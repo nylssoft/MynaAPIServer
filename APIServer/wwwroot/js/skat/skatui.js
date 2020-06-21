@@ -27,6 +27,15 @@ var skatui = (() => {
         return `images/skat/${str}.gif`;
     };
 
+    const getNextPlayer = (player) => {
+        for (let idx = 0; idx < model.skatTable.players.length; idx++) {
+            if (player.name == model.skatTable.players[idx].name) {
+                return model.skatTable.players[(idx + 1) % model.skatTable.players.length];
+            }
+        }
+        return undefined;
+    };
+
     // rendering
 
     const renderTableFull = (parent) => {
@@ -129,7 +138,7 @@ var skatui = (() => {
     }
 
     const renderSkat = (parent) => {
-        if (model.skatTable.gameStarted || model.skatTable.skatTaken && !model.skatTable.canPickupSkat) return;
+        if (model.skatTable.gameStarted) return;
         if (!model.skatTable.canPickupSkat) {
             renderCards(parent, [1, 1], false);
         }
@@ -217,12 +226,30 @@ var skatui = (() => {
     const renderHeader = (parent) => {
         skatutil.create(parent, "p", "activity", model.skatTable.message);
     };
-
-    const renderSummary = (parent) => {
+    
+    const renderSummary = (parent, left, right, bottom) => {
         model.skatTable.players.forEach((p) => {
             let classname = p.name == model.skatTable.player.name ? "summary-currentplayer" : "summary-otherplayer";
             skatutil.create(parent, "div", classname, p.summary);
         });
+        if (!model.skatTable.gameEnded) {
+            let leftPlayer = getNextPlayer(model.skatTable.player);
+            let rightPlayer = getNextPlayer(leftPlayer);
+            left.textContent = leftPlayer.name;
+            right.textContent = rightPlayer.name;
+            bottom.textContent = model.skatTable.player.name;
+            if (model.skatTable.currentPlayer) {
+                if (model.skatTable.currentPlayer.name == leftPlayer.name) {
+                    left.className += " blinking";
+                }
+                else if (model.skatTable.currentPlayer.name == rightPlayer.name) {
+                    right.className += " blinking";
+                }
+                else {
+                    bottom.className += " blinking";
+                }
+            }
+        }
     };
 
     const renderCopyright = (parent) => {
@@ -236,8 +263,11 @@ var skatui = (() => {
         let divHeader = skatutil.createDiv(parent, "header-section");
         let divOuvert = skatutil.createDiv(parent);
         let divCenter = skatutil.createDiv(parent);
+        let divLeft = skatutil.createDiv(parent, "left-section");
         let divStitch = skatutil.createDiv(divCenter, "stitch-section");
+        let divBottom = skatutil.createDiv(divCenter, "bottom-section");
         let divCards = skatutil.createDiv(divCenter, "cards-section");
+        let divRight = skatutil.createDiv(parent, "right-section");
         let divActions = skatutil.createDiv(parent);
         let divGame = skatutil.createDiv(parent);
         let divCopyright = skatutil.createDiv(parent);
@@ -249,7 +279,7 @@ var skatui = (() => {
             model.skatTable.gamePlayer.name == model.skatTable.player.name) {
             document.body.style.backgroundColor = "#005000"; // @TODO: use CSS class to change color
         }
-        renderSummary(divSummary);
+        renderSummary(divSummary, divLeft, divRight, divBottom);
         renderHeader(divHeader);
         renderOuvertOrScoreCards(divOuvert);
         renderStitch(divStitch);

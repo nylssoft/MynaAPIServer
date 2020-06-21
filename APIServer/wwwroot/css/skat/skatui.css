@@ -33,7 +33,6 @@ p, label, ul {
 
 .summary-otherplayer {
     display: inline;
-    margin: 10pt;
     color: white;
     font-family: 'Comic Sans MS';
     margin: 5pt;
@@ -41,10 +40,35 @@ p, label, ul {
 
 .summary-currentplayer {
     display: inline;
-    margin: 10pt;
     color: yellow;
     font-family: 'Comic Sans MS';
     margin: 5pt;
+}
+
+.left-section {
+    position: absolute;
+    top: 150px;
+    color: white;
+    margin: 5pt;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.right-section {
+    position: absolute;
+    top: 150px;
+    right: 30px;
+    color: white;
+    margin: 5pt;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.bottom-section {
+    color: white;
+    margin-left: 40%;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
 }
 
 .stitch-section {
@@ -56,6 +80,32 @@ p, label, ul {
 
 .cards-section {
     margin: 5pt;
+}
+
+.blinking {
+    animation: blinkingText 1.2s infinite;
+}
+
+@keyframes blinkingText {
+    0% {
+        color: white;
+    }
+
+    49% {
+        color: white;
+    }
+
+    60% {
+        color: transparent;
+    }
+
+    99% {
+        color: transparent;
+    }
+
+    100% {
+        color: white;
+    }
 }
 
 /* from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_checkbox */

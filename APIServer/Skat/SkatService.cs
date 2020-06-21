@@ -486,7 +486,27 @@ namespace APIServer.Skat
             var model = new TableModel();
             model.Player = GetSkatPlayerModel(player);
             model.GamePlayer = GetSkatPlayerModel(skatTable.GamePlayer);
-            model.CurrentPlayer = GetSkatPlayerModel(skatTable.CurrentPlayer);
+            var currentPlayer = skatTable.CurrentPlayer;
+            if (currentPlayer == null && !skatTable.GameStarted && !skatTable.GameEnded)
+            {
+                if (skatTable.GamePlayer != null)
+                {
+                    currentPlayer = skatTable.GamePlayer;
+                }
+                else
+                {
+                    foreach (var p in skatTable.Players)
+                    {
+                        if (p.BidStatus == BidStatus.Accept && skatTable.BidSaid ||
+                            p.BidStatus == BidStatus.Bid && !skatTable.BidSaid)
+                        {
+                            currentPlayer = p;
+                            break;
+                        }
+                    }
+                }
+            }
+            model.CurrentPlayer = GetSkatPlayerModel(currentPlayer);
             model.Message = stat.Header;
             model.SkatTaken = skatTable.SkatTaken;
             model.GameStarted = skatTable.GameStarted;
