@@ -46,10 +46,10 @@ Network Trash Folder
 Temporary Items
 .apdisk
 /.vs
-/Skat/.vs
-/Skat/obj
-/Skat/bin
-/Skat/Release
+/APIServer/.vs
+/APIServer/obj
+/APIServer/bin
+/APIServer/Release
 /bin
 
 # personal user files

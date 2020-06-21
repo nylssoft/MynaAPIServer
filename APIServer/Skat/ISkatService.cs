@@ -1,0 +1,60 @@
+﻿/*
+    Myna API Server
+    Copyright (C) 2020 Niels Stockfleth
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+using System.Collections.Generic;
+using APIServer.Skat.Model;
+
+namespace APIServer.Skat
+{
+    public interface ISkatService
+    {
+        // --- without authentication
+
+        public long GetState();
+
+        public string Login(string username);
+
+        // --- with authentication (ticket)
+
+        public SkatModel GetSkatModel(string ticket);
+
+        public bool PerformBidAction(string ticket, string bidAction);
+
+        public bool StartNewGame(string ticket);
+
+        public bool GiveUp(string ticket);
+
+        public bool SetGame(string ticket, GameModel skatGameModel);
+
+        public bool SetGameOption(string ticket, GameOptionModel skatGameOptionModel);
+
+        public bool PlayCard(string ticket, int internalCardNumber);
+
+        public bool CollectStitch(string ticket);
+
+        public bool PickupSkat(string ticket, int internalCardNumber);
+
+        public bool ConfirmStartGame(string ticket);
+
+        // --- with admin privileges
+
+        public bool Reset(string ticket);
+
+        public List<string> GetLoggedInUsers(string ticket);
+
+    }
+}
