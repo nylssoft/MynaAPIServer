@@ -32,9 +32,7 @@ var skatadmin = (() => {
         ticket = skatutil.getTicket();
         fetch("api/skat/tickets", { headers: { "ticket": ticket } })
             .then(response => response.json())
-            .then(arr => {
-                renderPage(arr);
-            });
+            .then(arr => renderPage(arr));
     };
 
     const btnLogin_click = () => {

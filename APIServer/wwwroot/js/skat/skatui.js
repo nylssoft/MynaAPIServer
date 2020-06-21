@@ -208,7 +208,6 @@ var skatui = (() => {
         skatutil.createRadiobutton(parent, "r4", "gametype", "Spades", "Pik", game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
         skatutil.createRadiobutton(parent, "r5", "gametype", "Hearts", "Herz", game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
         skatutil.createRadiobutton(parent, "r6", "gametype", "Diamonds", "Karo", game.type == "Color" && game.color == "Diamonds", btnGameType_click, gameStarted);
-
         checkBoxOuvert = skatutil.createCheckbox(parent, "c1", "Ouvert", "Ouvert", game.option.ouvert, btnGameOption_click, !model.skatTable.canSetOuvert);
         checkBoxHand = skatutil.createCheckbox(parent, "c2", "Hand", "Hand", game.option.hand, btnGameOption_click, !model.skatTable.canSetHand);
         checkBoxSchneider = skatutil.createCheckbox(parent, "c3", "Schneider", "Schneider", game.option.schneider, btnGameOption_click, !model.skatTable.canSetSchneider);
@@ -242,7 +241,6 @@ var skatui = (() => {
         let divActions = skatutil.createDiv(parent);
         let divGame = skatutil.createDiv(parent);
         let divCopyright = skatutil.createDiv(parent);
-
         if (model.skatTable.player &&
             model.skatTable.currentPlayer &&
             model.skatTable.player.name == model.skatTable.currentPlayer.name ||
@@ -251,7 +249,6 @@ var skatui = (() => {
             model.skatTable.gamePlayer.name == model.skatTable.player.name) {
             document.body.style.backgroundColor = "#005000"; // @TODO: use CSS class to change color
         }
-
         renderSummary(divSummary);
         renderHeader(divHeader);
         renderOuvertOrScoreCards(divOuvert);
@@ -267,7 +264,7 @@ var skatui = (() => {
             skatutil.create(parent, "p", undefined, "Du bist nicht angemeldet!");
             ticket = undefined;
             skatutil.clearTicket();
-            renderLoginWithTicket();
+            renderLoginWithTicket(parent);
             return;
         }
         document.title = `Myna Skat - ${model.currentUser.name}`;
@@ -308,14 +305,11 @@ var skatui = (() => {
         let body = document.querySelector("body");
         skatutil.removeAllChildren(body);
         body.style.backgroundColor = "#067E00"; // @TODO: use CSS
-
         divMain = skatutil.createDiv(body, "main");
-
         if (model.allUsers.length == 0) {
             skatutil.clearTicket();
             ticket = undefined;
         }
-
         if (!ticket) {
             renderUserList(divMain);
             if (model.allUsers.length == 3) {
@@ -330,11 +324,10 @@ var skatui = (() => {
         else {
             renderUsername(divMain);
         }
-        timerEnabled = true; // rendering finished, enable timer now, all calls sync
+        timerEnabled = true;
     };
 
     const render = () => {
-        // no timer callback during fetch
         timerEnabled = false;
         ticket = skatutil.getTicket();
         fetch("api/skat/model", { headers: { "ticket": ticket } })
@@ -347,6 +340,7 @@ var skatui = (() => {
     const btnLogin_click = (elem) => {
         const name = inputUsername.value.trim();
         if (name.length > 0) {
+            timerEnabled = false;
             fetch("api/skat/login", {
                 method: "POST",
                 headers: {
@@ -471,7 +465,7 @@ var skatui = (() => {
             }
         })
         if (!found) return;
-        timerEnabled = false; // async call
+        timerEnabled = false;
         fetch("api/skat/playcard", {
             method: "POST",
             headers: {
@@ -487,7 +481,7 @@ var skatui = (() => {
 
     const btnSkatCard_click = (card) => {
         if (!model.skatTable.player || !card || showLastStitch || !model.skatTable.canPickupSkat) return;
-        timerEnabled = false; // async call
+        timerEnabled = false;
         fetch("api/skat/pickupskat", {
             method: "POST",
             headers: {
@@ -508,7 +502,7 @@ var skatui = (() => {
 
     const btnStitchCard_click = () => {
         if (!model.skatTable.player || showLastStitch || !model.skatTable.canCollectStitch) return;
-        timerEnabled = false; // async call
+        timerEnabled = false;
         fetch("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render());
@@ -524,7 +518,7 @@ var skatui = (() => {
                     if (!statechanged || d > statechanged) {
                         console.log(d);
                         skatutil.setState(d);
-                        render(); // next try only if async rendering has finished
+                        render();
                     }
                 }
             });
