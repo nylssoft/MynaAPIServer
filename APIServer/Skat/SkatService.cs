@@ -35,6 +35,8 @@ namespace APIServer.Skat
 
         private readonly Dictionary<string, Context> userTickets = new Dictionary<string, Context>();
 
+        private readonly List<string> loginHistory = new List<string>();
+
         private SkatTable skatTable;
 
         public SkatService(IConfiguration configuration)
@@ -94,6 +96,11 @@ namespace APIServer.Skat
                     };
                     userTickets[ticket] = ctx;
                     stateChanged = DateTime.UtcNow;
+                    if (loginHistory.Count == 100)
+                    {
+                        loginHistory.RemoveAt(0);
+                    }
+                    loginHistory.Add($"{ctx.Created} : {ctx.Name}");
                     return ticket;
                 }
             }
@@ -403,6 +410,7 @@ namespace APIServer.Skat
                     {
                         ret.Add($"[{t.Key}] => {t.Value.Name} / {t.Value.Created} / {t.Value.LastAccess}");
                     }
+                    ret.AddRange(loginHistory);
                     return ret;
                 }
             }

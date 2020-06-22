@@ -203,7 +203,7 @@ var skatui = (() => {
             skatutil.createButton(parent, action.description, btnAction_click, action.name);
         });
         if (parent.childElementCount > 0) {
-            document.body.style.backgroundColor = "#005000"; // @TODO: use CSS style
+            document.body.className = "active-background";
         }
     };
 
@@ -211,22 +211,38 @@ var skatui = (() => {
         if (!model.skatTable.player || !model.skatTable.player.game) return;
         let game = model.skatTable.player.game;
         let gameStarted = model.skatTable.gameStarted
-        skatutil.createRadiobutton(parent, "r1", "gametype", "Grand", "Grand", game.type == "Grand", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(parent, "r2", "gametype", "Null", "Null", game.type == "Null", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(parent, "r3", "gametype", "Clubs", "Kreuz", game.type == "Color" && game.color == "Clubs", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(parent, "r4", "gametype", "Spades", "Pik", game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(parent, "r5", "gametype", "Hearts", "Herz", game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(parent, "r6", "gametype", "Diamonds", "Karo", game.type == "Color" && game.color == "Diamonds", btnGameType_click, gameStarted);
-        checkBoxOuvert = skatutil.createCheckbox(parent, "c1", "Ouvert", "Ouvert", game.option.ouvert, btnGameOption_click, !model.skatTable.canSetOuvert);
-        checkBoxHand = skatutil.createCheckbox(parent, "c2", "Hand", "Hand", game.option.hand, btnGameOption_click, !model.skatTable.canSetHand);
-        checkBoxSchneider = skatutil.createCheckbox(parent, "c3", "Schneider", "Schneider", game.option.schneider, btnGameOption_click, !model.skatTable.canSetSchneider);
-        checkBoxSchwarz = skatutil.createCheckbox(parent, "c4", "Schwarz", "Schwarz", game.option.schwarz, btnGameOption_click, !model.skatTable.canSetSchwarz);
+        let divGameType = skatutil.create(parent, "div", "gametype");
+        skatutil.createRadiobutton(divGameType, "r1", "gametype", "Grand", "Grand", game.type == "Grand", btnGameType_click, gameStarted);
+        skatutil.createRadiobutton(divGameType, "r2", "gametype", "Null", "Null", game.type == "Null", btnGameType_click, gameStarted);
+        skatutil.createRadiobutton(divGameType, "r3", "gametype", "Clubs", "Kreuz", game.type == "Color" && game.color == "Clubs", btnGameType_click, gameStarted);
+        skatutil.createRadiobutton(divGameType, "r4", "gametype", "Spades", "Pik", game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
+        skatutil.createRadiobutton(divGameType, "r5", "gametype", "Hearts", "Herz", game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
+        skatutil.createRadiobutton(divGameType, "r6", "gametype", "Diamonds", "Karo", game.type == "Color" && game.color == "Diamonds", btnGameType_click, gameStarted);
+        let divGameOption = skatutil.create(parent, "div", "gameoption");
+        checkBoxOuvert = skatutil.createCheckbox(divGameOption, "c1", "Ouvert", "Ouvert", game.option.ouvert, btnGameOption_click, !model.skatTable.canSetOuvert);
+        checkBoxHand = skatutil.createCheckbox(divGameOption, "c2", "Hand", "Hand", game.option.hand, btnGameOption_click, !model.skatTable.canSetHand);
+        checkBoxSchneider = skatutil.createCheckbox(divGameOption, "c3", "Schneider", "Schneider", game.option.schneider, btnGameOption_click, !model.skatTable.canSetSchneider);
+        checkBoxSchwarz = skatutil.createCheckbox(divGameOption, "c4", "Schwarz", "Schwarz", game.option.schwarz, btnGameOption_click, !model.skatTable.canSetSchwarz);
     };
 
     const renderHeader = (parent) => {
         skatutil.create(parent, "p", "activity", model.skatTable.message);
     };
-    
+
+    const renderSummaryPlayer = (elem, player) => {
+        elem.textContent = player.name;
+        if (model.skatTable.currentPlayer &&
+            model.skatTable.currentPlayer.name == player.name) {
+            elem.className += " blinking";
+        }
+        if (skatPlayerImages) {
+            let img = skatPlayerImages[player.name.toLowerCase()];
+            if (img) {
+                skatutil.createImg(elem, undefined, 65, 90, img);
+            }
+        }
+    };
+
     const renderSummary = (parent, left, right, bottom) => {
         model.skatTable.players.forEach((p) => {
             let classname = p.name == model.skatTable.player.name ? "summary-currentplayer" : "summary-otherplayer";
@@ -235,31 +251,20 @@ var skatui = (() => {
         if (!model.skatTable.gameEnded) {
             let leftPlayer = getNextPlayer(model.skatTable.player);
             let rightPlayer = getNextPlayer(leftPlayer);
-            left.textContent = leftPlayer.name;
-            right.textContent = rightPlayer.name;
-            bottom.textContent = model.skatTable.player.name;
-            if (model.skatTable.currentPlayer) {
-                if (model.skatTable.currentPlayer.name == leftPlayer.name) {
-                    left.className += " blinking";
-                }
-                else if (model.skatTable.currentPlayer.name == rightPlayer.name) {
-                    right.className += " blinking";
-                }
-                else {
-                    bottom.className += " blinking";
-                }
-            }
+            renderSummaryPlayer(left, leftPlayer);
+            renderSummaryPlayer(right, rightPlayer);
+            renderSummaryPlayer(bottom, model.skatTable.player);
         }
     };
 
     const renderCopyright = (parent) => {
         let time = new Date().toLocaleTimeString();
-        let prefix = "Myna Skat Version 1.0.4. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten";
+        let prefix = "Myna Skat Version 1.0.5. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten";
         skatutil.create(parent, "p", "copyright", `${prefix}. Letzte Aktualisierung: ${time}.`);
     };
 
     const renderMainPage = (parent) => {
-        let divSummary = skatutil.createDiv(parent, "summary-section");
+        let divSummary = skatutil.createDiv(parent);
         let divHeader = skatutil.createDiv(parent, "header-section");
         let divOuvert = skatutil.createDiv(parent);
         let divCenter = skatutil.createDiv(parent);
@@ -277,7 +282,7 @@ var skatui = (() => {
             !model.skatTable.gameStarted &&
             model.skatTable.gamePlayer &&
             model.skatTable.gamePlayer.name == model.skatTable.player.name) {
-            document.body.style.backgroundColor = "#005000"; // @TODO: use CSS class to change color
+            document.body.className = "active-background";
         }
         renderSummary(divSummary, divLeft, divRight, divBottom);
         renderHeader(divHeader);
@@ -332,10 +337,9 @@ var skatui = (() => {
         console.log(m);
         model = m;
         skatutil.setState(model.state);
-        let body = document.querySelector("body");
-        skatutil.removeAllChildren(body);
-        body.style.backgroundColor = "#067E00"; // @TODO: use CSS
-        divMain = skatutil.createDiv(body, "main");
+        skatutil.removeAllChildren(document.body);
+        document.body.className = "inactive-background";
+        divMain = skatutil.createDiv(document.body);
         if (model.allUsers.length == 0) {
             skatutil.clearTicket();
             ticket = undefined;
