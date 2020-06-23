@@ -18,11 +18,11 @@ p, label, ul {
 }
 
 .active-background {
-    background-color: #007400;
+    background-color: #006400;
 }
 
 .inactive-background {
-    background-color: #006400;
+    background-color: #556B2F;
 }
 
 .gametype {

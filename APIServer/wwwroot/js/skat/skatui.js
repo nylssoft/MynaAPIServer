@@ -59,6 +59,7 @@ var skatui = (() => {
 
     const renderTableFull = (parent) => {
         skatutil.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
+        document.body.className = "inactive-background";
     };
 
     const renderUserList = (parent) => {
@@ -91,15 +92,18 @@ var skatui = (() => {
         inputUsername.placeholder = "Name";
         inputUsername.focus();
         skatutil.createButton(parent, "Anmelden", btnLogin_click);
+        document.body.className = "active-background";
     };
 
     const renderWaitForUsers = (parent) => {
         skatutil.create(parent, "p", "activity", "Du musst warten bis alle angemeldet sind.");
+        document.body.className = "inactive-background";
     };
 
     const renderStartGame = (parent) => {
         skatutil.create(parent, "p", undefined, "Alle sind angemeldet! Starte das Spiel!");
         skatutil.createButton(parent, "Spiel starten", btnStartGame_click);
+        document.body.className = "active-background";
     };
 
     const renderCards = (parent, cards, show, action) => {
@@ -356,7 +360,8 @@ var skatui = (() => {
         ticket = getTicket();
         fetch("api/skat/model", { headers: { "ticket": ticket } })
             .then(response => response.json())
-            .then(m => renderModel(m));
+            .then(m => renderModel(m))
+            .catch((err) => console.error(err));
     };
 
     // callbacks
@@ -380,6 +385,7 @@ var skatui = (() => {
                     }
                     render();
                 })
+                .catch((err) => console.error(err));
         }
     };
 
@@ -387,21 +393,24 @@ var skatui = (() => {
         timerEnabled = false;
         fetch("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnConfirmStartGame_click = () => {
         timerEnabled = false;
         fetch("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnGiveUp_click = () => {
         timerEnabled = false;
         fetch("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnGameType_click = (elem) => {
@@ -427,7 +436,8 @@ var skatui = (() => {
             body: JSON.stringify({ "Type": gametype, "Color": gamecolor })
         })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnGameOption_click = () => {
@@ -447,7 +457,8 @@ var skatui = (() => {
             })
         })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnAction_click = (elem) => {
@@ -465,7 +476,8 @@ var skatui = (() => {
             body: JSON.stringify(action)
         })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnPlayerCard_click = (card) => {
@@ -491,7 +503,8 @@ var skatui = (() => {
             body: JSON.stringify(card.orderNumber)
         })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnSkatCard_click = (card) => {
@@ -507,7 +520,8 @@ var skatui = (() => {
             body: JSON.stringify(card.orderNumber)
         })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     const btnLastStitchCard_click = () => {
@@ -520,7 +534,8 @@ var skatui = (() => {
         timerEnabled = false;
         fetch("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
-            .then(() => render());
+            .then(() => render())
+            .catch((err) => console.error(err));
     };
 
     function ontimer() {
@@ -536,7 +551,8 @@ var skatui = (() => {
                         render();
                     }
                 }
-            });
+            })
+            .catch((err) => console.error(err));
     }
 
     // --- public API
