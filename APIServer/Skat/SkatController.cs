@@ -55,6 +55,13 @@ namespace APIServer.Skat
         // --- with authentication
 
         [HttpPost]
+        [Route("api/skat/logout")]
+        public IActionResult Logout()
+        {
+            return new JsonResult(SkatService.Logout(GetTicket()));
+        }
+
+        [HttpPost]
         [Route("api/skat/bid")]
         public IActionResult PerformBidAction([FromBody] string value)
         {

@@ -30,6 +30,8 @@ namespace APIServer.Skat
 
         // --- with authentication (ticket)
 
+        public bool Logout(string ticket);
+
         public SkatModel GetSkatModel(string ticket);
 
         public bool PerformBidAction(string ticket, string bidAction);

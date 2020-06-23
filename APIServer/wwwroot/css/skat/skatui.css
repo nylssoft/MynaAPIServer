@@ -104,6 +104,24 @@ p, label, ul {
     margin: 5pt;
 }
 
+.logout-button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    margin-left: 5px;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 8pt;
+}
+
+.logout-button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
 .blinking {
     animation: blinkingText 1.2s infinite;
 }

@@ -273,7 +273,11 @@ var skatui = (() => {
     const renderCopyright = (parent) => {
         let time = new Date().toLocaleTimeString();
         let prefix = "Myna Skat Version 1.0.6. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten";
-        skatutil.create(parent, "p", "copyright", `${prefix}. Letzte Aktualisierung: ${time}.`);
+        let div = skatutil.createDiv(parent);
+        skatutil.create(div, "span", "copyright", `${prefix}. Letzte Aktualisierung: ${time}.`);
+        if (ticket) {
+            skatutil.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
+        }
     };
 
     const renderMainPage = (parent) => {
@@ -533,6 +537,14 @@ var skatui = (() => {
         if (!model.skatTable.player || showLastStitch || !model.skatTable.canCollectStitch) return;
         timerEnabled = false;
         fetch("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } })
+            .then(response => response.json())
+            .then(() => render())
+            .catch((err) => console.error(err));
+    };
+
+    const btnLogout_click = () => {
+        timerEnabled = false;
+        fetch("api/skat/logout", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render())
             .catch((err) => console.error(err));

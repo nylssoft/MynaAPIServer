@@ -111,6 +111,22 @@ namespace APIServer.Skat
 
         // --- with authentication
 
+        public bool Logout(string ticket)
+        {
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null)
+                {
+                    skatTable = null;
+                    userTickets.Remove(ticket);
+                    stateChanged = DateTime.UtcNow;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public SkatModel GetSkatModel(string ticket)
         {
             lock (mutex)

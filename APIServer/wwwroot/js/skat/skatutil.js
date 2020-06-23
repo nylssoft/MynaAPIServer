@@ -26,8 +26,11 @@ var skatutil = (() => {
         return create(parent, "div", classname);
     };
 
-    const createButton = (parent, txt, action, value) => {
-        let b = create(parent, "button", "button");
+    const createButton = (parent, txt, action, value, classname) => {
+        if (!classname) {
+            classname = "button";
+        }
+        let b = create(parent, "button", classname);
         b.title = txt;
         b.textContent = txt;
         if (action) {
