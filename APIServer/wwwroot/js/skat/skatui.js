@@ -4,7 +4,6 @@ var skatui = (() => {
 
     // UI elements
     let inputUsername;
-    let inputTicket;
     let divMain;
     let checkBoxOuvert;
     let checkBoxHand;
@@ -18,6 +17,26 @@ var skatui = (() => {
     let showLastStitch = false;
 
     // helper
+
+    const clearTicket = () => {
+        ticket = undefined;
+        sessionStorage.removeItem("ticket");
+        localStorage.removeItem("ticket");
+    };
+
+    const setTicket = (t) => {
+        ticket = t;
+        sessionStorage.setItem("ticket", t);
+        localStorage.setItem("ticket", t);
+    };
+
+    const getTicket = () => {
+        let t = sessionStorage.getItem("ticket");
+        if (!t) {
+            t = localStorage.getItem("ticket");
+        }
+        return t;
+    }
 
     const getCardImage = (card) => {
         let str = card.orderNumber.toString();
@@ -52,7 +71,16 @@ var skatui = (() => {
         if (model.allUsers.length > 0) {
             skatutil.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
             let ul = skatutil.create(parent, "ul");
-            model.allUsers.forEach((user) => skatutil.create(ul, "li", undefined, user.name));
+            model.allUsers.forEach((user) => {
+                let li = skatutil.create(ul, "li");
+                if (skatPlayerImages) {
+                    let img = skatPlayerImages[user.name.toLowerCase()];
+                    if (img) {
+                        skatutil.createImg(li, undefined, 32, 45, img);
+                    }
+                }
+                skatutil.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
+            });
         }
     };
 
@@ -65,27 +93,8 @@ var skatui = (() => {
         skatutil.createButton(parent, "Anmelden", btnLogin_click);
     };
 
-    const renderLoginWithTicket = (parent) => {
-        skatutil.create(parent, "p", undefined, "Du kannst Dich mit Deinem Zugangscode anmelden.");
-        skatutil.createLabel(parent, undefined, "Zugangscode:");
-        inputTicket = skatutil.createInputField(parent, "ticket", btnLoginWithTicket_click);
-        inputTicket.placeholder = "Zugangscode";
-        inputTicket.focus();
-        skatutil.createButton(parent, "Anmelden", btnLoginWithTicket_click);
-    };
-
-    const renderConfirmStartGame = (parent) => {
-        skatutil.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
-    };
-
     const renderWaitForUsers = (parent) => {
         skatutil.create(parent, "p", "activity", "Du musst warten bis alle angemeldet sind.");
-    };
-
-    const renderTicket = (parent) => {
-        skatutil.create(parent, "p", undefined, "Dein Zugangscode ist");
-        skatutil.create(parent, "span", "ticket", ticket);
-        skatutil.create(parent, "p", undefined, "Schreib ihn Dir auf, um Dich erneuert anmelden zu k\u00F6nnen.");
     };
 
     const renderStartGame = (parent) => {
@@ -259,7 +268,7 @@ var skatui = (() => {
 
     const renderCopyright = (parent) => {
         let time = new Date().toLocaleTimeString();
-        let prefix = "Myna Skat Version 1.0.5. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten";
+        let prefix = "Myna Skat Version 1.0.6. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten";
         skatutil.create(parent, "p", "copyright", `${prefix}. Letzte Aktualisierung: ${time}.`);
     };
 
@@ -296,10 +305,8 @@ var skatui = (() => {
 
     const renderUsername = (parent) => {
         if (!model.currentUser) {
-            skatutil.create(parent, "p", undefined, "Du bist nicht angemeldet!");
-            ticket = undefined;
-            skatutil.clearTicket();
-            renderLoginWithTicket(parent);
+            clearTicket();
+            render();
             return;
         }
         document.title = `Myna Skat - ${model.currentUser.name}`;
@@ -308,23 +315,8 @@ var skatui = (() => {
         }
         else {
             renderUserList(parent);
-            renderTicket(parent);
-            let wait = model.allUsers.length < 3;
-            if (!wait) {
-                // @TODO: helper here
-                model.allUsers.forEach((user) => {
-                    if (!user.startGameConfirmed) {
-                        wait = true;
-                    }
-                });
-            }
-            if (wait) {
-                if (!model.currentUser.startGameConfirmed) {
-                    renderConfirmStartGame(parent);
-                }
-                else {
-                    renderWaitForUsers(parent);
-                }
+            if (model.allUsers.length < 3) {
+                renderWaitForUsers(parent);
             }
             else {
                 renderStartGame(parent);
@@ -341,14 +333,12 @@ var skatui = (() => {
         document.body.className = "inactive-background";
         divMain = skatutil.createDiv(document.body);
         if (model.allUsers.length == 0) {
-            skatutil.clearTicket();
-            ticket = undefined;
+            clearTicket();
         }
         if (!ticket) {
             renderUserList(divMain);
             if (model.allUsers.length == 3) {
                 renderTableFull(divMain);
-                renderLoginWithTicket(divMain);
             }
             else {
                 renderLogin(divMain);
@@ -363,7 +353,7 @@ var skatui = (() => {
 
     const render = () => {
         timerEnabled = false;
-        ticket = skatutil.getTicket();
+        ticket = getTicket();
         fetch("api/skat/model", { headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(m => renderModel(m));
@@ -371,7 +361,7 @@ var skatui = (() => {
 
     // callbacks
 
-    const btnLogin_click = (elem) => {
+    const btnLogin_click = () => {
         const name = inputUsername.value.trim();
         if (name.length > 0) {
             timerEnabled = false;
@@ -384,38 +374,30 @@ var skatui = (() => {
                 body: JSON.stringify(name)
             })
                 .then(response => response.json())
-                .then((ticket) => {
-                    if (ticket && ticket.length > 0) {
-                        skatutil.setTicket(ticket);
+                .then((t) => {
+                    if (t && t.length > 0) {
+                        setTicket(t);
                     }
                     render();
                 })
         }
     };
 
-    const btnLoginWithTicket_click = (elem) => {
-        const t = inputTicket.value.trim();
-        if (t.length > 0) {
-            skatutil.setTicket(t);
-            render();
-        }
-    };
-
-    const btnStartGame_click = (elem) => {
+    const btnStartGame_click = () => {
         timerEnabled = false;
         fetch("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render());
     };
 
-    const btnConfirmStartGame_click = (elem) => {
+    const btnConfirmStartGame_click = () => {
         timerEnabled = false;
         fetch("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render());
     };
 
-    const btnGiveUp_click = (elem) => {
+    const btnGiveUp_click = () => {
         timerEnabled = false;
         fetch("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
@@ -448,7 +430,7 @@ var skatui = (() => {
             .then(() => render());
     };
 
-    const btnGameOption_click = (elem) => {
+    const btnGameOption_click = () => {
         timerEnabled = false;
         fetch("api/skat/gameoption", {
             method: "POST",
@@ -492,12 +474,11 @@ var skatui = (() => {
             !card ||
             showLastStitch) return;
         let found = false;
-        // @TODO: improve
         model.skatTable.playableCards.forEach(c => {
             if (c.orderNumber == card.orderNumber) {
                 found = true;
             }
-        })
+        });
         if (!found) return;
         timerEnabled = false;
         fetch("api/skat/playcard", {
@@ -529,7 +510,7 @@ var skatui = (() => {
             .then(() => render());
     };
 
-    const btnLastStitchCard_click = (card) => {
+    const btnLastStitchCard_click = () => {
         showLastStitch = !showLastStitch;
         render();
     };

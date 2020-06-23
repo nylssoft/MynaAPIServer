@@ -3,7 +3,7 @@
 var skatadmin = (() => {
 
     let passwordElem;
-    let ticket;
+    let adminTicket;
 
     const renderPage = (tickets) => {
         let body = document.querySelector("body");
@@ -29,8 +29,8 @@ var skatadmin = (() => {
     };
 
     const render = () => {
-        ticket = skatutil.getTicket();
-        fetch("api/skat/tickets", { headers: { "ticket": ticket } })
+        adminTicket = sessionStorage.getItem("adminticket");
+        fetch("api/skat/tickets", { headers: { "ticket": adminTicket } })
             .then(response => response.json())
             .then(arr => renderPage(arr));
     };
@@ -38,13 +38,13 @@ var skatadmin = (() => {
     const btnLogin_click = () => {
         const t = passwordElem.value.trim();
         if (t.length > 0) {
-            skatutil.setTicket(t);
+            sessionStorage.setItem("adminticket", t);
             render();
         }
     };
 
     const btnReset_click = () => {
-        fetch("api/skat/reset", { method: "POST", headers: { "ticket": ticket } })
+        fetch("api/skat/reset", { method: "POST", headers: { "ticket": adminTicket } })
             .then(response => response.json())
             .then(() => render());
     };

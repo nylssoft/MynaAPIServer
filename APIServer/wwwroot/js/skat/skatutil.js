@@ -196,21 +196,9 @@ var skatutil = (() => {
         return window.sessionStorage.getItem("state");
     }
 
-    const getTicket = () => {
-        return window.sessionStorage.getItem("ticket");
-    };
-
     const clearState = () => {
         return window.sessionStorage.getItem("state");
     }
-
-    const clearTicket = (ticket) => {
-        window.sessionStorage.removeItem("ticket");
-    };
-
-    const setTicket = (ticket) => {
-        window.sessionStorage.setItem("ticket", ticket);
-    };
 
     const setState = (state) => {
         window.sessionStorage.setItem("state", state);
@@ -252,9 +240,6 @@ var skatutil = (() => {
         createCheckbox: createCheckbox,
         createOption: createOption,
         createMenu: createMenu,
-        getTicket: getTicket,
-        clearTicket: clearTicket,
-        setTicket: setTicket,
         getState: getState,
         clearState: clearState,
         setState: setState,

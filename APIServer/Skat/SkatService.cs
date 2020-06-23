@@ -35,6 +35,7 @@ namespace APIServer.Skat
 
         private readonly Dictionary<string, Context> userTickets = new Dictionary<string, Context>();
 
+        // @TODO: will be lost on restart => serialize e.g. into database
         private readonly List<string> loginHistory = new List<string>();
 
         private SkatTable skatTable;
@@ -53,9 +54,8 @@ namespace APIServer.Skat
                 var now = DateTime.Now;
                 foreach (var ctx in userTickets.Values)
                 {
-                    var diff = (now - ctx.LastAccess).TotalMinutes;
-                    // @TODO: add to configuation?
-                    if (diff > 30) // reset game after 30 minutes inactivity
+                    var diff = (int)(now - ctx.LastAccess).TotalMinutes;
+                    if (diff > GetOptions().SessionTimeout) // reset game after inactivity
                     {
                         skatTable = null;
                         userTickets.Clear();
@@ -74,9 +74,11 @@ namespace APIServer.Skat
         {
             lock (mutex)
             {
-                if (!userTickets.Values.Any((v) => v.Name == username)
+                var allowedUsers = GetOptions().AllowedUsers;
+                if (!userTickets.Values.Any((v) => v.Name.ToLowerInvariant() == username)
                     && userTickets.Count < 3
-                    && username.Trim().Length > 0)
+                    && username.Trim().Length > 0 &&
+                    (allowedUsers == null || allowedUsers.Contains(username.ToLowerInvariant())))
                 {
                     // only lower chars and digits except 0 and o
                     var pwdgen = new PasswordGenerator.PwdGen()
@@ -182,16 +184,11 @@ namespace APIServer.Skat
                 {
                     if (skatTable == null)
                     {
-                        var userNames = new List<string>();
-                        foreach (var user in userTickets.Values)
+                        if (userTickets.Count == 3)
                         {
-                            if (user.StartGameConfirmed)
-                            {
-                                userNames.Add(user.Name);
-                            }
-                        }
-                        if (userNames.Count == 3)
-                        {
+                            var userNames = userTickets.Values
+                                .OrderBy(ctx => ctx.Created)
+                                .Select(ctx => ctx.Name).ToList();
                             skatTable = new SkatTable(userNames[0], userNames[1], userNames[2]);
                             ret = true;
                         }
@@ -419,6 +416,12 @@ namespace APIServer.Skat
 
         // --- private
 
+        private SkatOptions GetOptions()
+        {
+            var opt = Configuration.GetSection("Skat").Get<SkatOptions>();
+            return opt ?? new SkatOptions();
+        }
+
         private Context GetContext(string ticket)
         {
             userTickets.TryGetValue(ticket ?? "", out Context ctx);
@@ -431,8 +434,7 @@ namespace APIServer.Skat
 
         private bool IsAdminTicket(string ticket)
         {
-            var adminpwd = Configuration["adminpwd"];
-            return adminpwd != null && adminpwd.Length > 0 && ticket == adminpwd;
+            return ticket == GetOptions().AdminTicket;
         }
 
         private Player GetPlayerByName(string username)
