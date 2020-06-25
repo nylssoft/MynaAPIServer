@@ -55,6 +55,12 @@ var skatui = (() => {
         return undefined;
     };
 
+    const isOuvert = () => {
+        return model && model.skatTable && model.skatTable.gameStarted && !model.skatTable.gameEnded &&
+            model.skatTable.gamePlayer && model.skatTable.gamePlayer.game.option.ouvert &&
+            model.skatTable.gamePlayer.name != model.skatTable.player.name;
+    };
+
     // rendering
 
     const renderTableFull = (parent) => {
@@ -168,9 +174,7 @@ var skatui = (() => {
     };
 
     const renderOuvertOrScoreCards = (parent) => {
-        if (model.skatTable.gameStarted && !model.skatTable.gameEnded &&
-            model.skatTable.gamePlayer && model.skatTable.gamePlayer.game.option.ouvert &&
-            model.skatTable.gamePlayer.name != model.skatTable.player.name) {
+        if (isOuvert()) {
             renderCards(parent, model.skatTable.ouvert, true);
         }
         else if (model.skatTable.gameEnded) {
@@ -264,6 +268,10 @@ var skatui = (() => {
         if (!model.skatTable.gameEnded) {
             let leftPlayer = getNextPlayer(model.skatTable.player);
             let rightPlayer = getNextPlayer(leftPlayer);
+            if (isOuvert()) {
+                left.className += "-ouvert";
+                right.className += "-ouvert";
+            }
             renderSummaryPlayer(left, leftPlayer);
             renderSummaryPlayer(right, rightPlayer);
             renderSummaryPlayer(bottom, model.skatTable.player);
