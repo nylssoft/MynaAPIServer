@@ -138,7 +138,7 @@ namespace APIServer.Skat
                     ret.CurrentUser = GetCurrentUser(ctx);
                     if (skatTable != null)
                     {
-                        ret.SkatTable = GetSkatTableModel(ctx.Name);
+                        ret.SkatTable = GetTableModel(ctx.Name);
                     }
                 }
                 return ret;
@@ -494,24 +494,24 @@ namespace APIServer.Skat
             return ret;
         }
 
-        private PlayerModel GetSkatPlayerModel(Player player, string summary = "")
+        private PlayerModel GetPlayerModel(Player player, string summary = "")
         {
             PlayerModel ret = null;
             if (player != null)
             {
                 var game = GetSkatGameModel(player.Game);
-                ret = new PlayerModel { Name = player.Name, Game = game, Summary = summary };
+                ret = new PlayerModel { Name = player.Name, Game = game, Summary = summary, BidStatus = player.BidStatus };
             }
             return ret;
         }
 
-        private TableModel GetSkatTableModel(string username)
+        private TableModel GetTableModel(string username)
         {
             var player = GetPlayerByName(username);
             var stat = skatTable.GetPlayerStatus(player);
             var model = new TableModel();
-            model.Player = GetSkatPlayerModel(player);
-            model.GamePlayer = GetSkatPlayerModel(skatTable.GamePlayer);
+            model.Player = GetPlayerModel(player);
+            model.GamePlayer = GetPlayerModel(skatTable.GamePlayer);
             var currentPlayer = skatTable.CurrentPlayer;
             if (currentPlayer == null && !skatTable.GameStarted && !skatTable.GameEnded)
             {
@@ -532,7 +532,7 @@ namespace APIServer.Skat
                     }
                 }
             }
-            model.CurrentPlayer = GetSkatPlayerModel(currentPlayer);
+            model.CurrentPlayer = GetPlayerModel(currentPlayer);
             model.Message = stat.Header;
             model.SkatTaken = skatTable.SkatTaken;
             model.GameStarted = skatTable.GameStarted;
@@ -546,6 +546,8 @@ namespace APIServer.Skat
             model.CanSetSchwarz = skatTable.CanSetSchwarz(player);
             model.CanStartNewGame = skatTable.CanStartNewGame();
             model.CanViewLastStitch = skatTable.CanViewLastStitch(player);
+            model.BidSaid = skatTable.BidSaid;
+            model.CurrentBidValue = skatTable.CurrentBidValue;
             for (int idx = 0; idx < stat.ActionTypes.Count; idx++)
             {
                 model.Actions.Add(new ActionModel { Name = stat.ActionTypes[idx].ToString(), Description = stat.ActionLabels[idx] });
@@ -606,19 +608,16 @@ namespace APIServer.Skat
                     }
                 }
             }
+            model.GameCounter = skatTable.GameCounter;
             foreach (var p in skatTable.Players)
             {
-                var txt = $"{p.Name}, {p.GetPositionText()}";
+                var txt = $"{p.Name}";
                 if (skatTable.GameStarted && skatTable.GamePlayer == p)
                 {
                     txt += $", {p.Game.GetGameText()}";
                 }
                 txt += $", {p.Score} Punkte";
-                if (player == p)
-                {
-                    txt += $", Spiel {skatTable.GameCounter}";
-                }
-                model.Players.Add(GetSkatPlayerModel(p, txt));
+                model.Players.Add(GetPlayerModel(p, txt));
             }
             return model;
         }

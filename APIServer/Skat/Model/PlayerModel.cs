@@ -15,6 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.Skat.Core;
+
 namespace APIServer.Skat.Model
 {
     public class PlayerModel
@@ -24,5 +26,7 @@ namespace APIServer.Skat.Model
         public GameModel Game { get; set; } = null;
 
         public string Summary { get; set; } = "";
+
+        public BidStatus BidStatus { get; set; } = BidStatus.Wait;
     }
 }

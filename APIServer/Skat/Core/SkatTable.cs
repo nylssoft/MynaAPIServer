@@ -476,27 +476,8 @@ namespace APIServer.Skat.Core
             // Bidding
             if (GamePlayer == null)
             {
-                if (player.BidStatus == BidStatus.Wait)
+                if (player.BidStatus == BidStatus.Accept && BidSaid)
                 {
-                    ret.Header += $"Du wartest bis du zum Reizen an der Reihe bist. ";
-                    ret.Header += $"{GetBidPlayer(BidStatus.Bid).Name} sagt {GetBidPlayer(BidStatus.Accept).Name}. ";
-                    if (CurrentBidValue > 0)
-                    {
-                        ret.Header += $"Es sind aktuell {CurrentBidValue} angesagt. ";
-                    }
-                }
-                else if (player.BidStatus == BidStatus.Accept && !BidSaid)
-                {
-                    ret.Header += $"Du wartest auf eine Reizansage von {GetBidPlayer(BidStatus.Bid).Name}. ";
-                    if (CurrentBidValue > 0)
-                    {
-                        ret.Header += $"Es sind aktuell {CurrentBidValue} angesagt. ";
-                    }
-                }
-                else if (player.BidStatus == BidStatus.Accept && BidSaid)
-                {
-                    ret.Header += $"Du musst die Reizanfrage beantworten. ";
-                    ret.Header += $"{GetBidPlayer(BidStatus.Bid).Name} hat {CurrentBidValue} gesagt. ";
                     ret.ActionLabels.Add($"{CurrentBidValue} halten");
                     ret.ActionLabels.Add("Weg");
                     ret.ActionTypes.Add(ActionType.HoldBid);
@@ -504,51 +485,13 @@ namespace APIServer.Skat.Core
                 }
                 else if (player.BidStatus == BidStatus.Bid && !BidSaid)
                 {
-                    var acceptPlayer = GetBidPlayer(BidStatus.Accept);
-                    if (acceptPlayer == null)
-                    {
-                        ret.Header += "Alle Spieler haben gepasst. Du kannst jetzt eine Reizansage abgeben oder auch passen. ";
-                    }
-                    else
-                    {
-                        ret.Header += $"Du musst eine Reizansage abgeben für {acceptPlayer.Name}. ";
-                        if (CurrentBidValue > 0)
-                        {
-                            ret.Header += $"Es sind aktuell {CurrentBidValue} angesagt. ";
-                        }
-                    }
                     ret.ActionLabels.Add($"{NextBidValue} sagen");
                     ret.ActionLabels.Add("Weg");
                     ret.ActionTypes.Add(ActionType.Bid);
                     ret.ActionTypes.Add(ActionType.PassBid);
                 }
-                else if (player.BidStatus == BidStatus.Bid && BidSaid)
-                {
-                    ret.Header += $"Du wartest auf eine Antwort von {GetBidPlayer(BidStatus.Accept).Name}. Du hast {CurrentBidValue} angesagt. ";
-                }
-                else if (player.BidStatus == BidStatus.Pass)
-                {
-                    ret.Header += "Du hast beim Reizen gepasst. ";
-                    var acceptPlayer = GetBidPlayer(BidStatus.Accept);
-                    if (acceptPlayer != null)
-                    {
-                        ret.Header += $"{GetBidPlayer(BidStatus.Bid).Name} sagt {acceptPlayer.Name}. ";
-                    }
-                    else
-                    {
-                        ret.Header += $"{GetBidPlayer(BidStatus.Bid).Name} könnte spielen. ";
-                    }
-                    if (CurrentBidValue > 0)
-                    {
-                        ret.Header += $"Es sind aktuell {CurrentBidValue} angesagt. ";
-                    }
-                }
                 foreach (var p in Players)
                 {
-                    if (p.Position == PlayerPosition.Rearhand)
-                    {
-                        ret.Header += p == player ? "Du hast gegeben. " : $"{p.Name} hat gegeben. ";
-                    }
                     if (p.Position == PlayerPosition.Forehand)
                     {
                         ret.Header += p == player ? "Du kommst raus. " : $"{p.Name} kommt raus. ";
@@ -562,15 +505,10 @@ namespace APIServer.Skat.Core
                 {
                     if (Skat.Count < 2)
                     {
-                        ret.Header += "Du musst 2 Karten drücken. ";
-                        ret.Header += $"Du hast {player.Game.GetGameAndOptionText()} als Spiel ausgewählt. ";
-                        ret.Header += $"Du hast {CurrentBidValue} gesagt. ";
+                        ret.Header += "Drücken! ";
                     }
                     else if (!SkatTaken && !player.Game.Option.HasFlag(GameOption.Hand))
                     {
-                        ret.Header += "Du kannst den Skat nehmen oder Hand ansagen. ";
-                        ret.Header += $"Du hast {player.Game.GetGameAndOptionText()} als Spiel ausgewählt. ";
-                        ret.Header += $"Du hast {CurrentBidValue} gesagt. ";
                         ret.ActionLabels.Add("Skat nehmen");
                         ret.ActionLabels.Add("Hand spielen");
                         ret.ActionTypes.Add(ActionType.TakeSkat);
@@ -578,37 +516,26 @@ namespace APIServer.Skat.Core
                     }
                     else
                     {
-                        ret.Header += "Du kannst jetzt ";
                         ret.ActionLabels.Add("Los geht's!");
                         ret.ActionTypes.Add(ActionType.StartGame);
                         if (player.Game.Option.HasFlag(GameOption.Hand))
                         {
                             ret.ActionLabels.Add("Kein Handspiel!");
                             ret.ActionTypes.Add(ActionType.DoNotPlayHand);
-                            ret.Header += "das Handspiel zurücknehmen ";
                         }
-                        else
-                        {
-                            ret.Header += "den Skat ändern ";
-                        }
-                        ret.Header += "oder das Spiel starten. ";
-                        ret.Header += $"Du hast {player.Game.GetGameAndOptionText()} als Spiel ausgewählt. ";
-                        ret.Header += $"Du hast {CurrentBidValue} gesagt. ";
                     }
+                    ret.Header += $"Du wirst {player.Game.GetGameAndOptionText()} spielen mit {CurrentBidValue}. ";
                 }
                 else
                 {
-                    ret.Header += $"Du wartest auf die Spielansage von {GamePlayer.Name}. Es wurden {CurrentBidValue} angesagt. ";
+                    ret.Header += $"{GamePlayer.Name} spielt mit {CurrentBidValue}. ";
                 }
                 foreach (var p in Players)
                 {
-                    if (p.Position == PlayerPosition.Rearhand)
-                    {
-                        ret.Header += p == player ? "Du hast gegeben. " : $"{p.Name} hat gegeben. ";
-                    }
                     if (p.Position == PlayerPosition.Forehand)
                     {
                         ret.Header += p == player ? "Du kommst raus. " : $"{p.Name} kommt raus. ";
+                        break;
                     }
                 }
             }
@@ -646,28 +573,9 @@ namespace APIServer.Skat.Core
                 // Game in progress
                 else
                 {
-                    if (player == CurrentPlayer)
-                    {
-                        if (Stitch.Count == 3)
-                        {
-                            ret.Header += "Du musst den Stich einsammeln. ";
-                        }
-                        else
-                        {
-                            ret.Header += "Du musst eine Karte ausspielen. ";
-                        }
-                    }
-                    else
-                    {
-                        ret.Header += $"Du wartest bis {CurrentPlayer.Name} eine Karte gespielt hat. ";
-                    }
                     if (player == GamePlayer)
                     {
                         ret.Header += $"Du spielst {GamePlayer.Game.GetGameAndOptionText()} mit {CurrentBidValue}. ";
-                        if (player == CurrentPlayer && BidExceeded)
-                        {
-                            ret.Header += "Du hast dich überreizt. ";
-                        }
                     }
                     else
                     {

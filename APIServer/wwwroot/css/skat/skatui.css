@@ -10,37 +10,57 @@ input {
     margin: 5pt;
 }
 
-p, label, ul {
+p {
     color: white;
     font-size: 18pt;
-    font-family:Arial, Helvetica, sans-serif;
-    margin: 5pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
+label, ul {
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-right: 5pt;
+}
+
+body {
+    margin-left: 20pt;
 }
 
 .active-background {
     background-color: #006400;
+    animation-duration: 500ms;
+    animation-name: bgslidein;
+    animation-iteration-count: 1;
+}
+
+@keyframes bgslidein {
+    from {
+        background-color: #00FF00;
+    }
+    to {
+        background-color: #006400;
+    }
 }
 
 .inactive-background {
-    background-color: #556B2F;
+    background-color: #006400;
 }
 
 .gametype {
-    display:inline;
-    margin: 5pt;
+    display: inline;
+    margin-right: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
 }
 
 .gameoption {
     display: inline-block;
-    margin: 5pt;
-}
-
-.ticket {
-    color: cyan;
-    font-size: 24pt;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: blue;
-    margin: 5pt;
+    margin-right: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
 }
 
 .copyright {
@@ -53,54 +73,53 @@ p, label, ul {
     display: inline;
     color: white;
     font-family: 'Comic Sans MS';
-    margin: 5pt;
+    margin-right: 15pt;
 }
 
 .summary-currentplayer {
     display: inline;
     color: yellow;
     font-family: 'Comic Sans MS';
-    margin: 5pt;
+    margin-right: 15pt;
 }
 
 .header-section {
-    min-height: 90px;
+}
+
+.actions-section {
+    min-height: 60px;
 }
 
 .left-section {
     position: absolute;
-    top: 150px;
+    top: 100px;
     color: white;
-    margin: 5pt;
     font-size: 18pt;
     font-family: Arial, Helvetica, sans-serif;
 }
 
 .left-section-ouvert {
     position: absolute;
-    top: 300px;
+    top: 250px;
     color: white;
-    margin: 5pt;
     font-size: 18pt;
     font-family: Arial, Helvetica, sans-serif;
 }
 
 .right-section {
     position: absolute;
-    top: 150px;
+    top: 100px;
     right: 30px;
     color: white;
-    margin: 5pt;
     font-size: 18pt;
     font-family: Arial, Helvetica, sans-serif;
 }
 
 .right-section-ouvert {
     position: absolute;
-    top: 300px;
+    top: 250px;
     right: 30px;
     color: white;
-    margin: 5pt;
     font-size: 18pt;
     font-family: Arial, Helvetica, sans-serif;
 }
@@ -110,23 +129,21 @@ p, label, ul {
     margin-left: 40%;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 18pt;
+    margin-top: 5pt;
 }
 
 .stitch-section {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 20pt;
 }
 
 .cards-section {
-    margin: 5pt;
 }
 
 .logout-button {
     background-color: blue;
     border: 2px solid #008CBA;
-    margin-left: 5px;
     color: white;
     text-align: center;
     text-decoration: none;
@@ -134,6 +151,7 @@ p, label, ul {
     transition-duration: 0.4s;
     cursor: pointer;
     font-size: 8pt;
+    margin-left: 15pt;
 }
 
 .logout-button:hover {

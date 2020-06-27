@@ -3,6 +3,7 @@
 var skatui = (() => {
 
     // UI elements
+
     let inputUsername;
     let divMain;
     let checkBoxOuvert;
@@ -11,10 +12,16 @@ var skatui = (() => {
     let checkBoxSchwarz;
 
     // state
+
     let ticket;
     let model;
     let timerEnabled = false;
     let showLastStitch = false;
+
+    let imgHeight = 140;
+    let imgWidth = 90;
+
+    let version = "1.0.7";
 
     // helper
 
@@ -71,10 +78,10 @@ var skatui = (() => {
     const renderUserList = (parent) => {
         skatutil.create(parent, "p", "welcome", "Willkommen bei Myna Skat!");
         let divInfoImages = skatutil.createDiv(parent);
-        skatutil.createImg(divInfoImages, undefined, 90, 140, "/images/skat/28.gif");
-        skatutil.createImg(divInfoImages, undefined, 90, 140, "/images/skat/20.gif");
-        skatutil.createImg(divInfoImages, undefined, 90, 140, "/images/skat/12.gif");
-        skatutil.createImg(divInfoImages, undefined, 90, 140, "/images/skat/04.gif");
+        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
+        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
+        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
+        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/04.gif");
         if (model.allUsers.length > 0) {
             skatutil.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
             let ul = skatutil.create(parent, "ul");
@@ -112,10 +119,11 @@ var skatui = (() => {
         document.body.className = "active-background";
     };
 
-    const renderCards = (parent, cards, show, action) => {
+    const renderCards = (parent, overlap, cards, show, action) => {
+        let cnt = 0;
         cards.forEach(card => {
             let gif = show ? getCardImage(card) : "/images/skat/back.gif";
-            let img = skatutil.createImg(parent, "skat-card-img", 90, 140, `${gif}`);
+            let img = skatutil.createImg(parent, undefined, imgWidth, imgHeight, `${gif}`);
             if (show) {
                 img.title = card.description;
                 if (action) {
@@ -125,6 +133,10 @@ var skatui = (() => {
             else {
                 img.title = "Skat";
             }
+            if (cnt > 0 && overlap) {
+                img.style.marginLeft = "-20pt";
+            }
+            cnt++;
         });
     };
 
@@ -139,11 +151,11 @@ var skatui = (() => {
             else {
                 if (model.skatTable.stitch.length == 0) {
                     if (!model.skatTable.gameEnded) {
-                        skatutil.createImg(parent, "skat-card-img", 90, 140, "/images/skat/empty.png");
+                        skatutil.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
                     }
                 }
                 else {
-                    renderCards(parent, model.skatTable.stitch, true, btnStitchCard_click);
+                    renderCards(parent, true, model.skatTable.stitch, true, btnStitchCard_click);
                 }
             }
         }
@@ -152,33 +164,33 @@ var skatui = (() => {
     const renderLastStitch = (parent) => {
         if (!model.skatTable.gameStarted || !model.skatTable.lastStitch || !showLastStitch) return;
         if (model.skatTable.lastStitch.length > 0) {
-            renderCards(parent, model.skatTable.lastStitch, true, btnLastStitchCard_click);
+            renderCards(parent, true, model.skatTable.lastStitch, true, btnLastStitchCard_click);
         }
     }
 
     const renderSkat = (parent) => {
         if (model.skatTable.gameStarted) return;
         if (!model.skatTable.canPickupSkat) {
-            renderCards(parent, [1, 1], false);
+            renderCards(parent, false, [1, 1], false);
         }
         else {
             if (model.skatTable.skat.length == 0) {
                 if (!model.skatTable.gameEnded) {
-                    skatutil.createImg(parent, "skat-card-img", 90, 140, "/images/skat/empty.png");
+                    skatutil.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
                 }
             }
             else {
-                renderCards(parent, model.skatTable.skat, true, btnSkatCard_click);
+                renderCards(parent, false, model.skatTable.skat, true, btnSkatCard_click);
             }
         }
     };
 
     const renderOuvertOrScoreCards = (parent) => {
         if (isOuvert()) {
-            renderCards(parent, model.skatTable.ouvert, true);
+            renderCards(parent, true, model.skatTable.ouvert, true);
         }
         else if (model.skatTable.gameEnded) {
-            renderCards(parent, model.skatTable.stitches, true);
+            renderCards(parent, false, model.skatTable.stitches, true);
         }
     };
 
@@ -243,7 +255,7 @@ var skatui = (() => {
     };
 
     const renderHeader = (parent) => {
-        skatutil.create(parent, "p", "activity", model.skatTable.message);
+        skatutil.create(parent, "p", undefined, model.skatTable.message);
     };
 
     const renderSummaryPlayer = (elem, player) => {
@@ -258,9 +270,24 @@ var skatui = (() => {
                 skatutil.createImg(elem, undefined, 65, 90, img);
             }
         }
+        if (!model.skatTable.gamePlayer && model.skatTable.currentBidValue > 0) {
+            if (model.skatTable.bidSaid && player.bidStatus == 0) {
+                skatutil.createSpan(elem, undefined, `${model.skatTable.currentBidValue}?`);
+            }
+            else if (!model.skatTable.bidSaid && player.bidStatus == 0) {
+                skatutil.createSpan(elem, undefined, `${model.skatTable.currentBidValue}`);
+            }
+            else if (!model.skatTable.bidSaid && player.bidStatus == 1) {
+                skatutil.createSpan(elem, undefined, "Ja!");
+            }
+            else if (player.bidStatus == 2) {
+                skatutil.createSpan(elem, undefined, "Weg");
+            }
+        }
     };
 
     const renderSummary = (parent, left, right, bottom) => {
+        skatutil.create(parent, "div", "summary-currentplayer", `Spiel ${model.skatTable.gameCounter}`);
         model.skatTable.players.forEach((p) => {
             let classname = p.name == model.skatTable.player.name ? "summary-currentplayer" : "summary-otherplayer";
             skatutil.create(parent, "div", classname, p.summary);
@@ -268,7 +295,7 @@ var skatui = (() => {
         if (!model.skatTable.gameEnded) {
             let leftPlayer = getNextPlayer(model.skatTable.player);
             let rightPlayer = getNextPlayer(leftPlayer);
-            if (isOuvert()) {
+            if (isOuvert() && model.skatTable.ouvert.length > 0) {
                 left.className += "-ouvert";
                 right.className += "-ouvert";
             }
@@ -280,7 +307,7 @@ var skatui = (() => {
 
     const renderCopyright = (parent) => {
         let time = new Date().toLocaleTimeString();
-        let prefix = "Myna Skat Version 1.0.6. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten";
+        let prefix = `Myna Skat Version ${version}. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten`;
         let div = skatutil.createDiv(parent);
         skatutil.create(div, "span", "copyright", `${prefix}. Letzte Aktualisierung: ${time}.`);
         if (ticket) {
@@ -291,14 +318,14 @@ var skatui = (() => {
     const renderMainPage = (parent) => {
         let divSummary = skatutil.createDiv(parent);
         let divHeader = skatutil.createDiv(parent, "header-section");
-        let divOuvert = skatutil.createDiv(parent);
+        let divOuvert = skatutil.createDiv(parent, "cards-section");
         let divCenter = skatutil.createDiv(parent);
         let divLeft = skatutil.createDiv(parent, "left-section");
         let divStitch = skatutil.createDiv(divCenter, "stitch-section");
         let divBottom = skatutil.createDiv(divCenter, "bottom-section");
         let divCards = skatutil.createDiv(divCenter, "cards-section");
         let divRight = skatutil.createDiv(parent, "right-section");
-        let divActions = skatutil.createDiv(parent);
+        let divActions = skatutil.createDiv(parent, "actions-section");
         let divGame = skatutil.createDiv(parent);
         let divCopyright = skatutil.createDiv(parent);
         if (model.skatTable.player &&
@@ -313,7 +340,7 @@ var skatui = (() => {
         renderHeader(divHeader);
         renderOuvertOrScoreCards(divOuvert);
         renderStitch(divStitch);
-        renderCards(divCards, model.skatTable.cards, true, btnPlayerCard_click);
+        renderCards(divCards, true, model.skatTable.cards, true, btnPlayerCard_click);
         renderActions(divActions);
         renderGame(divGame);
         renderCopyright(divCopyright);

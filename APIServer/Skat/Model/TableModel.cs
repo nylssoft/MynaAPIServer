@@ -60,5 +60,11 @@ namespace APIServer.Skat.Model
         public bool CanViewLastStitch { get; set; } = false;
         public List<ActionModel> Actions { get; set; } = new List<ActionModel>();
         public List<PlayerModel> Players { get; set; } = new List<PlayerModel>();
+
+        public bool BidSaid { get; set; } = false;
+
+        public int CurrentBidValue { get; set; } = 0;
+
+        public int GameCounter { get; set; } = 0;
     }
 }
