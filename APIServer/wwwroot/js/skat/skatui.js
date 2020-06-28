@@ -203,12 +203,6 @@ var skatui = (() => {
             skatutil.createButton(parent, "Letzten Stich zur\u00FCcklegen", btnLastStitchCard_click, "StopViewLastStitch");
         }
         else {
-            if (model.skatTable.canCollectStitch) {
-                skatutil.createButton(parent, "Sitch einsammeln", btnStitchCard_click, "CollectStitch");
-            }
-            if (model.skatTable.canViewLastStitch) {
-                skatutil.createButton(parent, "Letzten Stich zeigen", btnLastStitchCard_click, "ViewLastStitch");
-            }
             if (model.skatTable.canStartNewGame) {
                 if (!model.currentUser.startGameConfirmed) {
                     skatutil.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
@@ -229,6 +223,12 @@ var skatui = (() => {
                 }
             }
             if (!model.skatTable.isSpeedUp) {
+                if (model.skatTable.canCollectStitch) {
+                    skatutil.createButton(parent, "Sitch einsammeln", btnStitchCard_click, "CollectStitch");
+                }
+                if (model.skatTable.canViewLastStitch) {
+                    skatutil.createButton(parent, "Letzten Stich zeigen", btnLastStitchCard_click, "ViewLastStitch");
+                }
                 if (model.skatTable.canGiveUp) {
                     skatutil.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUp");
                 }
@@ -238,11 +238,11 @@ var skatui = (() => {
             }
             else {
                 if (model.skatTable.canConfirmSpeedUp) {
-                    skatutil.createButton(parent, "Aufgeben", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
+                    skatutil.createButton(parent, "Spiel beenden", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
                     skatutil.createButton(parent, "Weiterspielen", btnContinuePlay_click, "ContinuePlay");
                 }
                 else {
-                    skatutil.create(parent, "p", undefined, "Spiel abk\u00Fcrzen. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                    skatutil.create(parent, "p", undefined, "Spiel beenden. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
                 }
             }
         }
@@ -612,7 +612,10 @@ var skatui = (() => {
     };
 
     const btnStitchCard_click = () => {
-        if (!model.skatTable.player || showLastStitch || !model.skatTable.canCollectStitch) return;
+        if (!model.skatTable.player ||
+            showLastStitch ||
+            !model.skatTable.canCollectStitch ||
+            model.skatTable.isSpeedUp) return;
         timerEnabled = false;
         fetch("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())

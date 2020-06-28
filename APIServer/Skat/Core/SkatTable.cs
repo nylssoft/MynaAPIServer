@@ -294,7 +294,6 @@ namespace APIServer.Skat.Core
                 GameStarted &&
                 !GameEnded &&
                 player == GamePlayer &&
-                player == CurrentPlayer &&
                 player.Cards.Count > 0 &&
                 !IsSpeedUp;
         }
