@@ -138,7 +138,7 @@ namespace APIServer.Skat
                     ret.CurrentUser = GetCurrentUser(ctx);
                     if (skatTable != null)
                     {
-                        ret.SkatTable = GetTableModel(ctx.Name);
+                        ret.SkatTable = GetTableModel(ctx);
                     }
                 }
                 return ret;
@@ -154,6 +154,76 @@ namespace APIServer.Skat
                 if (ctx != null)
                 {
                     ctx.StartGameConfirmed = true;
+                    ret = true;
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool SpeedUp(string ticket)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && skatTable != null)
+                {
+                    var player = GetPlayerByName(ctx.Name);
+                    if (skatTable.CanSpeedUp(player))
+                    {
+                        skatTable.IsSpeedUp = true;
+                        ctx.SpeedUpConfirmed = true;
+                        ret = true;
+                    }
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool ConfirmSpeedUp(string ticket)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && skatTable?.IsSpeedUp == true && !ctx.SpeedUpConfirmed)
+                {
+                    ctx.SpeedUpConfirmed = true;
+                    if (userTickets.Values.All((c) => c.SpeedUpConfirmed))
+                    {
+                        skatTable.SpeedUpConfirmed();
+                    }
+                    ret = true;
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool ContinuePlay(string ticket)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && skatTable?.IsSpeedUp == true)
+                {
+                    skatTable.IsSpeedUp = false;
+                    foreach (var c in userTickets.Values)
+                    {
+                        c.SpeedUpConfirmed = false;
+                    }
                     ret = true;
                 }
                 if (ret)
@@ -223,6 +293,7 @@ namespace APIServer.Skat
                     foreach (var user in userTickets.Values)
                     {
                         user.StartGameConfirmed = false;
+                        user.SpeedUpConfirmed = false;
                     }
                     stateChanged = DateTime.UtcNow;
                 }
@@ -505,9 +576,9 @@ namespace APIServer.Skat
             return ret;
         }
 
-        private TableModel GetTableModel(string username)
+        private TableModel GetTableModel(Context ctx)
         {
-            var player = GetPlayerByName(username);
+            var player = GetPlayerByName(ctx.Name);
             var stat = skatTable.GetPlayerStatus(player);
             var model = new TableModel();
             model.Player = GetPlayerModel(player);
@@ -537,8 +608,15 @@ namespace APIServer.Skat
             model.SkatTaken = skatTable.SkatTaken;
             model.GameStarted = skatTable.GameStarted;
             model.GameEnded = skatTable.GameEnded;
+            model.IsSpeedUp = skatTable.IsSpeedUp;
             model.CanCollectStitch = skatTable.CanCollectStitch(player);
             model.CanGiveUp = skatTable.CanGiveUp(player);
+            model.CanSpeedUp = skatTable.CanSpeedUp(player);
+            model.CanConfirmSpeedUp =
+                skatTable.GameStarted &&
+                !skatTable.GameEnded &&
+                skatTable.IsSpeedUp &&
+                !ctx.SpeedUpConfirmed;
             model.CanPickupSkat = skatTable.CanPickupSkat(player);
             model.CanSetHand = skatTable.CanSetHand(player);
             model.CanSetOuvert = skatTable.CanSetOuvert(player);
@@ -585,7 +663,8 @@ namespace APIServer.Skat
                 {
                     model.Stitch.Add(GetSkatCardModel(card));
                 }
-                if (player != skatTable.GamePlayer && skatTable.GamePlayer.Game.Option.HasFlag(GameOption.Ouvert))
+                if (player != skatTable.GamePlayer && 
+                    (skatTable.GamePlayer.Game.Option.HasFlag(GameOption.Ouvert) || skatTable.IsSpeedUp))
                 {
                     skatTable.GamePlayer.SortCards();
                     foreach (var card in skatTable.GamePlayer.Cards)
@@ -611,13 +690,7 @@ namespace APIServer.Skat
             model.GameCounter = skatTable.GameCounter;
             foreach (var p in skatTable.Players)
             {
-                var txt = $"{p.Name}";
-                if (skatTable.GameStarted && skatTable.GamePlayer == p)
-                {
-                    txt += $", {p.Game.GetGameText()}";
-                }
-                txt += $", {p.Score} Punkte";
-                model.Players.Add(GetPlayerModel(p, txt));
+                model.Players.Add(GetPlayerModel(p, $"{p.Name}, {p.Score} Punkte"));
             }
             return model;
         }

@@ -28,6 +28,8 @@ namespace APIServer.Skat
         public DateTime LastAccess { get; set; }
 
         public bool StartGameConfirmed { get; set; } = false;
+
+        public bool SpeedUpConfirmed { get; set; } = false;
     };
 
 }

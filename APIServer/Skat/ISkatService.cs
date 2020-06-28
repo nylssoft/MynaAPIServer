@@ -52,6 +52,12 @@ namespace APIServer.Skat
 
         public bool ConfirmStartGame(string ticket);
 
+        public bool SpeedUp(string ticket);
+
+        public bool ConfirmSpeedUp(string ticket);
+
+        public bool ContinuePlay(string ticket);
+
         // --- with admin privileges
 
         public bool Reset(string ticket);

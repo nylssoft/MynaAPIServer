@@ -62,13 +62,6 @@ namespace APIServer.Skat.Core
             Cards.Sort((b, a) => a.GetOrderNumber(Game).CompareTo(b.GetOrderNumber(Game)));
         }
 
-        public string GetPositionText()
-        {
-            if (Position == PlayerPosition.Rearhand) return "Hinterhand";
-            if (Position == PlayerPosition.Forehand) return "Vorhand";
-            return "Mittelhand";
-        }
-
         public override bool Equals(object obj)
         {
             var p = obj as Player;

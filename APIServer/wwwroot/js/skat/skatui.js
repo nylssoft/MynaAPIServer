@@ -21,7 +21,7 @@ var skatui = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.7";
+    let version = "1.0.8";
 
     // helper
 
@@ -63,9 +63,13 @@ var skatui = (() => {
     };
 
     const isOuvert = () => {
-        return model && model.skatTable && model.skatTable.gameStarted && !model.skatTable.gameEnded &&
-            model.skatTable.gamePlayer && model.skatTable.gamePlayer.game.option.ouvert &&
-            model.skatTable.gamePlayer.name != model.skatTable.player.name;
+        return model &&
+            model.skatTable &&
+            model.skatTable.gameStarted &&
+            !model.skatTable.gameEnded &&
+            model.skatTable.gamePlayer &&
+            model.skatTable.gamePlayer.name != model.skatTable.player.name &&
+            (model.skatTable.gamePlayer.game.option.ouvert || model.skatTable.isSpeedUp);
     };
 
     // rendering
@@ -224,8 +228,22 @@ var skatui = (() => {
                     }
                 }
             }
-            if (model.skatTable.canGiveUp) {
-                skatutil.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUp");
+            if (!model.skatTable.isSpeedUp) {
+                if (model.skatTable.canGiveUp) {
+                    skatutil.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUp");
+                }
+                if (model.skatTable.canSpeedUp) {
+                    skatutil.createButton(parent, "Abk\u00Fcrzen", btnSpeedUp_click, "SpeedUp");
+                }
+            }
+            else {
+                if (model.skatTable.canConfirmSpeedUp) {
+                    skatutil.createButton(parent, "Aufgeben", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
+                    skatutil.createButton(parent, "Weiterspielen", btnContinuePlay_click, "ContinuePlay");
+                }
+                else {
+                    skatutil.create(parent, "p", undefined, "Spiel abk\u00Fcrzen. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                }
             }
         }
         model.skatTable.actions.forEach((action) => {
@@ -270,14 +288,14 @@ var skatui = (() => {
                 skatutil.createImg(elem, undefined, 65, 90, img);
             }
         }
-        if (!model.skatTable.gamePlayer && model.skatTable.currentBidValue > 0) {
-            if (model.skatTable.bidSaid && player.bidStatus == 0) {
+        if (!model.skatTable.gamePlayer) {
+            if (model.skatTable.bidSaid && player.bidStatus == 0 && model.skatTable.currentBidValue > 0) {
                 skatutil.createSpan(elem, undefined, `${model.skatTable.currentBidValue}?`);
             }
-            else if (!model.skatTable.bidSaid && player.bidStatus == 0) {
+            else if (!model.skatTable.bidSaid && player.bidStatus == 0 && model.skatTable.currentBidValue > 0) {
                 skatutil.createSpan(elem, undefined, `${model.skatTable.currentBidValue}`);
             }
-            else if (!model.skatTable.bidSaid && player.bidStatus == 1) {
+            else if (!model.skatTable.bidSaid && player.bidStatus == 1 && model.skatTable.currentBidValue > 0) {
                 skatutil.createSpan(elem, undefined, "Ja!");
             }
             else if (player.bidStatus == 2) {
@@ -452,6 +470,30 @@ var skatui = (() => {
             .catch((err) => console.error(err));
     };
 
+    const btnSpeedUp_click = () => {
+        timerEnabled = false;
+        fetch("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } })
+            .then(response => response.json())
+            .then(() => render())
+            .catch((err) => console.error(err));
+    };
+
+    const btnSpeedUpConfirm_click = () => {
+        timerEnabled = false;
+        fetch("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } })
+            .then(response => response.json())
+            .then(() => render())
+            .catch((err) => console.error(err));
+    };
+
+    const btnContinuePlay_click = () => {
+        timerEnabled = false;
+        fetch("api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } })
+            .then(response => response.json())
+            .then(() => render())
+            .catch((err) => console.error(err));
+    };
+
     const btnGameType_click = (elem) => {
         timerEnabled = false;
         let gamecolor = undefined;
@@ -523,7 +565,8 @@ var skatui = (() => {
         if (!model.skatTable.player ||
             model.skatTable.currentPlayer && model.skatTable.player.name != model.skatTable.currentPlayer.name ||
             !card ||
-            showLastStitch) return;
+            showLastStitch ||
+            model.skatTable.isSpeedUp) return;
         let found = false;
         model.skatTable.playableCards.forEach(c => {
             if (c.orderNumber == card.orderNumber) {

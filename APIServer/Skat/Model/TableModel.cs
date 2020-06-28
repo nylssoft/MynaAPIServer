@@ -49,6 +49,8 @@ namespace APIServer.Skat.Model
 
         public bool GameEnded { get; set; } = false;
 
+        public bool IsSpeedUp { get; set; } = false;
+
         public bool CanCollectStitch { get; set; } = false;
         public bool CanGiveUp { get; set; } = false;
         public bool CanPickupSkat { get; set; } = false;
@@ -58,6 +60,9 @@ namespace APIServer.Skat.Model
         public bool CanSetSchwarz { get; set; } = false;
         public bool CanStartNewGame { get; set; } = false;
         public bool CanViewLastStitch { get; set; } = false;
+        public bool CanSpeedUp { get; set; } = false;
+        public bool CanConfirmSpeedUp { get; set; } = false;
+
         public List<ActionModel> Actions { get; set; } = new List<ActionModel>();
         public List<PlayerModel> Players { get; set; } = new List<PlayerModel>();
 

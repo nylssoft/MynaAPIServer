@@ -64,6 +64,8 @@ namespace APIServer.Skat.Core
             }
         }
 
+        public bool IsSpeedUp { get; set; } = false;
+
         public int CurrentBidValue
         {
             get
@@ -168,6 +170,7 @@ namespace APIServer.Skat.Core
             GameStarted = false;
             GamePlayer = null;
             GameValue = null;
+            IsSpeedUp = false;
             SkatTaken = false;
             CurrentPlayer = null;
             Stitch.Clear();
@@ -283,6 +286,56 @@ namespace APIServer.Skat.Core
         private bool IsCardGreater(Game game, Card card1, Card card2)
         {
             return card1.GetOrderNumber(game) > card2.GetOrderNumber(game);
+        }
+
+        public bool CanSpeedUp(Player player)
+        {
+            return
+                GameStarted &&
+                !GameEnded &&
+                player == GamePlayer &&
+                player == CurrentPlayer &&
+                player.Cards.Count > 0 &&
+                !IsSpeedUp;
+        }
+
+        public void SpeedUpConfirmed()
+        {
+            IsSpeedUp = false;
+            var game = GamePlayer.Game;
+            if (game.Type != GameType.Null)
+            {
+                // add all remaining cards to the stitch of game player
+                GamePlayer.Stitches.AddRange(Stitch);
+                Stitch.Clear();
+                foreach (var p in Players)
+                {
+                    GamePlayer.Stitches.AddRange(p.Cards);
+                    p.Cards.Clear();
+                }
+            }
+            else
+            {
+                // add all remaining cards to the stitch of an opponent player
+                Player opponentPlayer = null;
+                foreach (var p in Players)
+                {
+                    if (p != GamePlayer)
+                    {
+                        opponentPlayer = p;
+                        break;
+                    }
+                }
+                opponentPlayer.Stitches.AddRange(Stitch);
+                Stitch.Clear();
+                foreach (var p in Players)
+                {
+                    opponentPlayer.Stitches.AddRange(p.Cards);
+                    p.Cards.Clear();
+                }
+            }
+            GameValue = game.GetGameValue(MatadorsJackStraight, GamePlayer.Stitches, Skat, CurrentBidValue, true);
+            GamePlayer.Score += GameValue.Score;
         }
 
         public bool CanGiveUp(Player player)

@@ -83,6 +83,13 @@ namespace APIServer.Skat
         }
 
         [HttpPost]
+        [Route("api/skat/speedup")]
+        public IActionResult SpeedUp()
+        {
+            return new JsonResult(SkatService.SpeedUp(GetTicket()));
+        }
+
+        [HttpPost]
         [Route("api/skat/collectstitch")]
         public IActionResult CollectStitch()
         {
@@ -122,6 +129,20 @@ namespace APIServer.Skat
         public IActionResult ConfirmStartGame()
         {
             return new JsonResult(SkatService.ConfirmStartGame(GetTicket()));
+        }
+
+        [HttpPost]
+        [Route("api/skat/confirmspeedup")]
+        public IActionResult ConfirmSpeedUp()
+        {
+            return new JsonResult(SkatService.ConfirmSpeedUp(GetTicket()));
+        }
+
+        [HttpPost]
+        [Route("api/skat/continueplay")]
+        public IActionResult ContinuePlay()
+        {
+            return new JsonResult(SkatService.ContinuePlay(GetTicket()));
         }
 
         [HttpGet]
