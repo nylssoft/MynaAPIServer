@@ -49,6 +49,14 @@ body {
     background-color: #006400;
 }
 
+.confirmation {
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
 .gametype {
     display: inline;
     margin-right: 5pt;
@@ -84,6 +92,11 @@ body {
 }
 
 .header-section {
+}
+
+.specialsort-section {
+    text-align: left;
+    margin-bottom: 5pt;
 }
 
 .actions-section {
@@ -324,14 +337,15 @@ body {
     background-color: blue;
     border: 2px solid #008CBA;
     color: white;
-    padding: 10px 10px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    margin: 4px 2px;
     transition-duration: 0.4s;
     cursor: pointer;
     font-size: 18pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
 }
 
 .button:hover {

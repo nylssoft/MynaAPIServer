@@ -17,11 +17,15 @@ var skatui = (() => {
     let model;
     let timerEnabled = false;
     let showLastStitch = false;
+    let giveUpClicked = false;
+    let speedUpClicked = false;
+    let logoutClicked = false;
+    let specialSortOption = false;
 
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.8";
+    let version = "1.0.9";
 
     // helper
 
@@ -70,6 +74,94 @@ var skatui = (() => {
             model.skatTable.gamePlayer &&
             model.skatTable.gamePlayer.name != model.skatTable.player.name &&
             (model.skatTable.gamePlayer.game.option.ouvert || model.skatTable.isSpeedUp);
+    };
+
+    const getColors = (cards) => {
+        let ret = [];
+        cards.forEach(c => {
+            if (!ret.includes(c.color)) {
+                ret.push(c.color);
+            }
+        });
+        return ret;
+    };
+
+    const getColorType = (color) => {
+        if (color == "Hearts" || color == "Diamonds") return "Red";
+        return "Black";
+    };
+
+    const getColoredCards = (color, cards) => {
+        let ret = [];
+        cards.forEach((card) => {
+            if (card.color == color) {
+                ret.push(card);
+            }
+        });
+        return ret;
+    };
+
+    const sortColors = (guess, colors, trumpColor) => {
+        let idx = 0;
+        if (colors.length == 0) return guess;
+        while (idx < colors.length) {
+            let c = colors[idx];
+            if (!guess.includes(c) &&
+                (guess.length == 0 && (!trumpColor || getColorType(trumpColor) != getColorType(c)) ||
+                    guess.length > 0 && getColorType(guess[guess.length - 1]) != getColorType(c))) {
+                let newguess = guess.slice();
+                newguess.push(c);
+                let restcolors = colors.slice(0, idx);
+                restcolors = restcolors.concat(colors.slice(idx + 1));
+                let ret = sortColors(newguess, restcolors);
+                if (ret) return ret;
+            }
+            idx++;
+        }
+        return undefined;
+    };
+
+    const isTrump = (game, card) => {
+        return game.type != "Null" &&
+            (card.value == "Jack" ||
+                (game.type != "Grand" && card.color == game.color));
+    };
+
+    const findFirstNonTrump = (game, cards) => {
+        for (let idx = 0; idx < cards.length; idx++) {
+            if (!isTrump(game, cards[idx])) {
+                return idx;
+            }
+        }
+        return -1;
+    };
+
+    const sortCards = (game, cards) => {
+        if (cards.length <= 2) return cards;
+        let idx = findFirstNonTrump(game, cards);
+        if (idx < 0) return cards;
+        let trumpCards = cards.slice(0, idx);
+        let nonTrumpCards = cards.slice(idx);
+        let colors = getColors(nonTrumpCards);
+        let trumpColor = undefined;
+        if (game.type == "Color" &&
+            trumpCards.length > 0 &&
+            trumpCards[trumpCards.length - 1].value != "Jack") {
+            trumpColor = game.color;
+        }
+        let sortedColors = sortColors([], colors, trumpColor);
+        if (sortedColors) {
+            let sortedCards = [];
+            if (trumpCards && trumpCards.length > 0) {
+                sortedCards = trumpCards;
+            }
+            sortedColors.forEach((color) => {
+                let coloredCards = getColoredCards(color, nonTrumpCards);
+                sortedCards = sortedCards.concat(coloredCards);
+            });
+            return sortedCards;
+        }
+        return cards;
     };
 
     // rendering
@@ -198,14 +290,45 @@ var skatui = (() => {
         }
     };
 
+    const renderViewCards = (parent) => {
+        let viewCards;
+        if (specialSortOption && model.skatTable.player && model.skatTable.player.game) {
+            viewCards = sortCards(model.skatTable.player.game, model.skatTable.cards);
+        }
+        else {
+            viewCards = model.skatTable.cards;
+        }
+        renderCards(parent, true, viewCards, true, btnPlayerCard_click);
+    };
+
     const renderActions = (parent) => {
+        let active = false;
         if (showLastStitch) {
             skatutil.createButton(parent, "Letzten Stich zur\u00FCcklegen", btnLastStitchCard_click, "StopViewLastStitch");
+        }
+        else if (giveUpClicked) {
+            skatutil.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
+            skatutil.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
+            skatutil.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
+            active = true;
+        }
+        else if (speedUpClicked) {
+            skatutil.create(parent, "span", "confirmation", "Willst Du wirklich abk\u00FCrzen?");
+            skatutil.createButton(parent, "Ja", btnSpeedUp_click, "SpeedUpYes");
+            skatutil.createButton(parent, "Nein", btnSpeedUp_click, "SpeedUpNo");
+            active = true;
+        }
+        else if (logoutClicked) {
+            skatutil.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
+            skatutil.createButton(parent, "Ja", btnLogout_click, "LogoutYes");
+            skatutil.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
+            active = true;
         }
         else {
             if (model.skatTable.canStartNewGame) {
                 if (!model.currentUser.startGameConfirmed) {
                     skatutil.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
+                    active = true;
                 }
                 else {
                     let wait = false;
@@ -216,6 +339,7 @@ var skatui = (() => {
                     });
                     if (!wait) {
                         skatutil.createButton(parent, "Neues Spiel", btnStartGame_click, "StartGame");
+                        active = true;
                     }
                     else {
                         skatutil.create(parent, "p", undefined, "Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
@@ -225,32 +349,41 @@ var skatui = (() => {
             if (!model.skatTable.isSpeedUp) {
                 if (model.skatTable.canCollectStitch) {
                     skatutil.createButton(parent, "Sitch einsammeln", btnStitchCard_click, "CollectStitch");
+                    active = true;
                 }
                 if (model.skatTable.canViewLastStitch) {
                     skatutil.createButton(parent, "Letzten Stich zeigen", btnLastStitchCard_click, "ViewLastStitch");
                 }
                 if (model.skatTable.canGiveUp) {
-                    skatutil.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUp");
+                    skatutil.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUpQuestion");
                 }
                 if (model.skatTable.canSpeedUp) {
-                    skatutil.createButton(parent, "Abk\u00Fcrzen", btnSpeedUp_click, "SpeedUp");
+                    skatutil.createButton(parent, "Abk\u00FCrzen", btnSpeedUp_click, "SpeedUp");
                 }
             }
             else {
                 if (model.skatTable.canConfirmSpeedUp) {
-                    skatutil.createButton(parent, "Spiel beenden", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
+                    skatutil.createButton(parent, "Spiel abk\u00FCrzen", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
                     skatutil.createButton(parent, "Weiterspielen", btnContinuePlay_click, "ContinuePlay");
+                    active = true;
                 }
                 else {
-                    skatutil.create(parent, "p", undefined, "Spiel beenden. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                    skatutil.create(parent, "p", undefined, "Spiel abk\u00FCrzen. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
                 }
             }
+            model.skatTable.actions.forEach((action) => {
+                skatutil.createButton(parent, action.description, btnAction_click, action.name);
+                active = true;
+            });
         }
-        model.skatTable.actions.forEach((action) => {
-            skatutil.createButton(parent, action.description, btnAction_click, action.name);
-        });
-        if (parent.childElementCount > 0) {
+        if (active) {
             document.body.className = "active-background";
+        }
+    };
+
+    const renderSpecialSort = (parent) => {
+        if (model.skatTable.player && model.skatTable.cards.length > 2) {
+            skatutil.createCheckbox(parent, "sortoption", "Sort", "Sortiere nach wechselnden Farben", specialSortOption, btnSpecialSortOption_click, false);
         }
     };
 
@@ -342,6 +475,7 @@ var skatui = (() => {
         let divStitch = skatutil.createDiv(divCenter, "stitch-section");
         let divBottom = skatutil.createDiv(divCenter, "bottom-section");
         let divCards = skatutil.createDiv(divCenter, "cards-section");
+        let divSpecialSort = skatutil.createDiv(divCenter, "specialsort-section");
         let divRight = skatutil.createDiv(parent, "right-section");
         let divActions = skatutil.createDiv(parent, "actions-section");
         let divGame = skatutil.createDiv(parent);
@@ -358,7 +492,8 @@ var skatui = (() => {
         renderHeader(divHeader);
         renderOuvertOrScoreCards(divOuvert);
         renderStitch(divStitch);
-        renderCards(divCards, true, model.skatTable.cards, true, btnPlayerCard_click);
+        renderViewCards(divCards);
+        renderSpecialSort(divSpecialSort);
         renderActions(divActions);
         renderGame(divGame);
         renderCopyright(divCopyright);
@@ -462,20 +597,46 @@ var skatui = (() => {
             .catch((err) => console.error(err));
     };
 
-    const btnGiveUp_click = () => {
-        timerEnabled = false;
-        fetch("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => render())
-            .catch((err) => console.error(err));
+    const btnGiveUp_click = (elem) => {
+        if (elem.value == "GiveUpYes") {
+            timerEnabled = false;
+            fetch("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } })
+                .then(response => response.json())
+                .then(() => {
+                    giveUpClicked = false;
+                    render();
+                })
+                .catch((err) => console.error(err));
+        }
+        else if (elem.value == "GiveUpNo") {
+            giveUpClicked = false;
+            render();
+        }
+        else {
+            giveUpClicked = true;
+            render();
+        }
     };
 
-    const btnSpeedUp_click = () => {
-        timerEnabled = false;
-        fetch("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => render())
-            .catch((err) => console.error(err));
+    const btnSpeedUp_click = (elem) => {
+        if (elem.value == "SpeedUpYes") {
+            timerEnabled = false;
+            fetch("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } })
+                .then(response => response.json())
+                .then(() => {
+                    speedUpClicked = false;
+                    render();
+                })
+                .catch((err) => console.error(err));
+        }
+        else if (elem.value == "SpeedUpNo") {
+            speedUpClicked = false;
+            render();
+        }
+        else {
+            speedUpClicked = true;
+            render();
+        }
     };
 
     const btnSpeedUpConfirm_click = () => {
@@ -623,12 +784,30 @@ var skatui = (() => {
             .catch((err) => console.error(err));
     };
 
-    const btnLogout_click = () => {
-        timerEnabled = false;
-        fetch("api/skat/logout", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => render())
-            .catch((err) => console.error(err));
+    const btnLogout_click = (elem) => {
+        if (elem.value == "LogoutYes" || !model.skatTable) {
+            timerEnabled = false;
+            fetch("api/skat/logout", { method: "POST", headers: { "ticket": ticket } })
+                .then(response => response.json())
+                .then(() => {
+                    logoutClicked = false;
+                    render();
+                })
+                .catch((err) => console.error(err));
+        }
+        else if (elem.value == "LogoutNo") {
+            logoutClicked = false;
+            render();
+        }
+        else {
+            logoutClicked = true;
+            render();
+        }
+    };
+
+    const btnSpecialSortOption_click = () => {
+        specialSortOption = !specialSortOption;
+        render();
     };
 
     function ontimer() {

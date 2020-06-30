@@ -389,8 +389,8 @@ namespace APIServer.Skat.Core
         public bool CanViewLastStitch(Player player)
         {
             return GameStarted &&
+                !GameEnded &&
                 LastStitch.Count > 0 &&
-                player == CurrentPlayer &&
                 player.Cards.Count > 0;
         }
 
