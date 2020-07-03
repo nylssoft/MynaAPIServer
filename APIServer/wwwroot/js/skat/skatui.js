@@ -20,8 +20,9 @@ var skatui = (() => {
     let giveUpClicked = false;
     let speedUpClicked = false;
     let logoutClicked = false;
+    let letsStartClicked = false;
     let specialSortOption = false;
-
+    
     let imgHeight = 140;
     let imgWidth = 90;
 
@@ -322,6 +323,12 @@ var skatui = (() => {
             skatutil.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
             skatutil.createButton(parent, "Ja", btnLogout_click, "LogoutYes");
             skatutil.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
+            active = true;
+        }
+        else if (letsStartClicked) {
+            skatutil.create(parent, "span", "confirmation", `Willst Du Dich wirklich ${model.skatTable.player.game.description} spielen?`);
+            skatutil.createButton(parent, "Ja", btnLetsStart_click, "LetsStartYes");
+            skatutil.createButton(parent, "Nein", btnLetsStart_click, "LetsStartNo");
             active = true;
         }
         else {
@@ -711,18 +718,24 @@ var skatui = (() => {
         console.log(elem);
         let action = elem.value;
         console.log(action);
-        fetch("api/skat/bid", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "ticket": ticket
-            },
-            body: JSON.stringify(action)
-        })
-            .then(response => response.json())
-            .then(() => render())
-            .catch((err) => console.error(err));
+        if (action == "StartGame") {
+            letsStartClicked = true;
+            render();
+        }
+        else {
+            fetch("api/skat/bid", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "ticket": ticket
+                },
+                body: JSON.stringify(action)
+            })
+                .then(response => response.json())
+                .then(() => render())
+                .catch((err) => console.error(err));
+        }
     };
 
     const btnPlayerCard_click = (card) => {
@@ -804,6 +817,31 @@ var skatui = (() => {
         }
         else {
             logoutClicked = true;
+            render();
+        }
+    };
+
+    const btnLetsStart_click = (elem) => {
+        if (elem.value == "LetsStartYes") {
+            timerEnabled = false;
+            fetch("api/skat/bid", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "ticket": ticket
+                },
+                body: JSON.stringify("StartGame")
+            })
+                .then(response => response.json())
+                .then(() => {
+                    letsStartClicked = false;
+                    render();
+                })
+                .catch((err) => console.error(err));
+        }
+        else if (elem.value == "LetsStartNo") {
+            letsStartClicked = false;
             render();
         }
     };
