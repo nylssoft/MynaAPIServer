@@ -344,6 +344,39 @@ namespace APIServer.Skat.Core
             return 0;
         }
 
+        public string GetBidValueTooptip(MatadorsJackStraight jacks)
+        {
+            if (Type == GameType.Null)
+            {
+                return $"{GetGameAndOptionText()} : {GetNullBaseValue()}.";
+            }
+            var with = jacks.With ? "Mit" : "Ohne";
+            var factor = jacks.Play;
+            string game = $"{with} {jacks.Count} spielt {jacks.Play} ";
+            if (Option.HasFlag(GameOption.Hand))
+            {
+                factor++;
+                game += $"Hand {factor} ";
+            }
+            if (Option.HasFlag(GameOption.Ouvert))
+            {
+                factor++;
+                game += $"Ouvert {factor} ";
+            }
+            if (Option.HasFlag(GameOption.Schneider))
+            {
+                factor++;
+                game += $"Angesagt {factor} ";
+            }
+            if (Option.HasFlag(GameOption.Schwarz))
+            {
+                factor++;
+                game += $"Angesagt {factor} ";
+            }
+            game += $"{GetGameText()} ";
+            return $"{game}: {factor} x {GetGrandOrColorBaseValue()} = {factor * GetGrandOrColorBaseValue()}.";
+        }
+
         public override bool Equals(object obj)
         {
             var g = obj as Game;

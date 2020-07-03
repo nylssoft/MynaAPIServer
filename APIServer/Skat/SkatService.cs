@@ -22,6 +22,10 @@ using System.Linq;
 
 using APIServer.Skat.Model;
 using APIServer.Skat.Core;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System.IO;
+using System.Text.Json;
 
 namespace APIServer.Skat
 {
@@ -35,14 +39,21 @@ namespace APIServer.Skat
 
         private readonly Dictionary<string, Context> userTickets = new Dictionary<string, Context>();
 
-        // @TODO: will be lost on restart => serialize e.g. into database
         private readonly List<string> loginHistory = new List<string>();
+
+        private readonly ILogger logger;
 
         private SkatTable skatTable;
 
-        public SkatService(IConfiguration configuration)
+        public SkatService(
+            IConfiguration configuration,
+            ILogger<SkatService> logger,
+            IHostApplicationLifetime appLifetime)
         {
             Configuration = configuration;
+            this.logger = logger;
+            appLifetime.ApplicationStarted.Register(OnStarted);
+            appLifetime.ApplicationStopped.Register(OnStopped);
         }
 
         // --- without authentication
@@ -571,7 +582,11 @@ namespace APIServer.Skat
             if (player != null)
             {
                 var game = GetSkatGameModel(player.Game);
-                ret = new PlayerModel { Name = player.Name, Game = game, Summary = summary, BidStatus = player.BidStatus };
+                ret = new PlayerModel {
+                    Name = player.Name,
+                    Game = game,
+                    Summary = summary,
+                    BidStatus = player.BidStatus };
             }
             return ret;
         }
@@ -582,6 +597,7 @@ namespace APIServer.Skat
             var stat = skatTable.GetPlayerStatus(player);
             var model = new TableModel();
             model.Player = GetPlayerModel(player);
+            model.Player.Tooltip = stat.Tooltip;
             model.GamePlayer = GetPlayerModel(skatTable.GamePlayer);
             var currentPlayer = skatTable.CurrentPlayer;
             if (currentPlayer == null && !skatTable.GameStarted && !skatTable.GameEnded)
@@ -704,5 +720,52 @@ namespace APIServer.Skat
             cardmodel.Description = card.ToString();
             return cardmodel;
         }
+
+        // --- application life time events
+
+        private const string historyFilename = "loginHistory.txt";
+
+        private void OnStarted()
+        {
+            try
+            {
+                var opt = GetOptions();
+                if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
+                {
+                    var fn = Path.Combine(opt.DataDirectoy, historyFilename);
+                    if (File.Exists(fn))
+                    {
+                        logger.LogInformation("Read login history.");
+                        loginHistory.AddRange(
+                            JsonSerializer.Deserialize<List<string>>(
+                                File.ReadAllText(fn)));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to read login history file.");
+            }
+        }
+
+        private void OnStopped()
+        {
+            try
+            {
+                var opt = GetOptions();
+                if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
+                {
+                    logger.LogInformation("Write login history.");
+                    File.WriteAllText(
+                        Path.Combine(opt.DataDirectoy, historyFilename),
+                        JsonSerializer.Serialize(loginHistory));
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to write login history file.");
+            }
+        }
+
     }
 }

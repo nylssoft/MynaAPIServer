@@ -27,5 +27,7 @@ namespace APIServer.Skat
 
         public List<string> AllowedUsers { get; set; } = null;
 
+        public string DataDirectoy { get; set; } = "data";
+
     }
 }

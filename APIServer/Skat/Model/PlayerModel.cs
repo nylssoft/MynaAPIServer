@@ -27,6 +27,8 @@ namespace APIServer.Skat.Model
 
         public string Summary { get; set; } = "";
 
+        public string Tooltip { get; set; } = "";
+
         public BidStatus BidStatus { get; set; } = BidStatus.Wait;
     }
 }

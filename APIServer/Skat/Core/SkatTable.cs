@@ -30,6 +30,8 @@ namespace APIServer.Skat.Core
         public List<string> ActionLabels { get; set; } = new List<string>();
 
         public List<ActionType> ActionTypes { get; set; } = new List<ActionType>();
+
+        public string Tooltip { get; set; } = "";
     };
 
     public class SkatTable
@@ -396,26 +398,30 @@ namespace APIServer.Skat.Core
 
         public bool CanSetOuvert(Player player)
         {
-            return !GameStarted && GamePlayer == player && (GamePlayer.Game.Type == GameType.Null || !SkatTaken);
+            return !GameStarted && (
+                GamePlayer == null ||
+                GamePlayer == player && (GamePlayer.Game.Type == GameType.Null || !SkatTaken));
         }
 
         public bool CanSetHand(Player player)
         {
-            return !GameStarted && !SkatTaken && GamePlayer == player && (!GamePlayer.Game.Option.HasFlag(GameOption.Ouvert) || GamePlayer.Game.Type == GameType.Null);
+            return !GameStarted &&
+                (GamePlayer == null && (!player.Game.Option.HasFlag(GameOption.Ouvert) || player.Game.Type == GameType.Null) ||
+                GamePlayer == player && !SkatTaken );
         }
 
         public bool CanSetSchneider(Player player)
         {
             return CanSetHand(player) &&
-                   GamePlayer.Game.Type != GameType.Null &&
-                   GamePlayer.Game.Option.HasFlag(GameOption.Hand) &&
-                   !GamePlayer.Game.Option.HasFlag(GameOption.Ouvert);
+                   player.Game.Type != GameType.Null &&
+                   player.Game.Option.HasFlag(GameOption.Hand) &&
+                   !player.Game.Option.HasFlag(GameOption.Ouvert);
         }
 
         public bool CanSetSchwarz(Player player)
         {
             return CanSetSchneider(player) &&
-                   GamePlayer.Game.Option.HasFlag(GameOption.Schneider);
+                   player.Game.Option.HasFlag(GameOption.Schneider);
         }
 
         public void SetGameOption(Player player, GameOption gameOption)
@@ -543,6 +549,11 @@ namespace APIServer.Skat.Core
                     ret.ActionTypes.Add(ActionType.Bid);
                     ret.ActionTypes.Add(ActionType.PassBid);
                 }
+                if (ret.ActionTypes.Count > 0 && player.Game != null)
+                {
+                    var jacks = player.Game.GetMatadorsJackStraight(player.Cards, null);
+                    ret.Tooltip = player.Game.GetBidValueTooptip(jacks);
+                }
                 foreach (var p in Players)
                 {
                     if (p.Position == PlayerPosition.Forehand)
@@ -578,6 +589,11 @@ namespace APIServer.Skat.Core
                         }
                     }
                     ret.Header += $"Du wirst {player.Game.GetGameAndOptionText()} spielen mit {CurrentBidValue}. ";
+                    if (ret.ActionTypes.Count > 0 && player.Game != null)
+                    {
+                        var jacks = player.Game.GetMatadorsJackStraight(player.Cards, null);
+                        ret.Tooltip = player.Game.GetBidValueTooptip(jacks);
+                    }
                 }
                 else
                 {

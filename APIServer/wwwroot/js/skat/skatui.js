@@ -25,7 +25,7 @@ var skatui = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.9";
+    let version = "1.1.0";
 
     // helper
 
@@ -375,6 +375,9 @@ var skatui = (() => {
                 skatutil.createButton(parent, action.description, btnAction_click, action.name);
                 active = true;
             });
+            if (model.skatTable.player && model.skatTable.player.tooltip && model.skatTable.player.tooltip.length > 0) {
+                skatutil.create(parent, "span", "tooltip", model.skatTable.player.tooltip);
+            }
         }
         if (active) {
             document.body.className = "active-background";
