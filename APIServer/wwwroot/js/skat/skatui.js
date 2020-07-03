@@ -26,7 +26,7 @@ var skatui = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.0";
+    let version = "1.1.1";
 
     // helper
 
