@@ -15,17 +15,17 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 using APIServer.Skat.Model;
 using APIServer.Skat.Core;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System.IO;
-using System.Text.Json;
 
 namespace APIServer.Skat
 {
