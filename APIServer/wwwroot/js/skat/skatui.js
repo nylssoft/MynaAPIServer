@@ -21,12 +21,12 @@ var skatui = (() => {
     let speedUpClicked = false;
     let logoutClicked = false;
     let letsStartClicked = false;
-    let specialSortOption = false;
+    let specialSortOption = true;
     
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.1";
+    let version = "1.1.2";
 
     // helper
 
@@ -216,11 +216,16 @@ var skatui = (() => {
         document.body.className = "active-background";
     };
 
-    const renderCards = (parent, overlap, cards, show, action) => {
+    const renderCards = (parent, overlap, cards, show, action, addspace) => {
         let cnt = 0;
+        let container = parent;
         cards.forEach(card => {
+            if (addspace && (cnt % 3 == 0)) {
+                container = skatutil.createDiv(parent, undefined);
+                container.style = "white-space:nowrap;display:inline-block;";
+            }
             let gif = show ? getCardImage(card) : "/images/skat/back.gif";
-            let img = skatutil.createImg(parent, undefined, imgWidth, imgHeight, `${gif}`);
+            let img = skatutil.createImg(container, undefined, imgWidth, imgHeight, `${gif}`);
             if (show) {
                 img.title = card.description;
                 if (action) {
@@ -231,7 +236,12 @@ var skatui = (() => {
                 img.title = "Skat";
             }
             if (cnt > 0 && overlap) {
-                img.style.marginLeft = "-20pt";
+                if (addspace && (cnt % 3 == 0)) {
+                    img.style.marginLeft = "5pt";
+                }
+                else {
+                    img.style.marginLeft = "-20pt";
+                }
             }
             cnt++;
         });
@@ -287,7 +297,7 @@ var skatui = (() => {
             renderCards(parent, true, model.skatTable.ouvert, true);
         }
         else if (model.skatTable.gameEnded) {
-            renderCards(parent, false, model.skatTable.stitches, true);
+            renderCards(parent, true, model.skatTable.stitches, true, undefined, true);
         }
     };
 
@@ -355,7 +365,7 @@ var skatui = (() => {
             }
             if (!model.skatTable.isSpeedUp) {
                 if (model.skatTable.canCollectStitch) {
-                    skatutil.createButton(parent, "Sitch einsammeln", btnStitchCard_click, "CollectStitch");
+                    skatutil.createButton(parent, "Stich einsammeln", btnStitchCard_click, "CollectStitch");
                     active = true;
                 }
                 if (model.skatTable.canViewLastStitch) {
