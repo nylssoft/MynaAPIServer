@@ -32,7 +32,8 @@ var skatadmin = (() => {
         adminTicket = sessionStorage.getItem("adminticket");
         fetch("api/skat/tickets", { headers: { "ticket": adminTicket } })
             .then(response => response.json())
-            .then(arr => renderPage(arr));
+            .then(arr => renderPage(arr))
+            .catch((err) => console.error(err));
     };
 
     const btnLogin_click = () => {
