@@ -86,7 +86,7 @@ namespace APIServer.Skat
             lock (mutex)
             {
                 var allowedUsers = GetOptions().AllowedUsers;
-                if (!userTickets.Values.Any((v) => v.Name.ToLowerInvariant() == username)
+                if (!userTickets.Values.Any((v) => string.Equals(v.Name, username, StringComparison.OrdinalIgnoreCase))
                     && userTickets.Count < 3
                     && username.Trim().Length > 0 &&
                     (allowedUsers == null || allowedUsers.Contains(username.ToLowerInvariant())))
