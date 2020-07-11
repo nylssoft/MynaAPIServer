@@ -10,11 +10,16 @@ var skatui = (() => {
     let checkBoxHand;
     let checkBoxSchneider;
     let checkBoxSchwarz;
+    let divChat;
+    let divLayoutLeft;
+    let btnToogleChat;
+    let inputChatText;
 
     // state
 
     let ticket;
     let model;
+    let chatModel;
     let timerEnabled = false;
     let showLastStitch = false;
     let giveUpClicked = false;
@@ -22,11 +27,13 @@ var skatui = (() => {
     let logoutClicked = false;
     let letsStartClicked = false;
     let specialSortOption = true;
-    
+    let showChat = false;
+    let lastChatText = "";
+
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.2";
+    let version = "1.1.3";
 
     // helper
 
@@ -206,7 +213,7 @@ var skatui = (() => {
     };
 
     const renderWaitForUsers = (parent) => {
-        skatutil.create(parent, "p", "activity", "Du musst warten bis alle angemeldet sind.");
+        skatutil.create(parent, "p", "activity", "Du musst warten, bis alle angemeldet sind.");
         document.body.className = "inactive-background";
     };
 
@@ -541,16 +548,68 @@ var skatui = (() => {
         }
     };
 
+    const renderChat = (parent, ticket) => {
+        let divChatButton = skatutil.createDiv(parent, "layout-chat-button");
+        let imgNewMessage = skatutil.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/skat/mail-unread-new.png");
+        btnToogleChat = skatutil.createButton(divChatButton, "", btnToogleChat_click, "ToogleChat", "chat-button");
+        divChat = skatutil.createDiv(parent, "layout-right");
+        let chatState = sessionStorage.getItem("chatstate");
+        if (!chatState) {
+            chatState = 0;
+        }
+        console.log(chatModel);
+        let currentChatState = 0;
+        if (chatModel && chatModel.history) {
+            chatModel.history.forEach((msg) => {
+                let divMsg = skatutil.createDiv(divChat, "chat-message");
+                divMsg.textContent = msg;
+            });
+            currentChatState = chatModel.state;
+        }
+        console.log(chatState);
+        console.log(currentChatState);
+        if (ticket) {
+            inputChatText = skatutil.createInputField(divChat, "Nachricht", btnChat_click, "chat-input", 40, 200);
+            inputChatText.placeholder = "Nachricht..."
+            if (lastChatText) {
+                inputChatText.value = lastChatText;
+            }
+        }
+        imgNewMessage.style.visibility = "hidden";
+        if (showChat) {
+            sessionStorage.setItem("chatstate", currentChatState);
+            divLayoutLeft.className = "layout-left-chat";
+            divChat.style.visibility = "visible";
+            btnToogleChat.textContent = "Chat ausblenden";
+            if (inputChatText) {
+                inputChatText.focus();
+            }
+        }
+        else {
+            if (currentChatState > chatState) {
+                imgNewMessage.style.visibility = "visible";
+            }
+            divLayoutLeft.className = "layout-left";
+            divChat.style.visibility = "hidden";
+            btnToogleChat.textContent = "Chat einblenden";
+        }
+    };
+
     const renderModel = (m) => {
         console.log(m);
+        if (inputChatText) {
+            lastChatText = inputChatText.value; // keep old value if rendered again
+        }
         model = m;
         skatutil.setState(model.state);
         skatutil.removeAllChildren(document.body);
         document.body.className = "inactive-background";
-        divMain = skatutil.createDiv(document.body);
         if (model.allUsers.length == 0) {
             clearTicket();
         }
+        divLayoutLeft = skatutil.createDiv(document.body, "layout-left");
+        divMain = skatutil.createDiv(divLayoutLeft);
+        renderChat(document.body, ticket);
         if (!ticket) {
             renderUserList(divMain);
             if (model.allUsers.length == 3) {
@@ -567,12 +626,23 @@ var skatui = (() => {
         timerEnabled = true;
     };
 
-    const render = () => {
+    const fetchModel = (ticket) => {
         timerEnabled = false;
-        ticket = getTicket();
         fetch("api/skat/model", { headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(m => renderModel(m))
+            .catch((err) => console.error(err));
+    };
+
+    const render = () => {
+        ticket = getTicket();
+        timerEnabled = false;
+        fetch("api/skat/chat")
+            .then(response => response.json())
+            .then(chat => {
+                chatModel = chat;
+                fetchModel(ticket);
+            })
             .catch((err) => console.error(err));
     };
 
@@ -859,6 +929,32 @@ var skatui = (() => {
     const btnSpecialSortOption_click = () => {
         specialSortOption = !specialSortOption;
         render();
+    };
+
+    const btnToogleChat_click = () => {
+        showChat = !showChat;
+        render();
+    };
+
+    const btnChat_click = () => {
+        if (inputChatText && inputChatText.value.trim().length > 0) {
+            timerEnabled = false;
+            fetch("api/skat/chat", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "ticket": ticket
+                },
+                body: JSON.stringify(inputChatText.value)
+            })
+                .then(response => response.json())
+                .then(() => {
+                    inputChatText.value = "";
+                    render();
+                })
+                .catch((err) => console.error(err));
+        }
     };
 
     function ontimer() {

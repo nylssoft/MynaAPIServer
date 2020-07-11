@@ -29,24 +29,92 @@ body {
     margin-left: 20pt;
 }
 
-.active-background {
-    background-color: #006400;
-    animation-duration: 500ms;
-    animation-name: bgslidein;
-    animation-iteration-count: 1;
+.layout-chat-button {
+    position: absolute;
+    margin-left: 0pt;
+    margin-right: 5pt;
+    padding-bottom: 5pt;
+    right: 20pt;
+    top: 0;
+    z-index: 1;
 }
 
-@keyframes bgslidein {
-    from {
-        background-color: #00FF00;
-    }
-    to {
-        background-color: #006400;
-    }
+.layout-left-chat {
+    position: absolute;
+    top: 0pt;
+    bottom: 20pt;
+    left: 20pt;
+    right: 440pt;
+}
+
+.layout-left {
+    position: absolute;
+    top: 0pt;
+    bottom: 20pt;
+    left: 20pt;
+    right: 20pt;
+}
+
+.layout-right {
+    visibility: hidden;
+    position: absolute;
+    background-color: lightgreen;
+    margin: 5pt;
+    color: black;
+    top: 30pt;
+    bottom: 20pt;
+    width: 400pt;
+    right: 20pt;
+    z-index: -1;
+    overflow-y: auto;
+    background-color: blue;
+}
+
+.chat-message {
+    margin: 5pt;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.chat-input {
+    margin-left: 5pt;
+    background-color: blue;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.chat-button {
+    background-color: blue;
+    color: white;
+    margin-top: 5pt;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    border: 2px solid #008CBA;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.chat-button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
+.chat-img-newmessage {
+    margin-right: 5pt;
+    transform: translateY(5pt);
+}
+
+.active-background {
+    background-color: #007400;
 }
 
 .inactive-background {
-    background-color: #006400;
+    background-color: #004400;
 }
 
 .confirmation {

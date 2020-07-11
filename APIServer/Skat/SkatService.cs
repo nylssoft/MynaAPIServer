@@ -41,6 +41,8 @@ namespace APIServer.Skat
 
         private readonly List<string> loginHistory = new List<string>();
 
+        private ChatModel chatModel = new ChatModel();
+
         private readonly ILogger logger;
 
         private SkatTable skatTable;
@@ -118,6 +120,33 @@ namespace APIServer.Skat
                 }
             }
             return null;
+        }
+
+        public ChatModel GetChatModel()
+        {
+            return chatModel;
+        }
+
+        public bool Chat(string ticket, string message)
+        {
+            string msg = message.Trim();
+            if (msg.Length == 0 || msg.Length > 200) return false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null)
+                {
+                    while (chatModel.History.Count > 20)
+                    {
+                        chatModel.History.RemoveAt(0);
+                    }
+                    chatModel.History.Add($"{ctx.Name}: {msg}");
+                    stateChanged = DateTime.UtcNow;
+                    chatModel.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
+                    return true;
+                }
+            }
+            return false;
         }
 
         // --- with authentication
@@ -723,7 +752,8 @@ namespace APIServer.Skat
 
         // --- application life time events
 
-        private const string historyFilename = "loginHistory.txt";
+        private const string loginHistoryFilename = "loginHistory.txt";
+        private const string chatHistoryFilename = "chatHistory.txt";
 
         private void OnStarted()
         {
@@ -732,7 +762,7 @@ namespace APIServer.Skat
                 var opt = GetOptions();
                 if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
                 {
-                    var fn = Path.Combine(opt.DataDirectoy, historyFilename);
+                    var fn = Path.Combine(opt.DataDirectoy, loginHistoryFilename);
                     if (File.Exists(fn))
                     {
                         logger.LogInformation("Read login history.");
@@ -740,11 +770,17 @@ namespace APIServer.Skat
                             JsonSerializer.Deserialize<List<string>>(
                                 File.ReadAllText(fn)));
                     }
+                    fn = Path.Combine(opt.DataDirectoy, chatHistoryFilename);
+                    if (File.Exists(fn))
+                    {
+                        logger.LogInformation("Read chat history.");
+                        chatModel =  JsonSerializer.Deserialize<ChatModel>(File.ReadAllText(fn));
+                    }
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to read login history file.");
+                logger.LogWarning(ex, "Failed to read data.");
             }
         }
 
@@ -757,8 +793,12 @@ namespace APIServer.Skat
                 {
                     logger.LogInformation("Write login history.");
                     File.WriteAllText(
-                        Path.Combine(opt.DataDirectoy, historyFilename),
+                        Path.Combine(opt.DataDirectoy, loginHistoryFilename),
                         JsonSerializer.Serialize(loginHistory));
+                    logger.LogInformation("Write chat history.");
+                    File.WriteAllText(
+                        Path.Combine(opt.DataDirectoy, chatHistoryFilename),
+                        JsonSerializer.Serialize(chatModel));
                 }
             }
             catch (Exception ex)

@@ -28,6 +28,10 @@ namespace APIServer.Skat
 
         public string Login(string username);
 
+        public ChatModel GetChatModel();
+
+        public bool Chat(string ticket, string message);
+
         // --- with authentication (ticket)
 
         public bool Logout(string ticket);

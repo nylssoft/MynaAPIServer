@@ -52,6 +52,20 @@ namespace APIServer.Skat
             return new JsonResult(SkatService.Login(value));
         }
 
+        [HttpGet]
+        [Route("api/skat/chat")]
+        public IActionResult GetChat()
+        {
+            return new JsonResult(SkatService.GetChatModel());
+        }
+
+        [HttpPost]
+        [Route("api/skat/chat")]
+        public IActionResult Chat([FromBody] string value)
+        {
+            return new JsonResult(SkatService.Chat(GetTicket(), value));
+        }
+
         // --- with authentication
 
         [HttpPost]
