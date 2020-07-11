@@ -33,7 +33,7 @@ var skatui = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.3";
+    let version = "1.1.4";
 
     // helper
 
@@ -569,7 +569,7 @@ var skatui = (() => {
         console.log(chatState);
         console.log(currentChatState);
         if (ticket) {
-            inputChatText = skatutil.createInputField(divChat, "Nachricht", btnChat_click, "chat-input", 40, 200);
+            inputChatText = skatutil.createInputField(divChat, "Nachricht", btnChat_click, "chat-input", 36, 200);
             inputChatText.placeholder = "Nachricht..."
             if (lastChatText) {
                 inputChatText.value = lastChatText;
@@ -578,7 +578,6 @@ var skatui = (() => {
         imgNewMessage.style.visibility = "hidden";
         if (showChat) {
             sessionStorage.setItem("chatstate", currentChatState);
-            divLayoutLeft.className = "layout-left-chat";
             divChat.style.visibility = "visible";
             btnToogleChat.textContent = "Chat ausblenden";
             if (inputChatText) {
@@ -589,7 +588,6 @@ var skatui = (() => {
             if (currentChatState > chatState) {
                 imgNewMessage.style.visibility = "visible";
             }
-            divLayoutLeft.className = "layout-left";
             divChat.style.visibility = "hidden";
             btnToogleChat.textContent = "Chat einblenden";
         }

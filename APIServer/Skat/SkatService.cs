@@ -517,6 +517,8 @@ namespace APIServer.Skat
                     skatTable = null;
                     userTickets.Clear();
                     stateChanged = DateTime.UtcNow;
+                    chatModel.History.Clear();
+                    chatModel.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
                     return true;
                 }
             }

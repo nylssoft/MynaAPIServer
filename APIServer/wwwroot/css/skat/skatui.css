@@ -31,20 +31,10 @@ body {
 
 .layout-chat-button {
     position: absolute;
-    margin-left: 0pt;
-    margin-right: 5pt;
-    padding-bottom: 5pt;
+    top: 2pt;
     right: 20pt;
-    top: 0;
     z-index: 1;
-}
-
-.layout-left-chat {
-    position: absolute;
-    top: 0pt;
-    bottom: 20pt;
-    left: 20pt;
-    right: 440pt;
+    margin-right: 5pt;
 }
 
 .layout-left {
@@ -65,7 +55,7 @@ body {
     bottom: 20pt;
     width: 400pt;
     right: 20pt;
-    z-index: -1;
+    z-index: 1;
     overflow-y: auto;
     background-color: blue;
 }
@@ -88,14 +78,14 @@ body {
 .chat-button {
     background-color: blue;
     color: white;
-    margin-top: 5pt;
+    margin-top: 0pt;
     text-align: center;
     text-decoration: none;
     display: inline-block;
     transition-duration: 0.4s;
     cursor: pointer;
     border: 2px solid #008CBA;
-    font-size: 18pt;
+    font-size: 8pt;
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -105,8 +95,10 @@ body {
 }
 
 .chat-img-newmessage {
-    margin-right: 5pt;
-    transform: translateY(5pt);
+    position: absolute;
+    top: 0pt;
+    right: 0pt;
+    transform: translate(25pt,-4pt);
 }
 
 .active-background {
@@ -291,12 +283,12 @@ body {
 
 /* Hide the browser's default checkbox */
 .container-checkbox input {
-        position: absolute;
-        opacity: 0;
-        cursor: pointer;
-        height: 0;
-        width: 0;
-    }
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
 
 /* Create a custom checkbox */
 .checkmark-checkbox {
