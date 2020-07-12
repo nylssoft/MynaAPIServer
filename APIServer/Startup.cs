@@ -22,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using APIServer.Skat;
+using APIServer.Email;
 
 namespace APIServer
 {
@@ -39,6 +40,7 @@ namespace APIServer
         {
             services.AddControllers();
             services.AddSingleton<ISkatService, SkatService>();
+            services.AddSingleton<INotificationService, NotificationService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
