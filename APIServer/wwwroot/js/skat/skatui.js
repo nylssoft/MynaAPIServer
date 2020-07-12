@@ -484,10 +484,12 @@ var skatui = (() => {
     };
 
     const renderCopyright = (parent) => {
-        let time = new Date().toLocaleTimeString();
-        let prefix = `Myna Skat Version ${version}. Copyright 2020 Niels Stockfleth. Alle Rechte vorbehalten`;
         let div = skatutil.createDiv(parent);
-        skatutil.create(div, "span", "copyright", `${prefix}. Letzte Aktualisierung: ${time}.`);
+        skatutil.create(div, "span", "copyright", `Myna Skat Version ${version}. Copyright 2020 `);
+        let a = skatutil.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
+        a.target = "_blank";
+        let time = new Date().toLocaleTimeString();
+        skatutil.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}.`);
         if (ticket) {
             skatutil.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
