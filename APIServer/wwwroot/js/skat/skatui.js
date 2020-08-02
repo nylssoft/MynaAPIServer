@@ -33,7 +33,7 @@ var skatui = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.4";
+    let version = "1.1.5";
 
     // helper
 
@@ -189,10 +189,15 @@ var skatui = (() => {
         if (model.allUsers.length > 0) {
             skatutil.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
             let ul = skatutil.create(parent, "ul");
+            let idx = 1;
             model.allUsers.forEach((user) => {
                 let li = skatutil.create(ul, "li");
                 if (skatPlayerImages) {
                     let img = skatPlayerImages[user.name.toLowerCase()];
+                    if (!img) {
+                        img = `/images/skat/profiles/Player${idx}.png`;
+                        idx++;
+                    }
                     if (img) {
                         skatutil.createImg(li, undefined, 32, 45, img);
                     }
@@ -444,6 +449,14 @@ var skatui = (() => {
         }
         if (skatPlayerImages) {
             let img = skatPlayerImages[player.name.toLowerCase()];
+            if (!img) {
+                for (let idx = 0; idx < model.allUsers.length; idx++) {
+                    if (model.allUsers[idx].name == player.name) {
+                        img = `/images/skat/profiles/Player${idx+1}.png`;
+                        break;
+                    }
+                }
+            }
             if (img) {
                 skatutil.createImg(elem, undefined, 65, 90, img);
             }
