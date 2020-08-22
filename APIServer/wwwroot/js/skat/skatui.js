@@ -34,7 +34,7 @@ var skatui = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "2.0.1";
+    let version = "2.0.2";
 
     let slideShowPictures;
     let slideShowInterval = 10;
@@ -511,6 +511,17 @@ var skatui = (() => {
         skatutil.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}.`);
         if (ticket) {
             skatutil.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
+        }
+        else {
+            let specialDiv = skatutil.createDiv(div, "special");
+            let adownloads = skatutil.createA(specialDiv, "special-link", "/downloads/downloads.html", "Downloads");
+            adownloads.target = "_blank";
+            let aadmin = skatutil.createA(specialDiv, "special-link", "/mynaskatadmin.html", "Administrator");
+            aadmin.target = "_blank";
+            let aticket = skatutil.createA(specialDiv, "special-link", "/mynaskatticket.html", "Ticket Login");
+            aticket.target = "_blank";
+            let aimpress = skatutil.createA(specialDiv, "special-link", "/impressum.html", "Impressum");
+            aimpress.target = "_blank";
         }
     };
 

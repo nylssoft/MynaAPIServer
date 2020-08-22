@@ -150,6 +150,19 @@ body {
     color: lightgreen;
 }
 
+.special {
+    position: absolute;
+    bottom: 10pt;
+    left: 0pt;
+}
+
+.special-link {
+    font-size: 11pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 20pt;
+    color: lightgreen;
+}
+
 .summary-otherplayer {
     display: inline;
     color: white;
