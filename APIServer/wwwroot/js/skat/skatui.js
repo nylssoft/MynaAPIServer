@@ -14,6 +14,7 @@ var skatui = (() => {
     let divLayoutLeft;
     let btnToogleChat;
     let inputChatText;
+    let divSlideShowInfo;
 
     // state
 
@@ -33,7 +34,12 @@ var skatui = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.5";
+    let version = "2.0.1";
+
+    let slideShowPictures;
+    let slideShowInterval = 10;
+    let backgroundChanged;
+    let backgroundIndex = 0;
 
     // helper
 
@@ -501,7 +507,7 @@ var skatui = (() => {
         skatutil.create(div, "span", "copyright", `Myna Skat Version ${version}. Copyright 2020 `);
         let a = skatutil.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        let time = new Date().toLocaleTimeString();
+        let time = new Date().toLocaleTimeString("de-DE");
         skatutil.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}.`);
         if (ticket) {
             skatutil.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
@@ -635,6 +641,9 @@ var skatui = (() => {
         }
         else {
             renderUsername(divMain);
+        }
+        if (!model || !model.allUsers || model.allUsers.length < 3) {
+            divSlideShowInfo = skatutil.createDiv(document.body, "slideshow-info");
         }
         timerEnabled = true;
     };
@@ -970,8 +979,66 @@ var skatui = (() => {
         }
     };
 
+    const shuffle_array = (arr) => {
+        let ridx;
+        let tmp;
+        let cidx = arr.length;
+        while (0 !== cidx) {
+            ridx = Math.floor(Math.random() * cidx);
+            cidx -= 1;
+            tmp = arr[cidx];
+            arr[cidx] = arr[ridx];
+            arr[ridx] = tmp;
+        }
+        return arr;
+    };
+
+    const concat_strings = (arr, delim) => {
+        let str = "";
+        let idx = 0;
+        arr.forEach((a) => {
+            if (a && a.length > 0) {
+                if (idx > 0) {
+                    str += delim;
+                }
+                str += a;
+                idx++;
+            }
+        });
+        return str;
+    };
+
+    const format_date = (dt) => {
+        if (dt && dt.length > 0) {
+            let locale = "de-DE";
+            let options = { year: "numeric", month: "short", day: "numeric" };
+            return new Date(dt).toLocaleDateString(locale, options);
+        }
+        return "";
+    };
+
     function ontimer() {
         if (!timerEnabled) return;
+        if (slideShowPictures && slideShowPictures.length > 0) {
+            if (!model || !model.allUsers || model.allUsers.length < 3) {
+                let currentDate = new Date();
+                if (!backgroundChanged || ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval) {
+                    let pic = slideShowPictures[backgroundIndex];
+                    document.body.style.background = `#000000 url('${pic.url}')`;
+                    document.body.style.backgroundSize = "cover";
+                    document.body.style.backgroundRepeat = "no-repeat";
+                    backgroundIndex = (backgroundIndex + 1) % slideShowPictures.length;
+                    backgroundChanged = currentDate;
+                    if (divSlideShowInfo) {
+                        let txts = [pic.summary, pic.city, pic.country, format_date(pic.date)];
+                        divSlideShowInfo.textContent = concat_strings(txts, " // ");
+                    }
+                }
+            }
+            else if (document.body.hasAttribute("style")) {
+                document.body.removeAttribute("style");
+            }
+        }
         fetch("api/skat/state")
             .then(response => response.json())
             .then((d) => {
@@ -987,15 +1054,35 @@ var skatui = (() => {
             .catch((err) => console.error(err));
     }
 
+    const enableSlideShow = (pictures, interval) => {
+        slideShowPictures = pictures;
+        shuffle_array(slideShowPictures);
+        if (interval) {
+            slideShowInterval = interval;
+        }
+    };
+
     // --- public API
 
     return {
         render: render,
+        enableSlideShow: enableSlideShow,
         ontimer: ontimer
     };
 })();
 
 window.onload = () => {
     window.setInterval(skatui.ontimer, 1000);
+    fetch("/images/skat/slideshow/pictures.json", { cache: "no-cache" })
+        .then(response => {
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                response.json().then(
+                    slideshow => skatui.enableSlideShow(slideshow.pictures, slideshow.interval));
+            }
+            else {
+                console.log("Slideshow disabled.");
+            }
+        })
     skatui.render();
 };

@@ -51,6 +51,8 @@ Temporary Items
 /APIServer/bin
 /APIServer/Release
 /bin
+/APIServer/wwwroot/images/skat/profiles
+/APIServer/wwwroot/images/skat/slideshow/*.jpg
 
 # personal user files
 *.user

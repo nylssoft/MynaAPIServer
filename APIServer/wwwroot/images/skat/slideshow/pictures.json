@@ -1,0 +1,12 @@
+{
+  "interval": 10,
+  "pictures": [
+    {
+      "url": "/images/skat/slideshow/demo.jpg",
+      "country": "Germany",
+      "city": "Munich",
+      "summary": "JSON example",
+      "date": "22 Aug 2020"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+<script>
+    "use strict";
+    let redirectURL = `https://${location.hostname}`;
+    if (location.port != 443) {
+        redirectURL += `:${location.port}`;
+    }
+    redirectURL += "/mynaskat.html";
+    window.location.replace(redirectURL);
+</script>
+</head>
+<body>
+</body>
+</html>
