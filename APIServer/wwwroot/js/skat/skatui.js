@@ -15,6 +15,8 @@ var skatui = (() => {
     let btnToogleChat;
     let inputChatText;
     let divSlideShowInfo;
+    let btnPlaySlideShow;
+    let btnPauseSlideShow;
 
     // state
 
@@ -30,11 +32,12 @@ var skatui = (() => {
     let specialSortOption = true;
     let showChat = false;
     let lastChatText = "";
+    let isSlideshowPlaying = true;
 
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "2.0.2";
+    let version = "2.0.3";
 
     let slideShowPictures;
     let slideShowInterval = 10;
@@ -655,6 +658,22 @@ var skatui = (() => {
         }
         if (!model || !model.allUsers || model.allUsers.length < 3) {
             divSlideShowInfo = skatutil.createDiv(document.body, "slideshow-info");
+            btnPauseSlideShow = skatutil.createImageButton(document.body, "Bildergalerie anhalten",
+                () => {
+                    isSlideshowPlaying = false;
+                    btnPauseSlideShow.style.visibility = "hidden";
+                    btnPlaySlideShow.style.visibility = "visible";
+                },
+                "/images/skat/media-playback-pause-3.png", 24, "slideshow-action");
+            btnPlaySlideShow = skatutil.createImageButton(document.body, "Bildergalerie abspielen",
+                    () => {
+                        isSlideshowPlaying = true;
+                        btnPauseSlideShow.style.visibility = "visible";
+                        btnPlaySlideShow.style.visibility = "hidden";
+                    },
+                "/images/skat/media-playback-start-3.png", 24, "slideshow-action");
+            btnPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
+            btnPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
         }
         timerEnabled = true;
     };
@@ -1033,7 +1052,9 @@ var skatui = (() => {
         if (slideShowPictures && slideShowPictures.length > 0) {
             if (!model || !model.allUsers || model.allUsers.length < 3) {
                 let currentDate = new Date();
-                if (!backgroundChanged || ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval) {
+                if (isSlideshowPlaying &&
+                    (!backgroundChanged ||
+                        ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval)) {
                     let pic = slideShowPictures[backgroundIndex];
                     document.body.style.background = `#000000 url('${pic.url}')`;
                     document.body.style.backgroundSize = "cover";

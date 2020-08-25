@@ -41,6 +41,15 @@ body {
     text-align:center;
 }
 
+.slideshow-action {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    position: absolute;
+    bottom: 0pt;
+    left: 0pt;
+}
+
 .layout-chat-button {
     position: absolute;
     top: 2pt;
