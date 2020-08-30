@@ -1,0 +1,12 @@
+{
+  "interval": 10,
+  "pictures": [
+    {
+      "url": "/images/slideshow/munich.jpg",
+      "country": "Germany",
+      "city": "Munich",
+      "summary": "Hometown",
+      "date": "30 Aug 2020"
+    }
+  ]
+}
