@@ -8,19 +8,19 @@ var skatticket = (() => {
     let imgWidth = 90;
 
     const render = () => {
-        skatutil.removeAllChildren(document.body);
+        controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
-        let divMain = skatutil.createDiv(document.body);
-        skatutil.create(divMain, "p", "welcome", "Willkommen bei Myna Skat!");
-        let divInfoImages = skatutil.createDiv(divMain);
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/04.gif");
-        skatutil.createLabel(divMain, undefined, "Ticket:");
-        passwordElem = skatutil.createPasswordField(divMain, "ticket", btnLogin_click);
+        let divMain = controls.createDiv(document.body);
+        controls.create(divMain, "p", "welcome", "Willkommen bei Online Skat!");
+        let divInfoImages = controls.createDiv(divMain);
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/04.gif");
+        controls.createLabel(divMain, undefined, "Ticket:");
+        passwordElem = controls.createPasswordField(divMain, "ticket", btnLogin_click);
         passwordElem.focus();
-        skatutil.createButton(divMain, "Anmelden", btnLogin_click);
+        controls.createButton(divMain, "Anmelden", btnLogin_click);
     };
 
     const btnLogin_click = () => {
@@ -31,7 +31,7 @@ var skatticket = (() => {
                 .then(model => {
                     if (model && model.currentUser) {
                         sessionStorage.setItem("ticket", t);
-                        location.pathname = "mynaskat.html";
+                        location.pathname = "skat.html";
                     }
                     else {
                         passwordElem.value = "";

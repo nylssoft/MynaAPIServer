@@ -1,6 +1,6 @@
 "use strict";
 
-var skatui = (() => {
+var skat = (() => {
 
     // UI elements
 
@@ -14,9 +14,6 @@ var skatui = (() => {
     let divLayoutLeft;
     let btnToogleChat;
     let inputChatText;
-    let divSlideShowInfo;
-    let btnPlaySlideShow;
-    let btnPauseSlideShow;
 
     // state
 
@@ -32,17 +29,11 @@ var skatui = (() => {
     let specialSortOption = true;
     let showChat = false;
     let lastChatText = "";
-    let isSlideshowPlaying = true;
 
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "2.0.3";
-
-    let slideShowPictures;
-    let slideShowInterval = 10;
-    let backgroundChanged;
-    let backgroundIndex = 0;
+    let version = "1.0.0";
 
     // helper
 
@@ -184,23 +175,23 @@ var skatui = (() => {
     // rendering
 
     const renderTableFull = (parent) => {
-        skatutil.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
+        controls.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
         document.body.className = "inactive-background";
     };
 
     const renderUserList = (parent) => {
-        skatutil.create(parent, "p", "welcome", "Willkommen bei Myna Skat!");
-        let divInfoImages = skatutil.createDiv(parent);
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
-        skatutil.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/04.gif");
+        controls.create(parent, "p", "welcome", "Willkommen beim Online Skat!");
+        let divInfoImages = controls.createDiv(parent);
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
+        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/04.gif");
         if (model.allUsers.length > 0) {
-            skatutil.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
-            let ul = skatutil.create(parent, "ul");
+            controls.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
+            let ul = controls.create(parent, "ul");
             let idx = 1;
             model.allUsers.forEach((user) => {
-                let li = skatutil.create(ul, "li");
+                let li = controls.create(ul, "li");
                 if (skatPlayerImages) {
                     let img = skatPlayerImages[user.name.toLowerCase()];
                     if (!img) {
@@ -208,32 +199,32 @@ var skatui = (() => {
                         idx++;
                     }
                     if (img) {
-                        skatutil.createImg(li, undefined, 32, 45, img);
+                        controls.createImg(li, undefined, 32, 45, img);
                     }
                 }
-                skatutil.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
+                controls.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
             });
         }
     };
 
     const renderLogin = (parent) => {
-        skatutil.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
-        skatutil.createLabel(parent, undefined, "Name:");
-        inputUsername = skatutil.createInputField(parent, "username", btnLogin_click);
+        controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
+        controls.createLabel(parent, undefined, "Name:");
+        inputUsername = controls.createInputField(parent, "username", btnLogin_click);
         inputUsername.placeholder = "Name";
         inputUsername.focus();
-        skatutil.createButton(parent, "Anmelden", btnLogin_click);
+        controls.createButton(parent, "Anmelden", btnLogin_click);
         document.body.className = "active-background";
     };
 
     const renderWaitForUsers = (parent) => {
-        skatutil.create(parent, "p", "activity", "Du musst warten, bis alle angemeldet sind.");
+        controls.create(parent, "p", "activity", "Du musst warten, bis alle angemeldet sind.");
         document.body.className = "inactive-background";
     };
 
     const renderStartGame = (parent) => {
-        skatutil.create(parent, "p", undefined, "Alle sind angemeldet! Starte das Spiel!");
-        skatutil.createButton(parent, "Spiel starten", btnStartGame_click);
+        controls.create(parent, "p", undefined, "Alle sind angemeldet! Starte das Spiel!");
+        controls.createButton(parent, "Spiel starten", btnStartGame_click);
         document.body.className = "active-background";
     };
 
@@ -242,11 +233,11 @@ var skatui = (() => {
         let container = parent;
         cards.forEach(card => {
             if (addspace && (cnt % 3 == 0)) {
-                container = skatutil.createDiv(parent, undefined);
+                container = controls.createDiv(parent, undefined);
                 container.style = "white-space:nowrap;display:inline-block;";
             }
             let gif = show ? getCardImage(card) : "/images/skat/back.gif";
-            let img = skatutil.createImg(container, undefined, imgWidth, imgHeight, `${gif}`);
+            let img = controls.createImg(container, undefined, imgWidth, imgHeight, `${gif}`);
             if (show) {
                 img.title = card.description;
                 if (action) {
@@ -279,7 +270,7 @@ var skatui = (() => {
             else {
                 if (model.skatTable.stitch.length == 0) {
                     if (!model.skatTable.gameEnded) {
-                        skatutil.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
+                        controls.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
                     }
                 }
                 else {
@@ -304,7 +295,7 @@ var skatui = (() => {
         else {
             if (model.skatTable.skat.length == 0) {
                 if (!model.skatTable.gameEnded) {
-                    skatutil.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
+                    controls.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
                 }
             }
             else {
@@ -336,36 +327,36 @@ var skatui = (() => {
     const renderActions = (parent) => {
         let active = false;
         if (showLastStitch) {
-            skatutil.createButton(parent, "Letzten Stich zur\u00FCcklegen", btnLastStitchCard_click, "StopViewLastStitch");
+            controls.createButton(parent, "Letzten Stich zur\u00FCcklegen", btnLastStitchCard_click, "StopViewLastStitch");
         }
         else if (giveUpClicked) {
-            skatutil.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
-            skatutil.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
-            skatutil.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
+            controls.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
+            controls.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
+            controls.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
             active = true;
         }
         else if (speedUpClicked) {
-            skatutil.create(parent, "span", "confirmation", "Willst Du wirklich abk\u00FCrzen?");
-            skatutil.createButton(parent, "Ja", btnSpeedUp_click, "SpeedUpYes");
-            skatutil.createButton(parent, "Nein", btnSpeedUp_click, "SpeedUpNo");
+            controls.create(parent, "span", "confirmation", "Willst Du wirklich abk\u00FCrzen?");
+            controls.createButton(parent, "Ja", btnSpeedUp_click, "SpeedUpYes");
+            controls.createButton(parent, "Nein", btnSpeedUp_click, "SpeedUpNo");
             active = true;
         }
         else if (logoutClicked) {
-            skatutil.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
-            skatutil.createButton(parent, "Ja", btnLogout_click, "LogoutYes");
-            skatutil.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
+            controls.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
+            controls.createButton(parent, "Ja", btnLogout_click, "LogoutYes");
+            controls.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
             active = true;
         }
         else if (letsStartClicked) {
-            skatutil.create(parent, "span", "confirmation", `Willst Du Dich wirklich ${model.skatTable.player.game.description} spielen?`);
-            skatutil.createButton(parent, "Ja", btnLetsStart_click, "LetsStartYes");
-            skatutil.createButton(parent, "Nein", btnLetsStart_click, "LetsStartNo");
+            controls.create(parent, "span", "confirmation", `Willst Du Dich wirklich ${model.skatTable.player.game.description} spielen?`);
+            controls.createButton(parent, "Ja", btnLetsStart_click, "LetsStartYes");
+            controls.createButton(parent, "Nein", btnLetsStart_click, "LetsStartNo");
             active = true;
         }
         else {
             if (model.skatTable.canStartNewGame) {
                 if (!model.currentUser.startGameConfirmed) {
-                    skatutil.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
+                    controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
                     active = true;
                 }
                 else {
@@ -376,45 +367,45 @@ var skatui = (() => {
                         }
                     });
                     if (!wait) {
-                        skatutil.createButton(parent, "Neues Spiel", btnStartGame_click, "StartGame");
+                        controls.createButton(parent, "Neues Spiel", btnStartGame_click, "StartGame");
                         active = true;
                     }
                     else {
-                        skatutil.create(parent, "p", undefined, "Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                        controls.create(parent, "p", undefined, "Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
                     }
                 }
             }
             if (!model.skatTable.isSpeedUp) {
                 if (model.skatTable.canCollectStitch) {
-                    skatutil.createButton(parent, "Stich einsammeln", btnStitchCard_click, "CollectStitch");
+                    controls.createButton(parent, "Stich einsammeln", btnStitchCard_click, "CollectStitch");
                     active = true;
                 }
                 if (model.skatTable.canViewLastStitch) {
-                    skatutil.createButton(parent, "Letzten Stich zeigen", btnLastStitchCard_click, "ViewLastStitch");
+                    controls.createButton(parent, "Letzten Stich zeigen", btnLastStitchCard_click, "ViewLastStitch");
                 }
                 if (model.skatTable.canGiveUp) {
-                    skatutil.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUpQuestion");
+                    controls.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUpQuestion");
                 }
                 if (model.skatTable.canSpeedUp) {
-                    skatutil.createButton(parent, "Abk\u00FCrzen", btnSpeedUp_click, "SpeedUp");
+                    controls.createButton(parent, "Abk\u00FCrzen", btnSpeedUp_click, "SpeedUp");
                 }
             }
             else {
                 if (model.skatTable.canConfirmSpeedUp) {
-                    skatutil.createButton(parent, "Spiel abk\u00FCrzen", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
-                    skatutil.createButton(parent, "Weiterspielen", btnContinuePlay_click, "ContinuePlay");
+                    controls.createButton(parent, "Spiel abk\u00FCrzen", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
+                    controls.createButton(parent, "Weiterspielen", btnContinuePlay_click, "ContinuePlay");
                     active = true;
                 }
                 else {
-                    skatutil.create(parent, "p", undefined, "Spiel abk\u00FCrzen. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                    controls.create(parent, "p", undefined, "Spiel abk\u00FCrzen. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
                 }
             }
             model.skatTable.actions.forEach((action) => {
-                skatutil.createButton(parent, action.description, btnAction_click, action.name);
+                controls.createButton(parent, action.description, btnAction_click, action.name);
                 active = true;
             });
             if (model.skatTable.player && model.skatTable.player.tooltip && model.skatTable.player.tooltip.length > 0) {
-                skatutil.create(parent, "span", "tooltip", model.skatTable.player.tooltip);
+                controls.create(parent, "span", "tooltip", model.skatTable.player.tooltip);
             }
         }
         if (active) {
@@ -424,7 +415,7 @@ var skatui = (() => {
 
     const renderSpecialSort = (parent) => {
         if (model.skatTable.player && model.skatTable.cards.length > 2) {
-            skatutil.createCheckbox(parent, "sortoption", "Sort", "Sortiere nach wechselnden Farben", specialSortOption, btnSpecialSortOption_click, false);
+            controls.createCheckbox(parent, "sortoption", "Sort", "Sortiere nach wechselnden Farben", specialSortOption, btnSpecialSortOption_click, false);
         }
     };
 
@@ -432,22 +423,22 @@ var skatui = (() => {
         if (!model.skatTable.player || !model.skatTable.player.game) return;
         let game = model.skatTable.player.game;
         let gameStarted = model.skatTable.gameStarted
-        let divGameType = skatutil.create(parent, "div", "gametype");
-        skatutil.createRadiobutton(divGameType, "r1", "gametype", "Grand", "Grand", game.type == "Grand", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(divGameType, "r2", "gametype", "Null", "Null", game.type == "Null", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(divGameType, "r3", "gametype", "Clubs", "Kreuz", game.type == "Color" && game.color == "Clubs", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(divGameType, "r4", "gametype", "Spades", "Pik", game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(divGameType, "r5", "gametype", "Hearts", "Herz", game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
-        skatutil.createRadiobutton(divGameType, "r6", "gametype", "Diamonds", "Karo", game.type == "Color" && game.color == "Diamonds", btnGameType_click, gameStarted);
-        let divGameOption = skatutil.create(parent, "div", "gameoption");
-        checkBoxOuvert = skatutil.createCheckbox(divGameOption, "c1", "Ouvert", "Ouvert", game.option.ouvert, btnGameOption_click, !model.skatTable.canSetOuvert);
-        checkBoxHand = skatutil.createCheckbox(divGameOption, "c2", "Hand", "Hand", game.option.hand, btnGameOption_click, !model.skatTable.canSetHand);
-        checkBoxSchneider = skatutil.createCheckbox(divGameOption, "c3", "Schneider", "Schneider", game.option.schneider, btnGameOption_click, !model.skatTable.canSetSchneider);
-        checkBoxSchwarz = skatutil.createCheckbox(divGameOption, "c4", "Schwarz", "Schwarz", game.option.schwarz, btnGameOption_click, !model.skatTable.canSetSchwarz);
+        let divGameType = controls.create(parent, "div", "gametype");
+        controls.createRadiobutton(divGameType, "r1", "gametype", "Grand", "Grand", game.type == "Grand", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r2", "gametype", "Null", "Null", game.type == "Null", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r3", "gametype", "Clubs", "Kreuz", game.type == "Color" && game.color == "Clubs", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r4", "gametype", "Spades", "Pik", game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r5", "gametype", "Hearts", "Herz", game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r6", "gametype", "Diamonds", "Karo", game.type == "Color" && game.color == "Diamonds", btnGameType_click, gameStarted);
+        let divGameOption = controls.create(parent, "div", "gameoption");
+        checkBoxOuvert = controls.createCheckbox(divGameOption, "c1", "Ouvert", "Ouvert", game.option.ouvert, btnGameOption_click, !model.skatTable.canSetOuvert);
+        checkBoxHand = controls.createCheckbox(divGameOption, "c2", "Hand", "Hand", game.option.hand, btnGameOption_click, !model.skatTable.canSetHand);
+        checkBoxSchneider = controls.createCheckbox(divGameOption, "c3", "Schneider", "Schneider", game.option.schneider, btnGameOption_click, !model.skatTable.canSetSchneider);
+        checkBoxSchwarz = controls.createCheckbox(divGameOption, "c4", "Schwarz", "Schwarz", game.option.schwarz, btnGameOption_click, !model.skatTable.canSetSchwarz);
     };
 
     const renderHeader = (parent) => {
-        skatutil.create(parent, "p", undefined, model.skatTable.message);
+        controls.create(parent, "p", undefined, model.skatTable.message);
     };
 
     const renderSummaryPlayer = (elem, player) => {
@@ -467,30 +458,30 @@ var skatui = (() => {
                 }
             }
             if (img) {
-                skatutil.createImg(elem, undefined, 65, 90, img);
+                controls.createImg(elem, undefined, 65, 90, img);
             }
         }
         if (!model.skatTable.gamePlayer) {
             if (model.skatTable.bidSaid && player.bidStatus == 0 && model.skatTable.currentBidValue > 0) {
-                skatutil.createSpan(elem, undefined, `${model.skatTable.currentBidValue}?`);
+                controls.createSpan(elem, undefined, `${model.skatTable.currentBidValue}?`);
             }
             else if (!model.skatTable.bidSaid && player.bidStatus == 0 && model.skatTable.currentBidValue > 0) {
-                skatutil.createSpan(elem, undefined, `${model.skatTable.currentBidValue}`);
+                controls.createSpan(elem, undefined, `${model.skatTable.currentBidValue}`);
             }
             else if (!model.skatTable.bidSaid && player.bidStatus == 1 && model.skatTable.currentBidValue > 0) {
-                skatutil.createSpan(elem, undefined, "Ja!");
+                controls.createSpan(elem, undefined, "Ja!");
             }
             else if (player.bidStatus == 2) {
-                skatutil.createSpan(elem, undefined, "Weg");
+                controls.createSpan(elem, undefined, "Weg");
             }
         }
     };
 
     const renderSummary = (parent, left, right, bottom) => {
-        skatutil.create(parent, "div", "summary-currentplayer", `Spiel ${model.skatTable.gameCounter}`);
+        controls.create(parent, "div", "summary-currentplayer", `Spiel ${model.skatTable.gameCounter}`);
         model.skatTable.players.forEach((p) => {
             let classname = p.name == model.skatTable.player.name ? "summary-currentplayer" : "summary-otherplayer";
-            skatutil.create(parent, "div", classname, p.summary);
+            controls.create(parent, "div", classname, p.summary);
         });
         if (!model.skatTable.gameEnded) {
             let leftPlayer = getNextPlayer(model.skatTable.player);
@@ -506,42 +497,36 @@ var skatui = (() => {
     };
 
     const renderCopyright = (parent) => {
-        let div = skatutil.createDiv(parent);
-        skatutil.create(div, "span", "copyright", `Myna Skat Version ${version}. Copyright 2020 `);
-        let a = skatutil.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
+        let div = controls.createDiv(parent);
+        controls.create(div, "span", "copyright", `Myna Skat Version ${version}. Copyright 2020 `);
+        let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         let time = new Date().toLocaleTimeString("de-DE");
-        skatutil.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}.`);
+        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}.`);
         if (ticket) {
-            skatutil.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
+            controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
         else {
-            let specialDiv = skatutil.createDiv(div, "special");
-            let adownloads = skatutil.createA(specialDiv, "special-link", "/downloads/downloads.html", "Downloads");
-            adownloads.target = "_blank";
-            let aadmin = skatutil.createA(specialDiv, "special-link", "/mynaskatadmin.html", "Administrator");
-            aadmin.target = "_blank";
-            let aticket = skatutil.createA(specialDiv, "special-link", "/mynaskatticket.html", "Ticket Login");
-            aticket.target = "_blank";
-            let aimpress = skatutil.createA(specialDiv, "special-link", "/impressum.html", "Impressum");
-            aimpress.target = "_blank";
+            let specialDiv = controls.createDiv(div, "special");
+            controls.createA(specialDiv, "special-link", "/skatadmin.html", "Administration");
+            controls.createA(specialDiv, "special-link", "/skatticket.html", "Ticketanmeldung");
         }
     };
 
     const renderMainPage = (parent) => {
-        let divSummary = skatutil.createDiv(parent);
-        let divHeader = skatutil.createDiv(parent, "header-section");
-        let divOuvert = skatutil.createDiv(parent, "cards-section");
-        let divCenter = skatutil.createDiv(parent);
-        let divLeft = skatutil.createDiv(parent, "left-section");
-        let divStitch = skatutil.createDiv(divCenter, "stitch-section");
-        let divBottom = skatutil.createDiv(divCenter, "bottom-section");
-        let divCards = skatutil.createDiv(divCenter, "cards-section");
-        let divSpecialSort = skatutil.createDiv(divCenter, "specialsort-section");
-        let divRight = skatutil.createDiv(parent, "right-section");
-        let divActions = skatutil.createDiv(parent, "actions-section");
-        let divGame = skatutil.createDiv(parent);
-        let divCopyright = skatutil.createDiv(parent);
+        let divSummary = controls.createDiv(parent);
+        let divHeader = controls.createDiv(parent, "header-section");
+        let divOuvert = controls.createDiv(parent, "cards-section");
+        let divCenter = controls.createDiv(parent);
+        let divLeft = controls.createDiv(parent, "left-section");
+        let divStitch = controls.createDiv(divCenter, "stitch-section");
+        let divBottom = controls.createDiv(divCenter, "bottom-section");
+        let divCards = controls.createDiv(divCenter, "cards-section");
+        let divSpecialSort = controls.createDiv(divCenter, "specialsort-section");
+        let divRight = controls.createDiv(parent, "right-section");
+        let divActions = controls.createDiv(parent, "actions-section");
+        let divGame = controls.createDiv(parent);
+        let divCopyright = controls.createDiv(parent);
         if (model.skatTable.player &&
             model.skatTable.currentPlayer &&
             model.skatTable.player.name == model.skatTable.currentPlayer.name ||
@@ -567,7 +552,7 @@ var skatui = (() => {
             render();
             return;
         }
-        document.title = `Myna Skat - ${model.currentUser.name}`;
+        document.title = `Online Skat - ${model.currentUser.name}`;
         if (model.skatTable) {
             renderMainPage(parent);
         }
@@ -584,10 +569,10 @@ var skatui = (() => {
     };
 
     const renderChat = (parent, ticket) => {
-        let divChatButton = skatutil.createDiv(parent, "layout-chat-button");
-        let imgNewMessage = skatutil.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/skat/mail-unread-new.png");
-        btnToogleChat = skatutil.createButton(divChatButton, "", btnToogleChat_click, "ToogleChat", "chat-button");
-        divChat = skatutil.createDiv(parent, "layout-right");
+        let divChatButton = controls.createDiv(parent, "layout-chat-button");
+        let imgNewMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/skat/mail-unread-new.png");
+        btnToogleChat = controls.createButton(divChatButton, "", btnToogleChat_click, "ToogleChat", "chat-button");
+        divChat = controls.createDiv(parent, "layout-right");
         let chatState = sessionStorage.getItem("chatstate");
         if (!chatState) {
             chatState = 0;
@@ -596,7 +581,7 @@ var skatui = (() => {
         let currentChatState = 0;
         if (chatModel && chatModel.history) {
             chatModel.history.forEach((msg) => {
-                let divMsg = skatutil.createDiv(divChat, "chat-message");
+                let divMsg = controls.createDiv(divChat, "chat-message");
                 divMsg.textContent = msg;
             });
             currentChatState = chatModel.state;
@@ -604,7 +589,7 @@ var skatui = (() => {
         console.log(chatState);
         console.log(currentChatState);
         if (ticket) {
-            inputChatText = skatutil.createInputField(divChat, "Nachricht", btnChat_click, "chat-input", 36, 200);
+            inputChatText = controls.createInputField(divChat, "Nachricht", btnChat_click, "chat-input", 36, 200);
             inputChatText.placeholder = "Nachricht..."
             if (lastChatText) {
                 inputChatText.value = lastChatText;
@@ -634,14 +619,14 @@ var skatui = (() => {
             lastChatText = inputChatText.value; // keep old value if rendered again
         }
         model = m;
-        skatutil.setState(model.state);
-        skatutil.removeAllChildren(document.body);
+        controls.setState(model.state);
+        controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
         if (model.allUsers.length == 0) {
             clearTicket();
         }
-        divLayoutLeft = skatutil.createDiv(document.body, "layout-left");
-        divMain = skatutil.createDiv(divLayoutLeft);
+        divLayoutLeft = controls.createDiv(document.body, "layout-left");
+        divMain = controls.createDiv(divLayoutLeft);
         renderChat(document.body, ticket);
         if (!ticket) {
             renderUserList(divMain);
@@ -655,25 +640,6 @@ var skatui = (() => {
         }
         else {
             renderUsername(divMain);
-        }
-        if (!model || !model.allUsers || model.allUsers.length < 3) {
-            divSlideShowInfo = skatutil.createDiv(document.body, "slideshow-info");
-            btnPauseSlideShow = skatutil.createImageButton(document.body, "Bildergalerie anhalten",
-                () => {
-                    isSlideshowPlaying = false;
-                    btnPauseSlideShow.style.visibility = "hidden";
-                    btnPlaySlideShow.style.visibility = "visible";
-                },
-                "/images/skat/media-playback-pause-3.png", 24, "slideshow-action");
-            btnPlaySlideShow = skatutil.createImageButton(document.body, "Bildergalerie abspielen",
-                    () => {
-                        isSlideshowPlaying = true;
-                        btnPauseSlideShow.style.visibility = "visible";
-                        btnPlaySlideShow.style.visibility = "hidden";
-                    },
-                "/images/skat/media-playback-start-3.png", 24, "slideshow-action");
-            btnPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
-            btnPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
         }
         timerEnabled = true;
     };
@@ -1009,76 +975,16 @@ var skatui = (() => {
         }
     };
 
-    const shuffle_array = (arr) => {
-        let ridx;
-        let tmp;
-        let cidx = arr.length;
-        while (0 !== cidx) {
-            ridx = Math.floor(Math.random() * cidx);
-            cidx -= 1;
-            tmp = arr[cidx];
-            arr[cidx] = arr[ridx];
-            arr[ridx] = tmp;
-        }
-        return arr;
-    };
-
-    const concat_strings = (arr, delim) => {
-        let str = "";
-        let idx = 0;
-        arr.forEach((a) => {
-            if (a && a.length > 0) {
-                if (idx > 0) {
-                    str += delim;
-                }
-                str += a;
-                idx++;
-            }
-        });
-        return str;
-    };
-
-    const format_date = (dt) => {
-        if (dt && dt.length > 0) {
-            let locale = "de-DE";
-            let options = { year: "numeric", month: "short", day: "numeric" };
-            return new Date(dt).toLocaleDateString(locale, options);
-        }
-        return "";
-    };
-
     function ontimer() {
         if (!timerEnabled) return;
-        if (slideShowPictures && slideShowPictures.length > 0) {
-            if (!model || !model.allUsers || model.allUsers.length < 3) {
-                let currentDate = new Date();
-                if (isSlideshowPlaying &&
-                    (!backgroundChanged ||
-                        ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval)) {
-                    let pic = slideShowPictures[backgroundIndex];
-                    document.body.style.background = `#000000 url('${pic.url}')`;
-                    document.body.style.backgroundSize = "cover";
-                    document.body.style.backgroundRepeat = "no-repeat";
-                    backgroundIndex = (backgroundIndex + 1) % slideShowPictures.length;
-                    backgroundChanged = currentDate;
-                    if (divSlideShowInfo) {
-                        let txts = [pic.summary, pic.city, pic.country, format_date(pic.date)];
-                        divSlideShowInfo.textContent = concat_strings(txts, " // ");
-                    }
-                }
-            }
-            else if (document.body.hasAttribute("style")) {
-                document.body.removeAttribute("style");
-            }
-        }
         fetch("api/skat/state")
             .then(response => response.json())
             .then((d) => {
                 if (d && d > 0) {
-                    let statechanged = skatutil.getState();
+                    let statechanged = controls.getState();
                     if (!statechanged || d > statechanged) {
                         console.log(d);
-                        skatutil.setState(d);
+                        controls.setState(d);
                         render();
                     }
                 }
@@ -1086,35 +992,15 @@ var skatui = (() => {
             .catch((err) => console.error(err));
     }
 
-    const enableSlideShow = (pictures, interval) => {
-        slideShowPictures = pictures;
-        shuffle_array(slideShowPictures);
-        if (interval) {
-            slideShowInterval = interval;
-        }
-    };
-
     // --- public API
 
     return {
         render: render,
-        enableSlideShow: enableSlideShow,
         ontimer: ontimer
     };
 })();
 
 window.onload = () => {
-    window.setInterval(skatui.ontimer, 1000);
-    fetch("/images/skat/slideshow/pictures.json", { cache: "no-cache" })
-        .then(response => {
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                response.json().then(
-                    slideshow => skatui.enableSlideShow(slideshow.pictures, slideshow.interval));
-            }
-            else {
-                console.log("Slideshow disabled.");
-            }
-        })
-    skatui.render();
+    window.setInterval(skat.ontimer, 1000);
+    skat.render();
 };

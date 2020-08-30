@@ -8,23 +8,23 @@ var skatadmin = (() => {
     const renderPage = (tickets) => {
         let body = document.querySelector("body");
         body.style.background = "#000000";
-        skatutil.removeAllChildren(body);
-        skatutil.create(body, "p", undefined, "Skat Administration");
+        controls.removeAllChildren(body);
+        controls.create(body, "p", undefined, "Online Skat Administration");
         if (tickets) {
             if (tickets.length == 0) {
-                skatutil.create(body, "p", undefined, "Niemand ist angemeldet.");
+                controls.create(body, "p", undefined, "Niemand ist angemeldet.");
             }
             else {
-                let ul = skatutil.create(body, "ul");
-                tickets.forEach((info) => skatutil.create(ul, "li", undefined, info));
-                skatutil.createButton(body, "Reset", btnReset_click);
+                let ul = controls.create(body, "ul");
+                tickets.forEach((info) => controls.create(ul, "li", undefined, info));
+                controls.createButton(body, "Reset", btnReset_click);
             }
         }
         else {
-            skatutil.createLabel(body, undefined, "Passwort:");
-            passwordElem = skatutil.createPasswordField(body, "password", btnLogin_click);
+            controls.createLabel(body, undefined, "Passwort:");
+            passwordElem = controls.createPasswordField(body, "password", btnLogin_click);
             passwordElem.focus();
-            skatutil.createButton(body, "Anmelden", btnLogin_click);
+            controls.createButton(body, "Anmelden", btnLogin_click);
         }
     };
 

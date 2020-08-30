@@ -1,6 +1,6 @@
 "use strict";
 
-var skatutil = (() => {
+var controls = (() => {
 
     // ---- create HTML elements
 
