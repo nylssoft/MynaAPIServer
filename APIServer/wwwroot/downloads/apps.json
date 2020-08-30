@@ -1,0 +1,14 @@
+{
+  "apps": [
+    {
+      "description": "Backup tool",
+      "download": "/downloads/MynaBackup.msi",
+      "image": "/images/downloads/MynaBackup.png",
+      "prepare": ".NET Core 3.1 Desktop Runtime (v3.1.4) for x86",
+      "preparedownload": "https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.4-windows-x86-installer",
+      "title": "Myna Backup",
+      "version": "1.0.8",
+      "github": "https://github.com/nylssoft/MynaBackup"
+    }
+  ]
+}
