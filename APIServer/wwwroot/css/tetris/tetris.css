@@ -11,12 +11,16 @@ body {
     background-color: black;
 }
 
-canvas {
+.playground {
     position: absolute;
     left: 100px;
     top: 100px;
-    border-color: red;
-    border-style: dashed;
+}
+
+.nextblock {
+    position: absolute;
+    left: 300px;
+    top: 100px;
 }
 
 .score {

@@ -302,7 +302,7 @@ class TBlock extends Block {
                 pts = [[0, 0], [0, 1], [-1, 0], [1, 0]];
                 break;
             case 1:
-                pts = [[0, 0], [-1, 0], [0, -1], [0, 1]];
+                pts = [[0, 0], [0, 1], [0, -1], [-1, 0]];
                 break;
             case 2:
                 pts = [[0, 0], [0, -1], [-1, 0], [1, 0]];
@@ -343,12 +343,13 @@ var tetris = (() => {
     // --- UI elements
 
     let canvas;
+    let canvasNextBlock;
     let scoreDiv;
 
     // --- state
 
-    let blocks;
     let block;
+    let nextBlock;
     let playground;
     let score;
     let state;
@@ -358,6 +359,22 @@ var tetris = (() => {
     let colorMap;
 
     // --- rendering
+
+    const drawNextBlock = () => {
+        if (!nextBlock) return;
+        let offx = pixelPerField;
+        let offy = 0;
+        let ctx = canvasNextBlock.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.fillStyle = colorMap[nextBlock.color];
+        let points = nextBlock.getRelativePoints(nextBlock.orientation);
+        points.forEach(p => {
+            let x = offx + (nextBlock.x + p[0]) * pixelPerField;
+            let y = offy + (nextBlock.y + p[1]) * pixelPerField;
+            ctx.fillRect(x, y, pixelPerField, pixelPerField);
+        });
+    };
 
     const draw = () => {
         let ctx = canvas.getContext("2d");
@@ -384,6 +401,11 @@ var tetris = (() => {
                     }
                 }
             }
+            if (state == StateEnums.DROPONEROW) {
+                if (playground.dropOneRow()) {
+                    window.requestAnimationFrame(draw);
+                }
+            }
         }
         // current block
         if (block) {
@@ -401,6 +423,8 @@ var tetris = (() => {
                 }
             }
         }
+
+        drawNextBlock();
     };
 
     const moveToMouseX = (force) => {
@@ -426,7 +450,7 @@ var tetris = (() => {
         scoreDiv = controls.createDiv(parent, "score");
         scoreDiv.textContent = `Score: ${score}`;
         
-        canvas = controls.create(parent, "canvas");
+        canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
         canvas.height = pixelPerField * (playground.height + 1);
         canvas.addEventListener("mousedown", e => {
@@ -443,16 +467,55 @@ var tetris = (() => {
             }
         });
 
+        parent.onwheel = e => {
+            e.preventDefault();
+            if (playground && block && state === StateEnums.MOVEDOWN) {
+                state = StateEnums.SOFTDROP;
+                window.requestAnimationFrame(draw);
+            }
+        };
+
+        canvasNextBlock = controls.create(parent, "canvas", "nextblock");
+        canvasNextBlock.width = pixelPerField * 4;
+        canvasNextBlock.height = pixelPerField * 4;
+        /*
         document.addEventListener("keydown", e => {
             if (playground && block && state === StateEnums.MOVEDOWN) {
                 state = StateEnums.SOFTDROP;
             }
         });
+        */
     };
 
+    const createBlock = (idx) => {
+        switch (idx) {
+            case 0:
+                return new LBlock();
+            case 1:
+                return new JBlock();
+            case 2:
+                return new IBlock();
+            case 3:
+                return new TBlock();
+            case 4:
+                return new ZBlock();
+            case 5:
+                return new SBlock();
+            default:
+                return new OBlock();
+        }
+    }
     const newBlock = () => {
-        let blockidx = Math.floor(Math.random() * blocks.length);
-        block = blocks[blockidx];
+        let idx = Math.floor(Math.random() * 7);
+        if (nextBlock) {
+            block = nextBlock;
+            nextBlock = createBlock(idx);
+        }
+        else {
+            block = createBlock(idx);
+            idx = Math.floor(Math.random() * 7);
+            nextBlock = createBlock(idx);
+        }
         if (block.placeFirstRow(playground)) {
             moveToMouseX(true);
             state = StateEnums.MOVEDOWN;
@@ -503,16 +566,6 @@ var tetris = (() => {
 
         playground = new Playground(10, 20);
 
-        blocks = [
-            new LBlock(),
-            new JBlock(),
-            new OBlock(),
-            new IBlock(),
-            new SBlock(),
-            new ZBlock(),
-            new TBlock()
-        ];
-
         colorMap = {};
         colorMap[ColorEnums.BLUE] = "blue";
         colorMap[ColorEnums.RED] = "red";
@@ -527,7 +580,8 @@ var tetris = (() => {
 
         controls.removeAllChildren(document.body);
 
-        renderTetris(document.body);
+        let all = controls.createDiv(document.body);
+        renderTetris(all);
 
         window.setInterval(ontimer, 500);
 
