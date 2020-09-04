@@ -1,0 +1,29 @@
+* {
+    user-select: none; /* supported by Chrome and Opera */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+body {
+    margin: 0pt;
+    border: none;
+    background-color: black;
+}
+
+canvas {
+    position: absolute;
+    left: 100px;
+    top: 100px;
+    border-color: red;
+    border-style: dashed;
+}
+
+.score {
+    position: absolute;
+    left: 100px;
+    top: 50px;
+    color: white;
+    font-family: Arial;
+    font-size: 18pt;
+}

@@ -81,8 +81,9 @@ var slideshow = (() => {
         utils.shuffle_array(slideShowPictures);
         if (interval) {
             slideShowInterval = interval;
+            ontimer();
+            window.setInterval(ontimer, interval * 1000);
         }
-        window.setInterval(slideshow.ontimer, interval);
     };
 
     // --- public API
