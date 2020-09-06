@@ -101,6 +101,10 @@ class Block {
     placeFirstRow(playground) {
         let firstRowsOccupied = playground.rows[0].some( c => c !== ColorEnums.EMPTY);
         if (!firstRowsOccupied) {
+            if (this._place(playground, 4, 0, 0)) {
+                return true;
+            }
+            /*
             let xarr = new Array(playground.width);
             for (let idx = 0; idx < xarr.length; idx++) {
                 xarr[idx] = idx;
@@ -111,25 +115,32 @@ class Block {
                     return true;
                 }
             }
+            */
         }
         return false;
     }
 
     rotateRight(playground) {
-        return this.move(playground, this.x, this._getNextRightOrientation());
+        if (!this.move(playground, this.x, this.y, this._getNextRightOrientation())) {
+            this.move(playground, this.x, this.y + 1, this._getNextRightOrientation());
+        }
     }
 
-    move(playground, x, o) {
+    move(playground, x, y, o) {
         if (o === undefined) {
             o = this.orientation;
         }
-        if (this._place(playground, x, this.y, o)) {
+        if (y === undefined) {
+            y = this.y;
+        }
+        x = (x === undefined) ? this.x : x;
+        if (this._place(playground, x, y, o)) {
             return true;
         }
         let dir = (playground.width - x) >= playground.width / 2 ? 1 : -1;
         while (x >= 0 && x < playground.width) {
             x += dir;
-            if (this._place(playground, x, this.y, o)) {
+            if (this._place(playground, x, y, o)) {
                 return true;
             }
         }
@@ -302,13 +313,13 @@ class TBlock extends Block {
                 pts = [[0, 0], [0, 1], [-1, 0], [1, 0]];
                 break;
             case 1:
-                pts = [[0, 0], [0, 1], [0, -1], [-1, 0]];
+                pts = [[0, 0], [0, 1], [0, -1], [1, 0]];
                 break;
             case 2:
                 pts = [[0, 0], [0, -1], [-1, 0], [1, 0]];
                 break;
             case 3:
-                pts = [[0, 0], [0, -1], [0, 1], [1, 0]];
+                pts = [[0, 0], [0, -1], [0, 1], [-1, 0]];
                 break;
         }
         return pts;
@@ -453,6 +464,7 @@ var tetris = (() => {
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
         canvas.height = pixelPerField * (playground.height + 1);
+        /*
         canvas.addEventListener("mousedown", e => {
             if (playground && block && state != StateEnums.SOFTDROP) {
                 if (block.rotateRight(playground)) {
@@ -466,7 +478,6 @@ var tetris = (() => {
                 moveToMouseX();
             }
         });
-
         parent.onwheel = e => {
             e.preventDefault();
             if (playground && block && state === StateEnums.MOVEDOWN) {
@@ -474,17 +485,34 @@ var tetris = (() => {
                 window.requestAnimationFrame(draw);
             }
         };
-
+        */
         canvasNextBlock = controls.create(parent, "canvas", "nextblock");
         canvasNextBlock.width = pixelPerField * 4;
         canvasNextBlock.height = pixelPerField * 4;
-        /*
+        
         document.addEventListener("keydown", e => {
-            if (playground && block && state === StateEnums.MOVEDOWN) {
-                state = StateEnums.SOFTDROP;
+            if (playground && block) {
+                if (state === StateEnums.SOFTDROP &&
+                    (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp")) {
+                    state = StateEnums.MOVEDOWN;
+                }
+                if (state === StateEnums.MOVEDOWN) {
+                    if (e.key === "ArrowLeft") {
+                        block.moveLeft(playground);
+                    }
+                    else if (e.key === "ArrowRight") {
+                        block.moveRight(playground);
+                    }
+                    else if (e.key === "ArrowDown") {
+                        state = StateEnums.SOFTDROP;
+                    }
+                    else if (e.key === "ArrowUp")
+                        block.rotateRight(playground);
+                }
+                window.requestAnimationFrame(draw);                    
             }
         });
-        */
+        
     };
 
     const createBlock = (idx) => {
