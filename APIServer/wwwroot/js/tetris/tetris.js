@@ -603,7 +603,7 @@ var tetris = (() => {
                     if (fullRows > 0) {
                         score += scores[fullRows - 1] * level;
                         lines += fullRows;
-                        if ((lines % 10) === 0) {
+                        if (lines >= level * 10) {
                             increaseLevel();
                         }
                     }
