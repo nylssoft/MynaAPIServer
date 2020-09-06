@@ -47,7 +47,6 @@ class Playground {
     }
 
     clearFullRows() {
-        let scores = [0, 40, 100, 300, 1200];
         let fullRows = 0;
         for (let y = 0; y < this.height; y++) {
             let hasFree = this.rows[y].some(c => c === ColorEnums.EMPTY);
@@ -59,7 +58,7 @@ class Playground {
                 }
             }
         }
-        return scores[fullRows];
+        return fullRows;
     }
 
     hasDropRows() {
@@ -100,24 +99,7 @@ class Block {
 
     placeFirstRow(playground) {
         let firstRowsOccupied = playground.rows[0].some( c => c !== ColorEnums.EMPTY);
-        if (!firstRowsOccupied) {
-            if (this._place(playground, 4, 0, 0)) {
-                return true;
-            }
-            /*
-            let xarr = new Array(playground.width);
-            for (let idx = 0; idx < xarr.length; idx++) {
-                xarr[idx] = idx;
-            }
-            utils.shuffle_array(xarr);
-            for (let idx = 0; idx < xarr.length; idx++) {
-                if (this._place(playground, xarr[idx], 0, 0)) {
-                    return true;
-                }
-            }
-            */
-        }
-        return false;
+        return !firstRowsOccupied && this._place(playground, 4, 0, 0);
     }
 
     rotateRight(playground) {
@@ -354,8 +336,11 @@ var tetris = (() => {
     // --- UI elements
 
     let canvas;
-    let canvasNextBlock;
     let scoreDiv;
+    let levelDiv;
+    let linesDiv;
+    let gameOverDiv;
+    let canvasNextBlock;
 
     // --- state
 
@@ -363,27 +348,86 @@ var tetris = (() => {
     let nextBlock;
     let playground;
     let score;
+    let lines;
+    let level;
     let state;
-    let mouseX;
-    
+    let speedDateTime;
+
     let pixelPerField;
+    let borderWidth;
+
     let colorMap;
+
+    let backgroundPictures;
+
+    // --- background
+
+    const setBackgroundPicture = () => {
+        if (backgroundPictures && level < backgroundPictures.length + 1) {
+            let pic = backgroundPictures[level - 1];
+            document.body.style.background = `#000000 url('${pic.url}')`;
+            document.body.style.backgroundSize = "cover";
+            document.body.style.backgroundRepeat = "no-repeat";
+        }
+    }
+
+    const initBackgroundPictures = (pictures) => {
+        backgroundPictures = pictures;
+        utils.shuffle_array(backgroundPictures);
+    }
+
+    const increaseLevel = () => {
+        level += 1;
+        levelDiv.textContent = `Stufe: ${level}`;
+        setBackgroundPicture();
+    }
 
     // --- rendering
 
-    const drawNextBlock = () => {
-        if (!nextBlock) return;
-        let offx = pixelPerField;
-        let offy = 0;
-        let ctx = canvasNextBlock.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const drawRect = (ctx, x, y, c) => {
+        ctx.fillStyle = colorMap[c].center;
         ctx.beginPath();
-        ctx.fillStyle = colorMap[nextBlock.color];
-        let points = nextBlock.getRelativePoints(nextBlock.orientation);
+        ctx.fillRect(x + borderWidth, y + borderWidth, pixelPerField - borderWidth * 2, pixelPerField - borderWidth);
+
+        ctx.fillStyle = colorMap[c].top;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + borderWidth, y + borderWidth);
+        ctx.lineTo(x + pixelPerField - borderWidth, y + borderWidth);
+        ctx.lineTo(x + pixelPerField, y);
+        ctx.fill();
+
+        ctx.fillStyle = colorMap[c].bottom;
+        ctx.beginPath();
+        ctx.moveTo(x, y + pixelPerField);
+        ctx.lineTo(x + borderWidth, y + pixelPerField - borderWidth);
+        ctx.lineTo(x + pixelPerField - borderWidth, y + pixelPerField - borderWidth);
+        ctx.lineTo(x + pixelPerField, y + pixelPerField);
+        ctx.fill();
+
+        ctx.fillStyle = colorMap[c].leftright;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + borderWidth, y + borderWidth);
+        ctx.lineTo(x + borderWidth, y + pixelPerField - borderWidth);
+        ctx.lineTo(x, y + pixelPerField);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(x + pixelPerField, y);
+        ctx.lineTo(x + pixelPerField - borderWidth, y + borderWidth);
+        ctx.lineTo(x + pixelPerField - borderWidth, y + pixelPerField - borderWidth);
+        ctx.lineTo(x + pixelPerField, y + pixelPerField);
+        ctx.fill();
+    };
+
+    const drawBlock = (ctx, b) => {
+        let offx = pixelPerField;
+        let offy = offx;
+        let points = b.getRelativePoints(b.orientation);
         points.forEach(p => {
-            let x = offx + (nextBlock.x + p[0]) * pixelPerField;
-            let y = offy + (nextBlock.y + p[1]) * pixelPerField;
-            ctx.fillRect(x, y, pixelPerField, pixelPerField);
+            let x = offx + (b.x + p[0]) * pixelPerField;
+            let y = offy + (b.y + p[1]) * pixelPerField;
+            drawRect(ctx, x, y, b.color);
         });
     };
 
@@ -393,22 +437,24 @@ var tetris = (() => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         let offx = pixelPerField;
-        let offy = 0;
+        let offy = offx;
 
-        ctx.beginPath();
         // border
-        ctx.fillStyle = "gray";
-        ctx.fillRect(0, 0, pixelPerField, pixelPerField * playground.height);
-        ctx.fillRect(pixelPerField * (playground.width + 1), 0, pixelPerField, pixelPerField * playground.height);
-        ctx.fillRect(0, pixelPerField * playground.height, pixelPerField * (playground.width + 2), pixelPerField);
+        for (let y = 0; y <= pixelPerField * (playground.height +1); y += pixelPerField) {
+            drawRect(ctx, 0, y, ColorEnums.BORDER);
+            drawRect(ctx, pixelPerField * (playground.width + 1), y, ColorEnums.BORDER);
+        }
+        for (let x = 1; x < pixelPerField * (playground.width + 1); x += pixelPerField) {
+            drawRect(ctx, x, 0, ColorEnums.BORDER);
+            drawRect(ctx, x, pixelPerField * (playground.height + 1), ColorEnums.BORDER);
+        }
         // playground
         if (playground) {
             for (let y = 0; y < playground.height; y++) {
                 for (let x = 0; x < playground.width; x++) {
                     let c = playground.getColor(x, y);
                     if (c != ColorEnums.EMPTY) {
-                        ctx.fillStyle = colorMap[c];
-                        ctx.fillRect(offx + x * pixelPerField, offy + y * pixelPerField, pixelPerField, pixelPerField);
+                        drawRect(ctx, offx + x * pixelPerField, offy + y * pixelPerField, c);
                     }
                 }
             }
@@ -420,75 +466,41 @@ var tetris = (() => {
         }
         // current block
         if (block) {
-            ctx.fillStyle = colorMap[block.color];
-            let points = block.getRelativePoints(block.orientation);
-            points.forEach(p => {
-                let x = offx + (block.x + p[0]) * pixelPerField;
-                let y = offy + (block.y + p[1]) * pixelPerField;
-                ctx.fillRect(x, y, pixelPerField, pixelPerField);
-            });
-
+            drawBlock(ctx, block);
             if (state == StateEnums.SOFTDROP) {
                 if (block.moveDown(playground)) {
                     window.requestAnimationFrame(draw);
                 }
             }
         }
-
-        drawNextBlock();
-    };
-
-    const moveToMouseX = (force) => {
-        let xm = block.x;
-        if (mouseX) {
-            let offX = pixelPerField;
-            xm = Math.floor((mouseX - offX) / pixelPerField);
-            if (xm < 0) {
-                xm = 0;
-            }
-            else if (xm >= playground.width) {
-                xm = playground.width - 1;
-            }
-        }
-        if (xm != block.x || force) {
-            if (block.move(playground, xm)) {
-                window.requestAnimationFrame(draw);
-            }
+        // next block
+        if (nextBlock) {
+            let ctxnext = canvasNextBlock.getContext("2d");
+            ctxnext.clearRect(0, 0, canvas.width, canvas.height);
+            drawBlock(ctxnext, nextBlock);
         }
     };
 
     const renderTetris = (parent) => {
-        scoreDiv = controls.createDiv(parent, "score");
-        scoreDiv.textContent = `Score: ${score}`;
-        
+        let info = controls.createDiv(parent, "info");
+        scoreDiv = controls.createDiv(info);
+        scoreDiv.textContent = `Punkte: ${score}`;
+        levelDiv = controls.createDiv(info);
+        levelDiv.textContent = `Stufe: ${level}`;
+        linesDiv = controls.createDiv(info);
+        linesDiv.textContent = `Linien: ${lines}`;
+        let nextDiv = controls.createDiv(info);
+        nextDiv.textContent = "N\u00E4chste Form:";
+
+        gameOverDiv = controls.createDiv(parent, "gameover");
+
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
-        canvas.height = pixelPerField * (playground.height + 1);
-        /*
-        canvas.addEventListener("mousedown", e => {
-            if (playground && block && state != StateEnums.SOFTDROP) {
-                if (block.rotateRight(playground)) {
-                    moveToMouseX(true);
-                }
-            }
-        });
-        canvas.addEventListener("mousemove", e => {
-            if (playground && block && state === StateEnums.MOVEDOWN) {
-                mouseX = e.offsetX;
-                moveToMouseX();
-            }
-        });
-        parent.onwheel = e => {
-            e.preventDefault();
-            if (playground && block && state === StateEnums.MOVEDOWN) {
-                state = StateEnums.SOFTDROP;
-                window.requestAnimationFrame(draw);
-            }
-        };
-        */
-        canvasNextBlock = controls.create(parent, "canvas", "nextblock");
-        canvasNextBlock.width = pixelPerField * 4;
-        canvasNextBlock.height = pixelPerField * 4;
+        canvas.height = pixelPerField * (playground.height + 2);
+
+        canvasNextBlock = controls.create(info, "canvas", "nextblock");
+        canvasNextBlock.width = pixelPerField * 6;
+        canvasNextBlock.height = pixelPerField * 6;
         
         document.addEventListener("keydown", e => {
             if (playground && block) {
@@ -506,8 +518,11 @@ var tetris = (() => {
                     else if (e.key === "ArrowDown") {
                         state = StateEnums.SOFTDROP;
                     }
-                    else if (e.key === "ArrowUp")
+                    else if (e.key === "ArrowUp" || e.key === " ")
                         block.rotateRight(playground);
+                }
+                if (e.key == "l") {
+                    increaseLevel();
                 }
                 window.requestAnimationFrame(draw);                    
             }
@@ -515,7 +530,8 @@ var tetris = (() => {
         
     };
 
-    const createBlock = (idx) => {
+    const createNewBlock = () => {
+        let idx = Math.floor(Math.random() * 7);
         switch (idx) {
             case 0:
                 return new LBlock();
@@ -533,53 +549,78 @@ var tetris = (() => {
                 return new OBlock();
         }
     }
-    const newBlock = () => {
-        let idx = Math.floor(Math.random() * 7);
+
+    const placeNewBlock = () => {
         if (nextBlock) {
             block = nextBlock;
-            nextBlock = createBlock(idx);
+            nextBlock = createNewBlock();
         }
         else {
-            block = createBlock(idx);
-            idx = Math.floor(Math.random() * 7);
-            nextBlock = createBlock(idx);
+            block = createNewBlock();
+            nextBlock = createNewBlock();
         }
         if (block.placeFirstRow(playground)) {
-            moveToMouseX(true);
             state = StateEnums.MOVEDOWN;
         }
         else {
-            scoreDiv.textContent = `Score: ${score}. GAME OVER!`;
+            block = undefined;
+            gameOverDiv.textContent = `GAME OVER!`;
             state = StateEnums.GAMEOVER;
         }
+        window.requestAnimationFrame(draw);
     };
 
     const ontimer = () => {
+        let currentDate = new Date();
+        if (!speedDateTime) {
+            speedDateTime = currentDate;
+        }
+        let ms = currentDate.getTime() - speedDateTime.getTime();
+        let delayms
+        if (state === StateEnums.NEWBLOCK) {
+            delayms = 1000 - (1000 / 10) * (Math.min(10, level) - 1);
+        }
+        else {
+            delayms = 500 - (500 / 10) * (Math.min(10, level) - 1) + 30;
+        }
+        if (ms < delayms) {
+            return;
+        }
+        speedDateTime = currentDate;
         switch (state) {
             case StateEnums.GAMEOVER:
                 break;
             case StateEnums.NEWBLOCK:
-                newBlock();
+                placeNewBlock();
                 break;
             case StateEnums.MOVEDOWN:
             case StateEnums.SOFTDROP:
                 if (!block.moveDown(playground)) {
                     block.stop(playground);
                     block = undefined;
-                    score += playground.clearFullRows();
-                    scoreDiv.textContent = `Score: ${score}`;
+                    let scores = [40, 100, 300, 1200];
+                    let fullRows = playground.clearFullRows();
+                    if (fullRows > 0) {
+                        score += scores[fullRows - 1] * level;
+                        lines += fullRows;
+                        if ((lines % 10) === 0) {
+                            increaseLevel();
+                        }
+                    }
+                    scoreDiv.textContent = `Punkte: ${score}`;
+                    linesDiv.textContent = `Linien: ${lines}`;
                     if (playground.hasDropRows()) {
                         state = StateEnums.DROPONEROW;
                     }
                     else {
-                        state = StateEnums.NEWBLOCK;
+                        placeNewBlock();
                     }
                 }
                 window.requestAnimationFrame(draw);
                 break;
             case StateEnums.DROPONEROW:
                 if (!playground.dropOneRow()) {
-                    newBlock();
+                    placeNewBlock();
                 }
                 window.requestAnimationFrame(draw);
                 break;
@@ -590,41 +631,71 @@ var tetris = (() => {
 
     const render = () => {
 
-        pixelPerField = 16;
+        pixelPerField = 24;
+        borderWidth = 3;
 
         playground = new Playground(10, 20);
 
-        colorMap = {};
-        colorMap[ColorEnums.BLUE] = "blue";
-        colorMap[ColorEnums.RED] = "red";
-        colorMap[ColorEnums.GREEN] = "green";
-        colorMap[ColorEnums.ORANGE] = "orange";
-        colorMap[ColorEnums.CYAN] = "cyan";
-        colorMap[ColorEnums.PURBLE] = "#800080";
-        colorMap[ColorEnums.YELLOW] = "yellow";
+        colorMap = {}
+        colorMap[ColorEnums.ORANGE] = {
+            center: "#f0a000", leftright: "#d89000", top: "#fbe3b3", bottom: "#795000"
+        }
+        colorMap[ColorEnums.CYAN] = {
+            center: "#00f0f0", leftright: "#00d8d8", top: "#b3fbfb", bottom: "#007878"
+        }
+        colorMap[ColorEnums.RED] = {
+            center: "#f00000", leftright: "#d80000", top: "#fbb3b3", bottom: "#780000"
+        }
+        colorMap[ColorEnums.GREEN] = {
+            center: "#00f000", leftright: "#00d800", top: "#b3fbb3", bottom: "#007800"
+        }
+        colorMap[ColorEnums.PURBLE] = {
+            center: "#a000f0", leftright: "#9000d8", top: "#e3b3fb", bottom: "#500078"
+        }
+        colorMap[ColorEnums.YELLOW] = {
+            center: "#f0f000", leftright: "#d8d800", top: "#fbfbb3", bottom: "#787800"
+        }
+        colorMap[ColorEnums.BLUE] = {
+            center: "#0000f0", leftright: "#0000d8", top: "#b3b3fb", bottom: "#000078"
+        }
+        colorMap[ColorEnums.BORDER] = {
+            center: "#787878", leftright: "#a1a2a1", top: "#d7d7d7", bottom: "#373737"
+        }
 
         state = StateEnums.NEWBLOCK;
         score = 0;
-
+        level = 1;
+        lines = 0;
         controls.removeAllChildren(document.body);
 
         let all = controls.createDiv(document.body);
         renderTetris(all);
 
-        window.setInterval(ontimer, 500);
+        window.setInterval(ontimer, 10);
 
         requestAnimationFrame(draw);
 
+        setBackgroundPicture();
     };
 
     // --- public API
 
     return {
         draw: draw,
-        render: render
+        render: render,
+        initBackgroundPictures: initBackgroundPictures
     };
 })();
 
 window.onload = () => {
-    tetris.render();
+    fetch("/images/slideshow/pictures.json", { cache: "no-cache" })
+        .then(response => {
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                response.json().then(model => {
+                    tetris.initBackgroundPictures(model.pictures);
+                    tetris.render();
+                });
+            }
+        });
 };
