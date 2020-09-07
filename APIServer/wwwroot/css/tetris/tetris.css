@@ -26,7 +26,33 @@ body {
     position: absolute;
     left: 420px;
     top: 10px;
-    padding: 10pt;
+    width: 198px;
+    padding-left: 10px;
+}
+
+.arrows-left {
+    position: absolute;
+    left: 520px;
+    top: 172px;
+}
+.arrow-right {
+    position: absolute;
+    left: 573px;
+    top: 172px;
+}
+.arrow-up {
+    position: absolute;
+    left: 545px;
+    top: 132px;
+}
+.arrow-down {
+    position: absolute;
+    left: 545px;
+    top: 212px;
+}
+.arrow-img {
+    background-color: transparent;
+    border-color: lightgreen;
 }
 
 .gameover {

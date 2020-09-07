@@ -550,6 +550,52 @@ var tetris = (() => {
         gameOverDiv = controls.createDiv(parent, "gameover");
         gameOverDiv.style.visibility = "hidden";
 
+        let arrowDivLeft = controls.createDiv(parent, "arrows-left");
+        controls.createImageButton(arrowDivLeft, "Pfeil Links",
+            () => {
+                if (playground && block && state === StateEnums.SOFTDROP) {
+                    state = StateEnums.MOVEDOWN;
+                }
+                if (playground && block && state === StateEnums.MOVEDOWN) {
+                    block.moveLeft(playground);
+                    window.requestAnimationFrame(draw);
+                }
+            },
+            "/images/tetris/arrow-left-3.png", 32, "arrow-img");
+        let arrowDivRight = controls.createDiv(parent, "arrow-right");
+        controls.createImageButton(arrowDivRight, "Pfeil Rechts",
+            () => {
+                if (playground && block && state === StateEnums.SOFTDROP) {
+                    state = StateEnums.MOVEDOWN;
+                }
+                if (playground && block && state === StateEnums.MOVEDOWN) {
+                    block.moveRight(playground);
+                    window.requestAnimationFrame(draw);
+                }
+            },
+            "/images/tetris/arrow-right-3.png", 32, "arrow-img");
+        let arrowDivUp = controls.createDiv(parent, "arrow-up");
+        controls.createImageButton(arrowDivUp, "Pfeil Oben",
+            () => {
+                if (playground && block && state === StateEnums.SOFTDROP) {
+                    state = StateEnums.MOVEDOWN;
+                }
+                if (playground && block && state === StateEnums.MOVEDOWN) {
+                    block.rotateRight(playground);
+                    window.requestAnimationFrame(draw);
+                }
+            },
+            "/images/tetris/arrow-up-3.png", 32, "arrow-img");
+        let arrowDivDown = controls.createDiv(parent, "arrow-down");
+        controls.createImageButton(arrowDivDown, "Pfeil Unten",
+            () => {
+                if (playground && block && state === StateEnums.MOVEDOWN) {
+                    state = StateEnums.SOFTDROP;
+                    window.requestAnimationFrame(draw);
+                }
+            },
+            "/images/tetris/arrow-down-3.png", 32, "arrow-img");
+
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
         canvas.height = pixelPerField * (playground.height + 2);
@@ -662,6 +708,7 @@ var tetris = (() => {
             case StateEnums.MOVEDOWN:
             case StateEnums.SOFTDROP:
                 if (!block.moveDown(playground)) {
+                    // @TODO: delay until block is fit to allow a move left or right
                     block.stop(playground);
                     block = undefined;
                     let scores = [40, 100, 300, 1200];
