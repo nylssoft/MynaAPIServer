@@ -32,24 +32,28 @@ body {
 
 .arrows-left {
     position: absolute;
-    left: 520px;
-    top: 172px;
+    left: 518px;
+    top: 175px;
 }
+
 .arrow-right {
     position: absolute;
     left: 573px;
-    top: 172px;
+    top: 175px;
 }
+
 .arrow-up {
     position: absolute;
     left: 545px;
-    top: 132px;
+    top: 125px;
 }
+
 .arrow-down {
     position: absolute;
     left: 545px;
-    top: 212px;
+    top: 225px;
 }
+
 .arrow-img {
     background-color: transparent;
     border-color: lightgreen;
