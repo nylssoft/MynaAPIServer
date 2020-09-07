@@ -103,9 +103,7 @@ class Block {
     }
 
     rotateRight(playground) {
-        if (!this.move(playground, this.x, this.y, this._getNextRightOrientation())) {
-            this.move(playground, this.x, this.y + 1, this._getNextRightOrientation());
-        }
+        return this.move(playground, this.x, this.y, this._getNextRightOrientation());
     }
 
     move(playground, x, y, o) {
@@ -118,13 +116,6 @@ class Block {
         x = (x === undefined) ? this.x : x;
         if (this._place(playground, x, y, o)) {
             return true;
-        }
-        let dir = (playground.width - x) >= playground.width / 2 ? 1 : -1;
-        while (x >= 0 && x < playground.width) {
-            x += dir;
-            if (this._place(playground, x, y, o)) {
-                return true;
-            }
         }
         return false;
     }
@@ -184,16 +175,16 @@ class LBlock extends Block {
         let pts;
         switch (o) {
             case 0:
-                pts = [[-1, 0], [0, 0], [0, 1], [0, 2]];
+                pts = [[0, 0], [1, 0], [1, 1], [1, 2]];
                 break;
             case 1:
-                pts = [[0, -1], [0, 0], [-1, 0], [-2, 0]];
+                pts = [[-1, 2], [0, 2], [1, 2], [1, 1]];
                 break;
             case 2:
-                pts = [[0, 0], [1, 0], [0, -1], [0, -2]];
+                pts = [[-1, 0], [-1, 1], [-1, 2], [0, 2]];
                 break;
             case 3:
-                pts = [[0, 0], [1, 0], [2, 0], [0, 1]];
+                pts = [[-1, 0], [0, 0], [1, 0], [-1, 1]];
                 break;
         }
         return pts;
@@ -210,16 +201,16 @@ class JBlock extends Block {
         let pts;
         switch (o) {
             case 0:
-                pts = [[0, 0], [1, 0], [0, 1], [0, 2]];
+                pts = [[-1, 0], [0, 0], [-1, 1], [-1, 2]];
                 break;
             case 1:
-                pts = [[0, 1], [0, 0], [-1, 0], [-2, 0]];
+                pts = [[-1, 0], [0, 0], [1, 0], [1, 1]];
                 break;
             case 2:
-                pts = [[-1, 0], [0, 0], [0, -1], [0, -2]];
+                pts = [[1, 0], [1, 1], [1, 2], [0, 2]];
                 break;
             case 3:
-                pts = [[0, -1], [0, 0], [1, 0], [2, 0]];
+                pts = [[-1, 1], [-1, 2], [0, 2], [1, 2]];
                 break;
         }
         return pts;
@@ -292,16 +283,16 @@ class TBlock extends Block {
         let pts;
         switch (o) {
             case 0:
-                pts = [[0, 0], [0, 1], [-1, 0], [1, 0]];
+                pts = [[0, 0], [0, 1], [0, 2], [-1, 1]];
                 break;
             case 1:
-                pts = [[0, 0], [0, 1], [0, -1], [1, 0]];
+                pts = [[0, 0], [0, 1], [-1, 1], [1, 1]];
                 break;
             case 2:
-                pts = [[0, 0], [0, -1], [-1, 0], [1, 0]];
+                pts = [[0, 0], [0, 1], [1, 1], [0, 2]];
                 break;
             case 3:
-                pts = [[0, 0], [0, -1], [0, 1], [-1, 0]];
+                pts = [[0, 1], [-1, 1], [1, 1], [0, 2]];
                 break;
         }
         return pts;
@@ -340,11 +331,12 @@ var tetris = (() => {
     let levelDiv;
     let linesDiv;
     let gameOverDiv;
+    let newGameButton;
     let canvasNextBlock;
 
     // --- state
 
-    let version = "1.0.3";
+    let version = "1.0.4";
 
     let block;
     let nextBlock;
@@ -521,6 +513,7 @@ var tetris = (() => {
             block = undefined;
             gameOverDiv.textContent = `GAME OVER`;
             gameOverDiv.style.visibility = "visible";
+            newGameButton.style.visibility = "visible";
             state = StateEnums.GAMEOVER;
         }
         window.requestAnimationFrame(draw);
@@ -549,6 +542,9 @@ var tetris = (() => {
 
         gameOverDiv = controls.createDiv(parent, "gameover");
         gameOverDiv.style.visibility = "hidden";
+
+        newGameButton = controls.createButton(parent, "Neues Spiel", () => { render(); }, "newgame", "newgame");
+        newGameButton.style.visibility = "hidden";
 
         let arrowDivLeft = controls.createDiv(parent, "arrows-left");
         controls.createImageButton(arrowDivLeft, "Pfeil Links",
@@ -602,34 +598,7 @@ var tetris = (() => {
 
         canvasNextBlock = controls.create(info, "canvas", "nextblock");
         canvasNextBlock.width = pixelPerField * 6;
-        canvasNextBlock.height = pixelPerField * 6;
-        
-        document.addEventListener("keydown", e => {
-            if (playground && block) {
-                if (state === StateEnums.SOFTDROP &&
-                    (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp")) {
-                    state = StateEnums.MOVEDOWN;
-                }
-                if (state === StateEnums.MOVEDOWN) {
-                    if (e.key === "ArrowLeft") {
-                        block.moveLeft(playground);
-                    }
-                    else if (e.key === "ArrowRight") {
-                        block.moveRight(playground);
-                    }
-                    else if (e.key === "ArrowDown") {
-                        state = StateEnums.SOFTDROP;
-                    }
-                    else if (e.key === "ArrowUp" || e.key === " ")
-                        block.rotateRight(playground);
-                }
-                if (e.key == "l") {
-                    increaseLevel();
-                }
-                window.requestAnimationFrame(draw);                    
-            }
-        });
-        
+        canvasNextBlock.height = pixelPerField * 6;                
     };
 
     const render = () => {
@@ -669,6 +638,11 @@ var tetris = (() => {
         score = 0;
         level = 1;
         lines = 0;
+
+        block = undefined;
+        nextBlock = undefined;
+        speedDateTime = undefined;
+
         controls.removeAllChildren(document.body);
 
         let all = controls.createDiv(document.body);
@@ -708,7 +682,6 @@ var tetris = (() => {
             case StateEnums.MOVEDOWN:
             case StateEnums.SOFTDROP:
                 if (!block.moveDown(playground)) {
-                    // @TODO: delay until block is fit to allow a move left or right
                     block.stop(playground);
                     block = undefined;
                     let scores = [40, 100, 300, 1200];
@@ -742,12 +715,41 @@ var tetris = (() => {
         }
     };
 
+    const initKeyDownEvent = () => {
+        document.addEventListener("keydown", e => {
+            if (playground && block) {
+                if (state === StateEnums.SOFTDROP &&
+                    (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp")) {
+                    state = StateEnums.MOVEDOWN;
+                }
+                if (state === StateEnums.MOVEDOWN) {
+                    if (e.key === "ArrowLeft") {
+                        block.moveLeft(playground);
+                    }
+                    else if (e.key === "ArrowRight") {
+                        block.moveRight(playground);
+                    }
+                    else if (e.key === "ArrowDown") {
+                        state = StateEnums.SOFTDROP;
+                    }
+                    else if (e.key === "ArrowUp" || e.key === " ")
+                        block.rotateRight(playground);
+                }
+                if (e.key == "l") {
+                    increaseLevel();
+                }
+                window.requestAnimationFrame(draw);
+            }
+        });
+    };
+
     // --- public API
 
     return {
         draw: draw,
         render: render,
         initBackgroundPictures: initBackgroundPictures,
+        initKeyDownEvent: initKeyDownEvent,
         ontimer: ontimer
     };
 })();
@@ -761,6 +763,7 @@ window.onload = () => {
             if (contentType && contentType.indexOf("application/json") !== -1) {
                 response.json().then(model => {
                     tetris.initBackgroundPictures(model.pictures);
+                    tetris.initKeyDownEvent();
                     tetris.render();
                     window.setInterval(tetris.ontimer, 10); // invoke every 10ms
                 });

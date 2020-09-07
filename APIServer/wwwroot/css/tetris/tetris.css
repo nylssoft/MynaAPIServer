@@ -32,7 +32,7 @@ body {
 
 .arrows-left {
     position: absolute;
-    left: 518px;
+    left: 516px;
     top: 175px;
 }
 
@@ -45,13 +45,13 @@ body {
 .arrow-up {
     position: absolute;
     left: 545px;
-    top: 125px;
+    top: 130px;
 }
 
 .arrow-down {
     position: absolute;
     left: 545px;
-    top: 225px;
+    top: 220px;
 }
 
 .arrow-img {
@@ -68,6 +68,20 @@ body {
     font-size: 18pt;
     z-index: 1;
     background-color: black;
+    padding: 10pt;
+}
+
+.newgame {
+    position: absolute;
+    left: 420px;
+    top: 300px;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    z-index: 1;
+    background-color: black;
+    color: lightgreen;
+    border-color: lightgreen;
     padding: 10pt;
 }
 
