@@ -7,10 +7,9 @@ var slideshow = (() => {
     let divSlideShowInfo;
     let btnPlaySlideShow;
     let btnPauseSlideShow;
+    let divFooter;
 
     // --- state
-
-    let version = "1.0.0";
 
     let isSlideshowPlaying = true;
 
@@ -52,9 +51,19 @@ var slideshow = (() => {
 
     const render = () => {
         controls.removeAllChildren(document.body);
-        let divFooter = controls.createDiv(document.body, "footer");
+        divFooter = controls.createDiv(document.body, "footer");
         renderSlideshowInfo(divFooter);
         renderLinks(divFooter);
+        window.onclick = (e) => {
+            if (e.target.tagName == "HTML") {
+                if (divFooter.style.visibility != "hidden") {
+                    divFooter.style.visibility = "hidden";
+                }
+                else {
+                    divFooter.style.visibility = "visible";
+                }
+            }
+        };
     };
 
     // --- callbacks
