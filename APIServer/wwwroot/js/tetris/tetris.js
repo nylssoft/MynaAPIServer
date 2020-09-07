@@ -344,7 +344,7 @@ var tetris = (() => {
 
     // --- state
 
-    let version = "1.0.2";
+    let version = "1.0.3";
 
     let block;
     let nextBlock;
