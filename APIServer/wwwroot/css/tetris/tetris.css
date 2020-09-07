@@ -14,20 +14,43 @@ body {
 .playground {
     position: absolute;
     left: 100px;
-    top: 100px;
+    top: 10px;
+    background-color: black;
 }
 
-.nextblock {
+.info {
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    background-color: black;
     position: absolute;
-    left: 300px;
-    top: 100px;
+    left: 420px;
+    top: 10px;
+    padding: 10pt;
 }
 
-.score {
+.gameover {
+    position: absolute;
+    left: 160px;
+    top: 190px;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    z-index: 1;
+    background-color: black;
+    padding: 10pt;
+}
+
+.copyright {
     position: absolute;
     left: 100px;
-    top: 50px;
-    color: white;
-    font-family: Arial;
-    font-size: 18pt;
+    top: 540px;
+    padding: 10pt;
+    font-size: 8pt;
+    font-family: Arial, Helvetica, sans-serif;
+    color: lightgreen;
+}
+
+a {
+    color: lightgreen;
 }

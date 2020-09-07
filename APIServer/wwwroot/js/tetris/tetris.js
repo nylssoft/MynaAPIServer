@@ -344,6 +344,8 @@ var tetris = (() => {
 
     // --- state
 
+    let version = "1.0.2";
+
     let block;
     let nextBlock;
     let playground;
@@ -382,7 +384,7 @@ var tetris = (() => {
         setBackgroundPicture();
     }
 
-    // --- rendering
+    // --- drawing canvas
 
     const drawRect = (ctx, x, y, c) => {
         ctx.fillStyle = colorMap[c].center;
@@ -481,6 +483,59 @@ var tetris = (() => {
         }
     };
 
+    // --- block methods
+
+    const createNewBlock = () => {
+        let idx = Math.floor(Math.random() * 7);
+        switch (idx) {
+            case 0:
+                return new LBlock();
+            case 1:
+                return new JBlock();
+            case 2:
+                return new IBlock();
+            case 3:
+                return new TBlock();
+            case 4:
+                return new ZBlock();
+            case 5:
+                return new SBlock();
+            default:
+                return new OBlock();
+        }
+    }
+
+    const placeNewBlock = () => {
+        if (nextBlock) {
+            block = nextBlock;
+            nextBlock = createNewBlock();
+        }
+        else {
+            block = createNewBlock();
+            nextBlock = createNewBlock();
+        }
+        if (block.placeFirstRow(playground)) {
+            state = StateEnums.MOVEDOWN;
+        }
+        else {
+            block = undefined;
+            gameOverDiv.textContent = `GAME OVER`;
+            gameOverDiv.style.visibility = "visible";
+            state = StateEnums.GAMEOVER;
+        }
+        window.requestAnimationFrame(draw);
+    };
+
+    // --- rendering HTML elements
+
+    const renderCopyright = (parent) => {
+        let div = controls.createDiv(parent, "copyright");
+        controls.create(div, "span", undefined, `Myna Tetris Version ${version}. Copyright 2020 `);
+        let a = controls.createA(div, undefined, "https://github.com/nylssoft/", "Niels Stockfleth");
+        a.target = "_blank";
+        controls.create(div, "span", undefined, ". Alle Rechte vorbehalten.");
+    };
+
     const renderTetris = (parent) => {
         let info = controls.createDiv(parent, "info");
         scoreDiv = controls.createDiv(info);
@@ -493,6 +548,7 @@ var tetris = (() => {
         nextDiv.textContent = "N\u00E4chste Form:";
 
         gameOverDiv = controls.createDiv(parent, "gameover");
+        gameOverDiv.style.visibility = "hidden";
 
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
@@ -530,45 +586,55 @@ var tetris = (() => {
         
     };
 
-    const createNewBlock = () => {
-        let idx = Math.floor(Math.random() * 7);
-        switch (idx) {
-            case 0:
-                return new LBlock();
-            case 1:
-                return new JBlock();
-            case 2:
-                return new IBlock();
-            case 3:
-                return new TBlock();
-            case 4:
-                return new ZBlock();
-            case 5:
-                return new SBlock();
-            default:
-                return new OBlock();
-        }
-    }
+    const render = () => {
 
-    const placeNewBlock = () => {
-        if (nextBlock) {
-            block = nextBlock;
-            nextBlock = createNewBlock();
+        pixelPerField = 24;
+        borderWidth = 3;
+
+        playground = new Playground(10, 20);
+
+        colorMap = {}
+        colorMap[ColorEnums.ORANGE] = {
+            center: "#f0a000", leftright: "#d89000", top: "#fbe3b3", bottom: "#795000"
         }
-        else {
-            block = createNewBlock();
-            nextBlock = createNewBlock();
+        colorMap[ColorEnums.CYAN] = {
+            center: "#00f0f0", leftright: "#00d8d8", top: "#b3fbfb", bottom: "#007878"
         }
-        if (block.placeFirstRow(playground)) {
-            state = StateEnums.MOVEDOWN;
+        colorMap[ColorEnums.RED] = {
+            center: "#f00000", leftright: "#d80000", top: "#fbb3b3", bottom: "#780000"
         }
-        else {
-            block = undefined;
-            gameOverDiv.textContent = `GAME OVER!`;
-            state = StateEnums.GAMEOVER;
+        colorMap[ColorEnums.GREEN] = {
+            center: "#00f000", leftright: "#00d800", top: "#b3fbb3", bottom: "#007800"
         }
-        window.requestAnimationFrame(draw);
+        colorMap[ColorEnums.PURBLE] = {
+            center: "#a000f0", leftright: "#9000d8", top: "#e3b3fb", bottom: "#500078"
+        }
+        colorMap[ColorEnums.YELLOW] = {
+            center: "#f0f000", leftright: "#d8d800", top: "#fbfbb3", bottom: "#787800"
+        }
+        colorMap[ColorEnums.BLUE] = {
+            center: "#0000f0", leftright: "#0000d8", top: "#b3b3fb", bottom: "#000078"
+        }
+        colorMap[ColorEnums.BORDER] = {
+            center: "#787878", leftright: "#a1a2a1", top: "#d7d7d7", bottom: "#373737"
+        }
+
+        state = StateEnums.NEWBLOCK;
+        score = 0;
+        level = 1;
+        lines = 0;
+        controls.removeAllChildren(document.body);
+
+        let all = controls.createDiv(document.body);
+        renderTetris(all);
+        renderCopyright(all);
+
+        requestAnimationFrame(draw);
+
+        setBackgroundPicture();
     };
+
+    // timer callback
 
     const ontimer = () => {
         let currentDate = new Date();
@@ -629,63 +695,17 @@ var tetris = (() => {
         }
     };
 
-    const render = () => {
-
-        pixelPerField = 24;
-        borderWidth = 3;
-
-        playground = new Playground(10, 20);
-
-        colorMap = {}
-        colorMap[ColorEnums.ORANGE] = {
-            center: "#f0a000", leftright: "#d89000", top: "#fbe3b3", bottom: "#795000"
-        }
-        colorMap[ColorEnums.CYAN] = {
-            center: "#00f0f0", leftright: "#00d8d8", top: "#b3fbfb", bottom: "#007878"
-        }
-        colorMap[ColorEnums.RED] = {
-            center: "#f00000", leftright: "#d80000", top: "#fbb3b3", bottom: "#780000"
-        }
-        colorMap[ColorEnums.GREEN] = {
-            center: "#00f000", leftright: "#00d800", top: "#b3fbb3", bottom: "#007800"
-        }
-        colorMap[ColorEnums.PURBLE] = {
-            center: "#a000f0", leftright: "#9000d8", top: "#e3b3fb", bottom: "#500078"
-        }
-        colorMap[ColorEnums.YELLOW] = {
-            center: "#f0f000", leftright: "#d8d800", top: "#fbfbb3", bottom: "#787800"
-        }
-        colorMap[ColorEnums.BLUE] = {
-            center: "#0000f0", leftright: "#0000d8", top: "#b3b3fb", bottom: "#000078"
-        }
-        colorMap[ColorEnums.BORDER] = {
-            center: "#787878", leftright: "#a1a2a1", top: "#d7d7d7", bottom: "#373737"
-        }
-
-        state = StateEnums.NEWBLOCK;
-        score = 0;
-        level = 1;
-        lines = 0;
-        controls.removeAllChildren(document.body);
-
-        let all = controls.createDiv(document.body);
-        renderTetris(all);
-
-        window.setInterval(ontimer, 10);
-
-        requestAnimationFrame(draw);
-
-        setBackgroundPicture();
-    };
-
     // --- public API
 
     return {
         draw: draw,
         render: render,
-        initBackgroundPictures: initBackgroundPictures
+        initBackgroundPictures: initBackgroundPictures,
+        ontimer: ontimer
     };
 })();
+
+// --- window loaded event
 
 window.onload = () => {
     fetch("/images/slideshow/pictures.json", { cache: "no-cache" })
@@ -695,6 +715,7 @@ window.onload = () => {
                 response.json().then(model => {
                     tetris.initBackgroundPictures(model.pictures);
                     tetris.render();
+                    window.setInterval(tetris.ontimer, 10); // invoke every 10ms
                 });
             }
         });
