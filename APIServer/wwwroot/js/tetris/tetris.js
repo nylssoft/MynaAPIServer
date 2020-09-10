@@ -383,7 +383,7 @@ var tetris = (() => {
         level += 1;
         levelDiv.textContent = `Stufe: ${level}`;
         setBackgroundPicture();
-        console.log(`Speed: ${speed[Math.min(29, level)]} frames / cell.`);
+        console.log(`Level ${level}: Speed is ${speed[Math.min(29, level)]} frames / cell.`);
     }
 
     // --- drawing canvas
@@ -489,9 +489,9 @@ var tetris = (() => {
         let scores = [40, 100, 300, 1200];
         let fullRows = playground.clearFullRows();
         if (fullRows > 0) {
-            score += scores[fullRows - 1] * level;
+            score += scores[fullRows - 1] * (level + 1);
             lines += fullRows;
-            if (lines >= level * 10) {
+            if (lines >= (level + 1) * 10) {
                 increaseLevel();
             }
         }
@@ -738,11 +738,6 @@ var tetris = (() => {
             center: "#787878", leftright: "#a1a2a1", top: "#d7d7d7", bottom: "#373737"
         }
 
-        state = StateEnums.NEWBLOCK;
-        score = 0;
-        level = 0;
-        lines = 0;
-
         speed = [
             48, // level 0
             43, // level 1
@@ -759,6 +754,13 @@ var tetris = (() => {
             3, 3, 3, // level 16-18
             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // level 19-28
             1]; // level 29+
+
+        state = StateEnums.NEWBLOCK;
+        score = 0;
+        level = 0;
+        lines = 0;
+
+        console.log(`Level ${level}: Speed is ${speed[level]} frames / cell.`);
 
         keyPressed = undefined;
         keyPressedCount = 0;
