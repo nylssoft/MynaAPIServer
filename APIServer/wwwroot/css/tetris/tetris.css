@@ -30,33 +30,32 @@ body {
     padding-left: 10px;
 }
 
-.arrows-left {
+.arrow-left {
     position: absolute;
     left: 516px;
     top: 175px;
+    border: 2px solid green;
 }
 
 .arrow-right {
     position: absolute;
     left: 573px;
     top: 175px;
+    border: 2px solid green;
 }
 
 .arrow-up {
     position: absolute;
     left: 545px;
     top: 130px;
+    border: 2px solid green;
 }
 
 .arrow-down {
     position: absolute;
     left: 545px;
     top: 220px;
-}
-
-.arrow-img {
-    background-color: transparent;
-    border-color: lightgreen;
+    border: 2px solid green;
 }
 
 .gameover {

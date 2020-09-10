@@ -181,10 +181,10 @@ class LBlock extends Block {
                 pts = [[-1, 2], [0, 2], [1, 2], [1, 1]];
                 break;
             case 2:
-                pts = [[-1, 0], [-1, 1], [-1, 2], [0, 2]];
+                pts = [[0, 0], [0, 1], [0, 2], [1, 2]];
                 break;
             case 3:
-                pts = [[-1, 0], [0, 0], [1, 0], [-1, 1]];
+                pts = [[0, 0], [1, 0], [2, 0], [0, 1]];
                 break;
         }
         return pts;
@@ -204,10 +204,10 @@ class JBlock extends Block {
                 pts = [[-1, 0], [0, 0], [-1, 1], [-1, 2]];
                 break;
             case 1:
-                pts = [[-1, 0], [0, 0], [1, 0], [1, 1]];
+                pts = [[-2, 0], [-1, 0], [0, 0], [0, 1]];
                 break;
             case 2:
-                pts = [[1, 0], [1, 1], [1, 2], [0, 2]];
+                pts = [[0, 0], [0, 1], [0, 2], [-1, 2]];
                 break;
             case 3:
                 pts = [[-1, 1], [-1, 2], [0, 2], [1, 2]];
@@ -335,8 +335,7 @@ var tetris = (() => {
     let canvasNextBlock;
 
     // --- state
-
-    let version = "1.0.4";
+    let version = "1.0.5";
 
     let block;
     let nextBlock;
@@ -345,7 +344,17 @@ var tetris = (() => {
     let lines;
     let level;
     let state;
-    let speedDateTime;
+
+    let speed;
+    let clearPoints;
+    let moveDownFrameCount;
+    let keyPressedCount;
+    let keyPressedMax;
+    let keyPressed;
+    let dirtyBorder;
+    let dirtyPlayground;
+    let dirtyBlock;
+    let dirtyNextBlock;
 
     let pixelPerField;
     let borderWidth;
@@ -358,7 +367,7 @@ var tetris = (() => {
 
     const setBackgroundPicture = () => {
         if (backgroundPictures && level < backgroundPictures.length + 1) {
-            let pic = backgroundPictures[level - 1];
+            let pic = backgroundPictures[level];
             document.body.style.background = `#000000 url('${pic.url}')`;
             document.body.style.backgroundSize = "cover";
             document.body.style.backgroundRepeat = "no-repeat";
@@ -374,6 +383,7 @@ var tetris = (() => {
         level += 1;
         levelDiv.textContent = `Stufe: ${level}`;
         setBackgroundPicture();
+        console.log(`Speed: ${speed[Math.min(29, level)]} frames / cell.`);
     }
 
     // --- drawing canvas
@@ -414,27 +424,35 @@ var tetris = (() => {
         ctx.fill();
     };
 
-    const drawBlock = (ctx, b) => {
+    const drawNextBlock = (ctx) => {
         let offx = pixelPerField;
         let offy = offx;
-        let points = b.getRelativePoints(b.orientation);
+        let points = nextBlock.getRelativePoints(nextBlock.orientation);
         points.forEach(p => {
-            let x = offx + (b.x + p[0]) * pixelPerField;
-            let y = offy + (b.y + p[1]) * pixelPerField;
-            drawRect(ctx, x, y, b.color);
+            let x = offx + (nextBlock.x + p[0]) * pixelPerField;
+            let y = offy + (nextBlock.y + p[1]) * pixelPerField;
+            drawRect(ctx, x, y, nextBlock.color);
         });
     };
 
-    const draw = () => {
-        let ctx = canvas.getContext("2d");
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    const drawBlock = (ctx) => {
+        clearPoints.forEach(p => {
+            ctx.clearRect(p.x, p.y, pixelPerField, pixelPerField);
+        });
+        clearPoints = [];
         let offx = pixelPerField;
         let offy = offx;
+        let points = block.getRelativePoints(block.orientation);
+        points.forEach(p => {
+            let x = offx + (block.x + p[0]) * pixelPerField;
+            let y = offy + (block.y + p[1]) * pixelPerField;
+            drawRect(ctx, x, y, block.color);
+            clearPoints.push({ "x": x, "y": y });
+        });
+    };
 
-        // border
-        for (let y = 0; y <= pixelPerField * (playground.height +1); y += pixelPerField) {
+    const drawBorder = (ctx) => {
+        for (let y = 0; y <= pixelPerField * (playground.height + 1); y += pixelPerField) {
             drawRect(ctx, 0, y, ColorEnums.BORDER);
             drawRect(ctx, pixelPerField * (playground.width + 1), y, ColorEnums.BORDER);
         }
@@ -442,37 +460,139 @@ var tetris = (() => {
             drawRect(ctx, x, 0, ColorEnums.BORDER);
             drawRect(ctx, x, pixelPerField * (playground.height + 1), ColorEnums.BORDER);
         }
-        // playground
-        if (playground) {
-            for (let y = 0; y < playground.height; y++) {
-                for (let x = 0; x < playground.width; x++) {
-                    let c = playground.getColor(x, y);
-                    if (c != ColorEnums.EMPTY) {
-                        drawRect(ctx, offx + x * pixelPerField, offy + y * pixelPerField, c);
+    };
+
+    const drawPlayground = (ctx) => {
+        let offx = pixelPerField;
+        let offy = offx;
+        ctx.clearRect(offx, offy, playground.width * pixelPerField, playground.height * pixelPerField);
+        for (let y = 0; y < playground.height; y++) {
+            for (let x = 0; x < playground.width; x++) {
+                let c = playground.getColor(x, y);
+                if (c != ColorEnums.EMPTY) {
+                    drawRect(ctx, offx + x * pixelPerField, offy + y * pixelPerField, c);
+                }
+            }
+        }
+    };
+
+    const moveDown = () => {
+        if (block.moveDown(playground)) {
+            dirtyBlock = true;
+            return;
+        }
+        keyPressed = undefined;
+        block.stop(playground);
+        block = undefined;
+        clearPoints = [];
+        dirtyPlayground = true;
+        let scores = [40, 100, 300, 1200];
+        let fullRows = playground.clearFullRows();
+        if (fullRows > 0) {
+            score += scores[fullRows - 1] * level;
+            lines += fullRows;
+            if (lines >= level * 10) {
+                increaseLevel();
+            }
+        }
+        scoreDiv.textContent = `Punkte: ${score}`;
+        linesDiv.textContent = `Linien: ${lines}`;
+        if (playground.hasDropRows()) {
+            state = StateEnums.DROPONEROW;
+        }
+        else {
+            placeNewBlock();
+        }
+    };
+
+    const draw = () => {
+        // game logic
+        if (state == StateEnums.NEWBLOCK) {
+            placeNewBlock();
+        }
+        else if (state == StateEnums.SOFTDROP) {
+            if (keyPressed) {
+                state = StateEnums.MOVEDOWN;
+            }
+            else {
+                moveDown();
+            }
+        }
+        else if (state == StateEnums.DROPONEROW) {
+            if (!playground.dropOneRow()) {
+                placeNewBlock();
+            }
+            else {
+                dirtyPlayground = true;
+            }
+        }
+        else if (state == StateEnums.MOVEDOWN) {
+            if (keyPressed) {
+                keyPressedCount++;
+                if (keyPressedCount >= keyPressedMax) {
+                    if (keyPressed === "ArrowLeft") {
+                        if (block.moveLeft(playground)) {
+                            dirtyBlock = true;
+                            if (keyPressedMax > 16) {
+                                keyPressedMax = 16;
+                            }
+                            else {
+                                keyPressedMax = 6;
+                            }
+                            keyPressedCount = 0;
+                        }
+                    }
+                    else if (keyPressed === "ArrowRight") {
+                        if (block.moveRight(playground)) {
+                            dirtyBlock = true;
+                            if (keyPressedMax > 16) {
+                                keyPressedMax = 16;
+                            }
+                            else {
+                                keyPressedMax = 6;
+                            }
+                            keyPressedCount = 0;
+                        }
                     }
                 }
-            }
-            if (state == StateEnums.DROPONEROW) {
-                if (playground.dropOneRow()) {
-                    window.requestAnimationFrame(draw);
+                if (keyPressed === "ArrowDown" || keyPressed === " ") {
+                    state = StateEnums.SOFTDROP;
+                    keyPressed = undefined;
+                }
+                else if (keyPressed === "ArrowUp" || keyPressed === "a") {
+                    if (block.rotateRight(playground)) {
+                        dirtyBlock = true;
+                    }
+                    keyPressed = undefined;
                 }
             }
-        }
-        // current block
-        if (block) {
-            drawBlock(ctx, block);
-            if (state == StateEnums.SOFTDROP) {
-                if (block.moveDown(playground)) {
-                    window.requestAnimationFrame(draw);
-                }
+            moveDownFrameCount++;
+            if (moveDownFrameCount >= speed[Math.min(29,level)]) {
+                moveDownFrameCount = 0;
+                moveDown();
             }
         }
-        // next block
-        if (nextBlock) {
+        // drawing
+        let ctx = canvas.getContext("2d");
+        if (dirtyBorder) {
+            drawBorder(ctx);
+            dirtyBorder = false;
+        }
+        if (dirtyPlayground && playground) {
+            drawPlayground(ctx);
+            dirtyPlayground = false;
+        }
+        if (dirtyBlock && block) {
+            drawBlock(ctx);
+            dirtyBlock = false;
+        }
+        if (dirtyNextBlock && nextBlock) {
             let ctxnext = canvasNextBlock.getContext("2d");
             ctxnext.clearRect(0, 0, canvas.width, canvas.height);
-            drawBlock(ctxnext, nextBlock);
+            drawNextBlock(ctxnext);
+            dirtyNextBlock = false;
         }
+        window.requestAnimationFrame(draw);
     };
 
     // --- block methods
@@ -498,28 +618,49 @@ var tetris = (() => {
     }
 
     const placeNewBlock = () => {
+        block = undefined;
+        let newBlock;
+        clearPoints = [];
         if (nextBlock) {
-            block = nextBlock;
+            newBlock = nextBlock;
             nextBlock = createNewBlock();
         }
         else {
-            block = createNewBlock();
+            newBlock = createNewBlock();
             nextBlock = createNewBlock();
         }
-        if (block.placeFirstRow(playground)) {
+        if (newBlock.placeFirstRow(playground)) {
+            block = newBlock;
             state = StateEnums.MOVEDOWN;
+            moveDownFrameCount = 0;
+            keyPressedCount = 0;
+            dirtyBlock = true;
+            dirtyNextBlock = true;
         }
         else {
-            block = undefined;
             gameOverDiv.textContent = `GAME OVER`;
             gameOverDiv.style.visibility = "visible";
             newGameButton.style.visibility = "visible";
             state = StateEnums.GAMEOVER;
         }
-        window.requestAnimationFrame(draw);
     };
 
     // --- rendering HTML elements
+
+    const createImage = (parent, url, size, action) => {
+        let img = controls.create(parent, "img");
+        img.src = url;
+        img.height = size;
+        img.width = size;
+        img.addEventListener("mousedown", e => {
+            keyPressed = action;
+            keyPressedMax = 100;
+            keyPressedCount = keyPressedMax;
+        });
+        img.addEventListener("mouseup", e => {
+            keyPressed = undefined;
+        });
+    }
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
@@ -546,51 +687,14 @@ var tetris = (() => {
         newGameButton = controls.createButton(parent, "Neues Spiel", () => { render(); }, "newgame", "newgame");
         newGameButton.style.visibility = "hidden";
 
-        let arrowDivLeft = controls.createDiv(parent, "arrows-left");
-        controls.createImageButton(arrowDivLeft, "Pfeil Links",
-            () => {
-                if (playground && block && state === StateEnums.SOFTDROP) {
-                    state = StateEnums.MOVEDOWN;
-                }
-                if (playground && block && state === StateEnums.MOVEDOWN) {
-                    block.moveLeft(playground);
-                    window.requestAnimationFrame(draw);
-                }
-            },
-            "/images/tetris/arrow-left-3.png", 32, "arrow-img");
+        let arrowDivLeft = controls.createDiv(parent, "arrow-left");
+        createImage(arrowDivLeft, "/images/tetris/arrow-left-3.png", 32, "ArrowLeft");
         let arrowDivRight = controls.createDiv(parent, "arrow-right");
-        controls.createImageButton(arrowDivRight, "Pfeil Rechts",
-            () => {
-                if (playground && block && state === StateEnums.SOFTDROP) {
-                    state = StateEnums.MOVEDOWN;
-                }
-                if (playground && block && state === StateEnums.MOVEDOWN) {
-                    block.moveRight(playground);
-                    window.requestAnimationFrame(draw);
-                }
-            },
-            "/images/tetris/arrow-right-3.png", 32, "arrow-img");
+        createImage(arrowDivRight, "/images/tetris/arrow-right-3.png", 32, "ArrowRight");
         let arrowDivUp = controls.createDiv(parent, "arrow-up");
-        controls.createImageButton(arrowDivUp, "Pfeil Oben",
-            () => {
-                if (playground && block && state === StateEnums.SOFTDROP) {
-                    state = StateEnums.MOVEDOWN;
-                }
-                if (playground && block && state === StateEnums.MOVEDOWN) {
-                    block.rotateRight(playground);
-                    window.requestAnimationFrame(draw);
-                }
-            },
-            "/images/tetris/arrow-up-3.png", 32, "arrow-img");
+        createImage(arrowDivUp, "/images/tetris/arrow-up-3.png", 32, "ArrowUp");
         let arrowDivDown = controls.createDiv(parent, "arrow-down");
-        controls.createImageButton(arrowDivDown, "Pfeil Unten",
-            () => {
-                if (playground && block && state === StateEnums.MOVEDOWN) {
-                    state = StateEnums.SOFTDROP;
-                    window.requestAnimationFrame(draw);
-                }
-            },
-            "/images/tetris/arrow-down-3.png", 32, "arrow-img");
+        createImage(arrowDivDown, "/images/tetris/arrow-down-3.png", 32, "ArrowDown");
 
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
@@ -636,12 +740,37 @@ var tetris = (() => {
 
         state = StateEnums.NEWBLOCK;
         score = 0;
-        level = 1;
+        level = 0;
         lines = 0;
 
+        speed = [
+            48, // level 0
+            43, // level 1
+            38, // level 2
+            33, // level 3
+            28, // level 4
+            23, // level 5
+            18, // level 6
+            13, // level 7
+            8,  // level 8
+            6,  // level 9
+            5, 5, 5, // level 10 - 12
+            4, 4, 4, // level 13 - 15
+            3, 3, 3, // level 16-18
+            2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // level 19-28
+            1]; // level 29+
+
+        keyPressed = undefined;
+        keyPressedCount = 0;
+        keyPressedMax = 100;
+        moveDownFrameCount = 0;
+        clearPoints = [];
         block = undefined;
         nextBlock = undefined;
-        speedDateTime = undefined;
+        dirtyBorder = true;
+        dirtyPlayground = true;
+        dirtyBlock = true;
+        dirtyNextBlock = true;
 
         controls.removeAllChildren(document.body);
 
@@ -654,92 +783,19 @@ var tetris = (() => {
         setBackgroundPicture();
     };
 
-    // timer callback
-
-    const ontimer = () => {
-        let currentDate = new Date();
-        if (!speedDateTime) {
-            speedDateTime = currentDate;
-        }
-        let ms = currentDate.getTime() - speedDateTime.getTime();
-        let delayms
-        if (state === StateEnums.NEWBLOCK) {
-            delayms = 1000 - (1000 / 10) * (Math.min(10, level) - 1);
-        }
-        else {
-            delayms = 500 - (500 / 10) * (Math.min(10, level) - 1) + 30;
-        }
-        if (ms < delayms) {
-            return;
-        }
-        speedDateTime = currentDate;
-        switch (state) {
-            case StateEnums.GAMEOVER:
-                break;
-            case StateEnums.NEWBLOCK:
-                placeNewBlock();
-                break;
-            case StateEnums.MOVEDOWN:
-            case StateEnums.SOFTDROP:
-                if (!block.moveDown(playground)) {
-                    block.stop(playground);
-                    block = undefined;
-                    let scores = [40, 100, 300, 1200];
-                    let fullRows = playground.clearFullRows();
-                    if (fullRows > 0) {
-                        score += scores[fullRows - 1] * level;
-                        lines += fullRows;
-                        if (lines >= level * 10) {
-                            increaseLevel();
-                        }
-                    }
-                    scoreDiv.textContent = `Punkte: ${score}`;
-                    linesDiv.textContent = `Linien: ${lines}`;
-                    if (playground.hasDropRows()) {
-                        state = StateEnums.DROPONEROW;
-                    }
-                    else {
-                        placeNewBlock();
-                    }
-                }
-                window.requestAnimationFrame(draw);
-                break;
-            case StateEnums.DROPONEROW:
-                if (!playground.dropOneRow()) {
-                    placeNewBlock();
-                }
-                window.requestAnimationFrame(draw);
-                break;
-            default:
-                break;
-        }
-    };
-
     const initKeyDownEvent = () => {
         document.addEventListener("keydown", e => {
-            if (playground && block) {
-                if (state === StateEnums.SOFTDROP &&
-                    (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp")) {
-                    state = StateEnums.MOVEDOWN;
-                }
-                if (state === StateEnums.MOVEDOWN) {
-                    if (e.key === "ArrowLeft") {
-                        block.moveLeft(playground);
-                    }
-                    else if (e.key === "ArrowRight") {
-                        block.moveRight(playground);
-                    }
-                    else if (e.key === "ArrowDown") {
-                        state = StateEnums.SOFTDROP;
-                    }
-                    else if (e.key === "ArrowUp" || e.key === " ")
-                        block.rotateRight(playground);
-                }
-                if (e.key == "l") {
-                    increaseLevel();
-                }
-                window.requestAnimationFrame(draw);
+            if (keyPressed != e.key) {
+                keyPressed = e.key;
+                keyPressedMax = 100;
+                keyPressedCount = keyPressedMax;
             }
+        });
+        document.addEventListener("keyup", (e) => {
+            if (e.key == "l") {
+                increaseLevel();
+            }
+            keyPressed = undefined;
         });
     };
 
@@ -749,8 +805,7 @@ var tetris = (() => {
         draw: draw,
         render: render,
         initBackgroundPictures: initBackgroundPictures,
-        initKeyDownEvent: initKeyDownEvent,
-        ontimer: ontimer
+        initKeyDownEvent: initKeyDownEvent
     };
 })();
 
@@ -765,7 +820,6 @@ window.onload = () => {
                     tetris.initBackgroundPictures(model.pictures);
                     tetris.initKeyDownEvent();
                     tetris.render();
-                    window.setInterval(tetris.ontimer, 10); // invoke every 10ms
                 });
             }
         });
