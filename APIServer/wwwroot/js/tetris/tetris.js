@@ -335,7 +335,7 @@ var tetris = (() => {
     let canvasNextBlock;
 
     // --- state
-    let version = "1.0.5";
+    let version = "1.0.6";
 
     let block;
     let nextBlock;
@@ -653,11 +653,27 @@ var tetris = (() => {
         img.height = size;
         img.width = size;
         img.addEventListener("mousedown", e => {
+            e.preventDefault();
             keyPressed = action;
             keyPressedMax = 100;
             keyPressedCount = keyPressedMax;
         });
         img.addEventListener("mouseup", e => {
+            e.preventDefault();
+            keyPressed = undefined;
+        });
+        img.addEventListener("touchstart", e => {
+            e.preventDefault();
+            keyPressed = action;
+            keyPressedMax = 100;
+            keyPressedCount = keyPressedMax;
+        });
+        img.addEventListener("touchend", e => {
+            e.preventDefault();
+            keyPressed = undefined;
+        });
+        img.addEventListener("touchcancel", e => {
+            e.preventDefault();
             keyPressed = undefined;
         });
     }
