@@ -335,7 +335,7 @@ var tetris = (() => {
     let canvasNextBlock;
 
     // --- state
-    let version = "1.0.6";
+    let version = "1.0.7";
 
     let block;
     let nextBlock;
@@ -796,8 +796,6 @@ var tetris = (() => {
         renderTetris(all);
         renderCopyright(all);
 
-        requestAnimationFrame(draw);
-
         setBackgroundPicture();
     };
 
@@ -838,6 +836,7 @@ window.onload = () => {
                     tetris.initBackgroundPictures(model.pictures);
                     tetris.initKeyDownEvent();
                     tetris.render();
+                    window.requestAnimationFrame(tetris.draw);
                 });
             }
         });
