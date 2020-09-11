@@ -96,8 +96,9 @@ body {
 
 .chat-img-newmessage {
     position: absolute;
-    top: 0pt;
-    right: 0pt;
+    top: 5pt;
+    right: 5pt;
+    z-index: -1;
     transform: translate(25pt,-4pt);
 }
 

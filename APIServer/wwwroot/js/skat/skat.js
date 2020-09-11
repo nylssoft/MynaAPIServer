@@ -12,7 +12,6 @@ var skat = (() => {
     let checkBoxSchwarz;
     let divChat;
     let divLayoutLeft;
-    let btnToogleChat;
     let inputChatText;
 
     // state
@@ -570,8 +569,11 @@ var skat = (() => {
 
     const renderChat = (parent, ticket) => {
         let divChatButton = controls.createDiv(parent, "layout-chat-button");
-        let imgNewMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/skat/mail-unread-new.png");
-        btnToogleChat = controls.createButton(divChatButton, "", btnToogleChat_click, "ToogleChat", "chat-button");
+        let imgMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/skat/mail-unread-3.png");
+        imgMessage.addEventListener("click", (e) => {
+            showChat = !showChat;
+            render();
+        });
         divChat = controls.createDiv(parent, "layout-right");
         let chatState = sessionStorage.getItem("chatstate");
         if (!chatState) {
@@ -595,21 +597,20 @@ var skat = (() => {
                 inputChatText.value = lastChatText;
             }
         }
-        imgNewMessage.style.visibility = "hidden";
         if (showChat) {
+            imgMessage.title = "Chat ausblenden";
             sessionStorage.setItem("chatstate", currentChatState);
             divChat.style.visibility = "visible";
-            btnToogleChat.textContent = "Chat ausblenden";
             if (inputChatText) {
                 inputChatText.focus();
             }
         }
         else {
+            imgMessage.title = "Chat einblenden";
             if (currentChatState > chatState) {
-                imgNewMessage.style.visibility = "visible";
+                imgMessage.src = "/images/skat/mail-unread-new.png";
             }
             divChat.style.visibility = "hidden";
-            btnToogleChat.textContent = "Chat einblenden";
         }
     };
 
@@ -946,11 +947,6 @@ var skat = (() => {
 
     const btnSpecialSortOption_click = () => {
         specialSortOption = !specialSortOption;
-        render();
-    };
-
-    const btnToogleChat_click = () => {
-        showChat = !showChat;
         render();
     };
 
