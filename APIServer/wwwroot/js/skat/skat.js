@@ -851,6 +851,7 @@ var skat = (() => {
         });
         if (!found) return;
         timerEnabled = false;
+        document.body.style.cursor = "wait";
         fetch("api/skat/playcard", {
             method: "POST",
             headers: {
@@ -861,8 +862,14 @@ var skat = (() => {
             body: JSON.stringify(card.orderNumber)
         })
             .then(response => response.json())
-            .then(() => render())
-            .catch((err) => console.error(err));
+            .then(() => {
+                render();
+                document.body.style.cursor = "default";
+            })
+            .catch((err) => {
+                console.error(err);
+                document.body.style.cursor = "default";
+            });
     };
 
     const btnSkatCard_click = (card) => {
@@ -893,10 +900,17 @@ var skat = (() => {
             !model.skatTable.canCollectStitch ||
             model.skatTable.isSpeedUp) return;
         timerEnabled = false;
+        document.body.style.cursor = "wait";
         fetch("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
-            .then(() => render())
-            .catch((err) => console.error(err));
+            .then(() => {
+                document.body.style.cursor = "default";
+                render();
+            })
+            .catch((err) => {
+                console.error(err);
+                document.body.style.cursor = "default";
+            });
     };
 
     const btnLogout_click = (elem) => {

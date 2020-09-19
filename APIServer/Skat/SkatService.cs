@@ -26,6 +26,7 @@ using Microsoft.Extensions.Logging;
 
 using APIServer.Skat.Model;
 using APIServer.Skat.Core;
+using System.Threading;
 
 namespace APIServer.Skat
 {
@@ -46,6 +47,8 @@ namespace APIServer.Skat
         private readonly ILogger logger;
 
         private SkatTable skatTable;
+
+        private DateTime lastCardPlayed;
 
         public SkatService(
             IConfiguration configuration,
@@ -433,6 +436,15 @@ namespace APIServer.Skat
         public bool PlayCard(string ticket, int internalCardNumber)
         {
             var ret = false;
+            int sleepms = 0;
+            lock (mutex)
+            {
+                sleepms = 3000 - (int)(DateTime.Now - lastCardPlayed).TotalMilliseconds;
+            }
+            if (sleepms > 0)
+            {
+                Thread.Sleep(sleepms);
+            }
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -444,6 +456,7 @@ namespace APIServer.Skat
                         if (c.InternalNumber == internalCardNumber)
                         {
                             skatTable.PlayCard(player, c);
+                            lastCardPlayed = DateTime.Now;
                             ret = true;
                             break;
                         }
@@ -460,6 +473,15 @@ namespace APIServer.Skat
         public bool CollectStitch(string ticket)
         {
             var ret = false;
+            int sleepms = 0;
+            lock (mutex)
+            {
+                sleepms = 3000 - (int)(DateTime.Now - lastCardPlayed).TotalMilliseconds;
+            }
+            if (sleepms > 0)
+            {
+                Thread.Sleep(sleepms);
+            }
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
