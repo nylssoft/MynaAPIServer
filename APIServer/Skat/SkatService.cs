@@ -439,7 +439,10 @@ namespace APIServer.Skat
             int sleepms = 0;
             lock (mutex)
             {
-                sleepms = 3000 - (int)(DateTime.Now - lastCardPlayed).TotalMilliseconds;
+                if (skatTable != null && skatTable.GameStarted && skatTable.Stitch.Count == 3)
+                {
+                    sleepms = 3000 - (int)(DateTime.Now - lastCardPlayed).TotalMilliseconds;
+                }
             }
             if (sleepms > 0)
             {
