@@ -366,12 +366,12 @@ namespace APIServer.Skat.Core
             if (Option.HasFlag(GameOption.Schneider))
             {
                 factor++;
-                game += $"Angesagt {factor} ";
+                game += $"Schneider angesagt {factor} ";
             }
             if (Option.HasFlag(GameOption.Schwarz))
             {
                 factor++;
-                game += $"Angesagt {factor} ";
+                game += $"Schwarz angesagt {factor} ";
             }
             game += $"{GetGameText()} ";
             return $"{game}: {factor} x {GetGrandOrColorBaseValue()} = {factor * GetGrandOrColorBaseValue()}.";
