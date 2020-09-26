@@ -171,6 +171,22 @@ class LBlock extends Block {
         this.color = ColorEnums.ORANGE;
     }
 
+    rotateRight(playground) {
+        if (!super.rotateRight(playground)) {
+            if (this.orientation == 0 && this.x == 0) {
+                return this.move(playground, this.x + 1, this.y, this._getNextRightOrientation());
+            }
+            else if (this.orientation == 2 && this.x == playground.width - 2) {
+                if (this.move(playground, this.x - 1, this.y, this._getNextRightOrientation())) {
+                    this.move(playground, this.x + 1, this.y);
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
     getRelativePoints(o) {
         let pts;
         switch (o) {
@@ -195,6 +211,22 @@ class JBlock extends Block {
     constructor() {
         super();
         this.color = ColorEnums.BLUE;
+    }
+
+    rotateRight(playground) {
+        if (!super.rotateRight(playground)) {
+            if (this.orientation == 0 && this.x == 1) {
+                if (this.move(playground, this.x + 1, this.y, this._getNextRightOrientation())) {
+                    this.move(playground, this.x - 1, this.y);
+                    return true;
+                }
+            }
+            else if (this.orientation == 2 && this.x == playground.width -  1) {
+                return this.move(playground, this.x - 1, this.y, this._getNextRightOrientation());
+            }
+            return false;
+        }
+        return true;
     }
 
     getRelativePoints(o) {
@@ -235,6 +267,19 @@ class ZBlock extends Block {
         this.color = ColorEnums.RED;
     }
 
+    rotateRight(playground) {
+        if (!super.rotateRight(playground)) {
+            if ((this.orientation == 1 || this.orientation == 3) && this.x == playground.width - 1) {
+                if (this.move(playground, this.x - 1, this.y, this._getNextRightOrientation())) {
+                    this.move(playground, this.x + 1, this.y);
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
     getRelativePoints(o) {
         let pts;
         switch (o) {
@@ -257,6 +302,19 @@ class SBlock extends Block {
         this.color = ColorEnums.GREEN;
     }
 
+    rotateRight(playground) {
+        if (!super.rotateRight(playground)) {
+            if ((this.orientation == 1 || this.orientation == 3) && this.x == 0) {
+                if (this.move(playground, this.x + 1, this.y, this._getNextRightOrientation())) {
+                    this.move(playground, this.x - 1, this.y);
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
     getRelativePoints(o) {
         let pts;
         switch (o) {
@@ -277,6 +335,19 @@ class TBlock extends Block {
     constructor() {
         super();
         this.color = ColorEnums.PURBLE;
+    }
+
+    rotateRight(playground) {
+        if (!super.rotateRight(playground)) {
+            if (this.orientation == 0 && this.x == playground.width - 1) {
+                return this.move(playground, this.x - 1, this.y, this._getNextRightOrientation());
+            }
+            else if (this.orientation == 2 && this.x == 0) {
+                return this.move(playground, this.x + 1, this.y, this._getNextRightOrientation());
+            }
+            return false;
+        }
+        return true;
     }
 
     getRelativePoints(o) {
@@ -304,6 +375,19 @@ class IBlock extends Block {
     constructor() {
         super();
         this.color = ColorEnums.CYAN;
+    }
+
+    rotateRight(playground) {
+        if (!super.rotateRight(playground)) {
+            if ((this.orientation == 2 || this.orientation == 0) && this.x < 2) {
+                return this.move(playground, 2, this.y, this._getNextRightOrientation());
+            }
+            else if ((this.orientation == 2 || this.orientation == 0) && this.x == playground.width - 1) {
+                return this.move(playground, this.x - 1, this.y, this._getNextRightOrientation());
+            }
+            return false;
+        }
+        return true;
     }
 
     getRelativePoints(o) {
@@ -335,7 +419,7 @@ var tetris = (() => {
     let canvasNextBlock;
 
     // --- state
-    let version = "1.0.7";
+    let version = "1.0.8";
 
     let block;
     let nextBlock;
@@ -481,6 +565,13 @@ var tetris = (() => {
             dirtyBlock = true;
             return;
         }
+        if (state == StateEnums.SOFTDROP) {
+            moveDownFrameCount++;
+            if (moveDownFrameCount < speed[Math.min(29, level)]) {
+                return;
+            }
+            moveDownFrameCount = 0;
+        }
         keyPressed = undefined;
         block.stop(playground);
         block = undefined;
@@ -513,6 +604,10 @@ var tetris = (() => {
         else if (state == StateEnums.SOFTDROP) {
             if (keyPressed) {
                 state = StateEnums.MOVEDOWN;
+                if (keyPressed != "ArrowLeft" && keyPressed != "ArrowRight") {
+                    keyPressed = undefined;
+                }
+                moveDownFrameCount = 0;
             }
             else {
                 moveDown();
@@ -527,6 +622,8 @@ var tetris = (() => {
             }
         }
         else if (state == StateEnums.MOVEDOWN) {
+            let speedcnt = speed[Math.min(29, level)];
+            let skipMoveDown = false;
             if (keyPressed) {
                 keyPressedCount++;
                 if (keyPressedCount >= keyPressedMax) {
@@ -540,6 +637,7 @@ var tetris = (() => {
                                 keyPressedMax = 6;
                             }
                             keyPressedCount = 0;
+                            skipMoveDown = true;
                         }
                     }
                     else if (keyPressed === "ArrowRight") {
@@ -552,24 +650,29 @@ var tetris = (() => {
                                 keyPressedMax = 6;
                             }
                             keyPressedCount = 0;
+                            skipMoveDown = true;
                         }
                     }
                 }
                 if (keyPressed === "ArrowDown" || keyPressed === " ") {
                     state = StateEnums.SOFTDROP;
                     keyPressed = undefined;
+                    skipMoveDown = true;
                 }
                 else if (keyPressed === "ArrowUp" || keyPressed === "a") {
                     if (block.rotateRight(playground)) {
                         dirtyBlock = true;
                     }
                     keyPressed = undefined;
+                    skipMoveDown = true;
                 }
             }
-            moveDownFrameCount++;
-            if (moveDownFrameCount >= speed[Math.min(29,level)]) {
-                moveDownFrameCount = 0;
-                moveDown();
+            if (!skipMoveDown) {
+                moveDownFrameCount++;
+                if (moveDownFrameCount >= speedcnt) {
+                    moveDownFrameCount = 0;
+                    moveDown();
+                }
             }
         }
         // drawing
