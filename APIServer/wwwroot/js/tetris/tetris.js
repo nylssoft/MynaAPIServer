@@ -417,9 +417,12 @@ var tetris = (() => {
     let gameOverDiv;
     let newGameButton;
     let canvasNextBlock;
+    let highScoreDiv;
+    let addHighScoreDiv;
+    let inputUserName;
 
     // --- state
-    let version = "1.0.8";
+    let version = "1.0.9";
 
     let block;
     let nextBlock;
@@ -446,6 +449,7 @@ var tetris = (() => {
     let colorMap;
 
     let backgroundPictures;
+    let highScores;
 
     // --- background
 
@@ -602,7 +606,7 @@ var tetris = (() => {
             placeNewBlock();
         }
         else if (state == StateEnums.SOFTDROP) {
-            if (keyPressed) {
+            if (keyPressed && keyPressed != "ArrowDown") {
                 state = StateEnums.MOVEDOWN;
                 if (keyPressed != "ArrowLeft" && keyPressed != "ArrowRight") {
                     keyPressed = undefined;
@@ -745,6 +749,10 @@ var tetris = (() => {
             gameOverDiv.style.visibility = "visible";
             newGameButton.style.visibility = "visible";
             state = StateEnums.GAMEOVER;
+            if (score > 0 && (highScores.length < 10 || highScores[9].score < score)) {
+                addHighScoreDiv.style.visibility = "visible";
+                inputUserName.focus();
+            }
         }
     };
 
@@ -789,7 +797,63 @@ var tetris = (() => {
         controls.create(div, "span", undefined, ". Alle Rechte vorbehalten.");
     };
 
+    const renderHighScoreEntries = () => {
+        controls.removeAllChildren(highScoreDiv);
+        highScoreDiv.style.visibility = "hidden";
+        fetch("api/tetris/highscore")
+            .then(response => response.json())
+            .then(h => {
+                highScores = h;
+                let pos = 1;
+                highScores.forEach(hs => {
+                    let e = controls.createDiv(highScoreDiv, "highscore");
+                    e.textContent = `${pos}. ${hs.name} - ${hs.score}`;
+                    let lstr = "Linien";
+                    if (hs.lines == 1) lstr = "Linie";
+                    let dstr = new Date(hs.created).toLocaleString("de-DE");
+                    e.title = `${hs.score} Punkte. Level ${hs.level}. ${hs.lines} ${lstr}. Spiel vom ${dstr}.`;
+                    pos++;
+                });
+                if (highScores.length > 0) {
+                    highScoreDiv.style.visibility = "visible";
+                }
+            })
+            .catch((err) => console.error(err));
+    };
+
+    const renderHighScores = (parent) => {
+        highScoreDiv = controls.createDiv(parent, "highscores");
+        addHighScoreDiv = controls.createDiv(parent, "addhighscore");
+        addHighScoreDiv.style.visibility = "hidden";
+        let msg = controls.createDiv(addHighScoreDiv, undefined);
+        msg.textContent = "Gl\u00FCckwunsch! Du darfst Dich in die Bestenliste eintragen!";
+        inputUserName = controls.createInputField(addHighScoreDiv, "Name",
+            () => {
+                const name = inputUserName.value.trim();
+                if (name.length > 0) {
+                    fetch("api/tetris/highscore", {
+                        method: "POST",
+                        headers: {
+                            "Accept": "application/json",
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ "Name": name, "Score": score, "Lines": lines, "Level": level })
+                    })
+                        .then(response => response.json())
+                        .then(() => {
+                            addHighScoreDiv.style.visibility = "hidden";
+                            renderHighScoreEntries();
+                        })
+                        .catch((err) => console.error(err));
+                }
+            }
+            , undefined, 10, 10);
+        inputUserName.placeholder = "Name";
+        renderHighScoreEntries();
+    };
+
     const renderTetris = (parent) => {
+        renderHighScores(parent);
         let info = controls.createDiv(parent, "info");
         scoreDiv = controls.createDiv(info);
         scoreDiv.textContent = `Punkte: ${score}`;
@@ -904,27 +968,41 @@ var tetris = (() => {
 
     const initKeyDownEvent = () => {
         document.addEventListener("keydown", e => {
-            if (keyPressed != e.key) {
-                keyPressed = e.key;
-                keyPressedMax = 100;
-                keyPressedCount = keyPressedMax;
+            if (state != StateEnums.GAMEOVER) {
+                if (e.key.startsWith("Arrow")) {
+                    e.preventDefault();
+                }
+                if (keyPressed != e.key) {
+                    keyPressed = e.key;
+                    keyPressedMax = 100;
+                    keyPressedCount = keyPressedMax;
+                }
             }
         });
         document.addEventListener("keyup", (e) => {
-            if (e.key == "l") {
-                increaseLevel();
+            if (state != StateEnums.GAMEOVER) {
+                if (e.key.startsWith("Arrow")) {
+                    e.preventDefault();
+                }
+                if (e.key == "l") {
+                    increaseLevel();
+                }
+                keyPressed = undefined;
             }
-            keyPressed = undefined;
         });
+    };
+
+    const init = (sm) => {
+        initBackgroundPictures(sm.pictures);
+        initKeyDownEvent();
+        render();
+        window.requestAnimationFrame(draw);
     };
 
     // --- public API
 
     return {
-        draw: draw,
-        render: render,
-        initBackgroundPictures: initBackgroundPictures,
-        initKeyDownEvent: initKeyDownEvent
+        init: init
     };
 })();
 
@@ -935,12 +1013,7 @@ window.onload = () => {
         .then(response => {
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.indexOf("application/json") !== -1) {
-                response.json().then(model => {
-                    tetris.initBackgroundPictures(model.pictures);
-                    tetris.initKeyDownEvent();
-                    tetris.render();
-                    window.requestAnimationFrame(tetris.draw);
-                });
+                response.json().then(model => tetris.init(model));
             }
         });
 };

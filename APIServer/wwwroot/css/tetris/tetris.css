@@ -11,11 +11,43 @@ body {
     background-color: black;
 }
 
+input {
+    font-size: 18pt;
+    margin: 0pt;
+}
+
 .playground {
     position: absolute;
     left: 100px;
     top: 10px;
     background-color: black;
+}
+
+.highscores {
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    background-color: black;
+    position: absolute;
+    left: 660px;
+    top: 10px;
+    width: 300px;
+    height: 290px;
+    padding-left: 10px;
+}
+
+.addhighscore {
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    background-color: black;
+    position: absolute;
+    left: 660px;
+    top: 10px;
+    width: 300px;
+    height: 290px;
+    padding-left: 10px;
+    z-index: 3;
 }
 
 .info {
@@ -27,6 +59,7 @@ body {
     left: 420px;
     top: 10px;
     width: 198px;
+    height: 290px;
     padding-left: 10px;
 }
 
@@ -73,7 +106,7 @@ body {
 .newgame {
     position: absolute;
     left: 420px;
-    top: 300px;
+    top: 320px;
     color: white;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 11pt;

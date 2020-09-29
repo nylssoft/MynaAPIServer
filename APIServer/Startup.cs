@@ -23,6 +23,7 @@ using Microsoft.Extensions.Hosting;
 
 using APIServer.Skat;
 using APIServer.Email;
+using APIServer.Tetris;
 
 namespace APIServer
 {
@@ -41,6 +42,7 @@ namespace APIServer
             services.AddControllers();
             services.AddSingleton<ISkatService, SkatService>();
             services.AddSingleton<INotificationService, NotificationService>();
+            services.AddSingleton<ITetrisService, TetrisService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -54,8 +56,6 @@ namespace APIServer
             app.UseDefaultFiles();
 
             app.UseStaticFiles();
-
-            app.UseHttpsRedirection();
 
             app.UseRouting();
 
