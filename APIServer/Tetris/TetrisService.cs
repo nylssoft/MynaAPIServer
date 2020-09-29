@@ -75,6 +75,10 @@ namespace APIServer.Tetris
                 }
                 if (highScores.Count == 10)
                 {
+                    if (highScores[9].Score >= highScore.Score)
+                    {
+                        return false;
+                    }
                     highScores.RemoveAt(9);
                 }
                 highScores.Add(highScore);

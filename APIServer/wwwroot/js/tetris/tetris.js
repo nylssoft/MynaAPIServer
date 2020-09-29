@@ -422,7 +422,7 @@ var tetris = (() => {
     let inputUserName;
 
     // --- state
-    let version = "1.0.9";
+    let version = "1.1.0";
 
     let block;
     let nextBlock;
@@ -749,10 +749,16 @@ var tetris = (() => {
             gameOverDiv.style.visibility = "visible";
             newGameButton.style.visibility = "visible";
             state = StateEnums.GAMEOVER;
-            if (score > 0 && (highScores.length < 10 || highScores[9].score < score)) {
-                addHighScoreDiv.style.visibility = "visible";
-                inputUserName.focus();
-            }
+            fetch("api/tetris/highscore")
+                .then(response => response.json())
+                .then(h => {
+                    highScores = h;
+                    if (score > 0 && (highScores.length < 10 || highScores[9].score < score)) {
+                        addHighScoreDiv.style.visibility = "visible";
+                        inputUserName.focus();
+                    }
+                })
+                .catch((err) => console.error(err));
         }
     };
 
