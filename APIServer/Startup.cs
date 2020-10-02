@@ -24,6 +24,7 @@ using Microsoft.Extensions.Hosting;
 using APIServer.Skat;
 using APIServer.Email;
 using APIServer.Tetris;
+using APIServer.PwdMan;
 
 namespace APIServer
 {
@@ -43,6 +44,7 @@ namespace APIServer
             services.AddSingleton<ISkatService, SkatService>();
             services.AddSingleton<INotificationService, NotificationService>();
             services.AddSingleton<ITetrisService, TetrisService>();
+            services.AddSingleton<IPwdManService, PwdManService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

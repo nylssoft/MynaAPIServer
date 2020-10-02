@@ -1,0 +1,68 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    background-color: black;
+    color: white;
+    margin: 20pt;
+}
+
+input {
+    margin: 10pt;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+}
+
+table {
+    border-collapse: collapse;
+    border: 1px solid white;
+    letter-spacing: 1px;
+}
+
+th, td {
+    border: 1px solid white;
+    padding: 5px 10px;
+    color: lightgreen;
+    text-align: center;
+}
+
+td {
+    color: white;
+}
+
+a {
+    color: lightgreen;
+}
+
+h1 {
+    color: lightgreen;
+}
+
+.pwditem {
+    vertical-align: top;
+    margin-left: 20pt;
+    color: yellow;
+}
+
+.copyright {
+    font-size: 8pt;
+    font-family: Arial, Helvetica, sans-serif;
+    color: lightgreen;
+}
+
+.logout-button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 8pt;
+    margin-left: 15pt;
+}
+
+.logout-button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}

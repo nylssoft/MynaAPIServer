@@ -5,5 +5,10 @@
     <UserSecretsId>fede4cea-1e14-4fd2-aeba-e1ec7e7d5deb</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.7.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.7.1" />
+  </ItemGroup>
+
 
 </Project>
