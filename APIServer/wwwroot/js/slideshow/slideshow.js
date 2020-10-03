@@ -24,6 +24,7 @@ var slideshow = (() => {
         let div = controls.createDiv(parent);
         controls.createA(div, "footer-link", "/skat.html", "Online Skat");
         controls.createA(div, "footer-link", "/tetris.html", "Tetris");
+        controls.createA(div, "footer-link", "/pwdman.html", "Passw\u00F6rter");
         controls.createA(div, "footer-link", "/downloads.html", "Downloads");
         controls.createA(div, "footer-link", "/impressum.html", "Impressum");
     };

@@ -18,6 +18,7 @@
 using APIServer.PasswordGenerator;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -41,6 +42,8 @@ namespace APIServer.PwdMan
         private readonly ILogger logger;
 
         private readonly object mutex = new object();
+
+        private readonly Dictionary<string,LoginTry> loginFailures = new Dictionary<string, LoginTry>();
 
         public PwdManService(
             IConfiguration configuration,
@@ -87,6 +90,19 @@ namespace APIServer.PwdMan
                 var user = users.Find((u) => u.Name == authentication.Username);
                 if (user != null)
                 {
+                    LoginTry loginTry = null;
+                    loginFailures.TryGetValue(user.Name, out loginTry);
+                    if (loginTry != null && loginTry.Count >= 3)
+                    {
+                        var min = (DateTime.UtcNow - loginTry.LastTryUtc).TotalMinutes;
+                        if (min < 5)
+                        {
+                            logger.LogDebug("Account disabled. Too many login tries.");
+                            return null;
+                        }
+                        loginTry = null; // try again
+                        loginFailures.Remove(user.Name);
+                    }
                     var hasher = new PasswordHasher<string>();
                     var hash = hasher.HashPassword(authentication.Username, authentication.Password);
                     if (hasher.VerifyHashedPassword(
@@ -94,9 +110,21 @@ namespace APIServer.PwdMan
                         user.PasswordHash,
                         authentication.Password) == PasswordVerificationResult.Success)
                     {
-                        return GenerateToken(authentication.Username, opt);
+                        var token = GenerateToken(authentication.Username, opt);
+                        if (token != null)
+                        {
+                            loginFailures.Remove(user.Name);
+                            return token;
+                        }
                     }
                     logger.LogDebug("Invalid password specified.");
+                    if (loginTry == null)
+                    {
+                        loginTry = new LoginTry();
+                        loginFailures[user.Name] = loginTry;
+                    }
+                    loginTry.Count += 1;
+                    loginTry.LastTryUtc = DateTime.UtcNow;
                     return null;
                 }
                 logger.LogDebug("Username not found.");
@@ -111,6 +139,37 @@ namespace APIServer.PwdMan
             {
                 var user = GetUserFromToken(token);
                 return user?.Salt;
+            }
+        }
+
+        public bool ChangeUserPassword(string token, UserPasswordChange userPassswordChange)
+        {
+            logger.LogDebug("Change user password...");
+            lock (mutex)
+            {
+                var user = GetUserFromToken(token);
+                if (user != null)
+                {
+                    var hasher = new PasswordHasher<string>();
+                    var hash = hasher.HashPassword(user.Name, userPassswordChange.OldPassword);
+                    if (hasher.VerifyHashedPassword(
+                        user.Name,
+                        user.PasswordHash,
+                        userPassswordChange.OldPassword) == PasswordVerificationResult.Success)
+                    {
+                        var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
+                        var opt = GetOptions();
+                        var users = ReadUsers(opt.UsersFile);
+                        user = users.Find(u => u.Name == user.Name);
+                        if (user != null)
+                        {
+                            user.PasswordHash = newhash;
+                            File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
+                            return true;
+                        }
+                    }
+                }
+                return false;
             }
         }
 

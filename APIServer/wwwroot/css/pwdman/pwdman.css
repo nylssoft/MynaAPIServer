@@ -49,7 +49,7 @@ h1 {
     color: lightgreen;
 }
 
-.logout-button {
+.small-button {
     background-color: blue;
     border: 2px solid #008CBA;
     color: white;
@@ -62,7 +62,27 @@ h1 {
     margin-left: 15pt;
 }
 
-.logout-button:hover {
+.small-button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
+.button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 18pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
+}
+
+.button:hover {
     background-color: #008CBA;
     color: darkblue;
 }

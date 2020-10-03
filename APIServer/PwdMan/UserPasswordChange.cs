@@ -17,19 +17,10 @@
 */
 namespace APIServer.PwdMan
 {
-    public interface IPwdManService
+    public class UserPasswordChange
     {
-        public bool AddUser(Authentication authentication);
+        public string OldPassword { get; set; }
 
-        public string Authenticate(Authentication authenication);
-
-        public string GetSalt(string token);
-
-        public bool ChangeUserPassword(string token, UserPasswordChange userPassswordChange);
-
-        public bool SavePasswordFile(string token, PasswordFile pwdFileContent);
-
-        public string GetEncodedPasswordFile(string token);
-
+        public string NewPassword { get; set; }
     }
 }

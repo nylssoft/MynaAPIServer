@@ -7,6 +7,9 @@ var pwdman = (() => {
     let userPasswordPwd;
     let userNameInput;
     let secretKeyPwd;
+    let oldPasswordPwd;
+    let newPasswordPwd;
+    let confirmPasswordPwd;
 
     // state
 
@@ -14,6 +17,7 @@ var pwdman = (() => {
     let token;
     let salt
     let cryptoKey;
+    let changePwd;
 
     let version = "1.0.0";
 
@@ -86,19 +90,25 @@ var pwdman = (() => {
         a.target = "_blank";
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten.`);
         if (token) {
-            controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
+            controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "small-button");
+        }
+        if (token && !changePwd) {
+            controls.createButton(div, "Kennwort \u00E4ndern", btnChangePwd_click, "ChangePwd", "small-button");
         }
     };
 
-    const renderHeader = (parent) => {
-        controls.create(parent, "h1", undefined, "Online Password Manager");
+    const renderHeader = (parent, txt) => {
+        controls.create(parent, "h1", undefined, "Passw\u00F6rter");
         if (userName && userName.length > 0) {
-            controls.create(parent, "p", undefined, `Willkommen ${userName}!`);
+            controls.create(parent, "p", undefined, `Hallo ${userName}! ${txt}`);
+        }
+        else {
+            controls.create(parent, "p", undefined, txt);
         }
     };
 
     const renderAuthentication = (parent) => {
-        renderHeader(parent);
+        renderHeader(parent, "Melde Dich mit Benutzernamen und Passwort an.");
         let div = controls.createDiv(parent, "logindiv");
         controls.createLabel(div, undefined, "Benutzer:");
         userNameInput = controls.createInputField(div, "Benutzer", () => userPasswordPwd.focus(), undefined, 16, 100);
@@ -108,8 +118,50 @@ var pwdman = (() => {
         renderCopyright(parent);
     };
 
+    const renderChangePwd = (parent) => {
+        renderHeader(parent, "Gibt Dein altes und neues Kennwort ein.");
+        let oldpwddiv = controls.createDiv(parent);
+        controls.createLabel(oldpwddiv, undefined, "Altes Kennwort:");
+        oldPasswordPwd = controls.createPasswordField(oldpwddiv, "Altes Kennwort", () => newPasswordPwd.focus(), undefined, 16, 100);
+        oldPasswordPwd.focus();
+        let newpwddiv = controls.createDiv(parent);
+        controls.createLabel(newpwddiv, undefined, "Neues Kennwort:");
+        newPasswordPwd = controls.createPasswordField(newpwddiv, "Neues Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        let confirmpwddiv = controls.createDiv(parent);
+        controls.createLabel(confirmpwddiv, undefined, "Best\u00E4tiges Kennwort:");
+        confirmPasswordPwd = controls.createPasswordField(confirmpwddiv, "Best\u00E4tiges Kennwort", () => { }, undefined, 16, 100);
+        let okcanceldiv = controls.createDiv(parent);
+        controls.createButton(okcanceldiv, "OK",
+            () => {
+                if (newPasswordPwd.value.length == 0 ||
+                    newPasswordPwd.value != confirmPasswordPwd.value ||
+                    newPasswordPwd.value == oldPasswordPwd.value) {
+                    return;
+                }
+                fetch("api/pwdman/userpwd", {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify({ "oldpassword": oldPasswordPwd.value, "newpassword": newPasswordPwd.value})
+                })
+                    .then(response => response.json())
+                    .then((ok) => {
+                        if (ok) {
+                            changePwd = false;
+                            render();
+                        }
+                    })
+                    .catch((err) => console.error(err));                
+            }, "ok", "button");
+        controls.createButton(okcanceldiv, "Abbrechen",
+            () => {
+                changePwd = false;
+                render();
+            }, "cancel", "button");
+        renderCopyright(parent);
+    };
+
     const renderSecretKey = (parent) => {
-        renderHeader(parent);
+        renderHeader(parent, "Gibt den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
         let div = controls.createDiv(parent, "secretkeydiv");
         controls.createLabel(div, undefined, "Geheimer Schl\u00FCssel:");
         secretKeyPwd = controls.createPasswordField(div, "Geheimer Schluessel", setCryptoKey, undefined, 16, 100);
@@ -150,7 +202,7 @@ var pwdman = (() => {
     };
 
     const renderPasswordItems = (parent, pwdItems) => {
-        renderHeader(parent);
+        renderHeader(parent, "Folgende Passw\u00F6rter stehen zur Verf\u00FCgung:");
         let div = controls.createDiv(parent, "pwditemsdiv");
         let table = controls.create(div, "table");
         let thead = controls.create(table, "thead");
@@ -185,6 +237,9 @@ var pwdman = (() => {
         }
         if (!token || token.length == 0) {
             renderAuthentication(document.body);
+        }
+        else if (changePwd) {
+            renderChangePwd(document.body);
         }
         else if (cryptoKey === undefined) {
             fetch("api/pwdman/salt", { headers: { "token": token } })
@@ -241,6 +296,12 @@ var pwdman = (() => {
         token = undefined;
         cryptoKey = undefined;
         userName = undefined;
+        changePwd = false;
+        render();
+    };
+
+    const btnChangePwd_click = () => {
+        changePwd = true;
         render();
     };
 

@@ -15,21 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System;
+
 namespace APIServer.PwdMan
 {
-    public interface IPwdManService
+    public class LoginTry
     {
-        public bool AddUser(Authentication authentication);
+        public int Count { get; set; } = 0;
 
-        public string Authenticate(Authentication authenication);
-
-        public string GetSalt(string token);
-
-        public bool ChangeUserPassword(string token, UserPasswordChange userPassswordChange);
-
-        public bool SavePasswordFile(string token, PasswordFile pwdFileContent);
-
-        public string GetEncodedPasswordFile(string token);
-
+        public DateTime LastTryUtc { get; set; } = DateTime.UtcNow;
     }
 }

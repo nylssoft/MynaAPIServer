@@ -55,6 +55,13 @@ namespace APIServer.PwdMan
         }
 
         [HttpPost]
+        [Route("api/pwdman/userpwd")]
+        public IActionResult ChangeUserPassword([FromBody] UserPasswordChange userPasswordChange)
+        {
+            return new JsonResult(PwdManService.ChangeUserPassword(GetToken(), userPasswordChange));
+        }
+
+        [HttpPost]
         [Route("api/pwdman/file")]
         public IActionResult SavePasswordFile([FromBody] PasswordFile passwordFile)
         {
