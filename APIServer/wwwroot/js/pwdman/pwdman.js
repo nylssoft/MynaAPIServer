@@ -170,6 +170,7 @@ var pwdman = (() => {
     };
 
     const renderPasswordItem = (parent, txt, decode) => {
+        if (txt.length == 0) return;
         let imgshow = controls.createImg(parent, undefined, 32, 32, "/images/pwdman/document-decrypt-3.png");
         imgshow.title = "Anzeigen";
         let imgcopy = controls.createImg(parent, undefined, 32, 32, "/images/pwdman/edit-copy-6.png");
@@ -217,11 +218,17 @@ var pwdman = (() => {
             let tr = controls.create(tbody, "tr");
             controls.create(tr, "td", undefined, pwdItem.Name);
             let tdwebsite = controls.create(tr, "td");
-            let imgopen = controls.createImg(tdwebsite, undefined, 32, 32, "/images/pwdman/homepage.png");
-            imgopen.title = pwdItem.Url;
-            imgopen.addEventListener("click", () => {
-                window.open(pwdItem.Url);
-            });
+            if (pwdItem.Url.length > 0) {
+                let url = pwdItem.Url;
+                if (url.indexOf(":") == -1) {
+                    url = `https://${url}`;
+                }
+                let imgopen = controls.createImg(tdwebsite, undefined, 32, 32, "/images/pwdman/homepage.png");
+                imgopen.title = url;
+                imgopen.addEventListener("click", () => {
+                    window.open(url);
+                });
+            }
             renderPasswordItem(controls.create(tr, "td"), pwdItem.Login);
             renderPasswordItem(controls.create(tr, "td"), pwdItem.Password, true);
             renderPasswordItem(controls.create(tr, "td"), pwdItem.Description);
@@ -273,15 +280,19 @@ var pwdman = (() => {
                             .then((decrypted) => {
                                 let str = new TextDecoder().decode(decrypted);
                                 let pwdItems = JSON.parse(str);
+                                pwdItems.sort((a, b) => a.Name.localeCompare(b.Name));
+                                console.log(pwdItems);
                                 renderPasswordItems(document.body, pwdItems);
                             })
                             .catch((err) => {
                                 console.error(err);
-                                btnLogout_click();
+                                cryptoKey = undefined;
+                                render();
                             });
                     }
                     else {
-                        btnLogout_click();
+                        cryptoKey = undefined;
+                        render();
                     }
                 })
                 .catch((err) => console.error(err));

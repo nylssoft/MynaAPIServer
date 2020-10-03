@@ -173,7 +173,7 @@ namespace APIServer.PwdMan
             }
         }
 
-        public bool SavePasswordFile(string token, PasswordFile passwordFileContent)
+        public bool SavePasswordFile(string token, PasswordFile passwordFile)
         {
             logger.LogDebug("Save password file...");
             lock (mutex)
@@ -182,13 +182,13 @@ namespace APIServer.PwdMan
                 if (user != null)
                 {
                     var salt = Encoding.UTF8.GetBytes(user.Salt);
-                    foreach (var item in passwordFileContent.Passwords)
+                    foreach (var item in passwordFile.Passwords)
                     {
                         item.Password = ConvertToHexString(
-                            EncodeSecret(salt, passwordFileContent.SecretKey, Encoding.UTF8.GetBytes(item.Password)));
+                            EncodeSecret(salt, passwordFile.SecretKey, Encoding.UTF8.GetBytes(item.Password)));
                     }
-                    var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFileContent.Passwords));
-                    var encoded = EncodeSecret(salt, passwordFileContent.SecretKey, passwords);
+                    var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
+                    var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
                     File.WriteAllBytes(user.PasswordFile, encoded);
                     return true;
                 }
