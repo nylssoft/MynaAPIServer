@@ -19,14 +19,6 @@ using APIServer.APIError;
 
 namespace APIServer.PwdMan
 {
-    public class UserAlreadyExistsException : APIException
-    {
-        public UserAlreadyExistsException() :
-            base("Benutzer existiert bereits.", 401)
-        {
-        }
-    }
-
     public class UnauthorizedException : APIException
     {
         public UnauthorizedException() :

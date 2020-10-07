@@ -56,18 +56,18 @@ namespace APIServer.PwdMan
             logger.LogDebug("Add user '{username}'...", authentication.Username);
             lock (mutex)
             {
-                if (!VerifyPasswordStrength(authentication.Password))
-                {
-                    throw new PasswordNotStrongEnoughException();
-                }
                 var opt = GetOptions();
                 var users = ReadUsers(opt.UsersFile);
                 var user = users.Find((u) => u.Name == authentication.Username);
-                if (user != null) throw new UserAlreadyExistsException();
-                if (opt.AllowedUsers == null ||
+                if (user != null ||
+                    opt.AllowedUsers == null ||
                     !opt.AllowedUsers.Contains(authentication.Username))
                 {
                     throw new UserNotAllowedException();
+                }
+                if (!VerifyPasswordStrength(authentication.Password))
+                {
+                    throw new PasswordNotStrongEnoughException();
                 }
                 var pwdgen = new PwdGen { Length = 12 };
                 var hasher = new PasswordHasher<string>();
