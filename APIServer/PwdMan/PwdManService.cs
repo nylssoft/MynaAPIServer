@@ -18,9 +18,7 @@
 using APIServer.PasswordGenerator;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -47,37 +45,43 @@ namespace APIServer.PwdMan
 
         public PwdManService(
             IConfiguration configuration,
-            ILogger<PwdManService> logger,
-            IHostApplicationLifetime appLifetime)
+            ILogger<PwdManService> logger)
         {
             Configuration = configuration;
             this.logger = logger;
         }
 
-        public bool AddUser(Authentication authentication)
+        public void AddUser(Authentication authentication)
         {
             logger.LogDebug("Add user '{username}'...", authentication.Username);
             lock (mutex)
             {
+                if (!VerifyPasswordStrength(authentication.Password))
+                {
+                    throw new PasswordNotStrongEnoughException();
+                }
                 var opt = GetOptions();
                 var users = ReadUsers(opt.UsersFile);
                 var user = users.Find((u) => u.Name == authentication.Username);
-                if (user == null && users.Count < 100)
+                if (user != null) throw new UserAlreadyExistsException();
+                if (opt.AllowedUsers == null ||
+                    !opt.AllowedUsers.Contains(authentication.Username))
                 {
-                    var pwdgen = new PwdGen { Length = 12 };
-                    var hasher = new PasswordHasher<string>();
-                    var hash = hasher.HashPassword(authentication.Username, authentication.Password);
-                    user = new User();
-                    user.Name = authentication.Username;
-                    user.PasswordFile = opt.PasswordFilePattern.Replace("{guid}", Guid.NewGuid().ToString());
-                    user.Salt = pwdgen.Generate();
-                    user.PasswordHash = hash;
-                    users.Add(user);
-                    File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
-                    return true;
+                    throw new UserNotAllowedException();
                 }
+                var pwdgen = new PwdGen { Length = 12 };
+                var hasher = new PasswordHasher<string>();
+                var hash = hasher.HashPassword(authentication.Username, authentication.Password);
+                user = new User
+                {
+                    Name = authentication.Username,
+                    PasswordFile = opt.PasswordFilePattern.Replace("{guid}", Guid.NewGuid().ToString()),
+                    Salt = pwdgen.Generate(),
+                    PasswordHash = hash
+                };
+                users.Add(user);
+                File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
             }
-            return false;
         }
 
         public string Authenticate(Authentication authentication)
@@ -92,13 +96,13 @@ namespace APIServer.PwdMan
                 {
                     LoginTry loginTry = null;
                     loginFailures.TryGetValue(user.Name, out loginTry);
-                    if (loginTry != null && loginTry.Count >= 3)
+                    if (loginTry != null && loginTry.Count >= opt.MaxLoginTryCount)
                     {
-                        var min = (DateTime.UtcNow - loginTry.LastTryUtc).TotalMinutes;
-                        if (min < 5)
+                        var sec = (DateTime.UtcNow - loginTry.LastTryUtc).TotalSeconds;
+                        if (sec < opt.AccountLockTime)
                         {
                             logger.LogDebug("Account disabled. Too many login tries.");
-                            return null;
+                            throw new UnauthorizedException();
                         }
                         loginTry = null; // try again
                         loginFailures.Remove(user.Name);
@@ -125,10 +129,12 @@ namespace APIServer.PwdMan
                     }
                     loginTry.Count += 1;
                     loginTry.LastTryUtc = DateTime.UtcNow;
-                    return null;
                 }
-                logger.LogDebug("Username not found.");
-                return null;
+                else
+                {
+                    logger.LogDebug("Username not found.");
+                }
+                throw new UnauthorizedException();
             }
         }
 
@@ -137,62 +143,71 @@ namespace APIServer.PwdMan
             logger.LogDebug("Get salt...");
             lock (mutex)
             {
-                var user = GetUserFromToken(token);
-                return user?.Salt;
+                return GetUserFromToken(token).Salt;
             }
         }
 
-        public bool ChangeUserPassword(string token, UserPasswordChange userPassswordChange)
+        public void ChangeUserPassword(string token, UserPasswordChange userPassswordChange)
         {
             logger.LogDebug("Change user password...");
             lock (mutex)
             {
                 var user = GetUserFromToken(token);
-                if (user != null)
+                var hasher = new PasswordHasher<string>();
+                var hash = hasher.HashPassword(user.Name, userPassswordChange.OldPassword);
+                if (hasher.VerifyHashedPassword(
+                    user.Name,
+                    user.PasswordHash,
+                    userPassswordChange.OldPassword) != PasswordVerificationResult.Success)
                 {
-                    var hasher = new PasswordHasher<string>();
-                    var hash = hasher.HashPassword(user.Name, userPassswordChange.OldPassword);
-                    if (hasher.VerifyHashedPassword(
-                        user.Name,
-                        user.PasswordHash,
-                        userPassswordChange.OldPassword) == PasswordVerificationResult.Success)
-                    {
-                        var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
-                        var opt = GetOptions();
-                        var users = ReadUsers(opt.UsersFile);
-                        user = users.Find(u => u.Name == user.Name);
-                        if (user != null)
-                        {
-                            user.PasswordHash = newhash;
-                            File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
-                            return true;
-                        }
-                    }
+                    throw new InvalidOldPasswordException();
                 }
-                return false;
+                if (userPassswordChange.OldPassword == userPassswordChange.NewPassword)
+                {
+                    throw new PasswordSameAsOldException();
+                }
+                if (!VerifyPasswordStrength(userPassswordChange.NewPassword))
+                {
+                    throw new PasswordNotStrongEnoughException();
+                }
+                var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
+                var opt = GetOptions();
+                var users = ReadUsers(opt.UsersFile);
+                user = users.Find(u => u.Name == user.Name);
+                if (user == null) throw new UnauthorizedException();
+                user.PasswordHash = newhash;
+                File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
             }
         }
 
-        public bool SavePasswordFile(string token, PasswordFile passwordFile)
+        public void SavePasswordFile(string token, PasswordFile passwordFile)
         {
             logger.LogDebug("Save password file...");
             lock (mutex)
             {
-                var user = GetUserFromToken(token);
-                if (user != null)
+                if (!VerifyPasswordStrength(passwordFile.SecretKey))
                 {
-                    var salt = Encoding.UTF8.GetBytes(user.Salt);
-                    foreach (var item in passwordFile.Passwords)
-                    {
-                        item.Password = ConvertToHexString(
-                            EncodeSecret(salt, passwordFile.SecretKey, Encoding.UTF8.GetBytes(item.Password)));
-                    }
-                    var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
-                    var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
-                    File.WriteAllBytes(user.PasswordFile, encoded);
-                    return true;
+                    throw new SecretKeyNotStrongEnoughException();
                 }
-                return false;
+                var user = GetUserFromToken(token);
+                var hasher = new PasswordHasher<string>();
+                var hash = hasher.HashPassword(user.Name, passwordFile.SecretKey);
+                if (hasher.VerifyHashedPassword(
+                    user.Name,
+                    user.PasswordHash,
+                    passwordFile.SecretKey) == PasswordVerificationResult.Success)
+                {
+                    throw new SecretKeySameAsPasswordException();
+                }
+                var salt = Encoding.UTF8.GetBytes(user.Salt);
+                foreach (var item in passwordFile.Passwords)
+                {
+                    item.Password = ConvertToHexString(
+                        EncodeSecret(salt, passwordFile.SecretKey, Encoding.UTF8.GetBytes(item.Password)));
+                }
+                var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
+                var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
+                File.WriteAllBytes(user.PasswordFile, encoded);
             }
         }
 
@@ -202,18 +217,29 @@ namespace APIServer.PwdMan
             lock (mutex)
             {
                 var user = GetUserFromToken(token);
-                if (user != null)
-                {
-                    if (File.Exists(user.PasswordFile))
-                    {
-                        return ConvertToHexString(File.ReadAllBytes(user.PasswordFile));
-                    }
-                }
-                return null;
+                if (!File.Exists(user.PasswordFile)) throw new PasswordFileNotFoundException();
+                return ConvertToHexString(File.ReadAllBytes(user.PasswordFile));
             }
         }
 
         // --- private
+
+        private bool VerifyPasswordStrength(string pwd)
+        {
+            var pwdGen = new PwdGen();
+            if (pwd.Length >= 8)
+            {
+                var cntSymbols = pwd.Count((c) => pwdGen.Symbols.Contains(c));
+                var cntUpper = pwd.Count((c) => pwdGen.UpperCharacters.Contains(c));
+                var cntLower = pwd.Count((c) => pwdGen.LowerCharacters.Contains(c));
+                var cntDigits = pwd.Count((c) => pwdGen.Digits.Contains(c));
+                if (cntSymbols >= 1 && cntUpper >= 1 && cntLower >= 1 && cntDigits >= 1)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private List<User> ReadUsers(string usersFile)
         {
@@ -290,7 +316,6 @@ namespace APIServer.PwdMan
         private User GetUserFromToken(string token)        
         {
             var opt = GetOptions();
-            var users = ReadUsers(opt.UsersFile);
             if (ValidateToken(token, opt))
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
@@ -298,11 +323,12 @@ namespace APIServer.PwdMan
                 var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "nameid");
                 if (claim != null)
                 {
+                    var users = ReadUsers(opt.UsersFile);
                     return users.Find((u) => u.Name == claim.Value);
                 }
                 logger.LogDebug("Claim type 'nameid' not found.");
             }
-            return null;
+            throw new InvalidTokenException();
         }
 
         private PwdManOptions GetOptions()

@@ -37,7 +37,8 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/user")]
         public IActionResult AddUser([FromBody] Authentication authentication)
         {
-            return new JsonResult(PwdManService.AddUser(authentication));
+            PwdManService.AddUser(authentication);
+            return Ok();
         }
 
         [HttpPost]
@@ -58,14 +59,16 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/userpwd")]
         public IActionResult ChangeUserPassword([FromBody] UserPasswordChange userPasswordChange)
         {
-            return new JsonResult(PwdManService.ChangeUserPassword(GetToken(), userPasswordChange));
+            PwdManService.ChangeUserPassword(GetToken(), userPasswordChange);
+            return Ok();
         }
 
         [HttpPost]
         [Route("api/pwdman/file")]
         public IActionResult SavePasswordFile([FromBody] PasswordFile passwordFile)
         {
-            return new JsonResult(PwdManService.SavePasswordFile(GetToken(), passwordFile));
+            PwdManService.SavePasswordFile(GetToken(), passwordFile);
+            return Ok();
         }
 
         [HttpGet]
@@ -81,6 +84,5 @@ namespace APIServer.PwdMan
         {
             return HttpContext.Request.Headers["token"];
         }
-
     }
 }

@@ -15,22 +15,17 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
+using System;
 
-namespace APIServer.PwdMan
+namespace APIServer.APIError
 {
-    public class PwdManOptions
+    public class APIException : Exception
     {
-        public TokenConfig TokenConfig { get; set; }
+        public int StatusCode { get; set; }
 
-        public string UsersFile { get; set; }
-
-        public string PasswordFilePattern { get; set; }
-
-        public List<string> AllowedUsers { get; set; } = null;
-
-        public int MaxLoginTryCount { get; set; } = 3;
-
-        public int AccountLockTime { get; set; } = 300;
+        public APIException(string message, int statusCode) : base(message)
+        {
+            StatusCode = statusCode;
+        }
     }
 }

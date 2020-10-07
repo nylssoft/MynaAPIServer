@@ -15,22 +15,25 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 
-namespace APIServer.PwdMan
+namespace APIServer.APIError
 {
-    public class PwdManOptions
+    public class APIErrorController : ControllerBase
     {
-        public TokenConfig TokenConfig { get; set; }
-
-        public string UsersFile { get; set; }
-
-        public string PasswordFilePattern { get; set; }
-
-        public List<string> AllowedUsers { get; set; } = null;
-
-        public int MaxLoginTryCount { get; set; } = 3;
-
-        public int AccountLockTime { get; set; } = 300;
+        [Route("/error")]
+        public IActionResult Error()
+        {
+            int statusCode = 400;
+            var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
+            if (context.Error is APIException)
+            {
+                statusCode = (context.Error as APIException).StatusCode;
+            }
+            return Problem(
+                title: context.Error.Message,
+                statusCode: statusCode);
+        }
     }
 }

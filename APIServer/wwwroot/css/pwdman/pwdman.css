@@ -49,6 +49,11 @@ h1 {
     color: lightgreen;
 }
 
+.error {
+    margin-top: 10pt;
+    color: red;
+}
+
 .small-button {
     background-color: blue;
     border: 2px solid #008CBA;

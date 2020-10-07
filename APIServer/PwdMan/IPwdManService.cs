@@ -19,15 +19,15 @@ namespace APIServer.PwdMan
 {
     public interface IPwdManService
     {
-        public bool AddUser(Authentication authentication);
+        public void AddUser(Authentication authentication);
 
         public string Authenticate(Authentication authenication);
 
         public string GetSalt(string token);
 
-        public bool ChangeUserPassword(string token, UserPasswordChange userPassswordChange);
+        public void ChangeUserPassword(string token, UserPasswordChange userPassswordChange);
 
-        public bool SavePasswordFile(string token, PasswordFile pwdFileContent);
+        public void SavePasswordFile(string token, PasswordFile pwdFileContent);
 
         public string GetEncodedPasswordFile(string token);
 
