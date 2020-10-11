@@ -46,7 +46,7 @@ namespace APIServer.PwdMan
 
         private readonly INotificationService notificationService;
 
-        private readonly Dictionary<string, string> totpTokens = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> totpKeys = new Dictionary<string, string>();
 
         public PwdManService(
             IConfiguration configuration,
@@ -129,8 +129,8 @@ namespace APIServer.PwdMan
                         {
                             if (string.IsNullOrEmpty(user.Email)) throw new UnauthorizedException();
                             var pwdgen = new PwdGen { Length = 28 };
-                            totpTokens[user.Name] = pwdgen.Generate();
-                            var totp = TOTP.Generate(totpTokens[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            totpKeys[user.Name] = pwdgen.Generate();
+                            var totp = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
                             var subject = $"Password Manager Bestätigungscode: {totp}";
                             notificationService.SendToAsync(user.Email, subject, totp);
                         }
@@ -174,9 +174,9 @@ namespace APIServer.PwdMan
                     {
                         var users = ReadUsers(opt.UsersFile);
                         var user = users.Find((u) => u.Name == claim.Value);
-                        if (user != null && user.Requires2FA && totpTokens.ContainsKey(user.Name))
+                        if (user != null && user.Requires2FA && totpKeys.ContainsKey(user.Name))
                         {
-                            var totp = TOTP.Generate(totpTokens[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            var totp = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
                             var subject = $"Password Manager Bestätigungscode: {totp}";
                             notificationService.SendToAsync(user.Email, subject, totp);
                             return;
@@ -203,12 +203,12 @@ namespace APIServer.PwdMan
                     {
                         var users = ReadUsers(opt.UsersFile);
                         var user = users.Find((u) => u.Name == claim.Value);
-                        if (user != null && totpTokens.ContainsKey(user.Name))
+                        if (user != null && totpKeys.ContainsKey(user.Name))
                         {
-                            var validTOTP = TOTP.Generate(totpTokens[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            var validTOTP = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
                             if (totp == validTOTP) // verify pass 2
                             {
-                                totpTokens.Remove(user.Name);
+                                totpKeys.Remove(user.Name);
                                 return GenerateToken(user.Name, opt, false);
                             }
                             throw new PwdManInvalidArgumentException("Der Bestätigungscode ist nicht korrekt.");
