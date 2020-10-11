@@ -23,6 +23,8 @@ namespace APIServer.PwdMan
     {
         public TokenConfig TokenConfig { get; set; }
 
+        public TOTPConfig TOTPConfig { get; set; }
+
         public string UsersFile { get; set; }
 
         public string PasswordFilePattern { get; set; }

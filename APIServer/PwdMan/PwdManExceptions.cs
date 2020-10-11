@@ -27,6 +27,14 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class Requires2FAException : APIException
+    {
+        public Requires2FAException() :
+            base("Die 2-Phasen-Überprüfung wurde noch nicht abgeschlossen.", 404)
+        {
+        }
+    }
+
     public class InvalidTokenException : APIException
     {
         public InvalidTokenException() :
@@ -34,6 +42,7 @@ namespace APIServer.PwdMan
         {
         }
     }
+
     public class UserNotAllowedException : APIException
     {
         public UserNotAllowedException() :
@@ -86,6 +95,13 @@ namespace APIServer.PwdMan
     {
         public PasswordFileNotFoundException() :
             base("Die Passworddatei wurde bisher nicht hochgeladen.", 400)
+        {
+        }
+    }
+
+    public class PwdManInvalidArgumentException : APIException
+    {
+        public PwdManInvalidArgumentException(string msg) : base(msg, 400)
         {
         }
     }

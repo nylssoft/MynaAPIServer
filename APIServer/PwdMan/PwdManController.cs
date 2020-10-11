@@ -35,9 +35,9 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/user")]
-        public IActionResult AddUser([FromBody] Authentication authentication)
+        public IActionResult AddUser([FromBody] UserCreation userCreation)
         {
-            PwdManService.AddUser(authentication);
+            PwdManService.AddUser(userCreation);
             return Ok();
         }
 
@@ -46,6 +46,13 @@ namespace APIServer.PwdMan
         public IActionResult Login([FromBody] Authentication authentication)
         {
             return new JsonResult(PwdManService.Authenticate(authentication));
+        }
+
+        [HttpPost]
+        [Route("api/pwdman/auth2")]
+        public IActionResult LoginPass2([FromBody] string totp)
+        {
+            return new JsonResult(PwdManService.AuthenticateTOTP(GetToken(), totp));
         }
 
         [HttpGet]

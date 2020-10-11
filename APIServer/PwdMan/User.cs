@@ -27,5 +27,8 @@ namespace APIServer.PwdMan
 
         public string PasswordFile { get; set; }
 
+        public string Email { get; set; }
+
+        public bool Requires2FA { get; set; }
     }
 }

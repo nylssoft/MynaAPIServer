@@ -19,9 +19,11 @@ namespace APIServer.PwdMan
 {
     public interface IPwdManService
     {
-        public void AddUser(Authentication authentication);
+        public void AddUser(UserCreation userCreation);
 
-        public string Authenticate(Authentication authenication);
+        public AuthenticationResult Authenticate(Authentication authenication);
+
+        public string AuthenticateTOTP(string token, string totp);
 
         public string GetSalt(string token);
 

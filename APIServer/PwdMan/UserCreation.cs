@@ -15,12 +15,16 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-namespace APIServer.Email
+namespace APIServer.PwdMan
 {
-    public interface INotificationService
+    public class UserCreation
     {
-        public void NotifyAsync(string subject, string plainTextBody);
+        public string Username { get; set; }
 
-        public void SendToAsync(string to, string subject, string plainTextBody);
+        public string Password { get; set; }
+
+        public string Email { get; set; }
+
+        public bool Requires2FA { get; set; }
     }
 }

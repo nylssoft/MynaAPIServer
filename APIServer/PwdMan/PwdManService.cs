@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.Email;
 using APIServer.PasswordGenerator;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Identity;
@@ -43,48 +44,56 @@ namespace APIServer.PwdMan
 
         private readonly Dictionary<string,LoginTry> loginFailures = new Dictionary<string, LoginTry>();
 
+        private readonly INotificationService notificationService;
+
         public PwdManService(
             IConfiguration configuration,
-            ILogger<PwdManService> logger)
+            ILogger<PwdManService> logger,
+            INotificationService notificationService)
         {
             Configuration = configuration;
             this.logger = logger;
+            this.notificationService = notificationService;
         }
 
-        public void AddUser(Authentication authentication)
+        public void AddUser(UserCreation userCreation)
         {
-            logger.LogDebug("Add user '{username}'...", authentication.Username);
+            logger.LogDebug("Add user '{username}'...", userCreation.Username);
+            if (string.IsNullOrEmpty(userCreation.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
+            if (userCreation.Requires2FA && string.IsNullOrEmpty(userCreation.Email)) throw new PwdManInvalidArgumentException("E-Mail-Addresse ungültig.");
             lock (mutex)
             {
                 var opt = GetOptions();
                 var users = ReadUsers(opt.UsersFile);
-                var user = users.Find((u) => u.Name == authentication.Username);
+                var user = users.Find((u) => u.Name == userCreation.Username);
                 if (user != null ||
                     opt.AllowedUsers == null ||
-                    !opt.AllowedUsers.Contains(authentication.Username))
+                    !opt.AllowedUsers.Contains(userCreation.Username))
                 {
                     throw new UserNotAllowedException();
                 }
-                if (!VerifyPasswordStrength(authentication.Password))
+                if (!VerifyPasswordStrength(userCreation.Password))
                 {
                     throw new PasswordNotStrongEnoughException();
                 }
                 var pwdgen = new PwdGen { Length = 12 };
                 var hasher = new PasswordHasher<string>();
-                var hash = hasher.HashPassword(authentication.Username, authentication.Password);
+                var hash = hasher.HashPassword(userCreation.Username, userCreation.Password);
                 user = new User
                 {
-                    Name = authentication.Username,
+                    Name = userCreation.Username,
                     PasswordFile = opt.PasswordFilePattern.Replace("{guid}", Guid.NewGuid().ToString()),
                     Salt = pwdgen.Generate(),
-                    PasswordHash = hash
+                    PasswordHash = hash,
+                    Email = userCreation.Email,
+                    Requires2FA = userCreation.Requires2FA
                 };
                 users.Add(user);
                 File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
             }
         }
 
-        public string Authenticate(Authentication authentication)
+        public AuthenticationResult Authenticate(Authentication authentication)
         {
             logger.LogDebug("Authenticate '{username}'...", authentication.Username);
             lock (mutex)
@@ -114,11 +123,18 @@ namespace APIServer.PwdMan
                         user.PasswordHash,
                         authentication.Password) == PasswordVerificationResult.Success)
                     {
-                        var token = GenerateToken(authentication.Username, opt);
+                        if (user.Requires2FA)
+                        {
+                            if (string.IsNullOrEmpty(user.Email)) throw new UnauthorizedException();
+                            var totp = TOTP.Generate(opt.TOTPConfig.Key, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            var subject = $"Password Manager Bestätigungscode: {totp}";
+                            notificationService.SendToAsync(user.Email, subject, totp);
+                        }
+                        var token = GenerateToken(authentication.Username, opt, user.Requires2FA);
                         if (token != null)
                         {
                             loginFailures.Remove(user.Name);
-                            return token;
+                            return new AuthenticationResult { Token = token, RequiresPass2 = user.Requires2FA };
                         }
                     }
                     logger.LogDebug("Invalid password specified.");
@@ -135,6 +151,37 @@ namespace APIServer.PwdMan
                     logger.LogDebug("Username not found.");
                 }
                 throw new UnauthorizedException();
+            }
+        }
+
+        public string AuthenticateTOTP(string token, string totp)
+        {
+            logger.LogDebug("Authenticate using Time-Based One-Time Password (TOTP)...");
+            lock (mutex)
+            {
+                var opt = GetOptions();
+                if (ValidateToken(token, opt)) // verify pass 1
+                {
+                    var validTOTP = TOTP.Generate(opt.TOTPConfig.Key, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                    if (totp == validTOTP) // verify pass 2
+                    {
+                        var tokenHandler = new JwtSecurityTokenHandler();
+                        var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+                        var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+                        if (claim != null)
+                        {
+                            var users = ReadUsers(opt.UsersFile);
+                            var user = users.Find((u) => u.Name == claim.Value);
+                            if (user != null)
+                            {
+                                return GenerateToken(user.Name, opt, false);
+                            }
+                        }
+                        logger.LogDebug("Claim type 'unique_name' not found.");
+                    }
+                    throw new PwdManInvalidArgumentException("Der Bestätigungscode ist nicht korrekt.");
+                }
+                throw new InvalidTokenException();
             }
         }
 
@@ -272,17 +319,23 @@ namespace APIServer.PwdMan
             return ret;
         }
 
-        private string GenerateToken(string username, PwdManOptions opt)
+        private string GenerateToken(string username, PwdManOptions opt, bool requires2FA)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(opt.TokenConfig.SignKey));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new Claim[] { new Claim(ClaimTypes.NameIdentifier, username) }),
+                NotBefore = DateTime.UtcNow,
                 Expires = DateTime.UtcNow.AddMinutes(opt.TokenConfig.ExpireMinutes),
                 Issuer = opt.TokenConfig.Issuer,
                 Audience = opt.TokenConfig.Audience,
                 SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature)
             };
+            tokenDescriptor.Claims = new Dictionary<string, object>();
+            tokenDescriptor.Claims[ClaimTypes.Name] = username;
+            if (requires2FA)
+            {
+                tokenDescriptor.Claims["amr"] = "2fa";
+            }
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
@@ -299,9 +352,11 @@ namespace APIServer.PwdMan
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
                     ValidateAudience = true,
+                    ValidateLifetime = true,
                     ValidIssuer = opt.TokenConfig.Issuer,
                     ValidAudience = opt.TokenConfig.Audience,
-                    IssuerSigningKey = securityKey
+                    IssuerSigningKey = securityKey,
+                    ClockSkew = TimeSpan.FromMinutes(1) // 1 minute tolerance for the expiration date
                 };
                 tokenHandler.ValidateToken(token, vaildateParams, out SecurityToken validatedToken);
             }
@@ -313,20 +368,29 @@ namespace APIServer.PwdMan
             return true;
         }
 
-        private User GetUserFromToken(string token)        
+        private User GetUserFromToken(string token)
         {
             var opt = GetOptions();
             if (ValidateToken(token, opt))
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "nameid");
+                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
                 if (claim != null)
                 {
                     var users = ReadUsers(opt.UsersFile);
-                    return users.Find((u) => u.Name == claim.Value);
+                    var user = users.Find((u) => u.Name == claim.Value);
+                    if (user != null)
+                    {
+                        if (user.Requires2FA)
+                        {
+                            var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+                            if (amr != null) throw new Requires2FAException();
+                        }
+                        return user;
+                    }
                 }
-                logger.LogDebug("Claim type 'nameid' not found.");
+                logger.LogDebug("Claim type 'unique_name' not found.");
             }
             throw new InvalidTokenException();
         }

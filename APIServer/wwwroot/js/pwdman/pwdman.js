@@ -6,6 +6,7 @@ var pwdman = (() => {
 
     let userPasswordPwd;
     let userNameInput;
+    let codeInput;
     let secretKeyPwd;
     let oldPasswordPwd;
     let newPasswordPwd;
@@ -16,6 +17,7 @@ var pwdman = (() => {
 
     let userName;
     let token;
+    let requiresPass2;
     let salt
     let cryptoKey;
     let changePwd;
@@ -38,6 +40,7 @@ var pwdman = (() => {
     const reset = (errmsg) => {
         localStorage.removeItem("pwdmantoken");
         localStorage.removeItem("pwdmanusername");
+        localStorage.removeItem("pwdmanrequirespass2");
         token = undefined;
         cryptoKey = undefined;
         userName = undefined;
@@ -58,11 +61,13 @@ var pwdman = (() => {
         })
             .then(response => {
                 if (response.ok) {
-                    response.json().then( t => {
+                    response.json().then(authResult => {
                         userName = userNameInput.value;
-                        token = t;
+                        token = authResult.token;
+                        requiresPass2 = authResult.requiresPass2;
                         localStorage.setItem("pwdmantoken", token);
                         localStorage.setItem("pwdmanusername", userName);
+                        localStorage.removeItem("pwdmanrequirespass2");
                         render();
                     });
                 }
@@ -73,6 +78,36 @@ var pwdman = (() => {
                     })
                 }
             })            
+            .catch(err => {
+                lastErrorMessage = err.message;
+                render();
+            });
+    };
+
+    const authenticatePass2 = () => {
+        lastErrorMessage = "";
+        fetch("api/pwdman/auth2", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+            body: JSON.stringify(codeInput.value)
+        })
+            .then(response => {
+                if (response.ok) {
+                    response.json().then(t => {
+                        token = t;
+                        requiresPass2 = false;
+                        localStorage.setItem("pwdmantoken", token);
+                        localStorage.removeItem("pwdmanrequirespass2");
+                        render();
+                    });
+                }
+                else {
+                    response.json().then(apierr => {
+                        lastErrorMessage = apierr.title;
+                        render();
+                    })
+                }
+            })
             .catch(err => {
                 lastErrorMessage = err.message;
                 render();
@@ -148,6 +183,15 @@ var pwdman = (() => {
         controls.createLabel(div, undefined, "Kennwort:");
         userPasswordPwd = controls.createPasswordField(div, "Kennwort", authenticate, undefined, 16, 100);
         userNameInput.focus();
+        renderCopyright(parent);
+    };
+
+    const renderPass2 = (parent) => {
+        renderHeader(parent, "Gibt den Best\u00E4tigungscode ein.");
+        let div = controls.createDiv(parent, "Codediv");
+        controls.createLabel(div, undefined, "Best\u00E4tigungscode:");
+        codeInput = controls.createInputField(div, "Best\u00E4tigungscode", authenticatePass2, undefined, 10, 10);
+        codeInput.focus();
         renderCopyright(parent);
     };
 
@@ -281,10 +325,14 @@ var pwdman = (() => {
         controls.removeAllChildren(document.body);
         if (!token || token.length == 0) {
             token = localStorage.getItem("pwdmantoken");
+            requiresPass2 = localStorage.getItem("pwdmanrequirespass2");
             userName = localStorage.getItem("pwdmanusername");
         }
         if (!token || token.length == 0) {
             renderAuthentication(document.body);
+        }
+        else if (requiresPass2 == true) {
+            renderPass2(document.body);
         }
         else if (changePwd) {
             renderChangePwd(document.body);

@@ -42,8 +42,15 @@ namespace APIServer.Email
         {
             var opt = GetOptions();
             if (!opt.IsConfigured()) return;
+            SendToAsync(opt.NotificationRecipientAddress, subject, plainTextBody);
+        }
+
+        public void SendToAsync(string to, string subject, string plainTextBody)
+        {
+            var opt = GetOptions();
+            if (!opt.IsConfigured()) return;
             var mm = new MailMessage();
-            mm.To.Add(new MailAddress(opt.NotificationRecipientAddress));
+            mm.To.Add(new MailAddress(to));
             mm.From = new MailAddress(opt.NotificationSenderAddress);
             mm.Subject = subject;
             mm.Body = plainTextBody;
