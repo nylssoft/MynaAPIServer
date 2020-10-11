@@ -25,6 +25,8 @@ namespace APIServer.PwdMan
 
         public string AuthenticateTOTP(string token, string totp);
 
+        public void SendTOTP(string token);
+
         public string GetSalt(string token);
 
         public void ChangeUserPassword(string token, UserPasswordChange userPassswordChange);

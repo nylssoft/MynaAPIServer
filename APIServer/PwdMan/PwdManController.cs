@@ -55,6 +55,14 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.AuthenticateTOTP(GetToken(), totp));
         }
 
+        [HttpPost]
+        [Route("api/pwdman/totp")]
+        public IActionResult SendTOTP()
+        {
+            PwdManService.SendTOTP(GetToken());
+            return Ok();
+        }
+
         [HttpGet]
         [Route("api/pwdman/salt")]
         public IActionResult GetSalt()

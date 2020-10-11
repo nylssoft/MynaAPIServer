@@ -46,6 +46,8 @@ namespace APIServer.PwdMan
 
         private readonly INotificationService notificationService;
 
+        private readonly Dictionary<string, string> totpTokens = new Dictionary<string, string>();
+
         public PwdManService(
             IConfiguration configuration,
             ILogger<PwdManService> logger,
@@ -126,7 +128,9 @@ namespace APIServer.PwdMan
                         if (user.Requires2FA)
                         {
                             if (string.IsNullOrEmpty(user.Email)) throw new UnauthorizedException();
-                            var totp = TOTP.Generate(opt.TOTPConfig.Key, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            var pwdgen = new PwdGen { Length = 28 };
+                            totpTokens[user.Name] = pwdgen.Generate();
+                            var totp = TOTP.Generate(totpTokens[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
                             var subject = $"Password Manager Bestätigungscode: {totp}";
                             notificationService.SendToAsync(user.Email, subject, totp);
                         }
@@ -154,6 +158,35 @@ namespace APIServer.PwdMan
             }
         }
 
+        public void SendTOTP(string token)
+        {
+            logger.LogDebug("Send TOTP...");
+            lock (mutex)
+            {
+                var opt = GetOptions();
+                if (ValidateToken(token, opt))
+                {
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+                    var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+                    var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+                    if (claim != null && amr?.Value == "2fa")
+                    {
+                        var users = ReadUsers(opt.UsersFile);
+                        var user = users.Find((u) => u.Name == claim.Value);
+                        if (user != null && user.Requires2FA && totpTokens.ContainsKey(user.Name))
+                        {
+                            var totp = TOTP.Generate(totpTokens[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            var subject = $"Password Manager Bestätigungscode: {totp}";
+                            notificationService.SendToAsync(user.Email, subject, totp);
+                            return;
+                        }
+                    }
+                }
+            }
+            throw new InvalidTokenException();
+        }
+
         public string AuthenticateTOTP(string token, string totp)
         {
             logger.LogDebug("Authenticate using Time-Based One-Time Password (TOTP)...");
@@ -162,24 +195,30 @@ namespace APIServer.PwdMan
                 var opt = GetOptions();
                 if (ValidateToken(token, opt)) // verify pass 1
                 {
-                    var validTOTP = TOTP.Generate(opt.TOTPConfig.Key, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-                    if (totp == validTOTP) // verify pass 2
+                    var tokenHandler = new JwtSecurityTokenHandler();
+                    var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+                    var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+                    var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+                    if (claim != null && amr?.Value == "2fa")
                     {
-                        var tokenHandler = new JwtSecurityTokenHandler();
-                        var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-                        var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
-                        if (claim != null)
+                        var users = ReadUsers(opt.UsersFile);
+                        var user = users.Find((u) => u.Name == claim.Value);
+                        if (user != null && totpTokens.ContainsKey(user.Name))
                         {
-                            var users = ReadUsers(opt.UsersFile);
-                            var user = users.Find((u) => u.Name == claim.Value);
-                            if (user != null)
+                            var validTOTP = TOTP.Generate(totpTokens[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            if (totp == validTOTP) // verify pass 2
                             {
+                                totpTokens.Remove(user.Name);
                                 return GenerateToken(user.Name, opt, false);
                             }
+                            throw new PwdManInvalidArgumentException("Der Bestätigungscode ist nicht korrekt.");
                         }
-                        logger.LogDebug("Claim type 'unique_name' not found.");
+                        logger.LogDebug("User not found or TOTP token already consumed.");
                     }
-                    throw new PwdManInvalidArgumentException("Der Bestätigungscode ist nicht korrekt.");
+                    else
+                    {
+                        logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
+                    }
                 }
                 throw new InvalidTokenException();
             }

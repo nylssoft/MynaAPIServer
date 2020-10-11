@@ -21,8 +21,6 @@ namespace APIServer.PwdMan
     {
         public int Digits { get; set; }
 
-        public string Key { get; set; }
-
         public int ValidSeconds { get; set; }
     }
 }

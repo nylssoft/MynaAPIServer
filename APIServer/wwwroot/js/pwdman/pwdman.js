@@ -23,7 +23,7 @@ var pwdman = (() => {
     let changePwd;
     let lastErrorMessage;
 
-    let version = "1.0.0";
+    let version = "1.0.1";
 
     // helper
 
@@ -67,7 +67,12 @@ var pwdman = (() => {
                         requiresPass2 = authResult.requiresPass2;
                         localStorage.setItem("pwdmantoken", token);
                         localStorage.setItem("pwdmanusername", userName);
-                        localStorage.removeItem("pwdmanrequirespass2");
+                        if (requiresPass2) {
+                            localStorage.setItem("pwdmanrequirespass2", "true");
+                        }
+                        else {
+                            localStorage.removeItem("pwdmanrequirespass2");
+                        }
                         render();
                     });
                 }
@@ -188,10 +193,33 @@ var pwdman = (() => {
 
     const renderPass2 = (parent) => {
         renderHeader(parent, "Gibt den Best\u00E4tigungscode ein.");
-        let div = controls.createDiv(parent, "Codediv");
+        let div = controls.createDiv(parent, "codediv");
         controls.createLabel(div, undefined, "Best\u00E4tigungscode:");
         codeInput = controls.createInputField(div, "Best\u00E4tigungscode", authenticatePass2, undefined, 10, 10);
         codeInput.focus();
+        controls.createButton(div, "Neuen Code verschicken",
+            () => {
+                lastErrorMessage = "";
+                fetch("api/pwdman/totp", {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            render();
+                        }
+                        else {
+                            response.json().then(apierror => {
+                                lastErrorMessage = apierror.title;
+                                render();
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        lastErrorMessage = err.message;
+                        render();
+                    });
+            }, "sendtotp", "button");
         renderCopyright(parent);
     };
 
@@ -323,9 +351,11 @@ var pwdman = (() => {
 
     const render = () => {
         controls.removeAllChildren(document.body);
+        if (requiresPass2 == undefined) {
+            requiresPass2 = localStorage.getItem("pwdmanrequirespass2") != undefined;
+        }
         if (!token || token.length == 0) {
             token = localStorage.getItem("pwdmantoken");
-            requiresPass2 = localStorage.getItem("pwdmanrequirespass2");
             userName = localStorage.getItem("pwdmanusername");
         }
         if (!token || token.length == 0) {
