@@ -7,11 +7,13 @@ var pwdman = (() => {
     let userPasswordPwd;
     let userNameInput;
     let codeInput;
+    let filterInput;
     let secretKeyPwd;
     let oldPasswordPwd;
     let newPasswordPwd;
     let confirmPasswordPwd;
     let errorDiv;
+    let pwdItemsDiv;
 
     // state
 
@@ -23,7 +25,7 @@ var pwdman = (() => {
     let changePwd;
     let lastErrorMessage;
 
-    let version = "1.0.1";
+    let version = "1.0.2";
 
     // helper
 
@@ -37,10 +39,34 @@ var pwdman = (() => {
         return ret;
     };
 
+    const getHostFromUrl = (urlstr) => {
+        urlstr = urlstr.toLowerCase();
+        if (!urlstr.startsWith("http:") && !urlstr.startsWith("https:")) {
+            urlstr = `https://${urlstr}`;
+        }
+        return new URL(urlstr).host;
+    };
+
+    const getState = () => {
+        let ret;
+        let str = localStorage.getItem("pwdman-state");
+        if (str && str.length > 0) {
+            ret = JSON.parse(str);
+        }
+        return ret;
+    };
+
+    const setState = (state) => {
+        if (state) {
+            localStorage.setItem("pwdman-state", JSON.stringify(state));
+        }
+        else {
+            localStorage.removeItem("pwdman-state");
+        }
+    };
+
     const reset = (errmsg) => {
-        localStorage.removeItem("pwdmantoken");
-        localStorage.removeItem("pwdmanusername");
-        localStorage.removeItem("pwdmanrequirespass2");
+        setState();
         token = undefined;
         cryptoKey = undefined;
         userName = undefined;
@@ -65,14 +91,7 @@ var pwdman = (() => {
                         userName = userNameInput.value;
                         token = authResult.token;
                         requiresPass2 = authResult.requiresPass2;
-                        localStorage.setItem("pwdmantoken", token);
-                        localStorage.setItem("pwdmanusername", userName);
-                        if (requiresPass2) {
-                            localStorage.setItem("pwdmanrequirespass2", "true");
-                        }
-                        else {
-                            localStorage.removeItem("pwdmanrequirespass2");
-                        }
+                        setState({ "token": token, "userName": userName, "requiresPass2": requiresPass2 });
                         render();
                     });
                 }
@@ -101,8 +120,10 @@ var pwdman = (() => {
                     response.json().then(t => {
                         token = t;
                         requiresPass2 = false;
-                        localStorage.setItem("pwdmantoken", token);
-                        localStorage.removeItem("pwdmanrequirespass2");
+                        let state = getState();
+                        state.token = token;
+                        state.requiresPass2 = requiresPass2;
+                        setState(state);
                         render();
                     });
                 }
@@ -171,13 +192,12 @@ var pwdman = (() => {
     };
 
     const renderHeader = (parent, txt) => {
-        controls.create(parent, "h1", undefined, "Passw\u00F6rter");
+        let header = "Passw\u00F6rter";
         if (userName && userName.length > 0) {
-            controls.create(parent, "p", undefined, `Hallo ${userName}! ${txt}`);
+            header += ` f\u00FCr ${userName}`;
         }
-        else {
-            controls.create(parent, "p", undefined, txt);
-        }
+        controls.create(parent, "h1", undefined, header);
+        controls.create(parent, "p", undefined, txt);
     };
 
     const renderAuthentication = (parent) => {
@@ -188,6 +208,7 @@ var pwdman = (() => {
         controls.createLabel(div, undefined, "Kennwort:");
         userPasswordPwd = controls.createPasswordField(div, "Kennwort", authenticate, undefined, 16, 100);
         userNameInput.focus();
+        controls.createButton(div, "Anmelden", authenticate, "login", "button");
         renderCopyright(parent);
     };
 
@@ -197,7 +218,8 @@ var pwdman = (() => {
         controls.createLabel(div, undefined, "Best\u00E4tigungscode:");
         codeInput = controls.createInputField(div, "Best\u00E4tigungscode", authenticatePass2, undefined, 10, 10);
         codeInput.focus();
-        controls.createButton(div, "Neuen Code verschicken",
+        controls.createButton(div, "Best\u00E4tigen", authenticatePass2, "confirmtotp", "button");
+        controls.createButton(div, "Neuen Code anfordern",
             () => {
                 lastErrorMessage = "";
                 fetch("api/pwdman/totp", {
@@ -279,6 +301,7 @@ var pwdman = (() => {
         controls.createLabel(div, undefined, "Geheimer Schl\u00FCssel:");
         secretKeyPwd = controls.createPasswordField(div, "Geheimer Schluessel", setCryptoKey, undefined, 32, 100);
         secretKeyPwd.focus();
+        controls.createButton(div, "Dekodieren", setCryptoKey, "decode", "button");
         renderCopyright(parent);
     };
 
@@ -314,49 +337,75 @@ var pwdman = (() => {
             }
         });
     };
-
-    const renderPasswordItems = (parent, pwdItems) => {
-        renderHeader(parent, "Folgende Passw\u00F6rter stehen zur Verf\u00FCgung:");
-        let div = controls.createDiv(parent, "pwditemsdiv");
-        let table = controls.create(div, "table");
+    
+    const renderPasswordTable = (parent, pwdItems) => {
+        controls.removeAllChildren(parent);
+        let table = controls.create(parent, "table");
         let thead = controls.create(table, "thead");
         let thr = controls.create(thead, "tr");
         controls.create(thr, "th", undefined, "Name");
-        controls.create(thr, "th", undefined, "Website");
         controls.create(thr, "th", undefined, "Login");
         controls.create(thr, "th", undefined, "Passwort");
         controls.create(thr, "th", undefined, "Beschreibung");
         let tbody = controls.create(table, "tbody");
         pwdItems.forEach(pwdItem => {
             let tr = controls.create(tbody, "tr");
-            controls.create(tr, "td", undefined, pwdItem.Name);
-            let tdwebsite = controls.create(tr, "td");
+            let tdname = controls.create(tr, "td");
             if (pwdItem.Url.length > 0) {
+                let host = getHostFromUrl(pwdItem.Url);
+                controls.createImg(tdname, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`);
                 let url = pwdItem.Url;
                 if (url.indexOf(":") == -1) {
                     url = `https://${url}`;
                 }
-                let imgopen = controls.createImg(tdwebsite, undefined, 32, 32, "/images/pwdman/homepage.png");
-                imgopen.title = url;
-                imgopen.addEventListener("click", () => {
-                    window.open(url, "_blank", "noopener=yes,noreferrer=yes");
-                });
+                controls.createA(tdname, undefined, url, pwdItem.Name,
+                    () => window.open(url, "_blank", "noopener=yes,noreferrer=yes"));
+            }
+            else {
+                controls.create(tdname, "span", undefined, pwdItem.Name);
             }
             renderPasswordItem(controls.create(tr, "td"), pwdItem.Login, "Login");
             renderPasswordItem(controls.create(tr, "td"), pwdItem.Password, "Passwort", true);
             renderPasswordItem(controls.create(tr, "td"), pwdItem.Description, "Beschreibung");
         });
+    };
+
+    const renderPasswordItems = (parent, pwdItems) => {
+        renderHeader(parent, "Folgende Passw\u00F6rter stehen zur Verf\u00FCgung:");
+        let div = controls.createDiv(parent);
+        controls.createLabel(div, undefined, "Filter:");
+        filterInput = controls.createInputField(div, "Filter", () => {
+            let v = filterInput.value.toLowerCase();
+            if (v.length > 0) {
+                let filteredItems = [];
+                pwdItems.forEach(pwdItem => {
+                    if (pwdItem.Name.toLowerCase().startsWith(v)) {
+                        filteredItems.push(pwdItem);
+                    }
+                });
+                renderPasswordTable(pwdItemsDiv, filteredItems);
+            }
+            else {
+                renderPasswordTable(pwdItemsDiv, pwdItems);
+            }
+        }, undefined, 32, 100);
+        filterInput.focus();
+        pwdItemsDiv = controls.createDiv(parent, "pwditemsdiv");        
+        renderPasswordTable(pwdItemsDiv, pwdItems);
         renderCopyright(parent);
     };
 
     const render = () => {
         controls.removeAllChildren(document.body);
-        if (requiresPass2 == undefined) {
-            requiresPass2 = localStorage.getItem("pwdmanrequirespass2") != undefined;
-        }
-        if (!token || token.length == 0) {
-            token = localStorage.getItem("pwdmantoken");
-            userName = localStorage.getItem("pwdmanusername");
+        let state = getState();
+        if (state) {
+            if (requiresPass2 == undefined) {
+                requiresPass2 = state.requiresPass2;
+            }
+            if (!token || token.length == 0) {
+                token = state.token;
+                userName = state.userName;
+            }
         }
         if (!token || token.length == 0) {
             renderAuthentication(document.body);
