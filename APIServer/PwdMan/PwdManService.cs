@@ -127,12 +127,7 @@ namespace APIServer.PwdMan
                     {
                         if (user.Requires2FA)
                         {
-                            if (string.IsNullOrEmpty(user.Email)) throw new UnauthorizedException();
-                            var pwdgen = new PwdGen { Length = 28 };
-                            totpKeys[user.Name] = pwdgen.Generate();
-                            var totp = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-                            var subject = $"Password Manager Bestätigungscode: {totp}";
-                            notificationService.SendToAsync(user.Email, subject, totp);
+                            Send2FAEmail(user, opt);
                         }
                         var token = GenerateToken(authentication.Username, opt, user.Requires2FA);
                         if (token != null)
@@ -174,11 +169,9 @@ namespace APIServer.PwdMan
                     {
                         var users = ReadUsers(opt.UsersFile);
                         var user = users.Find((u) => u.Name == claim.Value);
-                        if (user != null && user.Requires2FA && totpKeys.ContainsKey(user.Name))
+                        if (user != null && user.Requires2FA)
                         {
-                            var totp = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-                            var subject = $"Password Manager Bestätigungscode: {totp}";
-                            notificationService.SendToAsync(user.Email, subject, totp);
+                            Send2FAEmail(user, opt);
                             return;
                         }
                     }
@@ -205,20 +198,23 @@ namespace APIServer.PwdMan
                         var user = users.Find((u) => u.Name == claim.Value);
                         if (user != null && totpKeys.ContainsKey(user.Name))
                         {
-                            var validTOTP = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            long utcNowSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                            var validTOTP = TOTP.Generate(utcNowSeconds, totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            if (validTOTP != totp)
+                            {
+                                utcNowSeconds -= opt.TOTPConfig.ValidSeconds;
+                                validTOTP = TOTP.Generate(utcNowSeconds, totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            }
+                            totpKeys.Remove(user.Name);
                             if (totp == validTOTP) // verify pass 2
                             {
-                                totpKeys.Remove(user.Name);
                                 return GenerateToken(user.Name, opt, false);
                             }
-                            throw new PwdManInvalidArgumentException("Der Bestätigungscode ist nicht korrekt.");
                         }
                         logger.LogDebug("User not found or TOTP token already consumed.");
+                        throw new PwdManInvalidArgumentException("Der Sicherheitscode ist nicht korrekt.");
                     }
-                    else
-                    {
-                        logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
-                    }
+                    logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
                 }
                 throw new InvalidTokenException();
             }
@@ -309,6 +305,19 @@ namespace APIServer.PwdMan
         }
 
         // --- private
+
+        private void Send2FAEmail(User user, PwdManOptions opt)
+        {
+            if (string.IsNullOrEmpty(user.Email)) throw new UnauthorizedException();
+            var pwdgen = new PwdGen { Length = 28 };
+            totpKeys[user.Name] = pwdgen.Generate();
+            var totp = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+            var subject = $"Myna Online 2-Schritt-Verifizierung";
+            var body =
+                $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds} Sekunden gültig. " +
+                "In diesem Zeit kann er genau 1 Mal verwendet werden.";
+            notificationService.SendToAsync(user.Email, subject, body);
+        }
 
         private bool VerifyPasswordStrength(string pwd)
         {

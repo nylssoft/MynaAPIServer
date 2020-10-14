@@ -27,9 +27,14 @@ namespace APIServer.PwdMan
     {
         public static string Generate(string totpKey, int digits, int validSeconds)
         {
+            return Generate(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), totpKey, digits, validSeconds);
+        }
+
+        public static string Generate(long unixTimeSeconds, string totpKey, int digits, int validSeconds)
+        {
             var privateKey = Encoding.UTF8.GetBytes(totpKey);
-            long unixtime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / validSeconds;
-            byte[] msg = new BigInteger(unixtime).ToByteArray(isBigEndian: true);
+            long msgtime = unixTimeSeconds / validSeconds;
+            byte[] msg = new BigInteger(msgtime).ToByteArray(isBigEndian: true);
             byte[] hash = GetHMACSHA256(privateKey, msg);
             int offset = hash[^1] & 0xf;
             int binary =

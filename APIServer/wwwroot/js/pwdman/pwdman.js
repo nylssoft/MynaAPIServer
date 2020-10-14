@@ -25,7 +25,7 @@ var pwdman = (() => {
     let changePwd;
     let lastErrorMessage;
 
-    let version = "1.0.2";
+    let version = "1.0.3";
 
     // helper
 
@@ -192,16 +192,13 @@ var pwdman = (() => {
     };
 
     const renderHeader = (parent, txt) => {
-        let header = "Passw\u00F6rter";
-        if (userName && userName.length > 0) {
-            header += ` f\u00FCr ${userName}`;
-        }
-        controls.create(parent, "h1", undefined, header);
+        controls.create(parent, "h1", undefined, `Password Manager f\u00FCr ${userName}`);
         controls.create(parent, "p", undefined, txt);
     };
 
     const renderAuthentication = (parent) => {
-        renderHeader(parent, "Melde Dich mit Benutzernamen und Passwort an.");
+        controls.create(parent, "h1", undefined, "Anmelden");
+        controls.create(parent, "p", undefined, "Melde Dich mit Benutzernamen und Passwort an.");
         let div = controls.createDiv(parent, "logindiv");
         controls.createLabel(div, undefined, "Benutzer:");
         userNameInput = controls.createInputField(div, "Benutzer", () => userPasswordPwd.focus(), undefined, 16, 100);
@@ -209,16 +206,18 @@ var pwdman = (() => {
         userPasswordPwd = controls.createPasswordField(div, "Kennwort", authenticate, undefined, 16, 100);
         userNameInput.focus();
         controls.createButton(div, "Anmelden", authenticate, "login", "button");
-        renderCopyright(parent);
     };
 
     const renderPass2 = (parent) => {
-        renderHeader(parent, "Gibt den Best\u00E4tigungscode ein.");
+        controls.create(parent, "h1", undefined, "Anmelden");
+        controls.create(parent, "p", undefined, "Gibt den Sicherheitsscode f\u00FCr die Zwei-Schritt-Verifizierung ein. " +
+            "Der Code wurde per E-Mail an Dich gesendet. " +
+            "Er ist nur eine begrenzte Zeit g\u00FCltig.");
         let div = controls.createDiv(parent, "codediv");
-        controls.createLabel(div, undefined, "Best\u00E4tigungscode:");
-        codeInput = controls.createInputField(div, "Best\u00E4tigungscode", authenticatePass2, undefined, 10, 10);
+        controls.createLabel(div, undefined, "Sicherheitsscode:");
+        codeInput = controls.createInputField(div, "Sicherheitsscode", authenticatePass2, undefined, 10, 10);
         codeInput.focus();
-        controls.createButton(div, "Best\u00E4tigen", authenticatePass2, "confirmtotp", "button");
+        controls.createButton(div, "Anmelden", authenticatePass2, "confirmtotp", "button");
         controls.createButton(div, "Neuen Code anfordern",
             () => {
                 lastErrorMessage = "";
@@ -374,7 +373,8 @@ var pwdman = (() => {
         renderHeader(parent, "Folgende Passw\u00F6rter stehen zur Verf\u00FCgung:");
         let div = controls.createDiv(parent);
         controls.createLabel(div, undefined, "Filter:");
-        filterInput = controls.createInputField(div, "Filter", () => {
+        filterInput = controls.createInputField(div, "Filter", undefined, undefined, 32, 100);
+        filterInput.addEventListener("input", () => {
             let v = filterInput.value.toLowerCase();
             if (v.length > 0) {
                 let filteredItems = [];
@@ -388,7 +388,7 @@ var pwdman = (() => {
             else {
                 renderPasswordTable(pwdItemsDiv, pwdItems);
             }
-        }, undefined, 32, 100);
+        });
         filterInput.focus();
         pwdItemsDiv = controls.createDiv(parent, "pwditemsdiv");        
         renderPasswordTable(pwdItemsDiv, pwdItems);
