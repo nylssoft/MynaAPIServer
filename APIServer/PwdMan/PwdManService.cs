@@ -212,7 +212,7 @@ namespace APIServer.PwdMan
                             }
                         }
                         logger.LogDebug("User not found or TOTP token already consumed.");
-                        throw new PwdManInvalidArgumentException("Der Sicherheitscode ist nicht korrekt.");
+                        throw new PwdManInvalidArgumentException("Der Sicherheitscode ist abgelaufen. Fordere einen neuen Code an.");
                     }
                     logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
                 }
