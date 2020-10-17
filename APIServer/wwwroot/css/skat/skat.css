@@ -433,3 +433,72 @@ body {
     background-color: #008CBA;
     color: darkblue;
 }
+
+@media (max-width: 480px) {
+    .layout-right {
+        margin: 0;
+        bottom: 10pt;
+        width: 250pt;
+        right: 10pt;
+    }
+    .chat-input {
+        width: 230pt;
+    }
+    .username-input {
+        width: 100pt;
+    }
+    .ticket-password {
+        width: 100pt;
+    }
+    .left-section {
+        left: -20px;
+        top: 150px;
+    }
+    .left-section-ouvert {
+        left: -20px;
+        top: 300px;
+    }
+    .right-section {
+        right: 0;
+        top: 150px;
+    }
+    .right-section-ouvert {
+        right: 0;
+        top: 300px;
+    }
+    .player-img {
+        z-index: -2;
+    }
+    .card-img {
+        z-index: 2;
+    }
+    .container-radiobutton {
+        padding-left: 15px;
+        font-size: 11pt;
+    }
+    .checkmark-radiobutton {
+        height: 12px;
+        width: 12px;
+    }
+    .container-radiobutton .checkmark-radiobutton:after {
+        top: 5px;
+        left: 4px;
+        width: 3px;
+        height: 3px;
+    }
+    .container-checkbox {
+        padding-left: 17px;
+        font-size: 11pt;
+    }
+    .checkmark-checkbox {
+        height: 15px;
+        width: 15px;
+    }
+    .container-checkbox .checkmark-checkbox:after {
+        left: 5px;
+        top: 1px;
+        width: 3px;
+        height: 8px;
+        border-width: 0 3px 3px 0;
+    }
+}

@@ -18,7 +18,7 @@ var skatticket = (() => {
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/04.gif");
         controls.createLabel(divMain, undefined, "Ticket:");
-        passwordElem = controls.createPasswordField(divMain, "ticket", btnLogin_click);
+        passwordElem = controls.createPasswordField(divMain, "ticket", btnLogin_click, "ticket-password", 20, 32);
         passwordElem.focus();
         controls.createButton(divMain, "Anmelden", btnLogin_click);
     };

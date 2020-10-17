@@ -32,7 +32,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.1";
+    let version = "1.0.2";
 
     // helper
 
@@ -209,9 +209,8 @@ var skat = (() => {
     const renderLogin = (parent) => {
         controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
         controls.createLabel(parent, undefined, "Name:");
-        inputUsername = controls.createInputField(parent, "username", btnLogin_click);
+        inputUsername = controls.createInputField(parent, "username", btnLogin_click, "username-input", 20, 32);
         inputUsername.placeholder = "Name";
-        inputUsername.focus();
         controls.createButton(parent, "Anmelden", btnLogin_click);
         document.body.className = "active-background";
     };
@@ -236,7 +235,7 @@ var skat = (() => {
                 container.style = "white-space:nowrap;display:inline-block;";
             }
             let gif = show ? getCardImage(card) : "/images/skat/back.gif";
-            let img = controls.createImg(container, undefined, imgWidth, imgHeight, `${gif}`);
+            let img = controls.createImg(container, "card-img", imgWidth, imgHeight, `${gif}`);
             if (show) {
                 img.title = card.description;
                 if (action) {
@@ -269,7 +268,7 @@ var skat = (() => {
             else {
                 if (model.skatTable.stitch.length == 0) {
                     if (!model.skatTable.gameEnded) {
-                        controls.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
+                        controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png");
                     }
                 }
                 else {
@@ -294,7 +293,7 @@ var skat = (() => {
         else {
             if (model.skatTable.skat.length == 0) {
                 if (!model.skatTable.gameEnded) {
-                    controls.createImg(parent, undefined, imgWidth, imgHeight, "/images/skat/empty.png");
+                    controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png");
                 }
             }
             else {
@@ -457,7 +456,7 @@ var skat = (() => {
                 }
             }
             if (img) {
-                controls.createImg(elem, undefined, 65, 90, img);
+                controls.createImg(elem, "player-img", 65, 90, img);
             }
         }
         if (!model.skatTable.gamePlayer) {
@@ -601,9 +600,6 @@ var skat = (() => {
             imgMessage.title = "Chat ausblenden";
             sessionStorage.setItem("chatstate", currentChatState);
             divChat.style.visibility = "visible";
-            if (inputChatText) {
-                inputChatText.focus();
-            }
         }
         else {
             imgMessage.title = "Chat einblenden";

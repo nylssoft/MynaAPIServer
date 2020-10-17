@@ -22,7 +22,7 @@ var skatadmin = (() => {
         }
         else {
             controls.createLabel(body, undefined, "Passwort:");
-            passwordElem = controls.createPasswordField(body, "password", btnLogin_click);
+            passwordElem = controls.createPasswordField(body, "password", btnLogin_click, "ticket-password", 20, 32);
             passwordElem.focus();
             controls.createButton(body, "Anmelden", btnLogin_click);
         }
