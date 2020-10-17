@@ -22,7 +22,7 @@ var slideshow = (() => {
 
     const renderLinks = (parent) => {
         let div = controls.createDiv(parent);
-        controls.createA(div, "footer-link", "/skat.html", "Online Skat");
+        controls.createA(div, "footer-link", "/skat.html", "Online\u00A0Skat");
         controls.createA(div, "footer-link", "/tetris.html", "Tetris");
         controls.createA(div, "footer-link", "/pwdman.html", "Anmelden");
         controls.createA(div, "footer-link", "/downloads.html", "Downloads");

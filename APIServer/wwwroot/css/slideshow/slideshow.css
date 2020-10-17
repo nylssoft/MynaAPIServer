@@ -36,3 +36,15 @@
     bottom: 28pt;
     right: 0pt;
 }
+
+@media (max-width: 480px) {
+    .footer {
+        height: 350pt;
+    }
+    .slideshow-action {
+        bottom: 350pt;
+    }
+    .footer-link {
+        margin: 2pt;
+    }
+}
