@@ -422,7 +422,7 @@ var tetris = (() => {
     let inputUserName;
 
     // --- state
-    let version = "1.1.0";
+    let version = "1.2.0";
 
     let block;
     let nextBlock;
@@ -745,6 +745,7 @@ var tetris = (() => {
             dirtyNextBlock = true;
         }
         else {
+            highScoreDiv.style.visibility = "visible";
             gameOverDiv.textContent = `GAME OVER`;
             gameOverDiv.style.visibility = "visible";
             newGameButton.style.visibility = "visible";
@@ -755,7 +756,6 @@ var tetris = (() => {
                     highScores = h;
                     if (score > 0 && (highScores.length < 10 || highScores[9].score < score)) {
                         addHighScoreDiv.style.visibility = "visible";
-                        inputUserName.focus();
                     }
                 })
                 .catch((err) => console.error(err));
@@ -820,7 +820,7 @@ var tetris = (() => {
                     e.title = `${hs.score} Punkte. Level ${hs.level}. ${hs.lines} ${lstr}. Spiel vom ${dstr}.`;
                     pos++;
                 });
-                if (highScores.length > 0) {
+                if (highScores.length > 0 && state === StateEnums.GAMEOVER) {
                     highScoreDiv.style.visibility = "visible";
                 }
             })
@@ -829,6 +829,7 @@ var tetris = (() => {
 
     const renderHighScores = (parent) => {
         highScoreDiv = controls.createDiv(parent, "highscores");
+        highScoreDiv.style.visibility = "hidden";
         addHighScoreDiv = controls.createDiv(parent, "addhighscore");
         addHighScoreDiv.style.visibility = "hidden";
         let msg = controls.createDiv(addHighScoreDiv, undefined);
@@ -875,7 +876,8 @@ var tetris = (() => {
 
         newGameButton = controls.createButton(parent, "Neues Spiel", () => { render(); }, "newgame", "newgame");
         newGameButton.style.visibility = "hidden";
-
+        
+        controls.createDiv(parent, "arrow-div");
         let arrowDivLeft = controls.createDiv(parent, "arrow-left");
         createImage(arrowDivLeft, "/images/tetris/arrow-left-3.png", 32, "ArrowLeft");
         let arrowDivRight = controls.createDiv(parent, "arrow-right");
@@ -895,10 +897,6 @@ var tetris = (() => {
     };
 
     const render = () => {
-
-        pixelPerField = 24;
-        borderWidth = 3;
-
         playground = new Playground(10, 20);
 
         colorMap = {}
@@ -999,6 +997,14 @@ var tetris = (() => {
     };
 
     const init = (sm) => {
+        if (window.matchMedia('(max-width: 480px)').matches) {
+            pixelPerField = 18;
+            borderWidth = 2;
+        }
+        else {
+            pixelPerField = 24;
+            borderWidth = 3;
+        }
         initBackgroundPictures(sm.pictures);
         initKeyDownEvent();
         render();
