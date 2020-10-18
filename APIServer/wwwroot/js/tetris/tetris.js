@@ -422,7 +422,7 @@ var tetris = (() => {
     let inputUserName;
 
     // --- state
-    let version = "1.2.0";
+    let version = "1.2.1";
 
     let block;
     let nextBlock;
@@ -745,7 +745,6 @@ var tetris = (() => {
             dirtyNextBlock = true;
         }
         else {
-            highScoreDiv.style.visibility = "visible";
             gameOverDiv.textContent = `GAME OVER`;
             gameOverDiv.style.visibility = "visible";
             newGameButton.style.visibility = "visible";
@@ -756,6 +755,9 @@ var tetris = (() => {
                     highScores = h;
                     if (score > 0 && (highScores.length < 10 || highScores[9].score < score)) {
                         addHighScoreDiv.style.visibility = "visible";
+                    }
+                    else {
+                        highScoreDiv.style.visibility = highScores.length > 0 ? "visible" : "hidden";
                     }
                 })
                 .catch((err) => console.error(err));
@@ -834,27 +836,7 @@ var tetris = (() => {
         addHighScoreDiv.style.visibility = "hidden";
         let msg = controls.createDiv(addHighScoreDiv, undefined);
         msg.textContent = "Gl\u00FCckwunsch! Du darfst Dich in die Bestenliste eintragen!";
-        inputUserName = controls.createInputField(addHighScoreDiv, "Name",
-            () => {
-                const name = inputUserName.value.trim();
-                if (name.length > 0) {
-                    fetch("api/tetris/highscore", {
-                        method: "POST",
-                        headers: {
-                            "Accept": "application/json",
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ "Name": name, "Score": score, "Lines": lines, "Level": level })
-                    })
-                        .then(response => response.json())
-                        .then(() => {
-                            addHighScoreDiv.style.visibility = "hidden";
-                            renderHighScoreEntries();
-                        })
-                        .catch((err) => console.error(err));
-                }
-            }
-            , undefined, 10, 10);
+        inputUserName = controls.createInputField(addHighScoreDiv, "Name", addHighScore, "username-input", 10, 10);
         inputUserName.placeholder = "Name";
         renderHighScoreEntries();
     };
@@ -969,6 +951,30 @@ var tetris = (() => {
 
         setBackgroundPicture();
     };
+
+    // --- callbacks
+
+    const addHighScore = () => {
+        const name = inputUserName.value.trim();
+        if (name.length > 0) {
+            fetch("api/tetris/highscore", {
+                method: "POST",
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ "Name": name, "Score": score, "Lines": lines, "Level": level })
+            })
+                .then(response => response.json())
+                .then(() => {
+                    addHighScoreDiv.style.visibility = "hidden";
+                    renderHighScoreEntries();
+                })
+                .catch((err) => console.error(err));
+        }
+    };
+
+    // --- initialization
 
     const initKeyDownEvent = () => {
         document.addEventListener("keydown", e => {

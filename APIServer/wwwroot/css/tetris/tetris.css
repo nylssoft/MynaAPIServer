@@ -113,7 +113,7 @@ input {
     z-index: 1;
     background-color: black;
     color: lightgreen;
-    border-color: lightgreen;
+    border: 2px solid lightgreen;
     padding: 10pt;
 }
 
@@ -139,7 +139,7 @@ a {
     .highscores {
         left: 30px;
         top: 80px;
-        width: 175px;
+        width: 190px;
         height: 230px;
         padding-left: 0px;
         z-index: 1;
@@ -148,7 +148,7 @@ a {
     .addhighscore {
         left: 30px;
         top: 80px;
-        width: 175px;
+        width: 190px;
         height: 230px;
         padding-left: 0px;
     }
@@ -213,5 +213,9 @@ a {
         top: 420px;
         padding: 0;
         font-size: 8pt;
+    }
+
+    .username-input {
+        width: 100pt;
     }
 }
