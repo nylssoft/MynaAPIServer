@@ -25,7 +25,7 @@ var pwdman = (() => {
     let changePwd;
     let lastErrorMessage;
 
-    let version = "1.0.3";
+    let version = "1.0.4";
 
     // helper
 
@@ -49,7 +49,7 @@ var pwdman = (() => {
 
     const getState = () => {
         let ret;
-        let str = localStorage.getItem("pwdman-state");
+        let str = window.sessionStorage.getItem("pwdman-state");
         if (str && str.length > 0) {
             ret = JSON.parse(str);
         }
@@ -58,10 +58,10 @@ var pwdman = (() => {
 
     const setState = (state) => {
         if (state) {
-            localStorage.setItem("pwdman-state", JSON.stringify(state));
+            window.sessionStorage.setItem("pwdman-state", JSON.stringify(state));
         }
         else {
-            localStorage.removeItem("pwdman-state");
+            window.sessionStorage.removeItem("pwdman-state");
         }
     };
 
@@ -113,7 +113,7 @@ var pwdman = (() => {
         fetch("api/pwdman/auth2", {
             method: "POST",
             headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-            body: JSON.stringify(codeInput.value)
+            body: JSON.stringify(codeInput.value.trim())
         })
             .then(response => {
                 if (response.ok) {
@@ -140,6 +140,64 @@ var pwdman = (() => {
             });
     };
 
+    const resendTOTP = () => {
+        lastErrorMessage = "";
+        fetch("api/pwdman/totp", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+        })
+            .then(response => {
+                if (response.ok) {
+                    render();
+                }
+                else {
+                    response.json().then(apierror => {
+                        lastErrorMessage = apierror.title;
+                        render();
+                    });
+                }
+            })
+            .catch(err => {
+                lastErrorMessage = err.message;
+                render();
+            });
+    };
+
+    const changePassword = () => {
+        if (newPasswordPwd.value != confirmPasswordPwd.value) {
+            errorDiv.textContent = "Die Best\u00E4tigung passt nicht mit dem Kennwort \u00FCberein.";
+            return;
+        }
+        lastErrorMessage = "";
+        fetch("api/pwdman/userpwd", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+            body: JSON.stringify({ "oldpassword": oldPasswordPwd.value, "newpassword": newPasswordPwd.value })
+        })
+            .then(response => {
+                if (response.ok) {
+                    changePwd = false;
+                    render();
+                }
+                else {
+                    response.json().then(apierror => {
+                        lastErrorMessage = apierror.title;
+                        render();
+                    });
+                }
+            })
+            .catch(err => {
+                lastErrorMessage = err.message;
+                render();
+            });
+    };
+
+    const cancelChangePwd = () => {
+        lastErrorMessage = "";
+        changePwd = false;
+        render();
+    };
+
     const setCryptoKey = () => {
         let encoded = new TextEncoder().encode(secretKeyPwd.value);
         crypto.subtle.importKey("raw", encoded, "PBKDF2", false, ["deriveKey"])
@@ -160,6 +218,22 @@ var pwdman = (() => {
             .catch(err => console.error(err));
     };
 
+    const filterItems = (pwdItems) => {
+        let v = filterInput.value.toLowerCase();
+        if (v.length > 0) {
+            let filteredItems = [];
+            pwdItems.forEach(pwdItem => {
+                if (pwdItem.Name.toLowerCase().startsWith(v)) {
+                    filteredItems.push(pwdItem);
+                }
+            });
+            renderPasswordTable(pwdItemsDiv, filteredItems);
+        }
+        else {
+            renderPasswordTable(pwdItemsDiv, pwdItems);
+        }
+    };
+
     const decodePassword = async (encodedPwd) => {
         let iv = hex2arr(encodedPwd.substr(0, 12 * 2));
         let data = hex2arr(encodedPwd.substr(12 * 2));
@@ -173,134 +247,102 @@ var pwdman = (() => {
 
     // rendering
 
-    const renderCopyright = (parent) => {
+    const renderError = (parent) => {
         errorDiv = controls.createDiv(parent, "error");
         if (lastErrorMessage) {
             errorDiv.textContent = lastErrorMessage;
         }
+    };
+
+    const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Online Password Manager ${version}. Copyright 2020 `);
+        controls.create(div, "span", "copyright", `Myna Password Reader ${version}. Copyright 2020 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten.`);
         if (token) {
-            controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "small-button");
+            let logoutDiv = controls.createDiv(parent);
+            controls.createButton(logoutDiv, "Abmelden", btnLogout_click, undefined, "small-button");
+            if (!changePwd) {
+                controls.createButton(logoutDiv, "Kennwort \u00E4ndern", btnChangePwd_click, undefined, "small-button");
+            }
         }
-        if (token && !changePwd) {
-            controls.createButton(div, "Kennwort \u00E4ndern", btnChangePwd_click, "ChangePwd", "small-button");
-        }
-    };
-
-    const renderHeader = (parent, txt) => {
-        controls.create(parent, "h1", undefined, `Password Manager f\u00FCr ${userName}`);
-        controls.create(parent, "p", undefined, txt);
     };
 
     const renderAuthentication = (parent) => {
         controls.create(parent, "h1", undefined, "Anmelden");
         controls.create(parent, "p", undefined, "Melde Dich mit Benutzernamen und Passwort an.");
-        let div = controls.createDiv(parent, "logindiv");
-        controls.createLabel(div, undefined, "Benutzer:");
-        userNameInput = controls.createInputField(div, "Benutzer", () => userPasswordPwd.focus(), undefined, 16, 100);
-        controls.createLabel(div, undefined, "Kennwort:");
-        userPasswordPwd = controls.createPasswordField(div, "Kennwort", authenticate, undefined, 16, 100);
-        userNameInput.focus();
-        controls.createButton(div, "Anmelden", authenticate, "login", "button");
+        let loginDiv = controls.createDiv(parent);
+        let userNameLabel = controls.createLabel(loginDiv, undefined, "Benutzer:");
+        userNameLabel.htmlFor = "username-id";
+        userNameInput = controls.createInputField(loginDiv, "Benutzer", () => userPasswordPwd.focus(), undefined, 16, 20);
+        userNameInput.id = "username-id";
+        let passwordDiv = controls.createDiv(parent);
+        let userPasswordLabel = controls.createLabel(passwordDiv, undefined, "Kennwort:");
+        userPasswordLabel.htmlFor = "userpwd-id";
+        userPasswordPwd = controls.createPasswordField(passwordDiv, "Kennwort", authenticate, undefined, 16, 30);
+        userPasswordPwd.id = "userpwd-id";
+        let buttonDiv = controls.createDiv(parent);
+        controls.createButton(buttonDiv, "Anmelden", authenticate, undefined, "button");
+        renderError(parent);
     };
 
     const renderPass2 = (parent) => {
         controls.create(parent, "h1", undefined, "Anmelden");
-        controls.create(parent, "p", undefined, "Gibt den Sicherheitsscode f\u00FCr die Zwei-Schritt-Verifizierung ein. " +
-            "Der Code wurde per E-Mail an Dich gesendet. " +
-            "Er ist nur eine begrenzte Zeit g\u00FCltig.");
-        let div = controls.createDiv(parent, "codediv");
-        controls.createLabel(div, undefined, "Sicherheitsscode:");
-        codeInput = controls.createInputField(div, "Sicherheitsscode", authenticatePass2, undefined, 10, 10);
-        codeInput.focus();
-        controls.createButton(div, "Anmelden", authenticatePass2, "confirmtotp", "button");
-        controls.createButton(div, "Neuen Code anfordern",
-            () => {
-                lastErrorMessage = "";
-                fetch("api/pwdman/totp", {
-                    method: "POST",
-                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            render();
-                        }
-                        else {
-                            response.json().then(apierror => {
-                                lastErrorMessage = apierror.title;
-                                render();
-                            });
-                        }
-                    })
-                    .catch(err => {
-                        lastErrorMessage = err.message;
-                        render();
-                    });
-            }, "sendtotp", "button");
-        renderCopyright(parent);
+        if (lastErrorMessage && lastErrorMessage.length > 0) {
+            renderError(parent);
+            let buttonResendDiv = controls.createDiv(parent);
+            controls.createButton(buttonResendDiv, "Neuen Code anfordern", resendTOTP, undefined, "button");
+        }
+        else {
+            controls.create(parent, "p", undefined, "Gib den Sicherheitsscode f\u00FCr die Zwei-Schritt-Verifizierung ein. " +
+                "Der Code wurde per E-Mail an Dich gesendet. " +
+                "Er ist nur eine begrenzte Zeit g\u00FCltig.");
+            let codeDiv = controls.createDiv(parent);
+            let codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitsscode:");
+            codeLabel.htmlFor = "securitycode-id";
+            codeInput = controls.createInputField(codeDiv, "Sicherheitsscode", authenticatePass2, undefined, 10, 10);
+            codeInput.id = "securitycode-id";
+            let buttonLoginDiv = controls.createDiv(parent);
+            controls.createButton(buttonLoginDiv, "Anmelden", authenticatePass2, undefined, "button");
+        }
     };
 
     const renderChangePwd = (parent) => {
-        renderHeader(parent, "Gibt Dein altes und neues Kennwort ein.");
-        let oldpwddiv = controls.createDiv(parent);
-        controls.createLabel(oldpwddiv, undefined, "Altes Kennwort:");
-        oldPasswordPwd = controls.createPasswordField(oldpwddiv, "Altes Kennwort", () => newPasswordPwd.focus(), undefined, 16, 100);
-        oldPasswordPwd.focus();
-        let newpwddiv = controls.createDiv(parent);
-        controls.createLabel(newpwddiv, undefined, "Neues Kennwort:");
-        newPasswordPwd = controls.createPasswordField(newpwddiv, "Neues Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
-        let confirmpwddiv = controls.createDiv(parent);
-        controls.createLabel(confirmpwddiv, undefined, "Best\u00E4tiges Kennwort:");
-        confirmPasswordPwd = controls.createPasswordField(confirmpwddiv, "Best\u00E4tiges Kennwort", () => { }, undefined, 16, 100);
-        let okcanceldiv = controls.createDiv(parent);
-        controls.createButton(okcanceldiv, "OK",
-            () => {
-                if (newPasswordPwd.value != confirmPasswordPwd.value) {
-                    errorDiv.textContent = "Die Best\u00E4tigung passt nicht mit dem Kennwort \u00FCberein.";
-                    return;
-                }
-                lastErrorMessage = "";
-                fetch("api/pwdman/userpwd", {
-                    method: "POST",
-                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                    body: JSON.stringify({ "oldpassword": oldPasswordPwd.value, "newpassword": newPasswordPwd.value})
-                })
-                    .then(response => {
-                        if (response.ok) {
-                            changePwd = false;
-                            render();
-                        }
-                        else {
-                            response.json().then(apierror => {
-                                lastErrorMessage = apierror.title;
-                                render();
-                            });
-                        }
-                    })
-                    .catch(err => {
-                        lastErrorMessage = err.message;
-                        render();
-                    });
-            }, "ok", "button");
-        controls.createButton(okcanceldiv, "Abbrechen",
-            () => {
-                changePwd = false;
-                render();
-            }, "cancel", "button");
-        renderCopyright(parent);
+        controls.create(parent, "h1", undefined, "Kennwort \u00E4ndern");
+        controls.create(parent, "p", undefined, "Gib Dein altes und neues Kennwort ein.");
+        let oldPwdDiv = controls.createDiv(parent);
+        let oldPwdLabel = controls.createLabel(oldPwdDiv, undefined, "Altes Kennwort:");
+        oldPwdLabel.htmlFor = "oldpwd-id";
+        oldPasswordPwd = controls.createPasswordField(oldPwdDiv, "Altes Kennwort", () => newPasswordPwd.focus(), undefined, 16, 100);
+        oldPasswordPwd.id = "oldpwd-id";
+        let newPwdDiv = controls.createDiv(parent);
+        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Neues Kennwort:");
+        newPwdLabel.htmlFor = "newpwd-id";
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, "Neues Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd.id = "newpwd-id";
+        let confirmPwdDiv = controls.createDiv(parent);
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Best\u00E4tiges Kennwort:");
+        confirmPwdLabel.htmlFor = "confirmpwd-id";
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Best\u00E4tiges Kennwort", undefined, undefined, 16, 100);
+        confirmPasswordPwd.id = "confirmpwd-id";
+        let okCancelDiv = controls.createDiv(parent);
+        controls.createButton(okCancelDiv, "OK", changePassword, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancelChangePwd, undefined, "button");
+        renderError(parent);
     };
 
     const renderSecretKey = (parent) => {
-        renderHeader(parent, "Gibt den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
-        let div = controls.createDiv(parent, "secretkeydiv");
-        controls.createLabel(div, undefined, "Geheimer Schl\u00FCssel:");
-        secretKeyPwd = controls.createPasswordField(div, "Geheimer Schluessel", setCryptoKey, undefined, 32, 100);
-        secretKeyPwd.focus();
-        controls.createButton(div, "Dekodieren", setCryptoKey, "decode", "button");
+        controls.create(parent, "h1", undefined, "Passw\u00F6rter dekodieren");
+        controls.create(parent, "p", undefined, "Gibt den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
+        let keyPwdDiv = controls.createDiv(parent);
+        let keyPwdLabel = controls.createLabel(keyPwdDiv, undefined, "Schl\u00FCssel:");
+        keyPwdLabel.htmlFor = "keypwd-id";
+        secretKeyPwd = controls.createPasswordField(keyPwdDiv, "Schl\u00FCssel", setCryptoKey, undefined, 32, 100);
+        secretKeyPwd.id = "keypwd-id";
+        let buttonDecodeDiv = controls.createDiv(parent);
+        controls.createButton(buttonDecodeDiv, "Dekodieren", setCryptoKey, undefined, "button");
+        renderError(parent);
         renderCopyright(parent);
     };
 
@@ -336,16 +378,49 @@ var pwdman = (() => {
             }
         });
     };
-    
+
+    const renderPasswordItemDetails = (parent, pwdItems, pwdItem) => {
+        controls.removeAllChildren(parent);
+        controls.create(parent, "h1", undefined, "Passwort");
+        let detailsNameDiv = controls.createDiv(parent);
+        controls.createLabel(detailsNameDiv, "details-label", "Name:");
+        if (pwdItem.Url.length > 0) {
+            let host = getHostFromUrl(pwdItem.Url);
+            controls.createImg(detailsNameDiv, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`);
+            let url = pwdItem.Url;
+            if (url.indexOf(":") == -1) {
+                url = `https://${url}`;
+            }
+            controls.createA(detailsNameDiv, undefined, url, pwdItem.Name,
+                () => window.open(url, "_blank", "noopener=yes,noreferrer=yes"));
+        }
+        else {
+            controls.create(detailsNameDiv, "span", undefined, pwdItem.Name);
+        }
+        if (pwdItem.Login.length) {
+            let detailsLoginDiv = controls.createDiv(parent);
+            controls.createLabel(detailsLoginDiv, "details-label", "Login:");
+            renderPasswordItem(detailsLoginDiv, pwdItem.Login, "Login");
+        }
+        let detailsPasswordDiv = controls.createDiv(parent);
+        controls.createLabel(detailsPasswordDiv, "details-label", "Passwort:");
+        renderPasswordItem(detailsPasswordDiv, pwdItem.Password, "Passwort", true);
+        if (pwdItem.Description.length > 0) {
+            let detailsDescriptionDiv = controls.createDiv(parent);
+            controls.createLabel(detailsDescriptionDiv, "details-label", "Beschreibung:");
+            renderPasswordItem(detailsDescriptionDiv, pwdItem.Description, "Beschreibung");
+        }
+        let buttonBackDiv = controls.createDiv(parent);
+        controls.createButton(buttonBackDiv, "Zur\u00FCck zur Liste", () => {
+            controls.removeAllChildren(parent);
+            renderPasswordItems(parent, pwdItems);
+        }, undefined, "button");
+        renderCopyright(parent);
+    };
+
     const renderPasswordTable = (parent, pwdItems) => {
         controls.removeAllChildren(parent);
         let table = controls.create(parent, "table");
-        let thead = controls.create(table, "thead");
-        let thr = controls.create(thead, "tr");
-        controls.create(thr, "th", undefined, "Name");
-        controls.create(thr, "th", undefined, "Login");
-        controls.create(thr, "th", undefined, "Passwort");
-        controls.create(thr, "th", undefined, "Beschreibung");
         let tbody = controls.create(table, "tbody");
         pwdItems.forEach(pwdItem => {
             let tr = controls.create(tbody, "tr");
@@ -353,44 +428,22 @@ var pwdman = (() => {
             if (pwdItem.Url.length > 0) {
                 let host = getHostFromUrl(pwdItem.Url);
                 controls.createImg(tdname, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`);
-                let url = pwdItem.Url;
-                if (url.indexOf(":") == -1) {
-                    url = `https://${url}`;
-                }
-                controls.createA(tdname, undefined, url, pwdItem.Name,
-                    () => window.open(url, "_blank", "noopener=yes,noreferrer=yes"));
             }
-            else {
-                controls.create(tdname, "span", undefined, pwdItem.Name);
-            }
-            renderPasswordItem(controls.create(tr, "td"), pwdItem.Login, "Login");
-            renderPasswordItem(controls.create(tr, "td"), pwdItem.Password, "Passwort", true);
-            renderPasswordItem(controls.create(tr, "td"), pwdItem.Description, "Beschreibung");
+            controls.createA(tdname, undefined, "#open", pwdItem.Name,
+                () => renderPasswordItemDetails(document.body, pwdItems, pwdItem));
         });
     };
 
     const renderPasswordItems = (parent, pwdItems) => {
-        renderHeader(parent, "Folgende Passw\u00F6rter stehen zur Verf\u00FCgung:");
-        let div = controls.createDiv(parent);
-        controls.createLabel(div, undefined, "Filter:");
-        filterInput = controls.createInputField(div, "Filter", undefined, undefined, 32, 100);
-        filterInput.addEventListener("input", () => {
-            let v = filterInput.value.toLowerCase();
-            if (v.length > 0) {
-                let filteredItems = [];
-                pwdItems.forEach(pwdItem => {
-                    if (pwdItem.Name.toLowerCase().startsWith(v)) {
-                        filteredItems.push(pwdItem);
-                    }
-                });
-                renderPasswordTable(pwdItemsDiv, filteredItems);
-            }
-            else {
-                renderPasswordTable(pwdItemsDiv, pwdItems);
-            }
-        });
-        filterInput.focus();
-        pwdItemsDiv = controls.createDiv(parent, "pwditemsdiv");        
+        controls.create(parent, "h1", undefined, "Passw\u00F6rter");
+        controls.create(parent, "p", undefined, "Gib ein Suchbegriff ein, um die Liste zu verkleinern.");
+        let filterDiv = controls.createDiv(parent);
+        let searchLabel = controls.createLabel(filterDiv, undefined, "Suche:");
+        searchLabel.htmlFor = "filter-id";
+        filterInput = controls.createInputField(filterDiv, "Suche", undefined, undefined, 20, 32);
+        filterInput.id = "filter-id";
+        filterInput.addEventListener("input", () => filterItems(pwdItems));
+        pwdItemsDiv = controls.createDiv(parent);
         renderPasswordTable(pwdItemsDiv, pwdItems);
         renderCopyright(parent);
     };
@@ -472,6 +525,7 @@ var pwdman = (() => {
     };
 
     const btnChangePwd_click = () => {
+        lastErrorMessage = "";
         changePwd = true;
         render();
     };
