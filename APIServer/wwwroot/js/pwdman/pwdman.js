@@ -227,7 +227,7 @@ var pwdman = (() => {
                     filteredItems.push(pwdItem);
                 }
             });
-            renderPasswordTable(pwdItemsDiv, filteredItems);
+            renderPasswordTable(pwdItemsDiv, pwdItems, filteredItems);
         }
         else {
             renderPasswordTable(pwdItemsDiv, pwdItems);
@@ -418,11 +418,12 @@ var pwdman = (() => {
         renderCopyright(parent);
     };
 
-    const renderPasswordTable = (parent, pwdItems) => {
+    const renderPasswordTable = (parent, pwdItems, filteredPwdItems) => {
         controls.removeAllChildren(parent);
         let table = controls.create(parent, "table");
         let tbody = controls.create(table, "tbody");
-        pwdItems.forEach(pwdItem => {
+        let items = filteredPwdItems ? filteredPwdItems : pwdItems;
+        items.forEach(pwdItem => {
             let tr = controls.create(tbody, "tr");
             let tdname = controls.create(tr, "td");
             if (pwdItem.Url.length > 0) {
