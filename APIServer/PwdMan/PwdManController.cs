@@ -41,6 +41,13 @@ namespace APIServer.PwdMan
             return Ok();
         }
 
+        [HttpGet]
+        [Route("api/pwdman/username")]
+        public IActionResult GetUsername()
+        {
+            return new JsonResult(PwdManService.GetUsername(GetToken()));
+        }
+
         [HttpPost]
         [Route("api/pwdman/auth")]
         public IActionResult Login([FromBody] Authentication authentication)
@@ -91,6 +98,13 @@ namespace APIServer.PwdMan
         public IActionResult GetPasswordFile()
         {
             return new JsonResult(PwdManService.GetEncodedPasswordFile(GetToken()));
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/fileinfo")]
+        public IActionResult HashPasswordFile()
+        {
+            return new JsonResult(PwdManService.HasPasswordFile(GetToken()));
         }
 
         // --- private

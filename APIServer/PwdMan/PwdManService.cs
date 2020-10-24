@@ -58,6 +58,24 @@ namespace APIServer.PwdMan
             this.notificationService = notificationService;
         }
 
+        public bool IsRegisteredUsername(string username)
+        {
+            logger.LogDebug("Check whether username '{username}' is registered...", username);
+            lock (mutex)
+            {
+                return ReadUsers(GetOptions().UsersFile).Find((u) => u.Name == username) != null;
+            }
+        }
+
+        public string GetUsername(string authenticationToken)
+        {
+            logger.LogDebug("Get current username...");
+            lock (mutex)
+            {
+                return GetUserFromToken(authenticationToken).Name;
+            }
+        }
+
         public void AddUser(UserCreation userCreation)
         {
             logger.LogDebug("Add user '{username}'...", userCreation.Username);
@@ -301,6 +319,16 @@ namespace APIServer.PwdMan
                 var user = GetUserFromToken(token);
                 if (!File.Exists(user.PasswordFile)) throw new PasswordFileNotFoundException();
                 return ConvertToHexString(File.ReadAllBytes(user.PasswordFile));
+            }
+        }
+
+        public bool HasPasswordFile(string authenticationToken)
+        {
+            logger.LogDebug("Has password file...");
+            lock (mutex)
+            {
+                var user = GetUserFromToken(authenticationToken);
+                return user.PasswordFile?.Length > 0 && File.Exists(user.PasswordFile);
             }
         }
 

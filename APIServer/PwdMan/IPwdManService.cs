@@ -19,6 +19,8 @@ namespace APIServer.PwdMan
 {
     public interface IPwdManService
     {
+        public bool IsRegisteredUsername(string username);
+
         public void AddUser(UserCreation userCreation);
 
         public AuthenticationResult Authenticate(Authentication authenication);
@@ -35,5 +37,8 @@ namespace APIServer.PwdMan
 
         public string GetEncodedPasswordFile(string token);
 
+        public bool HasPasswordFile(string authenticationToken);
+
+        public string GetUsername(string authenticationToken);
     }
 }
