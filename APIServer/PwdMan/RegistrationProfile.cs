@@ -17,7 +17,7 @@
 */
 namespace APIServer.PwdMan
 {
-    public class UserCreation
+    public class RegistrationProfile
     {
         public string Username { get; set; }
 
@@ -26,5 +26,7 @@ namespace APIServer.PwdMan
         public string Email { get; set; }
 
         public bool Requires2FA { get; set; }
+
+        public string Token { get; set; }
     }
 }

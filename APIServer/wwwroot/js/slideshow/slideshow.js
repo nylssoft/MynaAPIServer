@@ -81,6 +81,9 @@ var slideshow = (() => {
             controls.createA(div, "footer-link", "/pwdman.html", "Anmelden", () => {
                 window.location.href = "/pwdman.html?nexturl=" + encodeURI(window.location.href);
             });
+            controls.createA(div, "footer-link", "/pwdman.html", "Registrieren", () => {
+                window.location.href = "/pwdman.html?register&nexturl=" + encodeURI(window.location.href);
+            });
         }
         controls.createA(div, "footer-link", "/downloads.html", "Downloads");
         controls.createA(div, "footer-link", "/impressum.html", "Impressum");

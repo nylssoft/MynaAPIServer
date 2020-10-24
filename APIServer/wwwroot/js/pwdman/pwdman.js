@@ -14,19 +14,25 @@ var pwdman = (() => {
     let confirmPasswordPwd;
     let errorDiv;
     let pwdItemsDiv;
+    let emailInput;
+    let facCheckbox;
 
     // state
 
     let userName;
+    let userEmail;
     let token;
     let requiresPass2;
     let salt
     let cryptoKey;
-    let changePwd;
+    let actionChangePwd;
+    let actionRequestRegistration;
+    let actionRegister;
     let lastErrorMessage;
     let nexturl;
+    let successRegister;
 
-    let version = "1.0.5";
+    let version = "1.0.6";
 
     // helper
 
@@ -71,12 +77,14 @@ var pwdman = (() => {
         token = undefined;
         cryptoKey = undefined;
         userName = undefined;
-        changePwd = false;
+        actionChangePwd = false;
+        actionRequestRegistration = false;
+        actionRegister = false;
         lastErrorMessage = "";
         if (errmsg) {
             lastErrorMessage = errmsg;
         }
-        render();
+        renderPage();
     };
 
     const authenticate = () => {
@@ -93,19 +101,19 @@ var pwdman = (() => {
                         token = authResult.token;
                         requiresPass2 = authResult.requiresPass2;
                         setState({ "token": token, "userName": userName, "requiresPass2": requiresPass2 });
-                        render();
+                        renderPage();
                     });
                 }
                 else {
                     response.json().then(apierr => {
                         lastErrorMessage = apierr.title;
-                        render();
+                        renderPage();
                     })
                 }
             })            
             .catch(err => {
                 lastErrorMessage = err.message;
-                render();
+                renderPage();
             });
     };
 
@@ -125,19 +133,19 @@ var pwdman = (() => {
                         state.token = token;
                         state.requiresPass2 = requiresPass2;
                         setState(state);
-                        render();
+                        renderPage();
                     });
                 }
                 else {
                     response.json().then(apierr => {
                         lastErrorMessage = apierr.title;
-                        render();
+                        renderPage();
                     })
                 }
             })
             .catch(err => {
                 lastErrorMessage = err.message;
-                render();
+                renderPage();
             });
     };
 
@@ -149,18 +157,18 @@ var pwdman = (() => {
         })
             .then(response => {
                 if (response.ok) {
-                    render();
+                    renderPage();
                 }
                 else {
                     response.json().then(apierror => {
                         lastErrorMessage = apierror.title;
-                        render();
+                        renderPage();
                     });
                 }
             })
             .catch(err => {
                 lastErrorMessage = err.message;
-                render();
+                renderPage();
             });
     };
 
@@ -181,20 +189,20 @@ var pwdman = (() => {
                         window.location.replace(nexturl);
                     }
                     else {
-                        changePwd = false;
-                        render();
+                        actionChangePwd = false;
+                        renderPage();
                     }
                 }
                 else {
                     response.json().then(apierror => {
                         lastErrorMessage = apierror.title;
-                        render();
+                        renderPage();
                     });
                 }
             })
             .catch(err => {
                 lastErrorMessage = err.message;
-                render();
+                renderPage();
             });
     };
 
@@ -204,8 +212,95 @@ var pwdman = (() => {
             window.location.replace(nexturl);
         }
         else {
-            changePwd = false;
-            render();
+            actionChangePwd = false;
+            renderPage();
+        }
+    };
+
+    const requestRegistration = () => {
+        lastErrorMessage = "";
+        let email = emailInput.value;
+        if (email.trim().length == 0 || email.indexOf("@") <= 0 ) {
+            errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse.";
+            return;
+        }
+        fetch("api/pwdman/register", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify(email)
+        })
+            .then(response => response.json().then(val => {
+                if (response.ok) {
+                    if (val === true) {
+                        actionRequestRegistration = false;
+                        actionRegister = true;
+                        userEmail = email;
+                    }
+                    else {
+                        lastErrorMessage = `Die E-Mail-Adresse ${email} ist noch nicht freigeschaltet.` +
+                            " Du bekommst eine Antwort, sobald Deine Identit\u00E4t best\u00E4tigt wurde.";
+                    }
+                    renderPage();
+                }
+                else {
+                    errorDiv.textContent = val.title;
+                }
+            }))
+            .catch(err => errorDiv.textContent = err.message);
+    };
+
+    const register = () => {
+        lastErrorMessage = "";
+        if (userNameInput.value.trim().length == 0) {
+            errorDiv.textContent = "Der Benutzername fehlt.";
+            return;
+        }
+        if (codeInput.value.trim().length == 0) {
+            errorDiv.textContent = "Der Registrierungscode fehlt.";
+            return;
+        }
+        if (newPasswordPwd.value.length == 0) {
+            errorDiv.textContent = "Das Kennwort fehlt.";
+            return;
+        }
+        if (newPasswordPwd.value != confirmPasswordPwd.value) {
+            errorDiv.textContent = "Die Best\u00E4tigung passt nicht mit dem Kennwort \u00FCberein.";
+            return;
+        }
+        fetch("api/pwdman/profile", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({
+                "Username": userNameInput.value.trim(),
+                "Password": newPasswordPwd.value,
+                "Email": userEmail,
+                "Requires2FA": facCheckbox.checked,
+                "Token": codeInput.value.trim()
+            })
+        })
+            .then(response => {
+                if (response.ok) {
+                    successRegister = true;
+                    userName = userNameInput.value.trim();
+                    renderPage();
+                }
+                else {
+                    response.json().then(apierror => errorDiv.textContent = apierror.title);
+                }
+            })
+            .catch(err => errorDiv.textContent = err.message);
+    };
+
+    const cancelRegister = () => {
+        lastErrorMessage = "";
+        if (nexturl && nexturl.length > 0) {
+            window.location.replace(nexturl);
+        }
+        else {
+            actionRequestRegisteration = false;
+            actionRegister = false;
+            successRegister = false;
+            renderPage();
         }
     };
 
@@ -222,7 +317,7 @@ var pwdman = (() => {
                 crypto.subtle.deriveKey(algo, key, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])
                     .then(c => {
                         cryptoKey = c;
-                        render();
+                        renderPage();
                     })
                     .catch(err => console.error(err));
             })
@@ -346,6 +441,78 @@ var pwdman = (() => {
         renderCopyright(parent, "Portal");
     };
 
+    const renderRequestRegistration = (parent) => {
+        controls.create(parent, "h1", undefined, "Registrieren");
+        if (lastErrorMessage && lastErrorMessage.length > 0) {
+            renderError(parent);
+            let buttonOKDiv = controls.createDiv(parent);
+            controls.createButton(buttonOKDiv, "OK", cancelRegister, undefined, "button");
+            return;
+        }
+        controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse an. Wenn Sie freigeschaltet wurde, kannst Du Dich mit einem Benutzernamen registrieren.");
+        let emailDiv = controls.createDiv(parent);
+        let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
+        emailLabel.htmlFor = "email-id";
+        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", requestRegistration, undefined, 30, 80);
+        emailInput.id = "email-id";
+        emailInput.addEventListener("input", () => {
+            errorDiv.textContent = "";
+        });
+        let okCancelDiv = controls.createDiv(parent);
+        controls.createButton(okCancelDiv, "Weiter", requestRegistration, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancelRegister, undefined, "button");
+        renderError(parent);
+        renderCopyright(parent, "Portal");
+    };
+
+    const renderRegister = (parent) => {
+        controls.create(parent, "h1", undefined, "Registrieren");
+        if (lastErrorMessage && lastErrorMessage.length > 0) {
+            renderError(parent);
+            let buttonOKDiv = controls.createDiv(parent);
+            controls.createButton(buttonOKDiv, "OK", cancelRegister, undefined, "button");
+            return;
+        }
+        if (successRegister) {
+            controls.create(parent, "p", undefined,
+                `Die Registrierung war erfolgreich! Du kannst Dich jetzt mit dem Benutzernamen ${userName} anmelden.`);
+            let buttonOKDiv = controls.createDiv(parent);
+            controls.createButton(buttonOKDiv, "OK", cancelRegister, undefined, "button");
+            return;
+        }
+        controls.create(parent, "p", undefined,
+            "W\u00E4hle Deinen Benutzernamen, ein Kennwort und" +
+            " ob die Zwei-Schritt-Verifizierung aktiviert werden soll." +
+            ` Verwende den Registrierungscode, welcher Dir per E-Mail an ${userEmail} zugestellt wurde.`);
+        let userNameDiv = controls.createDiv(parent);
+        let nameNameLabel = controls.createLabel(userNameDiv, undefined, "Benutzername:");
+        nameNameLabel.htmlFor = "username-id";
+        userNameInput = controls.createInputField(userNameDiv, "Benutzername", () => newPasswordPwd.focus(), undefined, 16, 20);
+        userNameInput.id = "username-id";
+        let newPwdDiv = controls.createDiv(parent);
+        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Kennwort:");
+        newPwdLabel.htmlFor = "newpwd-id";
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, "Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd.id = "newpwd-id";
+        let confirmPwdDiv = controls.createDiv(parent);
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Best\u00E4tiges Kennwort:");
+        confirmPwdLabel.htmlFor = "confirmpwd-id";
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Best\u00E4tiges Kennwort", () => codeInput.focus(), undefined, 16, 100);
+        confirmPasswordPwd.id = "confirmpwd-id";
+        let facDiv = controls.createDiv(parent, "fac");
+        facCheckbox = controls.createCheckbox(facDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", true, undefined, false);
+        let codeDiv = controls.createDiv(parent);
+        let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
+        codeLabel.htmlFor = "code-id";
+        codeInput = controls.createInputField(codeDiv, "Registrierungscode", undefined, undefined, 10, 10);
+        codeInput.id = "code-id";
+        let okCancelDiv = controls.createDiv(parent);
+        controls.createButton(okCancelDiv, "Registrieren", register, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancelRegister, undefined, "button");
+        renderError(parent);
+        renderCopyright(parent, "Portal");
+    };
+
     const renderSecretKey = (parent) => {
         controls.create(parent, "h1", undefined, "Passw\u00F6rter dekodieren");
         controls.create(parent, "p", undefined, "Gib den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
@@ -463,19 +630,7 @@ var pwdman = (() => {
         renderCopyright(parent);
     };
 
-    const render = () => {
-        if (window.location.search.length > 0) {
-            let params = new URLSearchParams(window.location.search);
-            if (params.has("nexturl")) {
-                nexturl = params.get("nexturl");
-            }
-            if (params.has("username")) {
-                userName = params.get("username");
-            }
-            if (params.has("changepwd")) {
-                changePwd = true;
-            }
-        }        
+    const renderPage = () => {
         controls.removeAllChildren(document.body);
         let state = getState();
         if (state) {
@@ -487,13 +642,19 @@ var pwdman = (() => {
                 userName = state.userName;
             }
         }
-        if (!token || token.length == 0) {
+        if (actionRequestRegistration) {
+            renderRequestRegistration(document.body);
+        }
+        else if (actionRegister) {
+            renderRegister(document.body);
+        }
+        else if (!token || token.length == 0) {
             renderAuthentication(document.body);
         }
         else if (requiresPass2 == true) {
             renderPass2(document.body);
         }
-        else if (changePwd) {
+        else if (actionChangePwd) {
             renderChangePwd(document.body);
         }
         else if (nexturl && nexturl.length > 0) {
@@ -536,7 +697,7 @@ var pwdman = (() => {
                                 .catch(() => {
                                     lastErrorMessage = "Die Passwortdatei kann nicht entschl\u00FCsselt werden.";
                                     cryptoKey = undefined;
-                                    render();
+                                    renderPage();
                                 });
                         });
                     }
@@ -546,6 +707,26 @@ var pwdman = (() => {
                 })
                 .catch(err => reset(err.message));
         }
+    };
+
+    const render = () => {
+        if (window.location.search.length > 0) {
+            let params = new URLSearchParams(window.location.search);
+            if (params.has("nexturl")) {
+                nexturl = params.get("nexturl");
+            }
+            if (params.has("username")) {
+                userName = params.get("username");
+            }
+            if (params.has("changepwd")) {
+                actionChangePwd = true;
+            }
+            else if (params.has("register")) {
+                actionRequestRegistration = true;
+                actionRegister = false;
+            }
+        }
+        renderPage();
     };
 
     // --- public API

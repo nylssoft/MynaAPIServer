@@ -48,6 +48,8 @@ namespace APIServer.PwdMan
 
         private readonly Dictionary<string, string> totpKeys = new Dictionary<string, string>();
 
+        private DateTime? lastRegistrationRequest;
+
         public PwdManService(
             IConfiguration configuration,
             ILogger<PwdManService> logger,
@@ -67,46 +69,85 @@ namespace APIServer.PwdMan
             }
         }
 
-        public string GetUsername(string authenticationToken)
+        public bool IsRegisterAllowed(string email)
         {
-            logger.LogDebug("Get current username...");
-            lock (mutex)
-            {
-                return GetUserFromToken(authenticationToken).Name;
-            }
-        }
-
-        public void AddUser(UserCreation userCreation)
-        {
-            logger.LogDebug("Add user '{username}'...", userCreation.Username);
-            if (string.IsNullOrEmpty(userCreation.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
-            if (userCreation.Requires2FA && string.IsNullOrEmpty(userCreation.Email)) throw new PwdManInvalidArgumentException("E-Mail-Addresse ungültig.");
+            logger.LogDebug("Check whether email addresss '{email}' is allowed to register...", email);
+            email = email.ToLowerInvariant();
             lock (mutex)
             {
                 var opt = GetOptions();
-                var users = ReadUsers(opt.UsersFile);
-                var user = users.Find((u) => u.Name == userCreation.Username);
-                if (user != null ||
-                    opt.AllowedUsers == null ||
-                    !opt.AllowedUsers.Contains(userCreation.Username))
+                if (string.IsNullOrEmpty(opt.RegistrationEmail))
                 {
-                    throw new UserNotAllowedException();
+                    throw new PwdManInvalidArgumentException("Registrieren ist deaktiviert.");
                 }
-                if (!VerifyPasswordStrength(userCreation.Password))
+                bool userEmailExists = ReadUsers(opt.UsersFile).Find((u) => u.Email == email) != null;
+                if (userEmailExists)
+                {
+                    throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde bereits registriert.");
+                }
+                if (ReadRegistrations(opt.RegistrationsFile).Find((r) => r.Email == email) != null)
+                {
+                    return true;
+                }
+                // avoid spam emails, only one request in 5 minutes
+                if (lastRegistrationRequest != null)
+                {
+                    var min = (DateTime.UtcNow - lastRegistrationRequest.Value).TotalMinutes;
+                    if (min < 5)
+                    {
+                        throw new PwdManInvalidArgumentException("Registrieren ist z.Zt. nicht möglich. Versuche es später noch einmal.");
+                    }
+                }
+                var subject = "Myna Portal Registrierungsanfrage";
+                var body = $"Ein Benutzer möchte sich mit folgender Email-Adresse registrieren:\n\n{email}.";
+                notificationService.SendToAsync(opt.RegistrationEmail, subject, body);
+                lastRegistrationRequest = DateTime.UtcNow;
+            }
+            return false;
+        }
+
+        public void Register(RegistrationProfile registrationProfile)
+        {
+            logger.LogDebug("Register user '{username}', email '{email}...", registrationProfile.Username, registrationProfile.Email);
+            if (string.IsNullOrEmpty(registrationProfile.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
+            if (string.IsNullOrEmpty(registrationProfile.Email)) throw new PwdManInvalidArgumentException("E-Mail-Addresse ungültig.");
+            if (string.IsNullOrEmpty(registrationProfile.Token)) throw new PwdManInvalidArgumentException("Registrierungscode ist ungültig.");
+            lock (mutex)
+            {
+                var email = registrationProfile.Email.ToLowerInvariant();
+                var opt = GetOptions();
+                var registrations = ReadRegistrations(opt.RegistrationsFile);
+                var registration = registrations.Find((r) => r.Email == email);
+                if (registration == null || registration.Token != registrationProfile.Token)
+                {
+                    throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
+                }
+                var users = ReadUsers(opt.UsersFile);
+                var userNameExists = users.Find((u) => u.Name == registrationProfile.Username) != null;
+                if (userNameExists)
+                {
+                    throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
+                }
+                var emailExists = users.Find((u) => u.Email == email) != null;
+                if (emailExists)
+                {
+                    throw new PwdManInvalidArgumentException("Die Email-Adresse wurde schon registriert.");
+                }
+                if (!VerifyPasswordStrength(registrationProfile.Password))
                 {
                     throw new PasswordNotStrongEnoughException();
                 }
                 var pwdgen = new PwdGen { Length = 12 };
                 var hasher = new PasswordHasher<string>();
-                var hash = hasher.HashPassword(userCreation.Username, userCreation.Password);
-                user = new User
+                var hash = hasher.HashPassword(registrationProfile.Username, registrationProfile.Password);
+                var user = new User
                 {
-                    Name = userCreation.Username,
+                    Name = registrationProfile.Username,
                     PasswordFile = opt.PasswordFilePattern.Replace("{guid}", Guid.NewGuid().ToString()),
                     Salt = pwdgen.Generate(),
                     PasswordHash = hash,
-                    Email = userCreation.Email,
-                    Requires2FA = userCreation.Requires2FA
+                    Email = registrationProfile.Email,
+                    Requires2FA = registrationProfile.Requires2FA
                 };
                 users.Add(user);
                 File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
@@ -238,6 +279,15 @@ namespace APIServer.PwdMan
             }
         }
 
+        public string GetUsername(string authenticationToken)
+        {
+            logger.LogDebug("Get current username...");
+            lock (mutex)
+            {
+                return GetUserFromToken(authenticationToken).Name;
+            }
+        }
+
         public string GetSalt(string token)
         {
             logger.LogDebug("Get salt...");
@@ -340,7 +390,7 @@ namespace APIServer.PwdMan
             var pwdgen = new PwdGen { Length = 28 };
             totpKeys[user.Name] = pwdgen.Generate();
             var totp = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-            var subject = $"Myna Online 2-Schritt-Verifizierung";
+            var subject = $"Myna Portal 2-Schritt-Verifizierung";
             var body =
                 $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds} Sekunden gültig. " +
                 "In diesem Zeit kann er genau 1 Mal verwendet werden.";
@@ -364,14 +414,24 @@ namespace APIServer.PwdMan
             return false;
         }
 
+        private List<Registration> ReadRegistrations(string registrationsFile)
+        {
+            return ReadJsonList<Registration>(registrationsFile);
+        }
+
         private List<User> ReadUsers(string usersFile)
         {
-            if (!File.Exists(usersFile))
+            return ReadJsonList<User>(usersFile);
+        }
+
+        private List<T> ReadJsonList<T>(string filename)
+        {
+            if (!File.Exists(filename))
             {
-                return new List<User>();
+                return new List<T>();
             }
-            var json = File.ReadAllText(usersFile);
-            return JsonSerializer.Deserialize<List<User>>(json);
+            var json = File.ReadAllText(filename);
+            return JsonSerializer.Deserialize<List<T>>(json);
         }
 
         private byte [] EncodeSecret(byte [] salt, string password, byte [] secret)

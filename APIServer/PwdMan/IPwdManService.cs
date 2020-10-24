@@ -21,7 +21,9 @@ namespace APIServer.PwdMan
     {
         public bool IsRegisteredUsername(string username);
 
-        public void AddUser(UserCreation userCreation);
+        public bool IsRegisterAllowed(string email);
+
+        public void Register(RegistrationProfile registrationProfile);
 
         public AuthenticationResult Authenticate(Authentication authenication);
 

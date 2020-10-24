@@ -15,26 +15,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
-
 namespace APIServer.PwdMan
 {
-    public class PwdManOptions
+    public class Registration
     {
-        public TokenConfig TokenConfig { get; set; }
+        public string Email { get; set; }
 
-        public TOTPConfig TOTPConfig { get; set; }
-
-        public string UsersFile { get; set; }
-
-        public string PasswordFilePattern { get; set; }
-
-        public string RegistrationsFile { get; set; } = null;
-
-        public string RegistrationEmail { get; set; } = null;
-
-        public int MaxLoginTryCount { get; set; } = 3;
-
-        public int AccountLockTime { get; set; } = 300;
+        public string Token { get; set; }
     }
 }

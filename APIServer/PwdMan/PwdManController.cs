@@ -34,13 +34,20 @@ namespace APIServer.PwdMan
         }
 
         [HttpPost]
-        [Route("api/pwdman/user")]
-        public IActionResult AddUser([FromBody] UserCreation userCreation)
+        [Route("api/pwdman/register")]
+        public IActionResult IsRegisterAllowed([FromBody] string email)
         {
-            PwdManService.AddUser(userCreation);
-            return Ok();
+            return new JsonResult(PwdManService.IsRegisterAllowed(email));
         }
 
+        [HttpPost]
+        [Route("api/pwdman/profile")]
+        public IActionResult Register([FromBody] RegistrationProfile registrationProfile)
+        {
+            PwdManService.Register(registrationProfile);
+            return Ok();
+        }
+        
         [HttpGet]
         [Route("api/pwdman/username")]
         public IActionResult GetUsername()
