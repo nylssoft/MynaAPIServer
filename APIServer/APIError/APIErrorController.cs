@@ -33,16 +33,17 @@ namespace APIServer.APIError
         [Route("/error")]
         public IActionResult Error()
         {
-            int statusCode = 400;
             var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
             if (context.Error is APIException)
             {
-                statusCode = (context.Error as APIException).StatusCode;
+                int statusCode = (context.Error as APIException).StatusCode;
+                logger.LogDebug("Error occurs: {statusCode} => {message}", statusCode, context.Error.Message);
+                return Problem(
+                    title: context.Error.Message,
+                    statusCode: statusCode);
             }
-            logger.LogDebug("Error occurs: {statusCode} => {message}", statusCode, context.Error.Message);
-            return Problem(
-                title: context.Error.Message,
-                statusCode: statusCode);
+            logger.LogWarning("Server error occured: {message}.", context.Error.Message);
+            return Problem(title: "Es ist ein unerwarteter Fehler auf dem Server aufgetreten", statusCode: 500);
         }
     }
 }
