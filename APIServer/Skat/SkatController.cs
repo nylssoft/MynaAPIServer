@@ -20,7 +20,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
 using APIServer.Skat.Model;
-using APIServer.Email;
 
 namespace APIServer.Skat
 {
@@ -31,13 +30,10 @@ namespace APIServer.Skat
 
         public ISkatService SkatService { get; }
 
-        public INotificationService NotificationService { get; }
-
-        public SkatController(IConfiguration configuration, ISkatService skatService, INotificationService notificationService)
+        public SkatController(IConfiguration configuration, ISkatService skatService)
         {
             Configuration = configuration;
             SkatService = skatService;
-            NotificationService = notificationService;
         }
 
         // --- without authentication
@@ -51,14 +47,9 @@ namespace APIServer.Skat
 
         [HttpPost]
         [Route("api/skat/login")]
-        public IActionResult Login([FromBody] string value)
+        public IActionResult Login([FromBody] string username)
         {
-            var ticket = SkatService.Login(value);
-            if (!string.IsNullOrEmpty(ticket))
-            {
-                NotificationService.NotifyAsync($"Anmeldung {value}", $"Ticket: {ticket}");
-            }
-            return new JsonResult(ticket);
+            return new JsonResult(SkatService.Login(GetToken(), username));
         }
 
         [HttpGet]
@@ -196,6 +187,11 @@ namespace APIServer.Skat
         private string GetTicket()
         {
             return HttpContext.Request.Headers["ticket"];
+        }
+
+        private string GetToken()
+        {
+            return HttpContext.Request.Headers["token"];
         }
     }
 }

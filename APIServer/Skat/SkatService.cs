@@ -27,6 +27,8 @@ using Microsoft.Extensions.Logging;
 using APIServer.Skat.Model;
 using APIServer.Skat.Core;
 using System.Threading;
+using APIServer.Email;
+using APIServer.PwdMan;
 
 namespace APIServer.Skat
 {
@@ -50,13 +52,17 @@ namespace APIServer.Skat
 
         private DateTime lastCardPlayed;
 
+        private IPwdManService pwdManService;
+
         public SkatService(
             IConfiguration configuration,
             ILogger<SkatService> logger,
+            IPwdManService pwdManService,
             IHostApplicationLifetime appLifetime)
         {
             Configuration = configuration;
             this.logger = logger;
+            this.pwdManService = pwdManService;
             appLifetime.ApplicationStarted.Register(OnStarted);
             appLifetime.ApplicationStopped.Register(OnStopped);
         }
@@ -86,10 +92,20 @@ namespace APIServer.Skat
             }
         }
 
-        public string Login(string username)
+        public LoginModel Login(string authenticationToken, string username)
         {
+            var ret = new LoginModel();
             lock (mutex)
             {
+                if (authenticationToken?.Length > 0)
+                {
+                    username = pwdManService.GetUsername(authenticationToken);
+                }
+                else if (pwdManService.IsRegisteredUsername(username))
+                {
+                    ret.IsAuthenticationRequired = true;
+                    return ret;
+                }
                 var allowedUsers = GetOptions().AllowedUsers;
                 if (!userTickets.Values.Any((v) => string.Equals(v.Name, username, StringComparison.OrdinalIgnoreCase))
                     && userTickets.Count < 3
@@ -119,10 +135,10 @@ namespace APIServer.Skat
                         loginHistory.RemoveAt(0);
                     }
                     loginHistory.Add($"{ctx.Created} : {ctx.Name}");
-                    return ticket;
+                    ret.Ticket = ticket;
                 }
             }
-            return null;
+            return ret;
         }
 
         public ChatModel GetChatModel()

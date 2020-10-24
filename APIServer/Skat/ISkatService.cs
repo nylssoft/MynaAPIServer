@@ -26,7 +26,7 @@ namespace APIServer.Skat
 
         public long GetState();
 
-        public string Login(string username);
+        public LoginModel Login(string authenticationToken, string username);
 
         public ChatModel GetChatModel();
 

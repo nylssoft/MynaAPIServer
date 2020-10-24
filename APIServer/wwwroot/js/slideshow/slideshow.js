@@ -17,14 +17,71 @@ var slideshow = (() => {
     let slideShowInterval = 10;
     let backgroundChanged;
     let backgroundIndex = 0;
+    let backgroundText;
+
+    let passwordManagerEnabled = false;
+    let username;
+
+    // --- helper
+
+    const getAuthenticationToken = () => {
+        let pwdmanState;
+        let str = window.sessionStorage.getItem("pwdman-state");
+        if (str && str.length > 0) {
+            pwdmanState = JSON.parse(str);
+            if (pwdmanState && !pwdmanState.requiresPass2 && pwdmanState.token.length > 0) {
+                return pwdmanState.token;
+            }
+        }
+        return "";
+    };
+
+    const logout = () => {
+        window.sessionStorage.removeItem("pwdman-state");
+        let skatTicket = sessionStorage.getItem("ticket");
+        if (!skatTicket) {
+            skatTicket = localStorage.getItem("ticket");
+        }
+        if (skatTicket && skatTicket.length > 0) {
+            window.sessionStorage.removeItem("ticket");
+            window.localStorage.removeItem("ticket");
+            fetch("api/skat/logout", { method: "POST", headers: { "ticket": skatTicket } })
+                .then(response => response.json())
+                .then(() => {
+                    console.log("Skat logout completed.");
+                    render();
+                })
+                .catch((err) => {
+                    console.error(err);
+                    render();
+                });
+        }
+        else {
+            render();
+        }
+    };
 
     // --- rendering
 
     const renderLinks = (parent) => {
         let div = controls.createDiv(parent);
-        controls.createA(div, "footer-link", "/skat.html", "Online\u00A0Skat");
+        controls.createA(div, "footer-link", "/skat.html", "Skat");
         controls.createA(div, "footer-link", "/tetris.html", "Tetris");
-        controls.createA(div, "footer-link", "/pwdman.html", "Anmelden");
+        if (passwordManagerEnabled) {
+            controls.createA(div, "footer-link", "/pwdman.html", "Passwort\u00A0Manager");
+        }
+        let token = getAuthenticationToken();
+        if (token.length > 0) {
+            controls.createA(div, "footer-link", "/pwdman.html", "Abmelden", logout);
+            controls.createA(div, "footer-link", "/pwdman.html", "Kennwort\u00A0\u00E4ndern", () => {
+                window.location.href = "/pwdman.html?changepwd&nexturl=" + encodeURI(window.location.href);                
+            });
+        }
+        else {
+            controls.createA(div, "footer-link", "/pwdman.html", "Anmelden", () => {
+                window.location.href = "/pwdman.html?nexturl=" + encodeURI(window.location.href);
+            });
+        }
         controls.createA(div, "footer-link", "/downloads.html", "Downloads");
         controls.createA(div, "footer-link", "/impressum.html", "Impressum");
     };
@@ -32,6 +89,9 @@ var slideshow = (() => {
     const renderSlideshowInfo = (parent) => {
         let div = controls.createDiv(parent);
         divSlideShowInfo = controls.createDiv(div, "slideshow-info");
+        if (backgroundText) {
+            divSlideShowInfo.textContent = backgroundText;
+        }
         btnPauseSlideShow = controls.createImageButton(div, "Bildergalerie anhalten",
             () => {
                 isSlideshowPlaying = false;
@@ -50,8 +110,19 @@ var slideshow = (() => {
         btnPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
     };
 
-    const render = () => {
+    const renderPage = () => {
         controls.removeAllChildren(document.body);
+        if (username && username.length > 0) {
+            let url;
+            if (skatPlayerImages) {
+                url = skatPlayerImages[username.toLowerCase()];
+            }
+            if (!url) {
+                url = "/images/skat/profiles/Player1.png";
+            }
+            let img = controls.createImg(document.body, "img-profile", 32, 45, url);
+            img.title = `Angemeldet als ${username}`;
+        }
         divFooter = controls.createDiv(document.body, "footer");
         renderSlideshowInfo(divFooter);
         renderLinks(divFooter);
@@ -67,6 +138,45 @@ var slideshow = (() => {
         };
     };
 
+    const fetchFileinfo = () => {
+        fetch("api/pwdman/fileinfo", { headers: { "token": getAuthenticationToken() } })
+            .then(response => response.json().then(val => {
+                if (response.ok && val === true) {
+                    passwordManagerEnabled = true;
+                }
+                renderPage();
+            }))
+            .catch(err => {
+                console.log(err.message);
+                renderPage();
+            });
+    };
+
+    const fetchUsername = () => {
+        fetch("api/pwdman/username", { headers: { "token": getAuthenticationToken() } })
+            .then(response => response.json().then(val => {
+                if (response.ok && typeof val === "string") {
+                    username = val;
+                }
+                fetchFileinfo();
+            }))
+            .catch(err => {
+                console.log(err.message);
+                fetchFileinfo();
+            });
+    };
+
+    const render = () => {
+        username = "";
+        passwordManagerEnabled = false;
+        let token = getAuthenticationToken();
+        if (token.length == 0) {
+            renderPage();
+            return;
+        }
+        fetchUsername();
+    };
+
     // --- callbacks
 
     const ontimer = () => {
@@ -80,9 +190,10 @@ var slideshow = (() => {
             document.body.style.backgroundRepeat = "no-repeat";
             backgroundIndex = (backgroundIndex + 1) % slideShowPictures.length;
             backgroundChanged = currentDate;
+            let txts = [pic.summary, pic.city, pic.country, utils.format_date(pic.date)];
+            backgroundText = utils.concat_strings(txts, " // ");
             if (divSlideShowInfo) {
-                let txts = [pic.summary, pic.city, pic.country, utils.format_date(pic.date)];
-                divSlideShowInfo.textContent = utils.concat_strings(txts, " // ");
+                divSlideShowInfo.textContent = backgroundText;
             }
         }
     }

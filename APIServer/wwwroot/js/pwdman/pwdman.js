@@ -24,8 +24,9 @@ var pwdman = (() => {
     let cryptoKey;
     let changePwd;
     let lastErrorMessage;
+    let nexturl;
 
-    let version = "1.0.4";
+    let version = "1.0.5";
 
     // helper
 
@@ -176,8 +177,13 @@ var pwdman = (() => {
         })
             .then(response => {
                 if (response.ok) {
-                    changePwd = false;
-                    render();
+                    if (nexturl && nexturl.length > 0) {
+                        window.location.replace(nexturl);
+                    }
+                    else {
+                        changePwd = false;
+                        render();
+                    }
                 }
                 else {
                     response.json().then(apierror => {
@@ -194,8 +200,13 @@ var pwdman = (() => {
 
     const cancelChangePwd = () => {
         lastErrorMessage = "";
-        changePwd = false;
-        render();
+        if (nexturl && nexturl.length > 0) {
+            window.location.replace(nexturl);
+        }
+        else {
+            changePwd = false;
+            render();
+        }
     };
 
     const setCryptoKey = () => {
@@ -254,19 +265,16 @@ var pwdman = (() => {
         }
     };
 
-    const renderCopyright = (parent) => {
+    const renderCopyright = (parent, title) => {
+        if (!title) {
+            title = "Password Manager";
+        }
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Password Reader ${version}. Copyright 2020 `);
+        controls.create(div, "span", "copyright", `Myna ${title} ${version}. Copyright 2020 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten.`);
-        if (token) {
-            let logoutDiv = controls.createDiv(parent);
-            controls.createButton(logoutDiv, "Abmelden", btnLogout_click, undefined, "small-button");
-            if (!changePwd) {
-                controls.createButton(logoutDiv, "Kennwort \u00E4ndern", btnChangePwd_click, undefined, "small-button");
-            }
-        }
+        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
+        controls.createA(div, "copyright", "/index.html", "Home");
     };
 
     const renderAuthentication = (parent) => {
@@ -277,6 +285,9 @@ var pwdman = (() => {
         userNameLabel.htmlFor = "username-id";
         userNameInput = controls.createInputField(loginDiv, "Benutzer", () => userPasswordPwd.focus(), undefined, 16, 20);
         userNameInput.id = "username-id";
+        if (userName) {
+            userNameInput.value = userName;
+        }
         let passwordDiv = controls.createDiv(parent);
         let userPasswordLabel = controls.createLabel(passwordDiv, undefined, "Kennwort:");
         userPasswordLabel.htmlFor = "userpwd-id";
@@ -285,6 +296,7 @@ var pwdman = (() => {
         let buttonDiv = controls.createDiv(parent);
         controls.createButton(buttonDiv, "Anmelden", authenticate, undefined, "button");
         renderError(parent);
+        renderCopyright(parent, "Portal");
     };
 
     const renderPass2 = (parent) => {
@@ -306,6 +318,7 @@ var pwdman = (() => {
             let buttonLoginDiv = controls.createDiv(parent);
             controls.createButton(buttonLoginDiv, "Anmelden", authenticatePass2, undefined, "button");
         }
+        renderCopyright(parent, "Portal");
     };
 
     const renderChangePwd = (parent) => {
@@ -330,11 +343,12 @@ var pwdman = (() => {
         controls.createButton(okCancelDiv, "OK", changePassword, undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", cancelChangePwd, undefined, "button");
         renderError(parent);
+        renderCopyright(parent, "Portal");
     };
 
     const renderSecretKey = (parent) => {
         controls.create(parent, "h1", undefined, "Passw\u00F6rter dekodieren");
-        controls.create(parent, "p", undefined, "Gibt den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
+        controls.create(parent, "p", undefined, "Gib den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
         let keyPwdDiv = controls.createDiv(parent);
         let keyPwdLabel = controls.createLabel(keyPwdDiv, undefined, "Schl\u00FCssel:");
         keyPwdLabel.htmlFor = "keypwd-id";
@@ -450,6 +464,18 @@ var pwdman = (() => {
     };
 
     const render = () => {
+        if (window.location.search.length > 0) {
+            let params = new URLSearchParams(window.location.search);
+            if (params.has("nexturl")) {
+                nexturl = params.get("nexturl");
+            }
+            if (params.has("username")) {
+                userName = params.get("username");
+            }
+            if (params.has("changepwd")) {
+                changePwd = true;
+            }
+        }        
         controls.removeAllChildren(document.body);
         let state = getState();
         if (state) {
@@ -469,6 +495,9 @@ var pwdman = (() => {
         }
         else if (changePwd) {
             renderChangePwd(document.body);
+        }
+        else if (nexturl && nexturl.length > 0) {
+            window.location.replace(nexturl);
         }
         else if (cryptoKey === undefined) {
             fetch("api/pwdman/salt", { headers: { "token": token } })
@@ -517,18 +546,6 @@ var pwdman = (() => {
                 })
                 .catch(err => reset(err.message));
         }
-    };
-
-    // callbacks
-
-    const btnLogout_click = () => {
-        reset();
-    };
-
-    const btnChangePwd_click = () => {
-        lastErrorMessage = "";
-        changePwd = true;
-        render();
     };
 
     // --- public API

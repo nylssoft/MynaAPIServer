@@ -422,7 +422,7 @@ var tetris = (() => {
     let inputUserName;
 
     // --- state
-    let version = "1.2.1";
+    let version = "1.2.2";
 
     let block;
     let nextBlock;
@@ -802,7 +802,8 @@ var tetris = (() => {
         controls.create(div, "span", undefined, `Myna Tetris Version ${version}. Copyright 2020 `);
         let a = controls.createA(div, undefined, "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", undefined, ". Alle Rechte vorbehalten.");
+        controls.create(div, "span", undefined, ". Alle Rechte vorbehalten. ");
+        controls.createA(div, "undefined", "/index.html", "Home");
     };
 
     const renderHighScoreEntries = () => {

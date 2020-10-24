@@ -32,9 +32,25 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.2";
+    let version = "1.0.3";
 
     // helper
+
+    const removeAuthenticationToken = () => {
+        window.sessionStorage.removeItem("pwdman-state");
+    };
+
+    const getAuthenticationToken = () => {
+        let pwdmanState;
+        let str = window.sessionStorage.getItem("pwdman-state");
+        if (str && str.length > 0) {
+            pwdmanState = JSON.parse(str);
+            if (pwdmanState && !pwdmanState.requiresPass2 && pwdmanState.token.length > 0) {
+                return pwdmanState.token;
+            }
+        }
+        return "";
+    };
 
     const clearTicket = () => {
         ticket = undefined;
@@ -208,11 +224,28 @@ var skat = (() => {
 
     const renderLogin = (parent) => {
         controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
-        controls.createLabel(parent, undefined, "Name:");
-        inputUsername = controls.createInputField(parent, "username", btnLogin_click, "username-input", 20, 32);
+        let label = controls.createLabel(parent, undefined, "Name:");
+        label.htmlFor = "username-id";
+        inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
         inputUsername.placeholder = "Name";
+        inputUsername.id = "username-id";
         controls.createButton(parent, "Anmelden", btnLogin_click);
         document.body.className = "active-background";
+        let token = getAuthenticationToken();
+        if (token && token.length > 0) {
+            fetch("api/pwdman/username", { headers: { "token": token } })
+                .then(response => {
+                    if (response.ok) {
+                        response.json().then(username => {
+                            inputUsername.value = username;
+                        });
+                    }
+                    else {
+                        response.json().then(apierr => console.error(apierr.title));
+                    }
+                })
+                .catch(err => console.log(err.message));
+        }
     };
 
     const renderWaitForUsers = (parent) => {
@@ -500,7 +533,8 @@ var skat = (() => {
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         let time = new Date().toLocaleTimeString("de-DE");
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}.`);
+        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}. `);
+        controls.createA(div, "copyright", "/index.html", "Home");
         if (ticket) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
@@ -578,7 +612,6 @@ var skat = (() => {
         if (!chatState) {
             chatState = 0;
         }
-        console.log(chatModel);
         let currentChatState = 0;
         if (chatModel && chatModel.history) {
             chatModel.history.forEach((msg) => {
@@ -587,8 +620,6 @@ var skat = (() => {
             });
             currentChatState = chatModel.state;
         }
-        console.log(chatState);
-        console.log(currentChatState);
         if (ticket) {
             inputChatText = controls.createInputField(divChat, "Nachricht", btnChat_click, "chat-input", 36, 200);
             inputChatText.placeholder = "Nachricht..."
@@ -611,7 +642,6 @@ var skat = (() => {
     };
 
     const renderModel = (m) => {
-        console.log(m);
         if (inputChatText) {
             lastChatText = inputChatText.value; // keep old value if rendered again
         }
@@ -649,7 +679,44 @@ var skat = (() => {
             .catch((err) => console.error(err));
     };
 
+    const loginFromRequest = () => {
+        if (window.location.search.length == 0) {
+            return false; // continue processing
+        }
+        let params = new URLSearchParams(window.location.search);
+        let name = params.get("login");
+        let token = getAuthenticationToken();
+        if (!name || name.length == 0 || token.length == 0) {
+            window.location.replace("/skat.html");
+            return true; // stop processing, redirected
+        }
+        fetch("api/skat/login", {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "token": getAuthenticationToken()
+            },
+            body: JSON.stringify(name)
+        })
+            .then(response => response.json())
+            .then((loginModel) => {
+                if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
+                    setTicket(loginModel.ticket);
+                }
+                window.location.replace("/skat.html");
+            })
+            .catch((err) => {
+                console.error(err);
+                window.location.replace("/skat.html");
+            });
+        return true; // stop processing, redirected (later)
+    };
+
     const render = () => {
+        if (loginFromRequest()) {
+            return;
+        }
         ticket = getTicket();
         timerEnabled = false;
         fetch("api/skat/chat")
@@ -671,14 +738,23 @@ var skat = (() => {
                 method: "POST",
                 headers: {
                     "Accept": "application/json",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "token": getAuthenticationToken()
                 },
                 body: JSON.stringify(name)
             })
                 .then(response => response.json())
-                .then((t) => {
-                    if (t && t.length > 0) {
-                        setTicket(t);
+                .then((loginModel) => {
+                    if (loginModel) {
+                        if (loginModel.isAuthenticationRequired) {
+                            let nexturl = `/skat.html?login=${name}`;
+                            window.location.href = "/pwdman.html?nexturl=" + encodeURI(nexturl)
+                                + "&username=" + encodeURI(name);
+                            return;
+                        }
+                        else if (loginModel.ticket && loginModel.ticket.length > 0) {
+                            setTicket(loginModel.ticket);
+                        }
                     }
                     render();
                 })
@@ -810,9 +886,7 @@ var skat = (() => {
 
     const btnAction_click = (elem) => {
         timerEnabled = false;
-        console.log(elem);
         let action = elem.value;
-        console.log(action);
         if (action == "StartGame") {
             letsStartClicked = true;
             render();
@@ -916,6 +990,8 @@ var skat = (() => {
                 .then(response => response.json())
                 .then(() => {
                     logoutClicked = false;
+                    removeAuthenticationToken();
+                    clearTicket();
                     render();
                 })
                 .catch((err) => console.error(err));
@@ -989,7 +1065,6 @@ var skat = (() => {
                 if (d && d > 0) {
                     let statechanged = controls.getState();
                     if (!statechanged || d > statechanged) {
-                        console.log(d);
                         controls.setState(d);
                         render();
                     }
