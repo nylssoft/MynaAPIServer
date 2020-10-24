@@ -17,11 +17,19 @@
 */
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace APIServer.APIError
 {
     public class APIErrorController : ControllerBase
     {
+        private readonly ILogger logger;
+
+        public APIErrorController(ILogger<APIErrorController> logger)
+        {
+            this.logger = logger;
+        }
+
         [Route("/error")]
         public IActionResult Error()
         {
@@ -31,6 +39,7 @@ namespace APIServer.APIError
             {
                 statusCode = (context.Error as APIException).StatusCode;
             }
+            logger.LogDebug("Error occurs: {statusCode} => {message}", statusCode, context.Error.Message);
             return Problem(
                 title: context.Error.Message,
                 statusCode: statusCode);
