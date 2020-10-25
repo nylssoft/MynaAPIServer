@@ -52,7 +52,7 @@ namespace APIServer.Skat
 
         private DateTime lastCardPlayed;
 
-        private IPwdManService pwdManService;
+        private readonly IPwdManService pwdManService;
 
         public SkatService(
             IConfiguration configuration,
@@ -100,6 +100,14 @@ namespace APIServer.Skat
                 if (authenticationToken?.Length > 0)
                 {
                     username = pwdManService.GetUsername(authenticationToken);
+                    foreach (var e in userTickets)
+                    {
+                        if (e.Value.Name == username)
+                        {
+                            ret.Ticket = e.Key;
+                            return ret;
+                        }
+                    }
                 }
                 else if (pwdManService.IsRegisteredUsername(username))
                 {
