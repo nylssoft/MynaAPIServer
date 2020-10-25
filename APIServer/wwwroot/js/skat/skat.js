@@ -32,7 +32,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.3";
+    let version = "1.0.4";
 
     // helper
 
@@ -223,21 +223,26 @@ var skat = (() => {
     };
 
     const renderLogin = (parent) => {
-        controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
-        let label = controls.createLabel(parent, undefined, "Name:");
-        label.htmlFor = "username-id";
-        inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
-        inputUsername.placeholder = "Name";
-        inputUsername.id = "username-id";
-        controls.createButton(parent, "Anmelden", btnLogin_click);
         document.body.className = "active-background";
         let token = getAuthenticationToken();
-        if (token && token.length > 0) {
+        if (token.length == 0) {
+            controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
+            let label = controls.createLabel(parent, undefined, "Name:");
+            label.htmlFor = "username-id";
+            inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
+            inputUsername.placeholder = "Name";
+            inputUsername.id = "username-id";
+            controls.createButton(parent, "Anmelden", btnLogin_click);
+        }
+        else {
             fetch("api/pwdman/username", { headers: { "token": token } })
                 .then(response => {
                     if (response.ok) {
                         response.json().then(username => {
+                            controls.create(parent, "p", undefined, `${username}! Du kannst noch mitspielen!`);
+                            inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "hide", 20, 32);
                             inputUsername.value = username;
+                            controls.createButton(parent, "Mitspielen", btnLogin_click);
                         });
                     }
                     else {

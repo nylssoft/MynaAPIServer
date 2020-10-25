@@ -29,6 +29,10 @@ body {
     margin-left: 20pt;
 }
 
+.hide {
+    display: none;
+}
+
 .layout-chat-button {
     position: absolute;
     top: 2pt;
