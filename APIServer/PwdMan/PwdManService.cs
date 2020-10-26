@@ -318,7 +318,7 @@ namespace APIServer.PwdMan
                 }
                 if (!VerifyPasswordStrength(userPassswordChange.NewPassword))
                 {
-                    throw new PasswordNotStrongEnoughException();
+                    throw new ChangedPasswordNotStrongEnoughException();
                 }
                 var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
                 var opt = GetOptions();

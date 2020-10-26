@@ -67,6 +67,14 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class ChangedPasswordNotStrongEnoughException : APIException
+    {
+        public ChangedPasswordNotStrongEnoughException() :
+            base("Das neue Kennwort ist nicht stark genug.", 400)
+        {
+        }
+    }
+
     public class PasswordSameAsOldException : APIException
     {
         public PasswordSameAsOldException() :

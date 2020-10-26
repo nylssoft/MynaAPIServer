@@ -31,8 +31,9 @@ var pwdman = (() => {
     let lastErrorMessage;
     let nexturl;
     let successRegister;
+    let actionOk;
 
-    let version = "1.0.6";
+    let version = "1.0.7";
 
     // helper
 
@@ -105,16 +106,10 @@ var pwdman = (() => {
                     });
                 }
                 else {
-                    response.json().then(apierr => {
-                        lastErrorMessage = apierr.title;
-                        renderPage();
-                    })
+                    response.json().then(apierr => errorDiv.textContent = apierr.title);
                 }
             })            
-            .catch(err => {
-                lastErrorMessage = err.message;
-                renderPage();
-            });
+            .catch(err => errorDiv.textContent = err.message);
     };
 
     const authenticatePass2 = () => {
@@ -174,7 +169,7 @@ var pwdman = (() => {
 
     const changePassword = () => {
         if (newPasswordPwd.value != confirmPasswordPwd.value) {
-            errorDiv.textContent = "Die Best\u00E4tigung passt nicht mit dem Kennwort \u00FCberein.";
+            errorDiv.textContent = "Das best\u00E4tigte Kennwort passt nicht mit dem neuen Kennwort \u00FCberein.";
             return;
         }
         lastErrorMessage = "";
@@ -185,36 +180,13 @@ var pwdman = (() => {
         })
             .then(response => {
                 if (response.ok) {
-                    if (nexturl && nexturl.length > 0) {
-                        window.location.replace(nexturl);
-                    }
-                    else {
-                        actionChangePwd = false;
-                        renderPage();
-                    }
+                    window.location.replace(window.location.href + "&ok");
                 }
                 else {
-                    response.json().then(apierror => {
-                        lastErrorMessage = apierror.title;
-                        renderPage();
-                    });
+                    response.json().then(apierror => errorDiv.textContent = apierror.title);
                 }
             })
-            .catch(err => {
-                lastErrorMessage = err.message;
-                renderPage();
-            });
-    };
-
-    const cancelChangePwd = () => {
-        lastErrorMessage = "";
-        if (nexturl && nexturl.length > 0) {
-            window.location.replace(nexturl);
-        }
-        else {
-            actionChangePwd = false;
-            renderPage();
-        }
+            .catch(err => errorDiv.textContent = err.message);            
     };
 
     const requestRegistration = () => {
@@ -291,14 +263,15 @@ var pwdman = (() => {
             .catch(err => errorDiv.textContent = err.message);
     };
 
-    const cancelRegister = () => {
+    const cancel = () => {
         lastErrorMessage = "";
         if (nexturl && nexturl.length > 0) {
             window.location.replace(nexturl);
         }
         else {
-            actionRequestRegisteration = false;
+            actionRequestRegistration = false;
             actionRegister = false;
+            actionChangePwd = false;
             successRegister = false;
             renderPage();
         }
@@ -390,6 +363,9 @@ var pwdman = (() => {
         userPasswordPwd.id = "userpwd-id";
         let buttonDiv = controls.createDiv(parent);
         controls.createButton(buttonDiv, "Anmelden", authenticate, undefined, "button");
+        if (nexturl) {
+            controls.createButton(buttonDiv, "Abbrechen", cancel, undefined, "button");
+        }
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
@@ -418,6 +394,13 @@ var pwdman = (() => {
 
     const renderChangePwd = (parent) => {
         controls.create(parent, "h1", undefined, "Kennwort \u00E4ndern");
+        if (actionOk === true) {
+            controls.create(parent, "p", undefined,
+                "Das Kennwort wurde erfolgreich ge\u00E4ndert! Du kannst Dich jetzt mit dem neuen Kennwort anmelden.");
+            let buttonOKDiv = controls.createDiv(parent);
+            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
+            return;
+        }
         controls.create(parent, "p", undefined, "Gib Dein altes und neues Kennwort ein.");
         let oldPwdDiv = controls.createDiv(parent);
         let oldPwdLabel = controls.createLabel(oldPwdDiv, undefined, "Altes Kennwort:");
@@ -436,7 +419,7 @@ var pwdman = (() => {
         confirmPasswordPwd.id = "confirmpwd-id";
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "OK", changePassword, undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancelChangePwd, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
@@ -446,7 +429,7 @@ var pwdman = (() => {
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             renderError(parent);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", cancelRegister, undefined, "button");
+            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
             return;
         }
         controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse an. Wenn Sie freigeschaltet wurde, kannst Du Dich mit einem Benutzernamen registrieren.");
@@ -460,7 +443,7 @@ var pwdman = (() => {
         });
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "Weiter", requestRegistration, undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancelRegister, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
@@ -470,14 +453,14 @@ var pwdman = (() => {
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             renderError(parent);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", cancelRegister, undefined, "button");
+            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
             return;
         }
         if (successRegister) {
             controls.create(parent, "p", undefined,
                 `Die Registrierung war erfolgreich! Du kannst Dich jetzt mit dem Benutzernamen ${userName} anmelden.`);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", cancelRegister, undefined, "button");
+            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
             return;
         }
         controls.create(parent, "p", undefined,
@@ -508,7 +491,7 @@ var pwdman = (() => {
         codeInput.id = "code-id";
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "Registrieren", register, undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancelRegister, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
@@ -712,9 +695,8 @@ var pwdman = (() => {
     const render = () => {
         if (window.location.search.length > 0) {
             let params = new URLSearchParams(window.location.search);
-            if (params.has("nexturl")) {
-                nexturl = params.get("nexturl");
-            }
+            actionOk = params.has("ok");
+            nexturl = params.get("nexturl");
             if (params.has("username")) {
                 userName = params.get("username");
             }
