@@ -543,11 +543,6 @@ var skat = (() => {
         if (ticket) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
-        else {
-            let specialDiv = controls.createDiv(div, "special");
-            controls.createA(specialDiv, "special-link", "/skatadmin.html", "Administration");
-            controls.createA(specialDiv, "special-link", "/skatticket.html", "Ticketanmeldung");
-        }
     };
 
     const renderMainPage = (parent) => {
