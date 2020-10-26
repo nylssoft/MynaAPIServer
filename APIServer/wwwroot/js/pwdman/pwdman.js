@@ -33,7 +33,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.0.7";
+    let version = "1.0.8";
 
     // helper
 
@@ -512,24 +512,23 @@ var pwdman = (() => {
 
     const renderPasswordItem = (parent, txt, desc, decode) => {
         if (txt.length == 0) return;
-        let imgshow = controls.createImg(parent, undefined, 32, 32, "/images/pwdman/document-decrypt-3.png");
-        imgshow.title = `${desc} anzeigen`;
-        let imgcopy = controls.createImg(parent, undefined, 32, 32, "/images/pwdman/edit-copy-6.png");
-        imgcopy.title = `${desc} in die Zwischenablage kopieren`;
+        let showButton = controls.createImageButton(parent, `${desc} anzeigen`, undefined,
+            "/images/pwdman/document-decrypt-3.png", 32, "transparent");
+        controls.createImageButton(parent, `${desc} in die Zwischenablage kopieren`,
+            async () => {
+                let t = txt;
+                if (decode) {
+                    t = await decodePassword(txt);
+                }
+                navigator.clipboard.writeText(t);
+            }, "/images/pwdman/edit-copy-6.png", 32, "transparent");
         let span = controls.create(parent, "span", "pwditem");
-        imgcopy.addEventListener("click", async () => {
-            let t = txt;
-            if (decode) {
-                t = await decodePassword(txt);
-            }
-            navigator.clipboard.writeText(t);
-        });
-        imgshow.addEventListener("click", async () => {
+        showButton.addEventListener("click", async () => {
             let hide = span.textContent.length > 0;
             if (hide) {
                 span.textContent = "";
-                imgshow.title = `${desc} anzeigen`;
-                imgshow.src = "/images/pwdman/document-decrypt-3.png";
+                showButton.title = `${desc} anzeigen`;
+                showButton.children[0].src = "/images/pwdman/document-decrypt-3.png";
             }
             else {
                 let t = txt;
@@ -537,8 +536,8 @@ var pwdman = (() => {
                     t = await decodePassword(txt);
                 }
                 span.textContent = t;
-                imgshow.title = `${desc} verbergen`;
-                imgshow.src = "/images/pwdman/document-encrypt-3.png";
+                showButton.title = `${desc} verbergen`;
+                showButton.children[0].src = "/images/pwdman/document-encrypt-3.png";
             }
         });
     };
