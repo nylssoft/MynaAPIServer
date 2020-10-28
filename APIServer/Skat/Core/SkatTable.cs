@@ -58,6 +58,8 @@ namespace APIServer.Skat.Core
 
         public bool SkatTaken { get; set; } = false;
 
+        public GameHistory GameHistory { get; set; }
+
         public bool GameEnded
         {
             get
@@ -115,6 +117,8 @@ namespace APIServer.Skat.Core
                 }
                 Skat.AddRange(Card.Draw(rng, deck, 2));
             }
+            GameHistory = new GameHistory();
+            GameHistory.Skat.AddRange(Skat);
             var s = new HashSet<int>();
             // farbe
             for (int m = 2; m < 18; m++) // mit 10 spielt 11 hand 12 schneider 13 angesagt 14 schwarz 15 angesagt 16 ouvert 17
@@ -187,6 +191,8 @@ namespace APIServer.Skat.Core
                 }
                 Skat.AddRange(Card.Draw(rng, deck, 2));
             }
+            GameHistory = new GameHistory();
+            GameHistory.Skat.AddRange(Skat);
             BidSaid = false;
             BidValueIndex = -1;
             BidExceeded = false;
@@ -470,6 +476,7 @@ namespace APIServer.Skat.Core
             if (!player.Game.Option.HasFlag(GameOption.Hand))
             {
                 skat = Skat;
+                GameHistory.Back.AddRange(skat);
             }
             var jackStraight = player.Game.GetMatadorsJackStraight(player.Cards, skat);
             if (player.Game.GetBidValue(jackStraight) < CurrentBidValue)
@@ -824,6 +831,7 @@ namespace APIServer.Skat.Core
                 }
                 if (IsValidForStitch(card))
                 {
+                    GameHistory.Played.Add((player.Name, card));
                     player.Cards.Remove(card);
                     CurrentPlayer = GetNextPlayer(player);
                     Stitch.Add(card);

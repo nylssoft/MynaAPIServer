@@ -166,6 +166,13 @@ namespace APIServer.Skat
             return new JsonResult(SkatService.GetSkatModel(GetTicket()));
         }
 
+        [HttpGet]
+        [Route("api/skat/gamehistory")]
+        public IActionResult GetGameHistory()
+        {
+            return new JsonResult(SkatService.GetGameHistoryModel(GetTicket()));
+        }
+
         // --- authentication with administrative privileges
 
         [HttpPost]

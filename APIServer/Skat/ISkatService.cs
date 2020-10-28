@@ -38,6 +38,8 @@ namespace APIServer.Skat
 
         public SkatModel GetSkatModel(string ticket);
 
+        public GameHistoryModel GetGameHistoryModel(string ticket);
+
         public bool PerformBidAction(string ticket, string bidAction);
 
         public bool StartNewGame(string ticket);

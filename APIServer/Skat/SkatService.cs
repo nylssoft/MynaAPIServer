@@ -212,6 +212,33 @@ namespace APIServer.Skat
             }
         }
 
+        public GameHistoryModel GetGameHistoryModel(string ticket)
+        {
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && skatTable != null && skatTable.GameHistory != null &&
+                    skatTable.GameEnded)
+                {
+                    var ret = new GameHistoryModel();
+                    foreach (var card in skatTable.GameHistory.Skat)
+                    {
+                        ret.Skat.Add(GetSkatCardModel(card));
+                    }
+                    foreach (var card in skatTable.GameHistory.Back)
+                    {
+                        ret.Back.Add(GetSkatCardModel(card));
+                    }
+                    foreach (var tuple in skatTable.GameHistory.Played)
+                    {
+                        ret.Played.Add(new PlayedCardModel { Player = tuple.Item1, Card = GetSkatCardModel(tuple.Item2)});
+                    }
+                    return ret;
+                }
+                return null;
+            }
+        }
+
         public bool ConfirmStartGame(string ticket)
         {
             var ret = false;

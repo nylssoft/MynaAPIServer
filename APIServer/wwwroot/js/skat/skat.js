@@ -32,7 +32,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.4";
+    let version = "1.0.5";
 
     // helper
 
@@ -393,6 +393,7 @@ var skat = (() => {
             if (model.skatTable.canStartNewGame) {
                 if (!model.currentUser.startGameConfirmed) {
                     controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
+                    controls.createButton(parent, "Spielverlauf", () => window.open(window.location.href + "?gamehistory", "_blank"));
                     active = true;
                 }
                 else {
@@ -641,6 +642,32 @@ var skat = (() => {
         }
     };
 
+    const renderGameHistory = (gameHistory) => {
+        controls.removeAllChildren(document.body);
+        document.body.className = "inactive-background";
+        let parent = document.body;
+        if (!gameHistory) {
+            controls.createLabel(parent, undefined, "Der Spielablauf ist noch nicht verf\u00FCgbar.");
+            return;
+        }
+        controls.createLabel(parent, undefined, "Skat:");
+        let divSkat = controls.createDiv(parent);
+        renderCards(divSkat, true, gameHistory.skat, true, undefined, true);
+        controls.createLabel(parent, undefined, "Gedr\u00FCckt:");
+        let divBack = controls.createDiv(parent);
+        renderCards(divBack, true, gameHistory.back, true, undefined, true);
+        let cnt = 1;
+        for (let idx = 0; idx <= gameHistory.played.length - 3; idx += 3) {
+            let p1 = gameHistory.played[idx];
+            let p2 = gameHistory.played[idx+1];
+            let p3 = gameHistory.played[idx+2];
+            controls.createLabel(parent, undefined, `Stich ${cnt}: ${p1.player}, ${p2.player}, ${p3.player}`);
+            let divStitch = controls.createDiv(parent);
+            renderCards(divStitch, true, [p1.card, p2.card, p3.card], true, undefined, true);
+            cnt++;
+        }
+    };
+
     const renderModel = (m) => {
         if (inputChatText) {
             lastChatText = inputChatText.value; // keep old value if rendered again
@@ -679,16 +706,11 @@ var skat = (() => {
             .catch((err) => console.error(err));
     };
 
-    const loginFromRequest = () => {
-        if (window.location.search.length == 0) {
-            return false; // continue processing
-        }
-        let params = new URLSearchParams(window.location.search);
-        let name = params.get("login");
+    const login = (name) => {
         let token = getAuthenticationToken();
         if (!name || name.length == 0 || token.length == 0) {
             window.location.replace("/skat.html");
-            return true; // stop processing, redirected
+            return;
         }
         fetch("api/skat/login", {
             method: "POST",
@@ -710,14 +732,22 @@ var skat = (() => {
                 console.error(err);
                 window.location.replace("/skat.html");
             });
-        return true; // stop processing, redirected (later)
     };
 
     const render = () => {
-        if (loginFromRequest()) {
+        let params = new URLSearchParams(window.location.search);
+        if (params.has("login")) {
+            login(params.get("login"));
             return;
         }
         ticket = getTicket();
+        if (ticket && params.has("gamehistory")) {
+            fetch("api/skat/gamehistory", { headers: { "ticket": ticket } })
+                .then(response => response.json())
+                .then(gameHistory => renderGameHistory(gameHistory))
+                .catch(err => console.error(err));
+            return;
+        }
         timerEnabled = false;
         fetch("api/skat/chat")
             .then(response => response.json())
