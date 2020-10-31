@@ -17,14 +17,14 @@
 */
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-
 using APIServer.Skat;
 using APIServer.Email;
 using APIServer.Tetris;
 using APIServer.PwdMan;
+using APIServer.Database;
 
 namespace APIServer
 {
@@ -41,10 +41,16 @@ namespace APIServer
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddSingleton<ISkatService, SkatService>();
+            // scoped
+            services.AddDbContext<DbMynaContext>(optionsBuilder =>
+                optionsBuilder.UseSqlite("Data Source=data/apiserver.db"));
+            services.AddScoped<IPwdManService, PwdManService>();
+            // singletons
             services.AddSingleton<INotificationService, NotificationService>();
+            services.AddSingleton<ISkatService, SkatService>();
             services.AddSingleton<ITetrisService, TetrisService>();
-            services.AddSingleton<IPwdManService, PwdManService>();
+            // enable cshtml pages
+            services.AddRazorPages();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -63,6 +69,7 @@ namespace APIServer
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapRazorPages();
             });
         }
     }

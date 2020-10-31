@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
 using APIServer.Skat.Model;
+using APIServer.PwdMan;
 
 namespace APIServer.Skat
 {
@@ -30,10 +31,13 @@ namespace APIServer.Skat
 
         public ISkatService SkatService { get; }
 
-        public SkatController(IConfiguration configuration, ISkatService skatService)
+        public IPwdManService PwdManService { get; }
+
+        public SkatController(IConfiguration configuration, ISkatService skatService, IPwdManService pwdManService)
         {
             Configuration = configuration;
             SkatService = skatService;
+            PwdManService = pwdManService;
         }
 
         // --- without authentication
@@ -49,7 +53,7 @@ namespace APIServer.Skat
         [Route("api/skat/login")]
         public IActionResult Login([FromBody] string username)
         {
-            return new JsonResult(SkatService.Login(GetToken(), username));
+            return new JsonResult(SkatService.Login(PwdManService, GetToken(), username));
         }
 
         [HttpGet]

@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System.Collections.Generic;
+using APIServer.PwdMan;
 using APIServer.Skat.Model;
 
 namespace APIServer.Skat
@@ -26,7 +27,7 @@ namespace APIServer.Skat
 
         public long GetState();
 
-        public LoginModel Login(string authenticationToken, string username);
+        public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username);
 
         public ChatModel GetChatModel();
 

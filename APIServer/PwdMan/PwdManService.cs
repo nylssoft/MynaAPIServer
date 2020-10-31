@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.Database;
 using APIServer.Email;
 using APIServer.PasswordGenerator;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
@@ -40,69 +41,80 @@ namespace APIServer.PwdMan
 
         private readonly ILogger logger;
 
-        private readonly object mutex = new object();
-
-        private readonly Dictionary<string,LoginTry> loginFailures = new Dictionary<string, LoginTry>();
+        private readonly DbMynaContext dbContext;
 
         private readonly INotificationService notificationService;
 
-        private readonly Dictionary<string, string> totpKeys = new Dictionary<string, string>();
-
-        private DateTime? lastRegistrationRequest;
+        private const string LAST_REGISTRATION_REQUEST = "LastReqistrationRequest";
 
         public PwdManService(
             IConfiguration configuration,
             ILogger<PwdManService> logger,
+            DbMynaContext dbContext,
             INotificationService notificationService)
         {
             Configuration = configuration;
             this.logger = logger;
+            this.dbContext = dbContext;
             this.notificationService = notificationService;
         }
 
         public bool IsRegisteredUsername(string username)
         {
             logger.LogDebug("Check whether username '{username}' is registered...", username);
-            lock (mutex)
-            {
-                return ReadUsers(GetOptions().UsersFile).Find((u) => u.Name == username) != null;
-            }
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
+            return user != null;
         }
 
         public bool IsRegisterAllowed(string email)
         {
             logger.LogDebug("Check whether email addresss '{email}' is allowed to register...", email);
             email = email.ToLowerInvariant();
-            lock (mutex)
+            var opt = GetOptions();
+            if (string.IsNullOrEmpty(opt.RegistrationEmail))
             {
-                var opt = GetOptions();
-                if (string.IsNullOrEmpty(opt.RegistrationEmail))
-                {
-                    throw new PwdManInvalidArgumentException("Registrieren ist deaktiviert.");
-                }
-                bool userEmailExists = ReadUsers(opt.UsersFile).Find((u) => u.Email == email) != null;
-                if (userEmailExists)
-                {
-                    throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde bereits registriert.");
-                }
-                if (ReadRegistrations(opt.RegistrationsFile).Find((r) => r.Email == email) != null)
-                {
-                    return true;
-                }
-                // avoid spam emails, only one request in 5 minutes
-                if (lastRegistrationRequest != null)
-                {
-                    var min = (DateTime.UtcNow - lastRegistrationRequest.Value).TotalMinutes;
-                    if (min < 5)
-                    {
-                        throw new PwdManInvalidArgumentException("Registrieren ist z.Zt. nicht möglich. Versuche es später noch einmal.");
-                    }
-                }
-                var subject = "Myna Portal Registrierungsanfrage";
-                var body = $"Ein Benutzer möchte sich mit folgender Email-Adresse registrieren:\n\n{email}.";
-                notificationService.SendToAsync(opt.RegistrationEmail, subject, body);
-                lastRegistrationRequest = DateTime.UtcNow;
+                throw new PwdManInvalidArgumentException("Registrieren ist deaktiviert.");
             }
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
+            bool userEmailExists = user != null;
+            if (userEmailExists)
+            {
+                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde bereits registriert.");
+            }
+            var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
+            if (registration != null)
+            {
+                return true;
+            }
+            DateTime? lastRegistrationRequest = null;
+            var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == LAST_REGISTRATION_REQUEST);
+            if (setting != null)
+            {
+                lastRegistrationRequest = JsonSerializer.Deserialize<DateTime>(setting.Value);
+            }
+            // avoid spam emails, only one request in 5 minutes
+            if (lastRegistrationRequest != null)
+            {
+                var min = (DateTime.UtcNow - lastRegistrationRequest.Value).TotalMinutes;
+                if (min < 5)
+                {
+                    throw new PwdManInvalidArgumentException("Registrieren ist z.Zt. nicht möglich. Versuche es später noch einmal.");
+                }
+            }
+            var val = JsonSerializer.Serialize<DateTime>(DateTime.UtcNow);
+            if (setting == null)
+            {
+                setting = new DbSetting { Key = LAST_REGISTRATION_REQUEST, Value = val };
+                dbContext.DbSettings.Add(setting);
+            }
+            else
+            {
+                setting.Value = val;
+            }
+            dbContext.SaveChanges();
+            var subject = "Myna Portal Registrierungsanfrage";
+            var body = $"Ein Benutzer möchte sich mit folgender Email-Adresse registrieren:\n\n{email}.";
+            notificationService.SendToAsync(opt.RegistrationEmail, subject, body);
             return false;
         }
 
@@ -112,127 +124,109 @@ namespace APIServer.PwdMan
             if (string.IsNullOrEmpty(registrationProfile.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
             if (string.IsNullOrEmpty(registrationProfile.Email)) throw new PwdManInvalidArgumentException("E-Mail-Addresse ungültig.");
             if (string.IsNullOrEmpty(registrationProfile.Token)) throw new PwdManInvalidArgumentException("Registrierungscode ist ungültig.");
-            lock (mutex)
+            var email = registrationProfile.Email.ToLowerInvariant();
+            var opt = GetOptions();
+            var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
+            if (registration == null || registration.Token != registrationProfile.Token)
             {
-                var email = registrationProfile.Email.ToLowerInvariant();
-                var opt = GetOptions();
-                var registrations = ReadRegistrations(opt.RegistrationsFile);
-                var registration = registrations.Find((r) => r.Email == email);
-                if (registration == null || registration.Token != registrationProfile.Token)
-                {
-                    throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
-                }
-                var users = ReadUsers(opt.UsersFile);
-                var userNameExists = users.Find((u) => u.Name == registrationProfile.Username) != null;
-                if (userNameExists)
-                {
-                    throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
-                }
-                var emailExists = users.Find((u) => u.Email == email) != null;
-                if (emailExists)
-                {
-                    throw new PwdManInvalidArgumentException("Die Email-Adresse wurde schon registriert.");
-                }
-                if (!VerifyPasswordStrength(registrationProfile.Password))
-                {
-                    throw new PasswordNotStrongEnoughException();
-                }
-                var pwdgen = new PwdGen { Length = 12 };
-                var hasher = new PasswordHasher<string>();
-                var hash = hasher.HashPassword(registrationProfile.Username, registrationProfile.Password);
-                var user = new User
-                {
-                    Name = registrationProfile.Username,
-                    PasswordFile = opt.PasswordFilePattern.Replace("{guid}", Guid.NewGuid().ToString()),
-                    Salt = pwdgen.Generate(),
-                    PasswordHash = hash,
-                    Email = registrationProfile.Email,
-                    Requires2FA = registrationProfile.Requires2FA
-                };
-                users.Add(user);
-                File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
+                throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
             }
+            var dbUser = dbContext.DbUsers.SingleOrDefault(u => u.Name == registrationProfile.Username);
+            if (dbUser != null)
+            {
+                throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
+            }
+            dbUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
+            if (dbUser != null)
+            {
+                throw new PwdManInvalidArgumentException("Die Email-Adresse wurde schon registriert.");
+            }
+            if (!VerifyPasswordStrength(registrationProfile.Password))
+            {
+                throw new PasswordNotStrongEnoughException();
+            }
+            var pwdgen = new PwdGen { Length = 12 };
+            var hasher = new PasswordHasher<string>();
+            var hash = hasher.HashPassword(registrationProfile.Username, registrationProfile.Password);
+            dbUser = new DbUser
+            {
+                Name = registrationProfile.Username,
+                PasswordFile = opt.PasswordFilePattern.Replace("{guid}", Guid.NewGuid().ToString()),
+                Salt = pwdgen.Generate(),
+                PasswordHash = hash,
+                Email = registrationProfile.Email,
+                Requires2FA = registrationProfile.Requires2FA
+            };
+            dbContext.DbUsers.Add(dbUser);
+            dbContext.SaveChanges();
         }
 
         public AuthenticationResult Authenticate(Authentication authentication)
         {
             logger.LogDebug("Authenticate '{username}'...", authentication.Username);
-            lock (mutex)
+            var opt = GetOptions();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == authentication.Username);
+            if (user != null)
             {
-                var opt = GetOptions();
-                var users = ReadUsers(opt.UsersFile);
-                var user = users.Find((u) => u.Name == authentication.Username);
-                if (user != null)
+                if (user.LoginTries >= opt.MaxLoginTryCount)
                 {
-                    LoginTry loginTry = null;
-                    loginFailures.TryGetValue(user.Name, out loginTry);
-                    if (loginTry != null && loginTry.Count >= opt.MaxLoginTryCount)
+                    var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
+                    if (sec < opt.AccountLockTime)
                     {
-                        var sec = (DateTime.UtcNow - loginTry.LastTryUtc).TotalSeconds;
-                        if (sec < opt.AccountLockTime)
-                        {
-                            logger.LogDebug("Account disabled. Too many login tries.");
-                            throw new UnauthorizedException();
-                        }
-                        loginTry = null; // try again
-                        loginFailures.Remove(user.Name);
+                        logger.LogDebug("Account disabled. Too many login tries.");
+                        throw new UnauthorizedException();
                     }
-                    var hasher = new PasswordHasher<string>();
-                    var hash = hasher.HashPassword(authentication.Username, authentication.Password);
-                    if (hasher.VerifyHashedPassword(
-                        authentication.Username,
-                        user.PasswordHash,
-                        authentication.Password) == PasswordVerificationResult.Success)
-                    {
-                        if (user.Requires2FA)
-                        {
-                            Send2FAEmail(user, opt);
-                        }
-                        var token = GenerateToken(authentication.Username, opt, user.Requires2FA);
-                        if (token != null)
-                        {
-                            loginFailures.Remove(user.Name);
-                            return new AuthenticationResult { Token = token, RequiresPass2 = user.Requires2FA };
-                        }
-                    }
-                    logger.LogDebug("Invalid password specified.");
-                    if (loginTry == null)
-                    {
-                        loginTry = new LoginTry();
-                        loginFailures[user.Name] = loginTry;
-                    }
-                    loginTry.Count += 1;
-                    loginTry.LastTryUtc = DateTime.UtcNow;
                 }
-                else
+                var hasher = new PasswordHasher<string>();
+                hasher.HashPassword(authentication.Username, authentication.Password);
+                if (hasher.VerifyHashedPassword(
+                    authentication.Username,
+                    user.PasswordHash,
+                    authentication.Password) == PasswordVerificationResult.Success)
                 {
-                    logger.LogDebug("Username not found.");
+                    if (user.Requires2FA)
+                    {
+                        Send2FAEmail(user, opt);
+                    }
+                    var token = GenerateToken(authentication.Username, opt, user.Requires2FA);
+                    if (token != null)
+                    {
+                        user.LoginTries = 0;
+                        user.LastLoginTryUtc = DateTime.UtcNow;
+                        dbContext.SaveChanges();
+                        return new AuthenticationResult { Token = token, RequiresPass2 = user.Requires2FA };
+                    }
                 }
-                throw new UnauthorizedException();
+                logger.LogDebug("Invalid password specified.");
+                user.LoginTries += 1;
+                user.LastLoginTryUtc = DateTime.UtcNow;
+                dbContext.SaveChanges();
             }
+            else
+            {
+                logger.LogDebug("Username not found.");
+            }
+            throw new UnauthorizedException();
         }
 
         public void SendTOTP(string token)
         {
             logger.LogDebug("Send TOTP...");
-            lock (mutex)
+            var opt = GetOptions();
+            if (ValidateToken(token, opt))
             {
-                var opt = GetOptions();
-                if (ValidateToken(token, opt))
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+                var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+                if (claim != null && amr?.Value == "2fa")
                 {
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-                    var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
-                    var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
-                    if (claim != null && amr?.Value == "2fa")
+                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+                    if (user != null && user.Requires2FA)
                     {
-                        var users = ReadUsers(opt.UsersFile);
-                        var user = users.Find((u) => u.Name == claim.Value);
-                        if (user != null && user.Requires2FA)
-                        {
-                            Send2FAEmail(user, opt);
-                            return;
-                        }
+                        Send2FAEmail(user, opt);
+                        dbContext.SaveChanges();
+                        return;
                     }
                 }
             }
@@ -242,154 +236,129 @@ namespace APIServer.PwdMan
         public string AuthenticateTOTP(string token, string totp)
         {
             logger.LogDebug("Authenticate using Time-Based One-Time Password (TOTP)...");
-            lock (mutex)
+            var opt = GetOptions();
+            if (ValidateToken(token, opt)) // verify pass 1
             {
-                var opt = GetOptions();
-                if (ValidateToken(token, opt)) // verify pass 1
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+                var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+                if (claim != null && amr?.Value == "2fa")
                 {
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-                    var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
-                    var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
-                    if (claim != null && amr?.Value == "2fa")
+                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+                    if (user != null && !string.IsNullOrEmpty(user.TOTPKey))
                     {
-                        var users = ReadUsers(opt.UsersFile);
-                        var user = users.Find((u) => u.Name == claim.Value);
-                        if (user != null && totpKeys.ContainsKey(user.Name))
+                        long utcNowSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        var validTOTP = TOTP.Generate(utcNowSeconds, user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                        if (validTOTP != totp)
                         {
-                            long utcNowSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                            var validTOTP = TOTP.Generate(utcNowSeconds, totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-                            if (validTOTP != totp)
-                            {
-                                utcNowSeconds -= opt.TOTPConfig.ValidSeconds;
-                                validTOTP = TOTP.Generate(utcNowSeconds, totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-                            }
-                            totpKeys.Remove(user.Name);
-                            if (totp == validTOTP) // verify pass 2
-                            {
-                                return GenerateToken(user.Name, opt, false);
-                            }
+                            utcNowSeconds -= opt.TOTPConfig.ValidSeconds;
+                            validTOTP = TOTP.Generate(utcNowSeconds, user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
                         }
-                        logger.LogDebug("User not found or TOTP token already consumed.");
-                        throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig. Fordere einen neuen Code an.");
+                        user.TOTPKey = "";
+                        dbContext.SaveChanges();
+                        if (totp == validTOTP) // verify pass 2
+                        {
+                            return GenerateToken(user.Name, opt, false);
+                        }
                     }
-                    logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
+                    logger.LogDebug("User not found or TOTP token already consumed.");
+                    throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig. Fordere einen neuen Code an.");
                 }
-                throw new InvalidTokenException();
+                logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
             }
+            throw new InvalidTokenException();
         }
 
         public string GetUsername(string authenticationToken)
         {
             logger.LogDebug("Get current username...");
-            lock (mutex)
-            {
-                return GetUserFromToken(authenticationToken).Name;
-            }
+            return GetUserFromToken(authenticationToken).Name;
         }
 
         public string GetSalt(string token)
         {
             logger.LogDebug("Get salt...");
-            lock (mutex)
-            {
-                return GetUserFromToken(token).Salt;
-            }
+            return GetUserFromToken(token).Salt;
         }
 
-        public void ChangeUserPassword(string token, UserPasswordChange userPassswordChange)
+        public void ChangeUserPassword(string authenticationToken, UserPasswordChange userPassswordChange)
         {
             logger.LogDebug("Change user password...");
-            lock (mutex)
+            var user = GetUserFromToken(authenticationToken);
+            var hasher = new PasswordHasher<string>();
+            hasher.HashPassword(user.Name, userPassswordChange.OldPassword);
+            if (hasher.VerifyHashedPassword(
+                user.Name,
+                user.PasswordHash,
+                userPassswordChange.OldPassword) != PasswordVerificationResult.Success)
             {
-                var user = GetUserFromToken(token);
-                var hasher = new PasswordHasher<string>();
-                var hash = hasher.HashPassword(user.Name, userPassswordChange.OldPassword);
-                if (hasher.VerifyHashedPassword(
-                    user.Name,
-                    user.PasswordHash,
-                    userPassswordChange.OldPassword) != PasswordVerificationResult.Success)
-                {
-                    throw new InvalidOldPasswordException();
-                }
-                if (userPassswordChange.OldPassword == userPassswordChange.NewPassword)
-                {
-                    throw new PasswordSameAsOldException();
-                }
-                if (!VerifyPasswordStrength(userPassswordChange.NewPassword))
-                {
-                    throw new ChangedPasswordNotStrongEnoughException();
-                }
-                var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
-                var opt = GetOptions();
-                var users = ReadUsers(opt.UsersFile);
-                user = users.Find(u => u.Name == user.Name);
-                if (user == null) throw new UnauthorizedException();
-                user.PasswordHash = newhash;
-                File.WriteAllText(opt.UsersFile, JsonSerializer.Serialize(users));
+                throw new InvalidOldPasswordException();
             }
+            if (userPassswordChange.OldPassword == userPassswordChange.NewPassword)
+            {
+                throw new PasswordSameAsOldException();
+            }
+            if (!VerifyPasswordStrength(userPassswordChange.NewPassword))
+            {
+                throw new ChangedPasswordNotStrongEnoughException();
+            }
+            var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
+            user.PasswordHash = newhash;
+            dbContext.SaveChanges();
         }
 
         public void SavePasswordFile(string token, PasswordFile passwordFile)
         {
             logger.LogDebug("Save password file...");
-            lock (mutex)
+            if (!VerifyPasswordStrength(passwordFile.SecretKey))
             {
-                if (!VerifyPasswordStrength(passwordFile.SecretKey))
-                {
-                    throw new SecretKeyNotStrongEnoughException();
-                }
-                var user = GetUserFromToken(token);
-                var hasher = new PasswordHasher<string>();
-                var hash = hasher.HashPassword(user.Name, passwordFile.SecretKey);
-                if (hasher.VerifyHashedPassword(
-                    user.Name,
-                    user.PasswordHash,
-                    passwordFile.SecretKey) == PasswordVerificationResult.Success)
-                {
-                    throw new SecretKeySameAsPasswordException();
-                }
-                var salt = Encoding.UTF8.GetBytes(user.Salt);
-                foreach (var item in passwordFile.Passwords)
-                {
-                    item.Password = ConvertToHexString(
-                        EncodeSecret(salt, passwordFile.SecretKey, Encoding.UTF8.GetBytes(item.Password)));
-                }
-                var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
-                var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
-                File.WriteAllBytes(user.PasswordFile, encoded);
+                throw new SecretKeyNotStrongEnoughException();
             }
+            var user = GetUserFromToken(token);
+            var hasher = new PasswordHasher<string>();
+            hasher.HashPassword(user.Name, passwordFile.SecretKey);
+            if (hasher.VerifyHashedPassword(
+                user.Name,
+                user.PasswordHash,
+                passwordFile.SecretKey) == PasswordVerificationResult.Success)
+            {
+                throw new SecretKeySameAsPasswordException();
+            }
+            var salt = Encoding.UTF8.GetBytes(user.Salt);
+            foreach (var item in passwordFile.Passwords)
+            {
+                item.Password = ConvertToHexString(
+                    EncodeSecret(salt, passwordFile.SecretKey, Encoding.UTF8.GetBytes(item.Password)));
+            }
+            var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
+            var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
+            File.WriteAllBytes(user.PasswordFile, encoded);
         }
 
         public string GetEncodedPasswordFile(string token)
         {
             logger.LogDebug("Get encoded password file...");
-            lock (mutex)
-            {
-                var user = GetUserFromToken(token);
-                if (!File.Exists(user.PasswordFile)) throw new PasswordFileNotFoundException();
-                return ConvertToHexString(File.ReadAllBytes(user.PasswordFile));
-            }
+            var user = GetUserFromToken(token);
+            if (!File.Exists(user.PasswordFile)) throw new PasswordFileNotFoundException();
+            return ConvertToHexString(File.ReadAllBytes(user.PasswordFile));
         }
 
         public bool HasPasswordFile(string authenticationToken)
         {
             logger.LogDebug("Has password file...");
-            lock (mutex)
-            {
-                var user = GetUserFromToken(authenticationToken);
-                return user.PasswordFile?.Length > 0 && File.Exists(user.PasswordFile);
-            }
+            var user = GetUserFromToken(authenticationToken);
+            return user.PasswordFile?.Length > 0 && File.Exists(user.PasswordFile);
         }
 
         // --- private
 
-        private void Send2FAEmail(User user, PwdManOptions opt)
+        private void Send2FAEmail(DbUser user, PwdManOptions opt)
         {
             if (string.IsNullOrEmpty(user.Email)) throw new UnauthorizedException();
             var pwdgen = new PwdGen { Length = 28 };
-            totpKeys[user.Name] = pwdgen.Generate();
-            var totp = TOTP.Generate(totpKeys[user.Name], opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+            user.TOTPKey = pwdgen.Generate();
+            var totp = TOTP.Generate(user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
             var subject = $"Myna Portal 2-Schritt-Verifizierung";
             var body =
                 $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds} Sekunden gültig. " +
@@ -412,26 +381,6 @@ namespace APIServer.PwdMan
                 }
             }
             return false;
-        }
-
-        private List<Registration> ReadRegistrations(string registrationsFile)
-        {
-            return ReadJsonList<Registration>(registrationsFile);
-        }
-
-        private List<User> ReadUsers(string usersFile)
-        {
-            return ReadJsonList<User>(usersFile);
-        }
-
-        private List<T> ReadJsonList<T>(string filename)
-        {
-            if (!File.Exists(filename))
-            {
-                return new List<T>();
-            }
-            var json = File.ReadAllText(filename);
-            return JsonSerializer.Deserialize<List<T>>(json);
         }
 
         private byte [] EncodeSecret(byte [] salt, string password, byte [] secret)
@@ -504,7 +453,7 @@ namespace APIServer.PwdMan
             return true;
         }
 
-        private User GetUserFromToken(string token)
+        private DbUser GetUserFromToken(string token)
         {
             var opt = GetOptions();
             if (ValidateToken(token, opt))
@@ -514,8 +463,7 @@ namespace APIServer.PwdMan
                 var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
                 if (claim != null)
                 {
-                    var users = ReadUsers(opt.UsersFile);
-                    var user = users.Find((u) => u.Name == claim.Value);
+                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null)
                     {
                         if (user.Requires2FA)

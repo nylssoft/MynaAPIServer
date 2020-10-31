@@ -52,17 +52,13 @@ namespace APIServer.Skat
 
         private DateTime lastCardPlayed;
 
-        private readonly IPwdManService pwdManService;
-
         public SkatService(
             IConfiguration configuration,
             ILogger<SkatService> logger,
-            IPwdManService pwdManService,
             IHostApplicationLifetime appLifetime)
         {
             Configuration = configuration;
             this.logger = logger;
-            this.pwdManService = pwdManService;
             appLifetime.ApplicationStarted.Register(OnStarted);
             appLifetime.ApplicationStopped.Register(OnStopped);
         }
@@ -92,7 +88,7 @@ namespace APIServer.Skat
             }
         }
 
-        public LoginModel Login(string authenticationToken, string username)
+        public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username)
         {
             var ret = new LoginModel();
             lock (mutex)
