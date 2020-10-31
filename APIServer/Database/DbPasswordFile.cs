@@ -19,30 +19,12 @@ using System;
 
 namespace APIServer.Database
 {
-    public class DbUser
+    public class DbPasswordFile
     {
-        public int DbUserId { get; set; }
+        public int DbPasswordFileId { get; set; }
 
-        public string Name { get; set; }
+        public string Content { get; set; }
 
-        public string PasswordHash { get; set; }
-
-        public string Salt { get; set; }
-
-        public string Email { get; set; }
-
-        public bool Requires2FA { get; set; }
-
-        public int LoginTries { get; set; }
-
-        public DateTime? LastLoginTryUtc { get; set; }
-
-        public DateTime? RegisteredUtc { get; set; }
-
-        public string TOTPKey { get; set; }
-
-        public int? DbPasswordFileId { get; set; }
-
-        public DbPasswordFile DbPasswordFile { get; set; }
+        public DateTime? LastWrittenUtc { get; set; }
     }
 }

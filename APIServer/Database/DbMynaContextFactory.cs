@@ -15,34 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace APIServer.Database
 {
-    public class DbUser
+    public class DbMynaContextFactory : IDesignTimeDbContextFactory<DbMynaContext>
     {
-        public int DbUserId { get; set; }
-
-        public string Name { get; set; }
-
-        public string PasswordHash { get; set; }
-
-        public string Salt { get; set; }
-
-        public string Email { get; set; }
-
-        public bool Requires2FA { get; set; }
-
-        public int LoginTries { get; set; }
-
-        public DateTime? LastLoginTryUtc { get; set; }
-
-        public DateTime? RegisteredUtc { get; set; }
-
-        public string TOTPKey { get; set; }
-
-        public int? DbPasswordFileId { get; set; }
-
-        public DbPasswordFile DbPasswordFile { get; set; }
+        public DbMynaContext CreateDbContext(string[] args)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<DbMynaContext>();
+            optionsBuilder.UseSqlite("Data Source=data/apiserver.db");
+            return new DbMynaContext(optionsBuilder.Options);
+        }
     }
 }

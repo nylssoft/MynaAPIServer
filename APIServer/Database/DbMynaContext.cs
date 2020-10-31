@@ -30,5 +30,7 @@ namespace APIServer.Database
         public DbSet<DbRegistration> DbRegistrations { get; set; }
 
         public DbSet<DbSetting> DbSettings { get; set; }
+
+        public DbSet<DbPasswordFile> DbPasswordFiles { get; set; }
     }
 }

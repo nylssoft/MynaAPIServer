@@ -25,12 +25,6 @@ namespace APIServer.PwdMan
 
         public TOTPConfig TOTPConfig { get; set; }
 
-        public string UsersFile { get; set; }
-
-        public string PasswordFilePattern { get; set; }
-
-        public string RegistrationsFile { get; set; } = null;
-
         public string RegistrationEmail { get; set; } = null;
 
         public int MaxLoginTryCount { get; set; } = 3;

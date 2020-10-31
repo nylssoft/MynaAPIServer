@@ -151,11 +151,11 @@ namespace APIServer.PwdMan
             dbUser = new DbUser
             {
                 Name = registrationProfile.Username,
-                PasswordFile = opt.PasswordFilePattern.Replace("{guid}", Guid.NewGuid().ToString()),
                 Salt = pwdgen.Generate(),
                 PasswordHash = hash,
                 Email = registrationProfile.Email,
-                Requires2FA = registrationProfile.Requires2FA
+                Requires2FA = registrationProfile.Requires2FA,
+                RegisteredUtc = DateTime.UtcNow
             };
             dbContext.DbUsers.Add(dbUser);
             dbContext.SaveChanges();
@@ -333,22 +333,29 @@ namespace APIServer.PwdMan
             }
             var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
             var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
-            File.WriteAllBytes(user.PasswordFile, encoded);
+            if (user.DbPasswordFile == null)
+            {
+                user.DbPasswordFile = new DbPasswordFile();
+            }
+            user.DbPasswordFile.Content = ConvertToHexString(encoded);
+            user.DbPasswordFile.LastWrittenUtc = DateTime.UtcNow;
+            dbContext.SaveChanges();
         }
 
         public string GetEncodedPasswordFile(string token)
         {
             logger.LogDebug("Get encoded password file...");
-            var user = GetUserFromToken(token);
-            if (!File.Exists(user.PasswordFile)) throw new PasswordFileNotFoundException();
-            return ConvertToHexString(File.ReadAllBytes(user.PasswordFile));
+            var user = GetUserFromToken(token);           
+            if (user.DbPasswordFileId == null) throw new PasswordFileNotFoundException();
+            dbContext.Entry(user).Reference(f => f.DbPasswordFile).Load();
+            return user.DbPasswordFile.Content;
         }
 
         public bool HasPasswordFile(string authenticationToken)
         {
             logger.LogDebug("Has password file...");
             var user = GetUserFromToken(authenticationToken);
-            return user.PasswordFile?.Length > 0 && File.Exists(user.PasswordFile);
+            return user.DbPasswordFileId != null;
         }
 
         // --- private
