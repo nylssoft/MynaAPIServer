@@ -43,7 +43,7 @@ namespace APIServer
             var databaseFile = Configuration.GetValue<string>("DatabaseFile");
             services.AddControllers();
             // scoped
-            services.AddDbContext<DbMynaContext>(builder => builder.UseSqlite(databaseFile));
+            services.AddDbContext<DbMynaContext>(builder => builder.UseSqlite($"Data Source={databaseFile}"));
             services.AddScoped<IPwdManService, PwdManService>();
             // singletons
             services.AddSingleton<INotificationService, NotificationService>();
