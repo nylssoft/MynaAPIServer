@@ -510,20 +510,19 @@ var pwdman = (() => {
         renderCopyright(parent);
     };
 
-    const renderPasswordItem = (parent, txt, desc, decode) => {
+    const renderPasswordItem = async (parent, txt, desc, decode) => {
         if (txt.length == 0) return;
+        if (decode) {
+            txt = await decodePassword(txt);
+        }
         let showButton = controls.createImageButton(parent, `${desc} anzeigen`, undefined,
             "/images/pwdman/document-decrypt-3.png", 32, "transparent");
         controls.createImageButton(parent, `${desc} in die Zwischenablage kopieren`,
-            async () => {
-                let t = txt;
-                if (decode) {
-                    t = await decodePassword(txt);
-                }
-                navigator.clipboard.writeText(t);
+            () => {
+                navigator.clipboard.writeText(txt);
             }, "/images/pwdman/edit-copy-6.png", 32, "transparent");
         let span = controls.create(parent, "span", "pwditem");
-        showButton.addEventListener("click", async () => {
+        showButton.addEventListener("click", () => {
             let hide = span.textContent.length > 0;
             if (hide) {
                 span.textContent = "";
@@ -531,11 +530,7 @@ var pwdman = (() => {
                 showButton.children[0].src = "/images/pwdman/document-decrypt-3.png";
             }
             else {
-                let t = txt;
-                if (decode) {
-                    t = await decodePassword(txt);
-                }
-                span.textContent = t;
+                span.textContent = txt;
                 showButton.title = `${desc} verbergen`;
                 showButton.children[0].src = "/images/pwdman/document-encrypt-3.png";
             }
