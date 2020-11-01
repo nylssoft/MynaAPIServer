@@ -803,7 +803,7 @@ var tetris = (() => {
         let a = controls.createA(div, undefined, "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", undefined, ". Alle Rechte vorbehalten. ");
-        controls.createA(div, "undefined", "/index.html", "Home");
+        controls.createA(div, "undefined", "/slideshow", "Home");
     };
 
     const renderHighScoreEntries = () => {

@@ -540,7 +540,7 @@ var skat = (() => {
         a.target = "_blank";
         let time = new Date().toLocaleTimeString("de-DE");
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}. `);
-        controls.createA(div, "copyright", "/index.html", "Home");
+        controls.createA(div, "copyright", "/slideshow", "Home");
         if (ticket) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
@@ -709,7 +709,7 @@ var skat = (() => {
     const login = (name) => {
         let token = getAuthenticationToken();
         if (!name || name.length == 0 || token.length == 0) {
-            window.location.replace("/skat.html");
+            window.location.replace("/skat");
             return;
         }
         fetch("api/skat/login", {
@@ -726,11 +726,11 @@ var skat = (() => {
                 if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
-                window.location.replace("/skat.html");
+                window.location.replace("/skat");
             })
             .catch((err) => {
                 console.error(err);
-                window.location.replace("/skat.html");
+                window.location.replace("/skat");
             });
     };
 
@@ -777,8 +777,8 @@ var skat = (() => {
                 .then((loginModel) => {
                     if (loginModel) {
                         if (loginModel.isAuthenticationRequired) {
-                            let nexturl = `/skat.html?login=${name}`;
-                            window.location.href = "/pwdman.html?nexturl=" + encodeURI(nexturl)
+                            let nexturl = `/skat?login=${name}`;
+                            window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
                                 + "&username=" + encodeURI(name);
                             return;
                         }

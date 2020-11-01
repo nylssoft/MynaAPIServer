@@ -9,7 +9,7 @@ var downloads = (() => {
         a.target = "_blank";
         let time = new Date().toLocaleTimeString("de-DE");
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}. `);
-        controls.createA(div, "copyright", "/index.html", "Home");
+        controls.createA(div, "copyright", "/slideshow", "Home");
     };
 
     const renderMainPage = (parent, apps) => {

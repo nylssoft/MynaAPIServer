@@ -1,0 +1,116 @@
+[
+  {
+    "outputFileName": "wwwroot/css/impressum/impressum.min.css",
+    "inputFiles": [ "wwwroot/css/impressum/impressum.css" ]
+  },
+  {
+    "outputFileName": "wwwroot/css/downloads/downloads.min.css",
+    "inputFiles": [ "wwwroot/css/downloads/downloads.css" ]
+  },
+  {
+    "outputFileName": "wwwroot/css/tetris/tetris.min.css",
+    "inputFiles": [ "wwwroot/css/tetris/tetris.css" ]
+  },
+  {
+    "outputFileName": "wwwroot/css/skat/skat.min.css",
+    "inputFiles": [ "wwwroot/css/skat/skat.css" ]
+  },
+  {
+    "outputFileName": "wwwroot/css/slideshow/slideshow.min.css",
+    "inputFiles": [ "wwwroot/css/slideshow/slideshow.css" ]
+  },
+  {
+    "outputFileName": "wwwroot/css/pwdman/pwdman.min.css",
+    "inputFiles": [ "wwwroot/css/pwdman/pwdman.css" ]
+  },
+  {
+    "outputFileName": "wwwroot/js/slideshow/slideshow.min.js",
+    "inputFiles": [ "wwwroot/js/slideshow/slideshow.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/downloads/downloads.min.js",
+    "inputFiles": [ "wwwroot/js/downloads/downloads.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/tetris/tetris.min.js",
+    "inputFiles": [ "wwwroot/js/tetris/tetris.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/skat/skat.min.js",
+    "inputFiles": [ "wwwroot/js/skat/skat.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/skat/skatplayerimages.min.js",
+    "inputFiles": [ "wwwroot/js/skat/skatplayerimages.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/skat/skatadmin.min.js",
+    "inputFiles": [ "wwwroot/js/skat/skatadmin.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/skat/skatticket.min.js",
+    "inputFiles": [ "wwwroot/js/skat/skatticket.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/common/controls.min.js",
+    "inputFiles": [ "wwwroot/js/common/controls.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/common/utils.min.js",
+    "inputFiles": [ "wwwroot/js/common/utils.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/pwdman/pwdman.min.js",
+    "inputFiles": [ "wwwroot/js/pwdman/pwdman.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  }
+]

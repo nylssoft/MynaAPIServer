@@ -65,28 +65,28 @@ var slideshow = (() => {
 
     const renderLinks = (parent) => {
         let div = controls.createDiv(parent);
-        controls.createA(div, "footer-link", "/skat.html", "Skat");
-        controls.createA(div, "footer-link", "/tetris.html", "Tetris");
+        controls.createA(div, "footer-link", "/skat", "Skat");
+        controls.createA(div, "footer-link", "/tetris", "Tetris");
         if (passwordManagerEnabled) {
-            controls.createA(div, "footer-link", "/pwdman.html", "Passwort\u00A0Manager");
+            controls.createA(div, "footer-link", "/pwdman", "Passwort\u00A0Manager");
         }
         let token = getAuthenticationToken();
         if (token.length > 0) {
-            controls.createA(div, "footer-link", "/pwdman.html", "Abmelden", logout);
-            controls.createA(div, "footer-link", "/pwdman.html", "Kennwort\u00A0\u00E4ndern", () => {
-                window.location.href = "/pwdman.html?changepwd&nexturl=" + encodeURI(window.location.href);                
+            controls.createA(div, "footer-link", "/pwdman", "Abmelden", logout);
+            controls.createA(div, "footer-link", "/pwdman", "Kennwort\u00A0\u00E4ndern", () => {
+                window.location.href = "/pwdman?changepwd&nexturl=" + encodeURI(window.location.href);                
             });
         }
         else {
-            controls.createA(div, "footer-link", "/pwdman.html", "Anmelden", () => {
-                window.location.href = "/pwdman.html?nexturl=" + encodeURI(window.location.href);
+            controls.createA(div, "footer-link", "/pwdman", "Anmelden", () => {
+                window.location.href = "/pwdman?nexturl=" + encodeURI(window.location.href);
             });
-            controls.createA(div, "footer-link", "/pwdman.html", "Registrieren", () => {
-                window.location.href = "/pwdman.html?register&nexturl=" + encodeURI(window.location.href);
+            controls.createA(div, "footer-link", "/pwdman", "Registrieren", () => {
+                window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
             });
         }
-        controls.createA(div, "footer-link", "/downloads.html", "Downloads");
-        controls.createA(div, "footer-link", "/impressum.html", "Impressum");
+        controls.createA(div, "footer-link", "/downloads", "Downloads");
+        controls.createA(div, "footer-link", "/impressum", "Impressum");
     };
 
     const renderSlideshowInfo = (parent) => {

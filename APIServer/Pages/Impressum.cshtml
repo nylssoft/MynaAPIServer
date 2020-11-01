@@ -1,0 +1,29 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Cache-Control" content="public,max-age=60,must-revalidate" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Impressum @DateTime.Now.ToShortTimeString()</title>
+    <environment include="Development">
+        <link rel="stylesheet" href="~/css/impressum/impressum.css" asp-append-version="true" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/css/impressum/impressum.min.css" asp-append-version="true" />
+    </environment>
+</head>
+<body>
+    <p>
+        Dies ist eine private Website.
+        Sie wird ausschließlich für persönliche oder familiäre Zwecke verwendet.
+    </p>
+    <div class="copyright">
+        <span>Myna Impressum Version 1.0.1. Copyright 2020</span>
+        <a href="https://github.com/nylssoft/" target="_blank">Niels Stockfleth</a>
+        <span>. Alle Rechte vorbehalten. </span>
+        <a href="~/slideshow">Home</a>
+    </div>
+</body>
+</html>

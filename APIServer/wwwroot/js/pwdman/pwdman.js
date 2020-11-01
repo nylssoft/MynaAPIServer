@@ -342,7 +342,7 @@ var pwdman = (() => {
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
-        controls.createA(div, "copyright", "/index.html", "Home");
+        controls.createA(div, "copyright", "/slideshow", "Home");
     };
 
     const renderAuthentication = (parent) => {

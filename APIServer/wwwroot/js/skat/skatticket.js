@@ -31,7 +31,7 @@ var skatticket = (() => {
                 .then(model => {
                     if (model && model.currentUser) {
                         sessionStorage.setItem("ticket", t);
-                        location.pathname = "skat.html";
+                        location.pathname = "skat";
                     }
                     else {
                         passwordElem.value = "";
