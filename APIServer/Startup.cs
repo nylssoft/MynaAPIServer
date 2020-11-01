@@ -51,6 +51,8 @@ namespace APIServer
             services.AddSingleton<ITetrisService, TetrisService>();
             // enable cshtml pages
             services.AddRazorPages();
+            // all urls lower case
+            services.AddRouting(options => options.LowercaseUrls = true);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
