@@ -195,7 +195,7 @@ var skat = (() => {
     };
 
     const renderUserList = (parent) => {
-        controls.create(parent, "p", "welcome", "Willkommen beim Online Skat!");
+        controls.create(parent, "p", "welcome", "Willkommen beim Skat!");
         let divInfoImages = controls.createDiv(parent);
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
@@ -585,7 +585,7 @@ var skat = (() => {
             render();
             return;
         }
-        document.title = `Online Skat - ${model.currentUser.name}`;
+        document.title = `Skat - ${model.currentUser.name}`;
         if (model.skatTable) {
             renderMainPage(parent);
         }

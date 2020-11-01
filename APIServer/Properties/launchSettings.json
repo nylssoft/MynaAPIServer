@@ -12,12 +12,12 @@
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
-      "launchUrl": "slideshow"
+      "launchUrl": ""
     },
     "SkatAPI": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "slideshow",
+      "launchUrl": "",
       "applicationUrl": "https://localhost:5001;http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
