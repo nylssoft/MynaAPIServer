@@ -11,7 +11,7 @@ var skatticket = (() => {
         controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
         let divMain = controls.createDiv(document.body);
-        controls.create(divMain, "p", "welcome", "Willkommen beim Online Skat!");
+        controls.create(divMain, "p", "welcome", "Willkommen beim Skat!");
         let divInfoImages = controls.createDiv(divMain);
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");

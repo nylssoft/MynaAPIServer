@@ -9,7 +9,7 @@ var skatadmin = (() => {
         let body = document.querySelector("body");
         body.style.background = "#000000";
         controls.removeAllChildren(body);
-        controls.create(body, "p", undefined, "Online Skat Administration");
+        controls.create(body, "p", undefined, "Skat Administration");
         if (tickets) {
             if (tickets.length == 0) {
                 controls.create(body, "p", undefined, "Niemand ist angemeldet.");
