@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APIServer.Migrations
 {
     [DbContext(typeof(DbMynaContext))]
-    [Migration("20201031215257_InitialCreate")]
+    [Migration("20201102065756_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -20,7 +20,7 @@ namespace APIServer.Migrations
 
             modelBuilder.Entity("APIServer.Database.DbPasswordFile", b =>
                 {
-                    b.Property<int>("DbPasswordFileId")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -30,31 +30,45 @@ namespace APIServer.Migrations
                     b.Property<DateTime?>("LastWrittenUtc")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("DbPasswordFileId");
+                    b.HasKey("Id");
 
-                    b.ToTable("DbPasswordFiles");
+                    b.ToTable("PasswordFiles");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbRegistration", b =>
                 {
-                    b.Property<int>("DbRegistrationId")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<long?>("ConfirmedById")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ConfirmedUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RequestedUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Token")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("DbRegistrationId");
+                    b.HasKey("Id");
 
-                    b.ToTable("DbRegistrations");
+                    b.HasIndex("ConfirmedById");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Registrations");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbSetting", b =>
                 {
-                    b.Property<int>("DbSettingId")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
@@ -64,18 +78,18 @@ namespace APIServer.Migrations
                     b.Property<string>("Value")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("DbSettingId");
+                    b.HasKey("Id");
 
-                    b.ToTable("DbSettings");
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("Settings");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbUser", b =>
                 {
-                    b.Property<int>("DbUserId")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("DbPasswordFileId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Email")
@@ -89,6 +103,9 @@ namespace APIServer.Migrations
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
+
+                    b.Property<long?>("PasswordFileId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("TEXT");
@@ -105,18 +122,31 @@ namespace APIServer.Migrations
                     b.Property<string>("TOTPKey")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("DbUserId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("DbPasswordFileId");
+                    b.HasIndex("Email")
+                        .IsUnique();
 
-                    b.ToTable("DbUsers");
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("PasswordFileId");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbRegistration", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "ConfirmedBy")
+                        .WithMany()
+                        .HasForeignKey("ConfirmedById");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbUser", b =>
                 {
-                    b.HasOne("APIServer.Database.DbPasswordFile", "DbPasswordFile")
+                    b.HasOne("APIServer.Database.DbPasswordFile", "PasswordFile")
                         .WithMany()
-                        .HasForeignKey("DbPasswordFileId");
+                        .HasForeignKey("PasswordFileId");
                 });
 #pragma warning restore 612, 618
         }

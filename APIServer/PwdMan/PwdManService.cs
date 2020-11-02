@@ -84,14 +84,13 @@ namespace APIServer.PwdMan
             var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
             if (registration != null)
             {
+                if (string.IsNullOrEmpty(registration.Token))
+                {
+                    throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde bisher nicht bestätigt.");
+                }
                 return true;
             }
-            DateTime? lastRegistrationRequest = null;
-            var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == LAST_REGISTRATION_REQUEST);
-            if (setting != null)
-            {
-                lastRegistrationRequest = JsonSerializer.Deserialize<DateTime>(setting.Value);
-            }
+            var lastRegistrationRequest = GetSetting<DateTime?>(LAST_REGISTRATION_REQUEST);
             // avoid spam emails, only one request in 5 minutes
             if (lastRegistrationRequest != null)
             {
@@ -101,21 +100,62 @@ namespace APIServer.PwdMan
                     throw new PwdManInvalidArgumentException("Registrieren ist z.Zt. nicht möglich. Versuche es später noch einmal.");
                 }
             }
-            var val = JsonSerializer.Serialize<DateTime>(DateTime.UtcNow);
-            if (setting == null)
-            {
-                setting = new DbSetting { Key = LAST_REGISTRATION_REQUEST, Value = val };
-                dbContext.DbSettings.Add(setting);
-            }
-            else
-            {
-                setting.Value = val;
-            }
+            SetSetting(LAST_REGISTRATION_REQUEST, DateTime.UtcNow);
+            dbContext.DbRegistrations.Add(new DbRegistration { Email = email, RequestedUtc = DateTime.UtcNow });
             dbContext.SaveChanges();
             var subject = "Myna Portal Registrierungsanfrage";
-            var body = $"Ein Benutzer möchte sich mit folgender Email-Adresse registrieren:\n\n{email}.";
+            var body = $"Ein Benutzer möchte sich mit folgender E-Mail-Adresse registrieren:\n\n{email}.";
             notificationService.SendToAsync(opt.RegistrationEmail, subject, body);
             return false;
+        }
+
+        public string ConfirmRegistration(string authenticationToken, Confirmation confirmation)
+        {
+            logger.LogDebug("Confirm registration for email addresss '{email}'...", confirmation.Email);
+            var email = confirmation.Email.ToLowerInvariant();
+            var user = GetUserFromToken(authenticationToken);
+            var opt = GetOptions();
+            if (!opt.Roles.UserManagers.Contains(user.Name))
+            {
+                throw new UnauthorizedException();
+            }
+            var emailUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
+            if (emailUser != null)
+            {
+                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde schon registriert.");
+            }
+            var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
+            if (registration == null)
+            {
+                throw new PwdManInvalidArgumentException("Es liegt keine Registrierungsanfrage für die E-Mail-Adresse vor.");
+            }
+            if (string.IsNullOrEmpty(registration.Token))
+            {
+                var pwdgen = new PwdGen
+                {
+                    Length = 6,
+                    LowerCharacters = "",
+                    Symbols = "",
+                    Digits = "123456789",
+                    UpperCharacters = "ABCDEFGHJKLMNPQRSTUVWXYZ",
+                    MinDigits = 2,
+                    MinUpperCharacters = 2,
+                    MinLowerCharacters = 0,
+                    MinSymbols = 0
+                };
+                registration.Token = pwdgen.Generate();
+                registration.ConfirmedUtc = DateTime.UtcNow;
+                registration.ConfirmedById = user.Id;
+                dbContext.SaveChanges();
+            }
+            if (confirmation.Notification)
+            {
+                var subject = $"Myna Portal Registrierungsbestätigung";
+                var body = $"Hallo {email}!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
+                    "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.";
+                notificationService.SendToAsync(email, subject, body);
+            }
+            return registration.Token;
         }
 
         public void Register(RegistrationProfile registrationProfile)
@@ -131,15 +171,15 @@ namespace APIServer.PwdMan
             {
                 throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
             }
-            var dbUser = dbContext.DbUsers.SingleOrDefault(u => u.Name == registrationProfile.Username);
-            if (dbUser != null)
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == registrationProfile.Username);
+            if (user != null)
             {
                 throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
             }
-            dbUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
-            if (dbUser != null)
+            user = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
+            if (user != null)
             {
-                throw new PwdManInvalidArgumentException("Die Email-Adresse wurde schon registriert.");
+                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde schon registriert.");
             }
             if (!VerifyPasswordStrength(registrationProfile.Password))
             {
@@ -148,16 +188,16 @@ namespace APIServer.PwdMan
             var pwdgen = new PwdGen { Length = 12 };
             var hasher = new PasswordHasher<string>();
             var hash = hasher.HashPassword(registrationProfile.Username, registrationProfile.Password);
-            dbUser = new DbUser
+            user = new DbUser
             {
                 Name = registrationProfile.Username,
                 Salt = pwdgen.Generate(),
                 PasswordHash = hash,
-                Email = registrationProfile.Email,
+                Email = email,
                 Requires2FA = registrationProfile.Requires2FA,
                 RegisteredUtc = DateTime.UtcNow
             };
-            dbContext.DbUsers.Add(dbUser);
+            dbContext.DbUsers.Add(user);
             dbContext.SaveChanges();
         }
 
@@ -333,32 +373,52 @@ namespace APIServer.PwdMan
             }
             var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
             var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
-            if (user.DbPasswordFile == null)
+            if (user.PasswordFile == null)
             {
-                user.DbPasswordFile = new DbPasswordFile();
+                user.PasswordFile = new DbPasswordFile();
             }
-            user.DbPasswordFile.Content = ConvertToHexString(encoded);
-            user.DbPasswordFile.LastWrittenUtc = DateTime.UtcNow;
+            user.PasswordFile.Content = ConvertToHexString(encoded);
+            user.PasswordFile.LastWrittenUtc = DateTime.UtcNow;
             dbContext.SaveChanges();
         }
 
         public string GetEncodedPasswordFile(string token)
         {
             logger.LogDebug("Get encoded password file...");
-            var user = GetUserFromToken(token);           
-            if (user.DbPasswordFileId == null) throw new PasswordFileNotFoundException();
-            dbContext.Entry(user).Reference(f => f.DbPasswordFile).Load();
-            return user.DbPasswordFile.Content;
+            var user = GetUserFromToken(token);
+            if (user.PasswordFileId == null) throw new PasswordFileNotFoundException();
+            dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
+            return user.PasswordFile.Content;
         }
 
         public bool HasPasswordFile(string authenticationToken)
         {
             logger.LogDebug("Has password file...");
             var user = GetUserFromToken(authenticationToken);
-            return user.DbPasswordFileId != null;
+            return user.PasswordFileId != null;
         }
 
         // --- private
+
+        private T GetSetting<T>(string key)
+        {
+            var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == key);
+            if (setting != null)
+            {
+                return JsonSerializer.Deserialize<T>(setting.Value);
+            }
+            return default;
+        }
+
+        private void SetSetting<T>(string key, T value)
+        {
+            var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == key);
+            if (setting == null)
+            {
+                setting = new DbSetting { Key = LAST_REGISTRATION_REQUEST };
+            }
+            setting.Value = JsonSerializer.Serialize(value);
+        }
 
         private void Send2FAEmail(DbUser user, PwdManOptions opt)
         {
@@ -390,7 +450,7 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        private byte [] EncodeSecret(byte [] salt, string password, byte [] secret)
+        private byte[] EncodeSecret(byte[] salt, string password, byte[] secret)
         {
             var iv = new byte[12];
             using (var rng = RandomNumberGenerator.Create())

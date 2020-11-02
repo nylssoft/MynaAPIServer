@@ -32,5 +32,22 @@ namespace APIServer.Database
         public DbSet<DbSetting> DbSettings { get; set; }
 
         public DbSet<DbPasswordFile> DbPasswordFiles { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            builder.Entity<DbRegistration>()
+                .HasIndex(r => r.Email)
+                .IsUnique();
+            builder.Entity<DbUser>()
+                .HasIndex(u => u.Name)
+                .IsUnique();
+            builder.Entity<DbUser>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+            builder.Entity<DbSetting>()
+                .HasIndex(s => s.Key)
+                .IsUnique();
+        }
+
     }
 }

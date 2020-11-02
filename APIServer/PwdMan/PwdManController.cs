@@ -47,7 +47,14 @@ namespace APIServer.PwdMan
             PwdManService.Register(registrationProfile);
             return Ok();
         }
-        
+
+        [HttpPost]
+        [Route("api/pwdman/confirmation")]
+        public IActionResult ConfirmRegistration([FromBody] Confirmation confirmation)
+        {
+            return new JsonResult(PwdManService.ConfirmRegistration(GetToken(), confirmation));
+        }
+
         [HttpGet]
         [Route("api/pwdman/username")]
         public IActionResult GetUsername()

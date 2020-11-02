@@ -16,12 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace APIServer.Database
 {
+    [Table("PasswordFiles")]
     public class DbPasswordFile
     {
-        public int DbPasswordFileId { get; set; }
+        public long Id { get; set; }
 
         public string Content { get; set; }
 

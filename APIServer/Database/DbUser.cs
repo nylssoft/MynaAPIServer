@@ -16,12 +16,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace APIServer.Database
 {
+    [Table("Users")]
     public class DbUser
     {
-        public int DbUserId { get; set; }
+        public long Id { get; set; }
 
         public string Name { get; set; }
 
@@ -41,8 +43,8 @@ namespace APIServer.Database
 
         public string TOTPKey { get; set; }
 
-        public int? DbPasswordFileId { get; set; }
+        public long? PasswordFileId { get; set; }
 
-        public DbPasswordFile DbPasswordFile { get; set; }
+        public DbPasswordFile PasswordFile { get; set; }
     }
 }

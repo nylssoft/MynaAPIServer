@@ -25,6 +25,8 @@ namespace APIServer.PwdMan
 
         public void Register(RegistrationProfile registrationProfile);
 
+        public string ConfirmRegistration(string authenticationToken, Confirmation confirmation);
+
         public AuthenticationResult Authenticate(Authentication authenication);
 
         public string AuthenticateTOTP(string token, string totp);

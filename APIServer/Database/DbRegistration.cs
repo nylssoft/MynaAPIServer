@@ -15,14 +15,27 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace APIServer.Database
 {
+    [Table("Registrations")]
     public class DbRegistration
     {
-        public int DbRegistrationId { get; set; }
+        public long Id { get; set; }
 
         public string Email { get; set; }
 
         public string Token { get; set; }
+
+        public DateTime? RequestedUtc { get; set; }
+
+        public DateTime? ConfirmedUtc { get; set; }
+
+        public long? ConfirmedById { get; set; }
+
+        public DbUser ConfirmedBy { get; set; }
+
     }
 }

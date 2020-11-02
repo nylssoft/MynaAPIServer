@@ -15,17 +15,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
-namespace APIServer.Database
+namespace APIServer.PwdMan
 {
-    [Table("Settings")]
-    public class DbSetting
+    public class RolesConfig
     {
-        public long Id { get; set; }
-
-        public string Key { get; set; }
-
-        public string Value { get; set; }
+        public List<string> UserManagers { get; set; }
     }
 }
