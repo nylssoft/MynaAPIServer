@@ -64,6 +64,25 @@ namespace APIServer.Migrations
                     b.ToTable("Registrations");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbRole", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DbUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbUserId");
+
+                    b.ToTable("Roles");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbSetting", b =>
                 {
                     b.Property<long>("Id")
@@ -138,6 +157,15 @@ namespace APIServer.Migrations
                     b.HasOne("APIServer.Database.DbUser", "ConfirmedBy")
                         .WithMany()
                         .HasForeignKey("ConfirmedById");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbRole", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", null)
+                        .WithMany("Roles")
+                        .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("APIServer.Database.DbUser", b =>

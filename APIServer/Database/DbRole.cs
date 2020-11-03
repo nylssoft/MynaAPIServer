@@ -15,39 +15,17 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace APIServer.Database
 {
-    [Table("Users")]
-    public class DbUser
+    [Table("Roles")]
+    public class DbRole
     {
         public long Id { get; set; }
 
+        public long DbUserId { get; set; }
+
         public string Name { get; set; }
-
-        public string PasswordHash { get; set; }
-
-        public string Salt { get; set; }
-
-        public string Email { get; set; }
-
-        public bool Requires2FA { get; set; }
-
-        public int LoginTries { get; set; }
-
-        public DateTime? LastLoginTryUtc { get; set; }
-
-        public DateTime? RegisteredUtc { get; set; }
-
-        public string TOTPKey { get; set; }
-
-        public long? PasswordFileId { get; set; }
-
-        public DbPasswordFile PasswordFile { get; set; }
-
-        public List<DbRole> Roles { get; set; }
     }
 }

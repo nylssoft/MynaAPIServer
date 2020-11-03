@@ -44,5 +44,7 @@ namespace APIServer.PwdMan
         public bool HasPasswordFile(string authenticationToken);
 
         public string GetUsername(string authenticationToken);
+
+        public UserProfile GetUserProfile(string authenticationToken);
     }
 }

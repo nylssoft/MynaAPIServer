@@ -17,16 +17,12 @@
 */
 namespace APIServer.PwdMan
 {
-    public class PwdManOptions
+    public class UserProfile
     {
-        public TokenConfig TokenConfig { get; set; }
+        public bool PasswordManagerEnabled { get; set; }
 
-        public TOTPConfig TOTPConfig { get; set; }
+        public bool ConfirmRegistrationEnabled { get; set; }
 
-        public string RegistrationEmail { get; set; }
-
-        public int MaxLoginTryCount { get; set; } = 3;
-
-        public int AccountLockTime { get; set; } = 300;
+        public string Username { get; set; }
     }
 }

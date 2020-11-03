@@ -86,6 +86,26 @@ namespace APIServer.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Roles",
+                columns: table => new
+                {
+                    Id = table.Column<long>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DbUserId = table.Column<long>(nullable: false),
+                    Name = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Roles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Roles_Users_DbUserId",
+                        column: x => x.DbUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Registrations_ConfirmedById",
                 table: "Registrations",
@@ -96,6 +116,11 @@ namespace APIServer.Migrations
                 table: "Registrations",
                 column: "Email",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Roles_DbUserId",
+                table: "Roles",
+                column: "DbUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Settings_Key",
@@ -125,6 +150,9 @@ namespace APIServer.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Registrations");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
 
             migrationBuilder.DropTable(
                 name: "Settings");

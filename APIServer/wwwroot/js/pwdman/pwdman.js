@@ -14,8 +14,11 @@ var pwdman = (() => {
     let confirmPasswordPwd;
     let errorDiv;
     let pwdItemsDiv;
+    let emailDiv;
     let emailInput;
     let facCheckbox;
+    let emailCheckbox;
+    let confirmOkCancelDiv;
 
     // state
 
@@ -25,6 +28,7 @@ var pwdman = (() => {
     let requiresPass2;
     let salt
     let cryptoKey;
+    let actionConfirmRegistration;
     let actionChangePwd;
     let actionRequestRegistration;
     let actionRegister;
@@ -78,6 +82,7 @@ var pwdman = (() => {
         token = undefined;
         cryptoKey = undefined;
         userName = undefined;
+        actionConfirmRegistration = false;
         actionChangePwd = false;
         actionRequestRegistration = false;
         actionRegister = false;
@@ -191,8 +196,8 @@ var pwdman = (() => {
 
     const requestRegistration = () => {
         lastErrorMessage = "";
-        let email = emailInput.value;
-        if (email.trim().length == 0 || email.indexOf("@") <= 0 ) {
+        let email = emailInput.value.trim();
+        if (email.length == 0 || email.indexOf("@") <= 0 ) {
             errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse.";
             return;
         }
@@ -213,6 +218,33 @@ var pwdman = (() => {
                             " Du bekommst eine Antwort, sobald Deine Identit\u00E4t best\u00E4tigt wurde.";
                     }
                     renderPage();
+                }
+                else {
+                    errorDiv.textContent = val.title;
+                }
+            }))
+            .catch(err => errorDiv.textContent = err.message);
+    };
+
+    const confirmRegistration = () => {
+        errorDiv.textContent = "";
+        let email = emailInput.value.trim();
+        if (email.length == 0 || email.indexOf("@") <= 0) {
+            errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse.";
+            return;
+        }
+        fetch("api/pwdman/confirmation", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+            body: JSON.stringify({ "email": email, "notification": emailCheckbox.checked })
+        })
+            .then(response => response.json().then(val => {
+                if (response.ok) {
+                    controls.removeAllChildren(emailDiv);
+                    controls.create(emailDiv, "p", undefined,
+                        `Die E-Mail-Adresse ${email} wurde erfolgreich best\u00E4tigt. Das Registrierungstoken ist ${val}.`);
+                    controls.removeAllChildren(confirmOkCancelDiv);
+                    controls.createButton(confirmOkCancelDiv, "OK", cancel, undefined, "button");
                 }
                 else {
                     errorDiv.textContent = val.title;
@@ -271,6 +303,7 @@ var pwdman = (() => {
         else {
             actionRequestRegistration = false;
             actionRegister = false;
+            actionConfirmRegistration = false;
             actionChangePwd = false;
             successRegister = false;
             renderPage();
@@ -424,6 +457,23 @@ var pwdman = (() => {
         renderCopyright(parent, "Portal");
     };
 
+    const renderConfirmRegistration = (parent) => {
+        controls.create(parent, "h1", undefined, "Registrierung best\u00E4tigen");
+        emailDiv = controls.createDiv(parent);
+        controls.create(emailDiv, "p", undefined, "Gib die E-Mail-Adresse f\u00FCr die Best\u00E4tigung ein.");
+        let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
+        emailLabel.htmlFor = "email-id";
+        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", confirmRegistration, undefined, 30, 80);
+        emailInput.id = "email-id";
+        let sendEmailDiv = controls.createDiv(emailDiv);
+        emailCheckbox = controls.createCheckbox(sendEmailDiv, undefined, undefined, "Best\u00E4tigung verschicken", true, undefined, false);
+        confirmOkCancelDiv = controls.createDiv(parent);
+        controls.createButton(confirmOkCancelDiv, "Best\u00E4tigen", confirmRegistration, undefined, "button");
+        controls.createButton(confirmOkCancelDiv, "Abbrechen", cancel, undefined, "button");
+        renderError(parent);
+        renderCopyright(parent, "Portal");
+    };
+
     const renderRequestRegistration = (parent) => {
         controls.create(parent, "h1", undefined, "Registrieren");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
@@ -433,7 +483,7 @@ var pwdman = (() => {
             return;
         }
         controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse an. Wenn Sie freigeschaltet wurde, kannst Du Dich mit einem Benutzernamen registrieren.");
-        let emailDiv = controls.createDiv(parent);
+        emailDiv = controls.createDiv(parent);
         let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
         emailLabel.htmlFor = "email-id";
         emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", requestRegistration, undefined, 30, 80);
@@ -487,7 +537,7 @@ var pwdman = (() => {
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
         codeLabel.htmlFor = "code-id";
-        codeInput = controls.createInputField(codeDiv, "Registrierungscode", undefined, undefined, 10, 10);
+        codeInput = controls.createInputField(codeDiv, "Registrierungscode", register, undefined, 10, 10);
         codeInput.id = "code-id";
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "Registrieren", register, undefined, "button");
@@ -634,6 +684,9 @@ var pwdman = (() => {
         else if (actionChangePwd) {
             renderChangePwd(document.body);
         }
+        else if (actionConfirmRegistration) {
+            renderConfirmRegistration(document.body);
+        }
         else if (nexturl && nexturl.length > 0) {
             window.location.replace(nexturl);
         }
@@ -700,6 +753,9 @@ var pwdman = (() => {
             else if (params.has("register")) {
                 actionRequestRegistration = true;
                 actionRegister = false;
+            }
+            else if (params.has("confirm")) {
+                actionConfirmRegistration = true;
             }
         }
         renderPage();

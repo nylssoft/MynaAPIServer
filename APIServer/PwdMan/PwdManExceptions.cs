@@ -19,6 +19,14 @@ using APIServer.APIError;
 
 namespace APIServer.PwdMan
 {
+    public class AccessDeniedPermissionException : APIException
+    {
+        public AccessDeniedPermissionException() :
+            base("Der Zugriff wurde verweigert.", 403)
+        {
+        }
+    }
+
     public class UnauthorizedException : APIException
     {
         public UnauthorizedException() :

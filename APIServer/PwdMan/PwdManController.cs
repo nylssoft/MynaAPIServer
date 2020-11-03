@@ -56,6 +56,13 @@ namespace APIServer.PwdMan
         }
 
         [HttpGet]
+        [Route("api/pwdman/userprofile")]
+        public IActionResult GetUserProfile()
+        {
+            return new JsonResult(PwdManService.GetUserProfile(GetToken()));
+        }
+
+        [HttpGet]
         [Route("api/pwdman/username")]
         public IActionResult GetUsername()
         {

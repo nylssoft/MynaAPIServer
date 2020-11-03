@@ -27,6 +27,8 @@ namespace APIServer.Database
 
         public DbSet<DbUser> DbUsers { get; set; }
 
+        public DbSet<DbRole> DbRoles { get; set; }
+
         public DbSet<DbRegistration> DbRegistrations { get; set; }
 
         public DbSet<DbSetting> DbSettings { get; set; }

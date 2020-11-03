@@ -26,7 +26,6 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -114,10 +113,9 @@ namespace APIServer.PwdMan
             logger.LogDebug("Confirm registration for email addresss '{email}'...", confirmation.Email);
             var email = confirmation.Email.ToLowerInvariant();
             var user = GetUserFromToken(authenticationToken);
-            var opt = GetOptions();
-            if (!opt.Roles.UserManagers.Contains(user.Name))
+            if (!HasRole(user, "usermanager"))
             {
-                throw new UnauthorizedException();
+                throw new AccessDeniedPermissionException();
             }
             var emailUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
             if (emailUser != null)
@@ -151,8 +149,9 @@ namespace APIServer.PwdMan
             if (confirmation.Notification)
             {
                 var subject = $"Myna Portal Registrierungsbestätigung";
-                var body = $"Hallo {email}!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
-                    "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.";
+                var body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
+                    "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n"+
+                    "Viele Grüsse!";
                 notificationService.SendToAsync(email, subject, body);
             }
             return registration.Token;
@@ -316,6 +315,18 @@ namespace APIServer.PwdMan
             return GetUserFromToken(authenticationToken).Name;
         }
 
+        public UserProfile GetUserProfile(string authenticationToken)
+        {
+            logger.LogDebug("Get user profile...");
+            var user = GetUserFromToken(authenticationToken);
+            return new UserProfile
+            {
+                Username = user.Name,
+                ConfirmRegistrationEnabled = HasRole(user, "usermanager"),
+                PasswordManagerEnabled = user.PasswordFileId.HasValue
+            };
+        }
+
         public string GetSalt(string token)
         {
             logger.LogDebug("Get salt...");
@@ -399,6 +410,22 @@ namespace APIServer.PwdMan
         }
 
         // --- private
+
+        private bool HasRole(DbUser user, string roleName)
+        {
+            if (user.Roles == null)
+            {
+                dbContext.Entry(user).Collection(user => user.Roles).Load();
+            }
+            foreach (var role in user.Roles)
+            {
+                if (role.Name == roleName)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private T GetSetting<T>(string key)
         {
