@@ -15,36 +15,46 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.PwdMan.Model;
+using System.Collections.Generic;
+
 namespace APIServer.PwdMan
 {
     public interface IPwdManService
     {
-        public bool IsRegisteredUsername(string username);
+        // --- registration
 
-        public bool IsRegisterAllowed(string email);
+        bool IsRegisterAllowed(string email);
 
-        public void Register(RegistrationProfile registrationProfile);
+        List<OutstandingRegistrationModel> GetOutstandingRegistrations(string authenticationToken);
 
-        public string ConfirmRegistration(string authenticationToken, Confirmation confirmation);
+        string ConfirmRegistration(string authenticationToken, OutstandingRegistrationModel registration);
 
-        public AuthenticationResult Authenticate(Authentication authenication);
+        void RegisterUser(UserRegistrationModel userRegistration);
 
-        public string AuthenticateTOTP(string token, string totp);
+        // --- user management
 
-        public void SendTOTP(string token);
+        bool IsRegisteredUsername(string username);
 
-        public string GetSalt(string token);
+        UserModel GetUser(string authenticationToken);
 
-        public void ChangeUserPassword(string token, UserPasswordChange userPassswordChange);
+        bool DeleteUser(string authenticationToken, string userName);
 
-        public void SavePasswordFile(string token, PasswordFile pwdFileContent);
+        // --- authentication
+        AuthenticationResponseModel Authenticate(AuthenticationModel authenication);
 
-        public string GetEncodedPasswordFile(string token);
+        string AuthenticateTOTP(string token, string totp);
 
-        public bool HasPasswordFile(string authenticationToken);
+        void SendTOTP(string token);
 
-        public string GetUsername(string authenticationToken);
+        void ChangeUserPassword(string token, UserPasswordChangeModel userPassswordChange);
 
-        public UserProfile GetUserProfile(string authenticationToken);
+        // --- password manager
+
+        void SavePasswordFile(string token, PasswordFileModel pwdFileContent);
+
+        string GetEncodedPasswordFile(string token);
+
+        bool HasPasswordFile(string authenticationToken);
     }
 }

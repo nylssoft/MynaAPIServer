@@ -40,11 +40,71 @@ var utils = (() => {
         return arr;
     };
 
+    // --- pwdpan
+
+    const get_authentication_token = () => {
+        let pwdmanState;
+        let str = window.sessionStorage.getItem("pwdman-state");
+        if (str && str.length > 0) {
+            pwdmanState = JSON.parse(str);
+            if (pwdmanState && !pwdmanState.requiresPass2 && pwdmanState.token.length > 0) {
+                return pwdmanState.token;
+            }
+        }
+        return undefined;
+    };
+
+    const logout = (resolve, reject) => {
+        // pwdman
+        window.sessionStorage.removeItem("pwdman-state");
+        // skat
+        let skatTicket = window.sessionStorage.getItem("ticket");
+        if (!skatTicket) {
+            skatTicket = window.localStorage.getItem("ticket");
+        }
+        if (skatTicket) {
+            window.sessionStorage.removeItem("ticket");
+            window.localStorage.removeItem("ticket");
+            fetch_api_call("api/skat/logout", { method: "POST", headers: { "ticket": skatTicket } }, resolve, reject);
+        }
+        else {
+            if (resolve) resolve();
+        }
+    };
+
+    const fetch_api_call = (apicall, init, resolve, reject) => {
+        fetch(apicall, init)
+            .then(response => {
+                response.json()
+                    .then(json => {
+                        if (response.ok) {
+                            if (resolve) resolve(json);
+                        }
+                        else {
+                            console.error(json.title);
+                            if (reject) reject(json.title);
+                        }
+                    })
+                    .catch((err) => {
+                        console.error(err.message);
+                        let errmsg = (response.status != 200) ? `${response.status} : ${response.statusText}` : err.message;
+                        if (reject) reject(errmsg);
+                    });
+            })
+            .catch(err => {
+                console.error(err.message);
+                if (reject) reject(err.message);
+            });
+    };
+
     // --- public API
 
     return {
         concat_strings: concat_strings,
         format_date: format_date,
-        shuffle_array: shuffle_array
+        shuffle_array: shuffle_array,
+        get_authentication_token: get_authentication_token,
+        logout: logout,
+        fetch_api_call: fetch_api_call
     };
 })();

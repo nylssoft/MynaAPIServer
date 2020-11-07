@@ -112,5 +112,14 @@
       "renameLocals": true
     },
     "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/pwdman/usermgmt.min.js",
+    "inputFiles": [ "wwwroot/js/pwdman/usermgmt.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
   }
 ]

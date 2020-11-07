@@ -36,22 +36,6 @@ var skat = (() => {
 
     // helper
 
-    const removeAuthenticationToken = () => {
-        window.sessionStorage.removeItem("pwdman-state");
-    };
-
-    const getAuthenticationToken = () => {
-        let pwdmanState;
-        let str = window.sessionStorage.getItem("pwdman-state");
-        if (str && str.length > 0) {
-            pwdmanState = JSON.parse(str);
-            if (pwdmanState && !pwdmanState.requiresPass2 && pwdmanState.token.length > 0) {
-                return pwdmanState.token;
-            }
-        }
-        return "";
-    };
-
     const clearTicket = () => {
         ticket = undefined;
         sessionStorage.removeItem("ticket");
@@ -224,8 +208,8 @@ var skat = (() => {
 
     const renderLogin = (parent) => {
         document.body.className = "active-background";
-        let token = getAuthenticationToken();
-        if (token.length == 0) {
+        let token = utils.get_authentication_token();
+        if (!token) {
             controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
             let label = controls.createLabel(parent, undefined, "Name:");
             label.htmlFor = "username-id";
@@ -235,21 +219,14 @@ var skat = (() => {
             controls.createButton(parent, "Anmelden", btnLogin_click);
         }
         else {
-            fetch("api/pwdman/username", { headers: { "token": token } })
-                .then(response => {
-                    if (response.ok) {
-                        response.json().then(username => {
-                            controls.create(parent, "p", undefined, `${username}! Du kannst noch mitspielen!`);
-                            inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "hide", 20, 32);
-                            inputUsername.value = username;
-                            controls.createButton(parent, "Mitspielen", btnLogin_click);
-                        });
-                    }
-                    else {
-                        response.json().then(apierr => console.error(apierr.title));
-                    }
-                })
-                .catch(err => console.log(err.message));
+            utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+                (user) => {
+                    controls.create(parent, "p", undefined, `${user.name}! Du kannst noch mitspielen!`);
+                    inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "hide", 20, 32);
+                    inputUsername.value = user.name;
+                    controls.createButton(parent, "Mitspielen", btnLogin_click);
+                },
+                (errmsg) => console.error(errmsg));
         }
     };
 
@@ -707,8 +684,8 @@ var skat = (() => {
     };
 
     const login = (name) => {
-        let token = getAuthenticationToken();
-        if (!name || name.length == 0 || token.length == 0) {
+        let token = utils.get_authentication_token();
+        if (!name || name.length == 0 || !token) {
             window.location.replace("/skat");
             return;
         }
@@ -717,7 +694,7 @@ var skat = (() => {
             headers: {
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-                "token": getAuthenticationToken()
+                "token": token
             },
             body: JSON.stringify(name)
         })
@@ -764,12 +741,16 @@ var skat = (() => {
         const name = inputUsername.value.trim();
         if (name.length > 0) {
             timerEnabled = false;
+            let token = utils.get_authentication_token();
+            if (!token) {
+                token = "";
+            }
             fetch("api/skat/login", {
                 method: "POST",
                 headers: {
                     "Accept": "application/json",
                     "Content-Type": "application/json",
-                    "token": getAuthenticationToken()
+                    "token": token
                 },
                 body: JSON.stringify(name)
             })
@@ -1020,9 +1001,8 @@ var skat = (() => {
                 .then(response => response.json())
                 .then(() => {
                     logoutClicked = false;
-                    removeAuthenticationToken();
-                    clearTicket();
-                    render();
+                    ticket = undefined;
+                    utils.logout(() => render());
                 })
                 .catch((err) => console.error(err));
         }

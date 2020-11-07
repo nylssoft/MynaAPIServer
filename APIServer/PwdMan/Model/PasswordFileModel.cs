@@ -15,14 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-namespace APIServer.PwdMan
+using System.Collections.Generic;
+
+namespace APIServer.PwdMan.Model
 {
-    public class UserProfile
+    public class PasswordFileModel
     {
-        public bool PasswordManagerEnabled { get; set; }
+        public string SecretKey { get; set; }
 
-        public bool ConfirmRegistrationEnabled { get; set; }
-
-        public string Username { get; set; }
+        public List<PasswordItemModel> Passwords { get; set; }
     }
 }

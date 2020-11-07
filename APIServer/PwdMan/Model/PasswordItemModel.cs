@@ -15,12 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-namespace APIServer.PwdMan
+namespace APIServer.PwdMan.Model
 {
-    public class AuthenticationResult
+    public class PasswordItemModel
     {
-        public string Token { get; set; }
+        public string Name { get; set; }
 
-        public bool RequiresPass2 { get; set; }
+        public string Url { get; set; }
+
+        public string Login { get; set; }
+
+        public string Password { get; set; }
+
+        public string Description { get; set; }
     }
 }

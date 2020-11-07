@@ -38,13 +38,6 @@ namespace APIServer.Email
             this.logger = logger;
         }
 
-        public void NotifyAsync(string subject, string plainTextBody)
-        {
-            var opt = GetOptions();
-            if (!opt.IsConfigured()) return;
-            SendToAsync(opt.NotificationRecipientAddress, subject, plainTextBody);
-        }
-
         public void SendToAsync(string to, string subject, string plainTextBody)
         {
             var opt = GetOptions();

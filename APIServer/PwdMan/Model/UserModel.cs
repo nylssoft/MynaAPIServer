@@ -15,20 +15,27 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-namespace APIServer.PwdMan
+using System;
+using System.Collections.Generic;
+
+namespace APIServer.PwdMan.Model
 {
-    public class User
+    public class UserModel
     {
         public string Name { get; set; }
-
-        public string PasswordHash { get; set; }
-
-        public string Salt { get; set; }
-
-        public string PasswordFile { get; set; }
 
         public string Email { get; set; }
 
         public bool Requires2FA { get; set; }
+
+        public DateTime? LastLoginUtc { get; set; }
+
+        public DateTime? RegisteredUtc { get; set; }
+
+        public List<string> Roles { get; set; }
+
+        public bool HasPasswordManagerFile { get; set; }
+
+        public string PasswordManagerSalt { get; set; }
     }
 }

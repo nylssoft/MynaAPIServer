@@ -15,14 +15,16 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
+using System;
 
-namespace APIServer.PwdMan
+namespace APIServer.PwdMan.Model
 {
-    public class PasswordFile
+    public class OutstandingRegistrationModel
     {
-        public string SecretKey { get; set; }
+        public string Email { get; set; }
 
-        public List<PasswordItem> Passwords { get; set; }
+        public bool Notification { get; set; }
+
+        public DateTime? RequestedUtc { get; set; }
     }
 }

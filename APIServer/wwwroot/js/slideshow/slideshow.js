@@ -19,46 +19,12 @@ var slideshow = (() => {
     let backgroundIndex = 0;
     let backgroundText;
 
-    let passwordManagerEnabled = false;
-    let username;
+    let currentUser;
 
     // --- helper
 
-    const getAuthenticationToken = () => {
-        let pwdmanState;
-        let str = window.sessionStorage.getItem("pwdman-state");
-        if (str && str.length > 0) {
-            pwdmanState = JSON.parse(str);
-            if (pwdmanState && !pwdmanState.requiresPass2 && pwdmanState.token.length > 0) {
-                return pwdmanState.token;
-            }
-        }
-        return "";
-    };
-
-    const logout = () => {
-        window.sessionStorage.removeItem("pwdman-state");
-        let skatTicket = sessionStorage.getItem("ticket");
-        if (!skatTicket) {
-            skatTicket = localStorage.getItem("ticket");
-        }
-        if (skatTicket && skatTicket.length > 0) {
-            window.sessionStorage.removeItem("ticket");
-            window.localStorage.removeItem("ticket");
-            fetch("api/skat/logout", { method: "POST", headers: { "ticket": skatTicket } })
-                .then(response => response.json())
-                .then(() => {
-                    console.log("Skat logout completed.");
-                    render();
-                })
-                .catch((err) => {
-                    console.error(err);
-                    render();
-                });
-        }
-        else {
-            render();
-        }
+    const onEditAccount = () => {
+        window.location.href = "/usermgmt?nexturl=" + encodeURI(window.location.href);
     };
 
     // --- rendering
@@ -67,22 +33,15 @@ var slideshow = (() => {
         let div = controls.createDiv(parent);
         controls.createA(div, "footer-link", "/skat", "Skat");
         controls.createA(div, "footer-link", "/tetris", "Tetris");
-        if (passwordManagerEnabled) {
-            controls.createA(div, "footer-link", "/pwdman", "Passwort\u00A0Manager");
-        }
-        let token = getAuthenticationToken();
-        if (token.length > 0) {
-            controls.createA(div, "footer-link", "/pwdman", "Abmelden", logout);
-            controls.createA(div, "footer-link", "/pwdman", "Kennwort\u00A0\u00E4ndern", () => {
-                window.location.href = "/pwdman?changepwd&nexturl=" + encodeURI(window.location.href);                
-            });
+        if (currentUser) {
+            if (currentUser.hasPasswordManagerFile) {
+                controls.createA(div, "footer-link", "/pwdman", "Passwort\u00A0Manager");
+            }
+            controls.createA(div, "footer-link", "/usermgmt", "Konto", () => onEditAccount());
         }
         else {
             controls.createA(div, "footer-link", "/pwdman", "Anmelden", () => {
                 window.location.href = "/pwdman?nexturl=" + encodeURI(window.location.href);
-            });
-            controls.createA(div, "footer-link", "/pwdman", "Registrieren", () => {
-                window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
             });
         }
         controls.createA(div, "footer-link", "/downloads", "Downloads");
@@ -115,16 +74,17 @@ var slideshow = (() => {
 
     const renderPage = () => {
         controls.removeAllChildren(document.body);
-        if (username && username.length > 0) {
+        if (currentUser) {
             let url;
             if (skatPlayerImages) {
-                url = skatPlayerImages[username.toLowerCase()];
+                url = skatPlayerImages[currentUser.name.toLowerCase()];
             }
             if (!url) {
                 url = "/images/skat/profiles/Player1.png";
             }
             let img = controls.createImg(document.body, "img-profile", 32, 45, url);
-            img.title = `Angemeldet als ${username}`;
+            img.title = `Angemeldet als ${currentUser.name}`;
+            img.addEventListener("click", () => onEditAccount());
         }
         divFooter = controls.createDiv(document.body, "footer");
         renderSlideshowInfo(divFooter);
@@ -141,43 +101,27 @@ var slideshow = (() => {
         };
     };
 
-    const fetchFileinfo = () => {
-        fetch("api/pwdman/fileinfo", { headers: { "token": getAuthenticationToken() } })
-            .then(response => response.json().then(val => {
-                if (response.ok && val === true) {
-                    passwordManagerEnabled = true;
-                }
+    const fetchCurrentUser = (token) => {
+        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+            (user) => {
+                currentUser = user;
                 renderPage();
-            }))
-            .catch(err => {
-                console.log(err.message);
+            },
+            (errmsg) => {
+                console.error(errmsg);
+                utils.logout();
                 renderPage();
-            });
-    };
-
-    const fetchUsername = () => {
-        fetch("api/pwdman/username", { headers: { "token": getAuthenticationToken() } })
-            .then(response => response.json().then(val => {
-                if (response.ok && typeof val === "string") {
-                    username = val;
-                }
-                fetchFileinfo();
-            }))
-            .catch(err => {
-                console.log(err.message);
-                fetchFileinfo();
             });
     };
 
     const render = () => {
-        username = "";
-        passwordManagerEnabled = false;
-        let token = getAuthenticationToken();
-        if (token.length == 0) {
+        currentUser = undefined;
+        let token = utils.get_authentication_token();
+        if (!token) {
             renderPage();
             return;
         }
-        fetchUsername();
+        fetchCurrentUser(token);
     };
 
     // --- callbacks

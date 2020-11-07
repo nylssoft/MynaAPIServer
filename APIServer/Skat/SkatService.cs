@@ -95,7 +95,8 @@ namespace APIServer.Skat
             {
                 if (authenticationToken?.Length > 0)
                 {
-                    username = pwdManService.GetUsername(authenticationToken);
+                    var user = pwdManService.GetUser(authenticationToken);
+                    username = user.Name;
                     foreach (var e in userTickets)
                     {
                         if (e.Value.Name == username)

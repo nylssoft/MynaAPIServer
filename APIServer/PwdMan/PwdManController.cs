@@ -17,6 +17,7 @@
 */
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using APIServer.PwdMan.Model;
 
 namespace APIServer.PwdMan
 {
@@ -42,36 +43,43 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/profile")]
-        public IActionResult Register([FromBody] RegistrationProfile registrationProfile)
+        public IActionResult RegisterUser([FromBody] UserRegistrationModel userRegistration)
         {
-            PwdManService.Register(registrationProfile);
+            PwdManService.RegisterUser(userRegistration);
             return Ok();
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/confirmation")]
+        public IActionResult GetOutstandingRegistrations()
+        {
+            return new JsonResult(PwdManService.GetOutstandingRegistrations(GetToken()));
         }
 
         [HttpPost]
         [Route("api/pwdman/confirmation")]
-        public IActionResult ConfirmRegistration([FromBody] Confirmation confirmation)
+        public IActionResult ConfirmRegistration([FromBody] OutstandingRegistrationModel confirmation)
         {
             return new JsonResult(PwdManService.ConfirmRegistration(GetToken(), confirmation));
         }
 
         [HttpGet]
-        [Route("api/pwdman/userprofile")]
-        public IActionResult GetUserProfile()
+        [Route("api/pwdman/user")]
+        public IActionResult GetUser()
         {
-            return new JsonResult(PwdManService.GetUserProfile(GetToken()));
+            return new JsonResult(PwdManService.GetUser(GetToken()));
         }
 
-        [HttpGet]
-        [Route("api/pwdman/username")]
-        public IActionResult GetUsername()
+        [HttpDelete]
+        [Route("api/pwdman/user")]
+        public IActionResult DeleteUser([FromBody] string username)
         {
-            return new JsonResult(PwdManService.GetUsername(GetToken()));
+            return new JsonResult(PwdManService.DeleteUser(GetToken(), username));
         }
 
         [HttpPost]
         [Route("api/pwdman/auth")]
-        public IActionResult Login([FromBody] Authentication authentication)
+        public IActionResult Login([FromBody] AuthenticationModel authentication)
         {
             return new JsonResult(PwdManService.Authenticate(authentication));
         }
@@ -91,16 +99,9 @@ namespace APIServer.PwdMan
             return Ok();
         }
 
-        [HttpGet]
-        [Route("api/pwdman/salt")]
-        public IActionResult GetSalt()
-        {
-            return new JsonResult(PwdManService.GetSalt(GetToken()));
-        }
-
         [HttpPost]
         [Route("api/pwdman/userpwd")]
-        public IActionResult ChangeUserPassword([FromBody] UserPasswordChange userPasswordChange)
+        public IActionResult ChangeUserPassword([FromBody] UserPasswordChangeModel userPasswordChange)
         {
             PwdManService.ChangeUserPassword(GetToken(), userPasswordChange);
             return Ok();
@@ -108,7 +109,7 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/file")]
-        public IActionResult SavePasswordFile([FromBody] PasswordFile passwordFile)
+        public IActionResult SavePasswordFile([FromBody] PasswordFileModel passwordFile)
         {
             PwdManService.SavePasswordFile(GetToken(), passwordFile);
             return Ok();

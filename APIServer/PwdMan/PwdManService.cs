@@ -18,6 +18,7 @@
 using APIServer.Database;
 using APIServer.Email;
 using APIServer.PasswordGenerator;
+using APIServer.PwdMan.Model;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -58,12 +59,7 @@ namespace APIServer.PwdMan
             this.notificationService = notificationService;
         }
 
-        public bool IsRegisteredUsername(string username)
-        {
-            logger.LogDebug("Check whether username '{username}' is registered...", username);
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
-            return user != null;
-        }
+        // --- registration
 
         public bool IsRegisterAllowed(string email)
         {
@@ -73,6 +69,11 @@ namespace APIServer.PwdMan
             if (string.IsNullOrEmpty(opt.RegistrationEmail))
             {
                 throw new PwdManInvalidArgumentException("Registrieren ist deaktiviert.");
+            }
+            // first user can register without confirmation and token
+            if (dbContext.DbUsers.Count() == 0)
+            {
+                return true;
             }
             var user = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
             bool userEmailExists = user != null;
@@ -108,7 +109,31 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public string ConfirmRegistration(string authenticationToken, Confirmation confirmation)
+        public List<OutstandingRegistrationModel> GetOutstandingRegistrations(string authenticationToken)
+        {
+            logger.LogDebug("Returns outstanding registrations...");
+            var user = GetUserFromToken(authenticationToken);
+            if (!HasRole(user, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var knownEmails = new HashSet<string>(dbContext.DbUsers.Select(u => u.Email).ToList());
+            var confirmations = new List<OutstandingRegistrationModel>();
+            var registrations = dbContext.DbRegistrations
+                .Where(r => !knownEmails.Contains(r.Email))
+                .Select(r => new { r.Email, r.RequestedUtc }).ToList();
+            foreach (var registration in registrations)
+            {
+                confirmations.Add(new OutstandingRegistrationModel
+                {
+                    Email = registration.Email,
+                    RequestedUtc = GetUtcDateTime(registration.RequestedUtc)
+                });
+            }
+            return confirmations;
+        }
+
+        public string ConfirmRegistration(string authenticationToken, OutstandingRegistrationModel confirmation)
         {
             logger.LogDebug("Confirm registration for email addresss '{email}'...", confirmation.Email);
             var email = confirmation.Email.ToLowerInvariant();
@@ -150,14 +175,14 @@ namespace APIServer.PwdMan
             {
                 var subject = $"Myna Portal Registrierungsbestätigung";
                 var body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
-                    "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n"+
+                    "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n" +
                     "Viele Grüsse!";
                 notificationService.SendToAsync(email, subject, body);
             }
             return registration.Token;
         }
 
-        public void Register(RegistrationProfile registrationProfile)
+        public void RegisterUser(UserRegistrationModel registrationProfile)
         {
             logger.LogDebug("Register user '{username}', email '{email}...", registrationProfile.Username, registrationProfile.Email);
             if (string.IsNullOrEmpty(registrationProfile.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
@@ -165,20 +190,25 @@ namespace APIServer.PwdMan
             if (string.IsNullOrEmpty(registrationProfile.Token)) throw new PwdManInvalidArgumentException("Registrierungscode ist ungültig.");
             var email = registrationProfile.Email.ToLowerInvariant();
             var opt = GetOptions();
-            var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
-            if (registration == null || registration.Token != registrationProfile.Token)
+            // first user can register without token
+            var firstUser = dbContext.DbUsers.Count() == 0;
+            if (!firstUser)
             {
-                throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
-            }
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == registrationProfile.Username);
-            if (user != null)
-            {
-                throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
-            }
-            user = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
-            if (user != null)
-            {
-                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde schon registriert.");
+                var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
+                if (registration == null || registration.Token != registrationProfile.Token)
+                {
+                    throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
+                }
+                var exsitingUser = dbContext.DbUsers.SingleOrDefault(u => u.Name == registrationProfile.Username);
+                if (exsitingUser != null)
+                {
+                    throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
+                }
+                exsitingUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
+                if (exsitingUser != null)
+                {
+                    throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde schon registriert.");
+                }
             }
             if (!VerifyPasswordStrength(registrationProfile.Password))
             {
@@ -187,7 +217,7 @@ namespace APIServer.PwdMan
             var pwdgen = new PwdGen { Length = 12 };
             var hasher = new PasswordHasher<string>();
             var hash = hasher.HashPassword(registrationProfile.Username, registrationProfile.Password);
-            user = new DbUser
+            var user = new DbUser
             {
                 Name = registrationProfile.Username,
                 Salt = pwdgen.Generate(),
@@ -196,11 +226,88 @@ namespace APIServer.PwdMan
                 Requires2FA = registrationProfile.Requires2FA,
                 RegisteredUtc = DateTime.UtcNow
             };
+            // first user has the usermanager role
+            if (firstUser)
+            {
+                user.Roles = new List<DbRole>();
+                user.Roles.Add(new DbRole { Name = "usermanager" });
+            }
             dbContext.DbUsers.Add(user);
             dbContext.SaveChanges();
         }
 
-        public AuthenticationResult Authenticate(Authentication authentication)
+        // --- user management
+
+        public bool IsRegisteredUsername(string username)
+        {
+            logger.LogDebug("Check whether username '{username}' is registered...", username);
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
+            return user != null;
+        }
+
+        public UserModel GetUser(string authenticationToken)
+        {
+            logger.LogDebug("Get user...");
+            var user = GetUserFromToken(authenticationToken);
+            var userModel = new UserModel
+            {
+                Name = user.Name,
+                Email = user.Email,
+                LastLoginUtc = GetUtcDateTime(user.LastLoginTryUtc),
+                Requires2FA = user.Requires2FA,
+                RegisteredUtc = GetUtcDateTime(user.RegisteredUtc),
+                HasPasswordManagerFile = user.PasswordFileId != null,
+                PasswordManagerSalt = user.Salt
+            };
+            userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
+            return userModel;
+        }
+
+        public bool DeleteUser(string authenticationToken, string userName)
+        {
+            logger.LogDebug($"Delete username {userName}...");
+            var user = GetUserFromToken(authenticationToken);
+            if (user.Name != userName)
+            {
+                if (!HasRole(user, "usermanager"))
+                {
+                    throw new AccessDeniedPermissionException();
+                }
+                user = dbContext.DbUsers.SingleOrDefault(u => u.Name == userName);
+                if (user == null)
+                {
+                    return false;
+                }
+            }
+            if (user.PasswordFileId.HasValue)
+            {
+                var delpwdfile = new DbPasswordFile { Id = user.PasswordFileId.Value };
+                dbContext.DbPasswordFiles.Attach(delpwdfile);
+                dbContext.DbPasswordFiles.Remove(delpwdfile);
+            }
+            var regs = dbContext.DbRegistrations.Where(r => r.ConfirmedById == user.Id);
+            if (regs.Any())
+            {
+                dbContext.DbRegistrations.RemoveRange(regs);
+            }
+            regs = dbContext.DbRegistrations.Where(r => r.Email == user.Email);
+            if (regs.Any())
+            {
+                dbContext.DbRegistrations.RemoveRange(regs);
+            }
+            var roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id);
+            if (roles.Any())
+            {
+                dbContext.DbRoles.RemoveRange(roles);
+            }
+            dbContext.DbUsers.Remove(user);
+            dbContext.SaveChanges();
+            return true;
+        }
+
+        // --- authentication
+
+        public AuthenticationResponseModel Authenticate(AuthenticationModel authentication)
         {
             logger.LogDebug("Authenticate '{username}'...", authentication.Username);
             var opt = GetOptions();
@@ -233,7 +340,7 @@ namespace APIServer.PwdMan
                         user.LoginTries = 0;
                         user.LastLoginTryUtc = DateTime.UtcNow;
                         dbContext.SaveChanges();
-                        return new AuthenticationResult { Token = token, RequiresPass2 = user.Requires2FA };
+                        return new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
                     }
                 }
                 logger.LogDebug("Invalid password specified.");
@@ -309,31 +416,8 @@ namespace APIServer.PwdMan
             throw new InvalidTokenException();
         }
 
-        public string GetUsername(string authenticationToken)
-        {
-            logger.LogDebug("Get current username...");
-            return GetUserFromToken(authenticationToken).Name;
-        }
 
-        public UserProfile GetUserProfile(string authenticationToken)
-        {
-            logger.LogDebug("Get user profile...");
-            var user = GetUserFromToken(authenticationToken);
-            return new UserProfile
-            {
-                Username = user.Name,
-                ConfirmRegistrationEnabled = HasRole(user, "usermanager"),
-                PasswordManagerEnabled = user.PasswordFileId.HasValue
-            };
-        }
-
-        public string GetSalt(string token)
-        {
-            logger.LogDebug("Get salt...");
-            return GetUserFromToken(token).Salt;
-        }
-
-        public void ChangeUserPassword(string authenticationToken, UserPasswordChange userPassswordChange)
+        public void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange)
         {
             logger.LogDebug("Change user password...");
             var user = GetUserFromToken(authenticationToken);
@@ -359,7 +443,9 @@ namespace APIServer.PwdMan
             dbContext.SaveChanges();
         }
 
-        public void SavePasswordFile(string token, PasswordFile passwordFile)
+        // --- password manager
+
+        public void SavePasswordFile(string token, PasswordFileModel passwordFile)
         {
             logger.LogDebug("Save password file...");
             if (!VerifyPasswordStrength(passwordFile.SecretKey))
@@ -410,6 +496,17 @@ namespace APIServer.PwdMan
         }
 
         // --- private
+
+        private DateTime? GetUtcDateTime(DateTime? dbDateTime)
+        {
+            DateTime? ret = null;
+            if (dbDateTime != null)
+            {
+                var ticks = dbDateTime.Value.Ticks;
+                ret = new DateTime(ticks, DateTimeKind.Utc);
+            }
+            return ret;
+        }
 
         private bool HasRole(DbUser user, string roleName)
         {
