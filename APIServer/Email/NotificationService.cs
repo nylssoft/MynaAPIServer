@@ -43,8 +43,8 @@ namespace APIServer.Email
             var opt = GetOptions();
             if (!opt.IsConfigured()) return;
             var mm = new MailMessage();
+            mm.From = new MailAddress(opt.Office365Account);
             mm.To.Add(new MailAddress(to));
-            mm.From = new MailAddress(opt.NotificationSenderAddress);
             mm.Subject = subject;
             mm.Body = plainTextBody;
             mm.IsBodyHtml = false;

@@ -1004,7 +1004,7 @@ var tetris = (() => {
     };
 
     const init = (sm) => {
-        if (window.matchMedia('(max-width: 480px)').matches) {
+        if (utils.is_mobile()) {
             pixelPerField = 18;
             borderWidth = 2;
         }

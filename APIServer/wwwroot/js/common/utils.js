@@ -40,6 +40,12 @@ var utils = (() => {
         return arr;
     };
 
+    // --- mobile support
+
+    const is_mobile = () => {
+        return window.matchMedia('(max-width: 480px)').matches;
+    };
+
     // --- pwdpan
 
     const get_authentication_token = () => {
@@ -105,6 +111,7 @@ var utils = (() => {
         shuffle_array: shuffle_array,
         get_authentication_token: get_authentication_token,
         logout: logout,
-        fetch_api_call: fetch_api_call
+        fetch_api_call: fetch_api_call,
+        is_mobile: is_mobile
     };
 })();

@@ -115,7 +115,7 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
             if (confirmations) {
                 let mgmtDiv = controls.create(actionsDiv, "p");
-                controls.createButton(mgmtDiv, "Best\u00E4tige Registrierungen", () => renderConfirmRegistrations());
+                controls.createButton(mgmtDiv, "Registrierungen best\u00E4tigen", () => renderConfirmRegistrations());
             }
         }
     };

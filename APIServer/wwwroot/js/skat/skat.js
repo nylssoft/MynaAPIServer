@@ -216,7 +216,14 @@ var skat = (() => {
             inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
             inputUsername.placeholder = "Name";
             inputUsername.id = "username-id";
+            if (!utils.is_mobile()) {
+                inputUsername.focus();
+            }
             controls.createButton(parent, "Anmelden", btnLogin_click);
+            let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du dich registrieren. ");
+            controls.createButton(p, "Registrieren", () => {
+                window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
+            });
         }
         else {
             utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },

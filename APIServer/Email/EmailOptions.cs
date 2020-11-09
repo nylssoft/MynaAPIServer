@@ -19,16 +19,13 @@ namespace APIServer.Email
 {
     public class EmailOptions
     {
-        public string NotificationSenderAddress { get; set; } = null;
-
         public string Office365Account { get; set; } = null;
 
         public string Office365Password { get; set; } = null;
 
         public bool IsConfigured()
         {
-            return !string.IsNullOrEmpty(NotificationSenderAddress) &&
-                !string.IsNullOrEmpty(Office365Account) &&
+            return !string.IsNullOrEmpty(Office365Account) &&
                 !string.IsNullOrEmpty(Office365Password);
         }
     }

@@ -17,8 +17,6 @@ var pwdman = (() => {
     let emailDiv;
     let emailInput;
     let facCheckbox;
-    let emailCheckbox;
-    let confirmOkCancelDiv;
 
     // state
 
@@ -364,6 +362,14 @@ var pwdman = (() => {
         userPasswordLabel.htmlFor = "userpwd-id";
         userPasswordPwd = controls.createPasswordField(passwordDiv, "Kennwort", authenticate, undefined, 16, 30);
         userPasswordPwd.id = "userpwd-id";
+        if (!utils.is_mobile()) {
+            if (userName) {
+                userPasswordPwd.focus();
+            }
+            else {
+                userNameInput.focus();
+            }
+        }
         let buttonDiv = controls.createDiv(parent);
         controls.createButton(buttonDiv, "Anmelden", authenticate, undefined, "button");
         if (nexturl) {
@@ -393,6 +399,9 @@ var pwdman = (() => {
             codeLabel.htmlFor = "securitycode-id";
             codeInput = controls.createInputField(codeDiv, "Sicherheitsscode", authenticatePass2, undefined, 10, 10);
             codeInput.id = "securitycode-id";
+            if (!utils.is_mobile()) {
+                codeInput.focus();
+            }
             let buttonLoginDiv = controls.createDiv(parent);
             controls.createButton(buttonLoginDiv, "Anmelden", authenticatePass2, undefined, "button");
         }
@@ -414,6 +423,9 @@ var pwdman = (() => {
         oldPwdLabel.htmlFor = "oldpwd-id";
         oldPasswordPwd = controls.createPasswordField(oldPwdDiv, "Altes Kennwort", () => newPasswordPwd.focus(), undefined, 16, 100);
         oldPasswordPwd.id = "oldpwd-id";
+        if (!utils.is_mobile()) {
+            oldPasswordPwd.focus();
+        }
         let newPwdDiv = controls.createDiv(parent);
         let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Neues Kennwort:");
         newPwdLabel.htmlFor = "newpwd-id";
@@ -448,6 +460,9 @@ var pwdman = (() => {
         emailInput.addEventListener("input", () => {
             errorDiv.textContent = "";
         });
+        if (!utils.is_mobile()) {
+            emailInput.focus();
+        }
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "Weiter", requestRegistration, undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
@@ -479,6 +494,9 @@ var pwdman = (() => {
         nameNameLabel.htmlFor = "username-id";
         userNameInput = controls.createInputField(userNameDiv, "Benutzername", () => newPasswordPwd.focus(), undefined, 16, 20);
         userNameInput.id = "username-id";
+        if (!utils.is_mobile()) {
+            userNameInput.focus();
+        }
         let newPwdDiv = controls.createDiv(parent);
         let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Kennwort:");
         newPwdLabel.htmlFor = "newpwd-id";
@@ -511,6 +529,9 @@ var pwdman = (() => {
         keyPwdLabel.htmlFor = "keypwd-id";
         secretKeyPwd = controls.createPasswordField(keyPwdDiv, "Schl\u00FCssel", setCryptoKey, undefined, 32, 100);
         secretKeyPwd.id = "keypwd-id";
+        if (!utils.is_mobile()) {
+            secretKeyPwd.focus();
+        }
         let buttonDecodeDiv = controls.createDiv(parent);
         controls.createButton(buttonDecodeDiv, "Dekodieren", setCryptoKey, undefined, "button");
         renderError(parent);
@@ -609,6 +630,9 @@ var pwdman = (() => {
         filterInput = controls.createInputField(filterDiv, "Suche", undefined, undefined, 20, 32);
         filterInput.id = "filter-id";
         filterInput.addEventListener("input", () => filterItems(pwdItems));
+        if (!utils.is_mobile()) {
+            filterInput.focus();
+        }
         pwdItemsDiv = controls.createDiv(parent);
         renderPasswordTable(pwdItemsDiv, pwdItems);
         renderCopyright(parent);
