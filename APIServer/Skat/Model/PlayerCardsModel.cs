@@ -19,22 +19,10 @@ using System.Collections.Generic;
 
 namespace APIServer.Skat.Model
 {
-    public class GameHistoryModel
+    public class PlayerCardsModel
     {
-        public string GameText { get; set; } = "";
+        public string PlayerName { get; set; } = "";
 
-        public string GamePlayerName { get; set; } = "";
-
-        public int GamePlayerScore { get; set; }
-
-        public int GameValue { get; set; }
-
-        public List<PlayerCardsModel> PlayerCards { get; set; } = new List<PlayerCardsModel>();
-
-        public List<CardModel> Skat { get; set; } = new List<CardModel>();
-
-        public List<CardModel> Back { get; set; } = new List<CardModel>();
-
-        public List<PlayedCardModel> Played { get; set; } = new List<PlayedCardModel>();
+        public List<CardModel> Cards { get; set; } = new List<CardModel>();
     }
 }

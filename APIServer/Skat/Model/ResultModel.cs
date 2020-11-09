@@ -15,26 +15,19 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System;
 using System.Collections.Generic;
 
 namespace APIServer.Skat.Model
 {
-    public class GameHistoryModel
+    public class ResultModel
     {
-        public string GameText { get; set; } = "";
+        public DateTime? StartedUtc { get; set; }
 
-        public string GamePlayerName { get; set; } = "";
+        public DateTime? EndedUtc { get; set; }
 
-        public int GamePlayerScore { get; set; }
+        public List<string> PlayerNames { get; set; } = new List<string>();
 
-        public int GameValue { get; set; }
-
-        public List<PlayerCardsModel> PlayerCards { get; set; } = new List<PlayerCardsModel>();
-
-        public List<CardModel> Skat { get; set; } = new List<CardModel>();
-
-        public List<CardModel> Back { get; set; } = new List<CardModel>();
-
-        public List<PlayedCardModel> Played { get; set; } = new List<PlayedCardModel>();
+        public List<GameHistoryModel> History { get; set; } = new List<GameHistoryModel>();
     }
 }

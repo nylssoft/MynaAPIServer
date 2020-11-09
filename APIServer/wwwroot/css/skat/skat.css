@@ -29,6 +29,41 @@ body {
     margin-left: 20pt;
 }
 
+table {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    color: white;
+    min-width: 400pt;
+    border-collapse: collapse;
+    border: 3px solid blue;
+    background-color: blue;
+}
+
+td, th {
+    padding: 20px;
+    letter-spacing: 1px;
+}
+
+thead th {
+    text-align: left;
+}
+
+tbody td {
+    text-align: left;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: dodgerblue;
+}
+
+tbody tr:nth-child(even) {
+    background-color: cornflowerblue;
+}
+
+td a {
+    color: white;
+}
+
 .hide {
     display: none;
 }
@@ -439,6 +474,15 @@ body {
 }
 
 @media (max-width: 480px) {
+    table {
+        min-width: 200pt;
+        width: 200pt;
+        font-size: 11pt;
+    }
+    td, th {
+        padding: 15px;
+        letter-spacing: 1px;
+    }
     .layout-right {
         margin: 0;
         bottom: 10pt;

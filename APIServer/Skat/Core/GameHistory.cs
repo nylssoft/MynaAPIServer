@@ -21,6 +21,16 @@ namespace APIServer.Skat.Core
 {
     public class GameHistory
     {
+        public string GameText { get; set; } = "";
+
+        public string GamePlayerName { get; set; } = "";
+
+        public int GamePlayerScore { get; set; }
+
+        public int GameValue { get; set; }
+
+        public List<(string, List<Card>)> PlayerCards { get; set; } = new List<(string, List<Card>)>();
+
         public List<Card> Skat { get; set; } = new List<Card>();
 
         public List<Card> Back { get; set; } = new List<Card>();

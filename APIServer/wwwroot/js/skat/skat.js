@@ -32,7 +32,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.0.5";
+    let version = "1.1.1";
 
     // helper
 
@@ -377,7 +377,7 @@ var skat = (() => {
             if (model.skatTable.canStartNewGame) {
                 if (!model.currentUser.startGameConfirmed) {
                     controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
-                    controls.createButton(parent, "Spielverlauf", () => window.open(window.location.href + "?gamehistory", "_blank"));
+                    controls.createButton(parent, "Tabelle", () => window.open(window.location.href + "?result", "_blank"));
                     active = true;
                 }
                 else {
@@ -626,18 +626,72 @@ var skat = (() => {
         }
     };
 
-    const renderGameHistory = (gameHistory) => {
+    const renderResult = (result) => {
+        document.title = "Skat - Tabelle";
+        controls.removeAllChildren(document.body);
+        document.body.className = "inactive-background";
+        let parent = document.body;
+        if (!result || !result.endedUtc) {
+            controls.createLabel(parent, undefined, "Die Tabelle ist noch nicht verf\u00FCgbar.");
+            return;
+        }
+        let started = new Date(result.startedUtc);
+        let ended = new Date(result.endedUtc);
+        let p1 = controls.create(parent, "p");
+        p1.textContent = `Tabelle f\u00FCr den ${started.toLocaleDateString("de-DE")} von ` +
+            `${started.toLocaleTimeString("de-DE")} bis ${ended.toLocaleTimeString("de-DE")}.`;
+        let cnt = 1;
+        let table = controls.create(parent, "table");
+        let theader = controls.create(table, "thead");
+        let tr = controls.create(theader, "tr");
+        controls.create(tr, "th", undefined, " ");
+        controls.create(tr, "th", undefined, `${result.playerNames[0]}`);
+        controls.create(tr, "th", undefined, `${result.playerNames[1]}`);
+        controls.create(tr, "th", undefined, `${result.playerNames[2]}`);
+        controls.create(tr, "th", undefined, "Spiel");
+        let tbody = controls.create(table, "tbody");
+        let scores = [0, 0, 0];
+        result.history.forEach((h) => {
+            tr = controls.create(tbody, "tr");
+            controls.create(tr, "td", undefined, `${cnt}`);
+            let idx = result.playerNames.findIndex((e) => e == h.gamePlayerName);
+            scores[idx] += h.gameValue;
+            for (let col = 0; col < 3; col++) {
+                let td = controls.create(tr, "td");
+                if (col == idx) {
+                    td.textContent = `${scores[idx]}`;
+                }
+                else {
+                    td.textContent = "-";
+                }
+            }
+            let tddetails = controls.create(tr, "td");
+            controls.createA(tddetails, undefined, "#open", `${h.gameValue}`, () => renderGameHistory(result, h));
+            cnt++;
+        });
+    };
+
+    const renderGameHistory = (result, gameHistory) => {
         controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
         let parent = document.body;
         if (!gameHistory) {
-            controls.createLabel(parent, undefined, "Der Spielablauf ist noch nicht verf\u00FCgbar.");
+            controls.create(parent, "p", undefined, "Der Spielablauf ist noch nicht verf\u00FCgbar.");
             return;
         }
-        controls.createLabel(parent, undefined, "Skat:");
+        let gameP = controls.create(parent, "p");
+        gameP.textContent = `${gameHistory.gamePlayerName} hat ${gameHistory.gameText} gespielt und ${gameHistory.gamePlayerScore} Augen bekommen. Das Spiel wurde mit ${gameHistory.gameValue} Punkten gewertet.`;
+        let buttonDiv = controls.createDiv(parent);
+        controls.createButton(buttonDiv, "Zur\u00FCck", () => renderResult(result));
+        controls.create(parent, "p", undefined, "Skat:");
         let divSkat = controls.createDiv(parent);
         renderCards(divSkat, true, gameHistory.skat, true, undefined, true);
-        controls.createLabel(parent, undefined, "Gedr\u00FCckt:");
+        gameHistory.playerCards.forEach((pc) => {
+            controls.create(parent, "p", undefined, `Spielkarten von ${pc.playerName}:`);
+            let d = controls.createDiv(parent);
+            renderCards(d, true, pc.cards, true, undefined, false);
+        });
+        controls.create(parent, "p", undefined, "Gedr\u00FCckt:");
         let divBack = controls.createDiv(parent);
         renderCards(divBack, true, gameHistory.back, true, undefined, true);
         let cnt = 1;
@@ -645,7 +699,7 @@ var skat = (() => {
             let p1 = gameHistory.played[idx];
             let p2 = gameHistory.played[idx+1];
             let p3 = gameHistory.played[idx+2];
-            controls.createLabel(parent, undefined, `Stich ${cnt}: ${p1.player}, ${p2.player}, ${p3.player}`);
+            controls.create(parent, "p", undefined, `Stich ${cnt}: ${p1.player}, ${p2.player}, ${p3.player}`);
             let divStitch = controls.createDiv(parent);
             renderCards(divStitch, true, [p1.card, p2.card, p3.card], true, undefined, true);
             cnt++;
@@ -725,10 +779,10 @@ var skat = (() => {
             return;
         }
         ticket = getTicket();
-        if (ticket && params.has("gamehistory")) {
-            fetch("api/skat/gamehistory", { headers: { "ticket": ticket } })
+        if (ticket && params.has("result")) {
+            fetch("api/skat/result", { headers: { "ticket": ticket } })
                 .then(response => response.json())
-                .then(gameHistory => renderGameHistory(gameHistory))
+                .then(result => renderResult(result))
                 .catch(err => console.error(err));
             return;
         }

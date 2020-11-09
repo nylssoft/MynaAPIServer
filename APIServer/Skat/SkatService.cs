@@ -27,7 +27,6 @@ using Microsoft.Extensions.Logging;
 using APIServer.Skat.Model;
 using APIServer.Skat.Core;
 using System.Threading;
-using APIServer.Email;
 using APIServer.PwdMan;
 
 namespace APIServer.Skat
@@ -209,26 +208,25 @@ namespace APIServer.Skat
             }
         }
 
-        public GameHistoryModel GetGameHistoryModel(string ticket)
+        public ResultModel GetResultModel(string ticket)
         {
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
-                if (ctx != null && skatTable != null && skatTable.GameHistory != null &&
-                    skatTable.GameEnded)
+                if (ctx != null && skatTable != null)
                 {
-                    var ret = new GameHistoryModel();
-                    foreach (var card in skatTable.GameHistory.Skat)
+                    var ret = new ResultModel
                     {
-                        ret.Skat.Add(GetSkatCardModel(card));
+                        StartedUtc = skatTable.SkatResult.StartedUtc,
+                        EndedUtc = skatTable.SkatResult.EndedUtc
+                    };
+                    foreach (var p in skatTable.Players)
+                    {
+                        ret.PlayerNames.Add(p.Name);
                     }
-                    foreach (var card in skatTable.GameHistory.Back)
+                    foreach (var h in skatTable.SkatResult.History)
                     {
-                        ret.Back.Add(GetSkatCardModel(card));
-                    }
-                    foreach (var tuple in skatTable.GameHistory.Played)
-                    {
-                        ret.Played.Add(new PlayedCardModel { Player = tuple.Item1, Card = GetSkatCardModel(tuple.Item2)});
+                        ret.History.Add(GetGameHistoryModel(h));
                     }
                     return ret;
                 }
@@ -655,12 +653,12 @@ namespace APIServer.Skat
             return ret;
         }
 
-        private UserModel GetCurrentUser(Context ctx)
+        private static UserModel GetCurrentUser(Context ctx)
         {
             return new UserModel { Name = ctx.Name, StartGameConfirmed = ctx.StartGameConfirmed };
         }
 
-        private GameModel GetSkatGameModel(Game game)
+        private static GameModel GetSkatGameModel(Game game)
         {
             GameModel ret = null;
             if (game != null)
@@ -680,7 +678,38 @@ namespace APIServer.Skat
             return ret;
         }
 
-        private PlayerModel GetPlayerModel(Player player, string summary = "")
+        private static GameHistoryModel GetGameHistoryModel(GameHistory gameHistory)
+        {
+            var ret = new GameHistoryModel();
+            ret.GameText = gameHistory.GameText;
+            ret.GamePlayerName = gameHistory.GamePlayerName;
+            ret.GamePlayerScore = gameHistory.GamePlayerScore;
+            ret.GameValue = gameHistory.GameValue;
+            foreach (var tuple in gameHistory.PlayerCards)
+            {
+                var playerCards = new List<CardModel>();
+                foreach (var card in tuple.Item2)
+                {
+                    playerCards.Add(GetSkatCardModel(card));
+                }
+                ret.PlayerCards.Add(new PlayerCardsModel { PlayerName = tuple.Item1, Cards = playerCards });
+            }
+            foreach (var card in gameHistory.Skat)
+            {
+                ret.Skat.Add(GetSkatCardModel(card));
+            }
+            foreach (var card in gameHistory.Back)
+            {
+                ret.Back.Add(GetSkatCardModel(card));
+            }
+            foreach (var tuple in gameHistory.Played)
+            {
+                ret.Played.Add(new PlayedCardModel { Player = tuple.Item1, Card = GetSkatCardModel(tuple.Item2) });
+            }
+            return ret;
+        }
+
+        private static PlayerModel GetPlayerModel(Player player, string summary = "")
         {
             PlayerModel ret = null;
             if (player != null)
@@ -815,7 +844,7 @@ namespace APIServer.Skat
             return model;
         }
 
-        private CardModel GetSkatCardModel(Card card)
+        private static CardModel GetSkatCardModel(Card card)
         {
             var cardmodel = new CardModel();
             cardmodel.OrderNumber = card.InternalNumber;

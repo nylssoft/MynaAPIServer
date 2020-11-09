@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -58,7 +59,9 @@ namespace APIServer.Skat.Core
 
         public bool SkatTaken { get; set; } = false;
 
-        public GameHistory GameHistory { get; set; }
+        public GameHistory CurrentHistory { get; set; }
+
+        public SkatResult SkatResult { get; set; }
 
         public bool GameEnded
         {
@@ -107,6 +110,8 @@ namespace APIServer.Skat.Core
             Players.Add(new Player(player1, PlayerPosition.Rearhand));
             Players.Add(new Player(player2, PlayerPosition.Forehand));
             Players.Add(new Player(player3, PlayerPosition.Middlehand));
+            SkatResult = new SkatResult();
+            CurrentHistory = new GameHistory();
             using (var rng = new RNGCryptoServiceProvider())
             {
                 var deck = Card.GenerateDeck();
@@ -114,11 +119,11 @@ namespace APIServer.Skat.Core
                 {
                     player.Cards.AddRange(Card.Draw(rng, deck, 10));
                     player.SortCards();
+                    CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
                 }
                 Skat.AddRange(Card.Draw(rng, deck, 2));
+                CurrentHistory.Skat.AddRange(Skat);
             }
-            GameHistory = new GameHistory();
-            GameHistory.Skat.AddRange(Skat);
             var s = new HashSet<int>();
             // farbe
             for (int m = 2; m < 18; m++) // mit 10 spielt 11 hand 12 schneider 13 angesagt 14 schwarz 15 angesagt 16 ouvert 17
@@ -155,7 +160,6 @@ namespace APIServer.Skat.Core
                 p.Game = new Game(GameType.Grand);
                 switch (p.Position)
                 {
-
                     case PlayerPosition.Middlehand:
                         p.Position = PlayerPosition.Forehand;
                         p.BidStatus = BidStatus.Accept;
@@ -182,17 +186,19 @@ namespace APIServer.Skat.Core
             Stitch.Clear();
             Skat.Clear();
             LastStitch.Clear();
+            CurrentHistory = new GameHistory();
             using (var rng = new RNGCryptoServiceProvider())
             {
                 var deck = Card.GenerateDeck();
                 foreach (var player in Players)
                 {
                     player.Cards.AddRange(Card.Draw(rng, deck, 10));
+                    player.SortCards();
+                    CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
                 }
                 Skat.AddRange(Card.Draw(rng, deck, 2));
+                CurrentHistory.Skat.AddRange(Skat);
             }
-            GameHistory = new GameHistory();
-            GameHistory.Skat.AddRange(Skat);
             BidSaid = false;
             BidValueIndex = -1;
             BidExceeded = false;
@@ -344,6 +350,10 @@ namespace APIServer.Skat.Core
             }
             GameValue = game.GetGameValue(MatadorsJackStraight, GamePlayer.Stitches, Skat, CurrentBidValue, true);
             GamePlayer.Score += GameValue.Score;
+            CurrentHistory.GamePlayerScore = GetScore(GamePlayer);
+            CurrentHistory.GameValue = GameValue.Score;
+            SkatResult.History.Add(CurrentHistory);
+            SkatResult.EndedUtc = DateTime.UtcNow;
         }
 
         public bool CanGiveUp(Player player)
@@ -383,6 +393,10 @@ namespace APIServer.Skat.Core
             var game = GamePlayer.Game;
             GameValue = game.GetGameValue(MatadorsJackStraight, GamePlayer.Stitches, Skat, CurrentBidValue, true);
             GamePlayer.Score += GameValue.Score;
+            CurrentHistory.GamePlayerScore = GetScore(GamePlayer);
+            CurrentHistory.GameValue = GameValue.Score;
+            SkatResult.History.Add(CurrentHistory);
+            SkatResult.EndedUtc = DateTime.UtcNow;
         }
 
         public bool CanShowOuvertCards(Player player)
@@ -476,8 +490,10 @@ namespace APIServer.Skat.Core
             if (!player.Game.Option.HasFlag(GameOption.Hand))
             {
                 skat = Skat;
-                GameHistory.Back.AddRange(skat);
+                CurrentHistory.Back.AddRange(skat);
             }
+            CurrentHistory.GameText = player.Game.GetGameAndOptionText();
+            CurrentHistory.GamePlayerName = player.Name;
             var jackStraight = player.Game.GetMatadorsJackStraight(player.Cards, skat);
             if (player.Game.GetBidValue(jackStraight) < CurrentBidValue)
             {
@@ -792,6 +808,10 @@ namespace APIServer.Skat.Core
                 var game = GamePlayer.Game;
                 GameValue = game.GetGameValue(MatadorsJackStraight, GamePlayer.Stitches, Skat, CurrentBidValue, false);
                 GamePlayer.Score += GameValue.Score;
+                CurrentHistory.GamePlayerScore = GetScore(GamePlayer);
+                CurrentHistory.GameValue = GameValue.Score;
+                SkatResult.History.Add(CurrentHistory);
+                SkatResult.EndedUtc = DateTime.UtcNow;
             }
         }
 
@@ -831,7 +851,7 @@ namespace APIServer.Skat.Core
                 }
                 if (IsValidForStitch(card))
                 {
-                    GameHistory.Played.Add((player.Name, card));
+                    CurrentHistory.Played.Add((player.Name, card));
                     player.Cards.Remove(card);
                     CurrentPlayer = GetNextPlayer(player);
                     Stitch.Add(card);
