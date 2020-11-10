@@ -90,14 +90,14 @@ namespace APIServer.Skat
         [Route("api/skat/newgame")]
         public IActionResult StartNewGame()
         {
-            return new JsonResult(SkatService.StartNewGame(GetTicket()));
+            return new JsonResult(SkatService.StartNewGame(PwdManService, GetTicket()));
         }
 
         [HttpPost]
         [Route("api/skat/giveup")]
         public IActionResult GiveUp()
         {
-            return new JsonResult(SkatService.GiveUp(GetTicket()));
+            return new JsonResult(SkatService.GiveUp(PwdManService, GetTicket()));
         }
 
         [HttpPost]
@@ -111,14 +111,14 @@ namespace APIServer.Skat
         [Route("api/skat/collectstitch")]
         public IActionResult CollectStitch()
         {
-            return new JsonResult(SkatService.CollectStitch(GetTicket()));
+            return new JsonResult(SkatService.CollectStitch(PwdManService, GetTicket()));
         }
 
         [HttpPost]
         [Route("api/skat/playcard")]
         public IActionResult PlayCard([FromBody] int value)
         {
-            return new JsonResult(SkatService.PlayCard(GetTicket(), value));
+            return new JsonResult(SkatService.PlayCard(PwdManService, GetTicket(), value));
         }
 
         [HttpPost]
@@ -153,7 +153,7 @@ namespace APIServer.Skat
         [Route("api/skat/confirmspeedup")]
         public IActionResult ConfirmSpeedUp()
         {
-            return new JsonResult(SkatService.ConfirmSpeedUp(GetTicket()));
+            return new JsonResult(SkatService.ConfirmSpeedUp(PwdManService, GetTicket()));
         }
 
         [HttpPost]

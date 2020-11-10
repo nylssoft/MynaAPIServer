@@ -43,17 +43,17 @@ namespace APIServer.Skat
 
         public bool PerformBidAction(string ticket, string bidAction);
 
-        public bool StartNewGame(string ticket);
+        public bool StartNewGame(IPwdManService pwdManService, string ticket);
 
-        public bool GiveUp(string ticket);
+        public bool GiveUp(IPwdManService pwdManService, string ticket);
 
         public bool SetGame(string ticket, GameModel skatGameModel);
 
         public bool SetGameOption(string ticket, GameOptionModel skatGameOptionModel);
 
-        public bool PlayCard(string ticket, int internalCardNumber);
+        public bool PlayCard(IPwdManService pwdManService, string ticket, int internalCardNumber);
 
-        public bool CollectStitch(string ticket);
+        public bool CollectStitch(IPwdManService pwdManService, string ticket);
 
         public bool PickupSkat(string ticket, int internalCardNumber);
 
@@ -61,7 +61,7 @@ namespace APIServer.Skat
 
         public bool SpeedUp(string ticket);
 
-        public bool ConfirmSpeedUp(string ticket);
+        public bool ConfirmSpeedUp(IPwdManService pwdManService, string ticket);
 
         public bool ContinuePlay(string ticket);
 

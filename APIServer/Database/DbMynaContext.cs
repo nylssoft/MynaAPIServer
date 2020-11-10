@@ -35,6 +35,10 @@ namespace APIServer.Database
 
         public DbSet<DbPasswordFile> DbPasswordFiles { get; set; }
 
+        public DbSet<DbSkatResult> DbSkatResults { get; set; }
+
+        public DbSet<DbSkatGameHistory> DbSkatGameHistories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<DbRegistration>()

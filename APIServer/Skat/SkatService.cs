@@ -49,6 +49,8 @@ namespace APIServer.Skat
 
         private SkatTable skatTable;
 
+        private long? skatResultId;
+
         private DateTime lastCardPlayed;
 
         public SkatService(
@@ -215,20 +217,7 @@ namespace APIServer.Skat
                 var ctx = GetContext(ticket);
                 if (ctx != null && skatTable != null)
                 {
-                    var ret = new ResultModel
-                    {
-                        StartedUtc = skatTable.SkatResult.StartedUtc,
-                        EndedUtc = skatTable.SkatResult.EndedUtc
-                    };
-                    foreach (var p in skatTable.Players)
-                    {
-                        ret.PlayerNames.Add(p.Name);
-                    }
-                    foreach (var h in skatTable.SkatResult.History)
-                    {
-                        ret.History.Add(GetGameHistoryModel(h));
-                    }
-                    return ret;
+                    return GetSkatResultModel(skatTable.Players, skatTable.SkatResult);
                 }
                 return null;
             }
@@ -277,7 +266,7 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public bool ConfirmSpeedUp(string ticket)
+        public bool ConfirmSpeedUp(IPwdManService pwdManService, string ticket)
         {
             var ret = false;
             lock (mutex)
@@ -289,6 +278,7 @@ namespace APIServer.Skat
                     if (userTickets.Values.All((c) => c.SpeedUpConfirmed))
                     {
                         skatTable.SpeedUpConfirmed();
+                        AddGameHistory(pwdManService);
                     }
                     ret = true;
                 }
@@ -349,7 +339,7 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public bool StartNewGame(string ticket)
+        public bool StartNewGame(IPwdManService pwdManService, string ticket)
         {
             var ret = false;
             lock (mutex)
@@ -366,6 +356,7 @@ namespace APIServer.Skat
                                 .Select(ctx => ctx.Name).ToList();
                             skatTable = new SkatTable(userNames[0], userNames[1], userNames[2]);
                             ret = true;
+                            AddSkatResult(pwdManService);
                         }
                     }
                     else if (skatTable != null && skatTable.CanStartNewGame())
@@ -390,7 +381,7 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public bool GiveUp(string ticket)
+        public bool GiveUp(IPwdManService pwdManService, string ticket)
         {
             var ret = false;
             lock (mutex)
@@ -403,6 +394,7 @@ namespace APIServer.Skat
                     {
                         skatTable.GiveUp();
                         ret = true;
+                        AddGameHistory(pwdManService);
                     }
                 }
                 if (ret)
@@ -479,7 +471,7 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public bool PlayCard(string ticket, int internalCardNumber)
+        public bool PlayCard(IPwdManService pwdManService, string ticket, int internalCardNumber)
         {
             var ret = false;
             int sleepms = 0;
@@ -519,7 +511,7 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public bool CollectStitch(string ticket)
+        public bool CollectStitch(IPwdManService pwdManService, string ticket)
         {
             var ret = false;
             int sleepms = 0;
@@ -540,6 +532,10 @@ namespace APIServer.Skat
                     if (skatTable.CanCollectStitch(player))
                     {
                         skatTable.CollectStitch(player);
+                        if (player.Cards.Count == 0)
+                        {
+                            AddGameHistory(pwdManService);
+                        }
                         ret = true;
                     }
                 }
@@ -674,6 +670,24 @@ namespace APIServer.Skat
                 ret.Option.Hand = game.Option.HasFlag(GameOption.Hand);
                 ret.Option.Schneider = game.Option.HasFlag(GameOption.Schneider);
                 ret.Option.Schwarz = game.Option.HasFlag(GameOption.Schwarz);
+            }
+            return ret;
+        }
+
+        private static ResultModel GetSkatResultModel(List<Player> players, SkatResult skatResult)
+        {
+            var ret = new ResultModel
+            {
+                StartedUtc = skatResult.StartedUtc,
+                EndedUtc = skatResult.EndedUtc
+            };
+            foreach (var p in players)
+            {
+                ret.PlayerNames.Add(p.Name);
+            }
+            foreach (var h in skatResult.History)
+            {
+                ret.History.Add(GetGameHistoryModel(h));
             }
             return ret;
         }
@@ -852,6 +866,41 @@ namespace APIServer.Skat
             cardmodel.Value = $"{card.Value}";
             cardmodel.Description = card.ToString();
             return cardmodel;
+        }
+
+        // --- store skat result and game history
+
+        private void AddSkatResult(IPwdManService pwdManService)
+        {
+            try
+            {
+                var names = new List<string>();
+                foreach (var p in skatTable.Players)
+                {
+                    names.Add(p.Name);
+                }
+                skatResultId = pwdManService.AddSkatResult(names);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to add skat result.");
+            }
+        }
+
+        private void AddGameHistory(IPwdManService pwdManService)
+        {
+            if (skatResultId.HasValue)
+            {
+                try
+                {
+                    var json = JsonSerializer.Serialize(GetGameHistoryModel(skatTable.CurrentHistory));
+                    pwdManService.AddGameHistory(skatResultId.Value, json);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to add game history.");
+                }
+            }
         }
 
         // --- application life time events

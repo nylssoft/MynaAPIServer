@@ -56,5 +56,11 @@ namespace APIServer.PwdMan
         string GetEncodedPasswordFile(string token);
 
         bool HasPasswordFile(string authenticationToken);
+
+        // --- skat
+
+        long AddSkatResult(List<string> playerNames);
+
+        void AddGameHistory(long skatResultId, string history);
     }
 }

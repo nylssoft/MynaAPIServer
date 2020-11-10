@@ -495,6 +495,31 @@ namespace APIServer.PwdMan
             return user.PasswordFileId != null;
         }
 
+        // --- skat
+
+        public long AddSkatResult(List<string> playerNames)
+        {
+            var skatResult = new DbSkatResult
+            {
+                Player1 = playerNames[0],
+                Player2 = playerNames[1],
+                Player3 = playerNames[2],
+                StartedUtc = DateTime.UtcNow
+            };
+            dbContext.DbSkatResults.Add(skatResult);
+            dbContext.SaveChanges();
+            return skatResult.Id;
+        }
+
+        public void AddGameHistory(long skatResultId, string history)
+        {
+            var skatResult = dbContext.DbSkatResults.Single((r) => r.Id == skatResultId);
+            var gameHistory = new DbSkatGameHistory { DbSkatResultId = skatResultId, History = history };
+            dbContext.DbSkatGameHistories.Add(gameHistory);
+            skatResult.EndedUtc = DateTime.UtcNow;
+            dbContext.SaveChanges();
+        }
+
         // --- private
 
         private DateTime? GetUtcDateTime(DateTime? dbDateTime)

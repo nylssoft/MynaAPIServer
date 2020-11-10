@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace APIServer.Migrations
 {
     [DbContext(typeof(DbMynaContext))]
-    [Migration("20201103071152_InitialCreate")]
+    [Migration("20201110175523_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -105,6 +105,51 @@ namespace APIServer.Migrations
                     b.ToTable("Settings");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbSkatGameHistory", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DbSkatResultId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("History")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbSkatResultId");
+
+                    b.ToTable("SkatGameHistories");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbSkatResult", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("EndedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Player1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Player2")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Player3")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SkatResults");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbUser", b =>
                 {
                     b.Property<long>("Id")
@@ -166,6 +211,15 @@ namespace APIServer.Migrations
                     b.HasOne("APIServer.Database.DbUser", null)
                         .WithMany("Roles")
                         .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbSkatGameHistory", b =>
+                {
+                    b.HasOne("APIServer.Database.DbSkatResult", null)
+                        .WithMany("SkatGameHistories")
+                        .HasForeignKey("DbSkatResultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

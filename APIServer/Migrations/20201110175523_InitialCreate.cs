@@ -36,6 +36,23 @@ namespace APIServer.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "SkatResults",
+                columns: table => new
+                {
+                    Id = table.Column<long>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    StartedUtc = table.Column<DateTime>(nullable: false),
+                    EndedUtc = table.Column<DateTime>(nullable: true),
+                    Player1 = table.Column<string>(nullable: true),
+                    Player2 = table.Column<string>(nullable: true),
+                    Player3 = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SkatResults", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -61,6 +78,26 @@ namespace APIServer.Migrations
                         principalTable: "PasswordFiles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SkatGameHistories",
+                columns: table => new
+                {
+                    Id = table.Column<long>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DbSkatResultId = table.Column<long>(nullable: false),
+                    History = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SkatGameHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SkatGameHistories_SkatResults_DbSkatResultId",
+                        column: x => x.DbSkatResultId,
+                        principalTable: "SkatResults",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -129,6 +166,11 @@ namespace APIServer.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_SkatGameHistories_DbSkatResultId",
+                table: "SkatGameHistories",
+                column: "DbSkatResultId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -158,7 +200,13 @@ namespace APIServer.Migrations
                 name: "Settings");
 
             migrationBuilder.DropTable(
+                name: "SkatGameHistories");
+
+            migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "SkatResults");
 
             migrationBuilder.DropTable(
                 name: "PasswordFiles");
