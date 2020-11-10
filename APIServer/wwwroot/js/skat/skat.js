@@ -32,7 +32,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.1";
+    let version = "1.1.2";
 
     // helper
 
@@ -173,9 +173,25 @@ var skat = (() => {
 
     // rendering
 
-    const renderTableFull = (parent) => {
-        controls.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
-        document.body.className = "inactive-background";
+    const renderTableFull = (parent, ignoreToken) => {
+        let token = utils.get_authentication_token();
+        if (ignoreToken || !token) {
+            controls.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
+            document.body.className = "inactive-background";
+        }
+        else {
+            utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+                (user) => {
+                    model.allUsers.forEach((skatuser) => {
+                        if (skatuser.name == user.name) {
+                            window.location.href = `skat?login=${encodeURI(user.name)}`;
+                            return;
+                        }
+                    });
+                    renderTableFull(parent, true);
+                },
+                () => renderTableFull(parent, true));
+        }
     };
 
     const renderUserList = (parent) => {
