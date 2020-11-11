@@ -34,7 +34,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.0";
+    let version = "1.1.1";
 
     // helper
 
@@ -655,18 +655,23 @@ var pwdman = (() => {
             }
         }
         if (actionRequestRegistration) {
+            document.title = "Registrieren";
             renderRequestRegistration(document.body);
         }
         else if (actionRegister) {
+            document.title = "Registrieren";
             renderRegister(document.body);
         }
         else if (!token || token.length == 0) {
+            document.title = "Anmelden";
             renderAuthentication(document.body);
         }
         else if (requiresPass2 == true) {
+            document.title = "Anmelden";
             renderPass2(document.body);
         }
         else if (actionChangePwd) {
+            document.title = "Kennwort \u00E4ndern";
             renderChangePwd(document.body);
         }
         else if (nexturl && nexturl.length > 0) {
