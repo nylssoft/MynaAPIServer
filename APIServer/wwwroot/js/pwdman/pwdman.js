@@ -34,7 +34,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.0.8";
+    let version = "1.0.9";
 
     // helper
 
@@ -417,7 +417,9 @@ var pwdman = (() => {
             controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
             return;
         }
-        controls.create(parent, "p", undefined, "Gib Dein altes und neues Kennwort ein.");
+        controls.create(parent, "p", undefined, "Gib Dein altes und neues Kennwort ein." +
+            " Das Kennwort muss mindestens 8 Zeichen lang sein, mindestens einen Grossbuchstaben (A-Z)," +
+            " einen Kleinbuchstaben (a-z), eine Ziffer (0-9) und ein Sonderzeichen (!@$()=+-,:.) enthalten.");
         let oldPwdDiv = controls.createDiv(parent);
         let oldPwdLabel = controls.createLabel(oldPwdDiv, undefined, "Altes Kennwort:");
         oldPwdLabel.htmlFor = "oldpwd-id";
@@ -488,7 +490,9 @@ var pwdman = (() => {
         controls.create(parent, "p", undefined,
             "W\u00E4hle Deinen Benutzernamen, ein Kennwort und" +
             " ob die Zwei-Schritt-Verifizierung aktiviert werden soll." +
-            ` Verwende den Registrierungscode, welcher Dir per E-Mail an ${userEmail} zugestellt wurde.`);
+            ` Verwende den Registrierungscode, welcher Dir per E-Mail an ${userEmail} zugestellt wurde.` +
+            " Das Kennwort muss mindestens 8 Zeichen lang sein, mindestens einen Grossbuchstaben (A-Z)," +
+            " einen Kleinbuchstaben (a-z), eine Ziffer (0-9) und ein Sonderzeichen (!@$()=+-,:.) enthalten.");
         let userNameDiv = controls.createDiv(parent);
         let nameNameLabel = controls.createLabel(userNameDiv, undefined, "Benutzername:");
         nameNameLabel.htmlFor = "username-id";
@@ -508,7 +512,7 @@ var pwdman = (() => {
         confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Best\u00E4tiges Kennwort", () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         let facDiv = controls.createDiv(parent, "fac");
-        facCheckbox = controls.createCheckbox(facDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", true, undefined, false);
+        facCheckbox = controls.createCheckbox(facDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", false, undefined, false);
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
         codeLabel.htmlFor = "code-id";

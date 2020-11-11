@@ -16,9 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using System;
-using System.ComponentModel;
 using System.Net;
 using System.Net.Mail;
 
@@ -28,17 +25,12 @@ namespace APIServer.Email
     {
         public IConfiguration Configuration { get; }
 
-        private readonly ILogger logger;
-
-        private SmtpClient smtpClient = null;
-
-        public NotificationService(IConfiguration configuration, ILogger<NotificationService> logger)
+        public NotificationService(IConfiguration configuration)
         {
             Configuration = configuration;
-            this.logger = logger;
         }
 
-        public void SendToAsync(string to, string subject, string plainTextBody)
+        public void Send(string to, string subject, string plainTextBody)
         {
             var opt = GetOptions();
             if (!opt.IsConfigured()) return;
@@ -48,13 +40,9 @@ namespace APIServer.Email
             mm.Subject = subject;
             mm.Body = plainTextBody;
             mm.IsBodyHtml = false;
-            try
+            using (var smtpClient = GetSmtpClient())
             {
-                GetSmtpClient().SendAsync(mm, subject);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to send notification '{subject}'.", subject);
+                smtpClient.Send(mm);
             }
         }
 
@@ -62,38 +50,16 @@ namespace APIServer.Email
 
         private SmtpClient GetSmtpClient()
         {
-            if (smtpClient == null)
-            {
-                var opt = GetOptions();
-                smtpClient = new SmtpClient();
-                smtpClient.UseDefaultCredentials = false;
-                smtpClient.Credentials = new NetworkCredential(opt.Office365Account, opt.Office365Password);
-                smtpClient.Port = 587;
-                smtpClient.Host = "smtp.office365.com";
-                smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
-                smtpClient.EnableSsl = true;
-                smtpClient.SendCompleted += new SendCompletedEventHandler(SendCompletedCallback);
-            }
+            var opt = GetOptions();
+            var smtpClient = new SmtpClient();
+            smtpClient.UseDefaultCredentials = false;
+            smtpClient.Credentials = new NetworkCredential(opt.Office365Account, opt.Office365Password);
+            smtpClient.Port = 587;
+            smtpClient.Host = "smtp.office365.com";
+            smtpClient.DeliveryMethod = SmtpDeliveryMethod.Network;
+            smtpClient.EnableSsl = true;
             return smtpClient;
         }
-
-        private void SendCompletedCallback(object sender, AsyncCompletedEventArgs e)
-        {
-            var subject = e.UserState as string;
-            if (e.Cancelled)
-            {
-                logger.LogInformation("Send notification '{subject}' canceled.", subject);
-            }
-            if (e.Error != null)
-            {
-                logger.LogError(e.Error, "Send notification '{subject}' failed.", subject);
-            }
-            else
-            {
-                logger.LogInformation("Notification '{subject}' sent.", subject);
-            }
-        }
-
         private EmailOptions GetOptions()
         {
             var opt = Configuration.GetSection("Email").Get<EmailOptions>();

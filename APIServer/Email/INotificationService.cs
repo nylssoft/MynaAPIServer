@@ -19,6 +19,6 @@ namespace APIServer.Email
 {
     public interface INotificationService
     {
-        public void SendToAsync(string to, string subject, string plainTextBody);
+        public void Send(string to, string subject, string plainTextBody);
     }
 }

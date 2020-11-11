@@ -45,8 +45,8 @@ namespace APIServer
             // scoped
             services.AddDbContext<DbMynaContext>(builder => builder.UseSqlite($"Data Source={databaseFile}"));
             services.AddScoped<IPwdManService, PwdManService>();
+            services.AddScoped<INotificationService, NotificationService>();
             // singletons
-            services.AddSingleton<INotificationService, NotificationService>();
             services.AddSingleton<ISkatService, SkatService>();
             services.AddSingleton<ITetrisService, TetrisService>();
             // enable cshtml pages

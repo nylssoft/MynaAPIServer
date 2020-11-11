@@ -105,7 +105,7 @@ namespace APIServer.PwdMan
             dbContext.SaveChanges();
             var subject = "Myna Portal Registrierungsanfrage";
             var body = $"Ein Benutzer möchte sich mit folgender E-Mail-Adresse registrieren:\n\n{email}.";
-            notificationService.SendToAsync(opt.RegistrationEmail, subject, body);
+            notificationService.Send(opt.RegistrationEmail, subject, body);
             return false;
         }
 
@@ -177,7 +177,7 @@ namespace APIServer.PwdMan
                 var body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
                     "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n" +
                     "Viele Grüsse!";
-                notificationService.SendToAsync(email, subject, body);
+                notificationService.Send(email, subject, body);
             }
             return registration.Token;
         }
@@ -577,9 +577,9 @@ namespace APIServer.PwdMan
             var totp = TOTP.Generate(user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
             var subject = $"Myna Portal 2-Schritt-Verifizierung";
             var body =
-                $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds} Sekunden gültig. " +
+                $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds/60} Minuten gültig. " +
                 "In diesem Zeit kann er genau 1 Mal verwendet werden.";
-            notificationService.SendToAsync(user.Email, subject, body);
+            notificationService.Send(user.Email, subject, body);
         }
 
         private bool VerifyPasswordStrength(string pwd)
