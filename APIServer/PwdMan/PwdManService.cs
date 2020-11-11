@@ -527,34 +527,14 @@ namespace APIServer.PwdMan
             return user.PasswordFileId != null;
         }
 
-        // --- skat
+        // --- database access
 
-        public long AddSkatResult(List<string> playerNames)
+        public DbMynaContext GetDbContext()
         {
-            var skatResult = new DbSkatResult
-            {
-                Player1 = playerNames[0],
-                Player2 = playerNames[1],
-                Player3 = playerNames[2],
-                StartedUtc = DateTime.UtcNow
-            };
-            dbContext.DbSkatResults.Add(skatResult);
-            dbContext.SaveChanges();
-            return skatResult.Id;
+            return dbContext;
         }
 
-        public void AddGameHistory(long skatResultId, string history)
-        {
-            var skatResult = dbContext.DbSkatResults.Single((r) => r.Id == skatResultId);
-            var gameHistory = new DbSkatGameHistory { DbSkatResultId = skatResultId, History = history };
-            dbContext.DbSkatGameHistories.Add(gameHistory);
-            skatResult.EndedUtc = DateTime.UtcNow;
-            dbContext.SaveChanges();
-        }
-
-        // --- private
-
-        private DateTime? GetUtcDateTime(DateTime? dbDateTime)
+        public DateTime? GetUtcDateTime(DateTime? dbDateTime)
         {
             DateTime? ret = null;
             if (dbDateTime != null)
@@ -564,6 +544,8 @@ namespace APIServer.PwdMan
             }
             return ret;
         }
+
+        // --- private
 
         private bool HasRole(DbUser user, string roleName)
         {

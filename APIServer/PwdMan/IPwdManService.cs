@@ -15,7 +15,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.Database;
 using APIServer.PwdMan.Model;
+using System;
 using System.Collections.Generic;
 
 namespace APIServer.PwdMan
@@ -59,10 +61,11 @@ namespace APIServer.PwdMan
 
         bool HasPasswordFile(string authenticationToken);
 
-        // --- skat
+        // --- database access
 
-        long AddSkatResult(List<string> playerNames);
+        DbMynaContext GetDbContext();
 
-        void AddGameHistory(long skatResultId, string history);
+        DateTime? GetUtcDateTime(DateTime? dbDateTime);
+
     }
 }

@@ -22,6 +22,8 @@ namespace APIServer.Skat.Model
 {
     public class ResultModel
     {
+        public long Id { get; set; }
+
         public DateTime? StartedUtc { get; set; }
 
         public DateTime? EndedUtc { get; set; }

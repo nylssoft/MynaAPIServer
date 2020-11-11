@@ -41,6 +41,10 @@ namespace APIServer.Skat
 
         public ResultModel GetResultModel(string ticket);
 
+        public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long id);
+
+        public List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken);
+
         public bool PerformBidAction(string ticket, string bidAction);
 
         public bool StartNewGame(IPwdManService pwdManService, string ticket);

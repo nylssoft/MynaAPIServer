@@ -28,6 +28,7 @@ using APIServer.Skat.Model;
 using APIServer.Skat.Core;
 using System.Threading;
 using APIServer.PwdMan;
+using APIServer.Database;
 
 namespace APIServer.Skat
 {
@@ -221,6 +222,58 @@ namespace APIServer.Skat
                 }
                 return null;
             }
+        }
+
+        public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long id)
+        {
+            var user = pwdManService.GetUser(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            var result = dbContext.DbSkatResults.Single(r =>
+                r.Id == id && (r.Player1 == user.Name || r.Player2 == user.Name || r.Player3 == user.Name));
+            dbContext.Entry(result).Collection(r => r.SkatGameHistories).Load();
+            var ret = new ResultModel
+            {
+                StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
+                EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
+                PlayerNames = new List<string>(),
+                History = new List<GameHistoryModel>()
+            };
+            ret.PlayerNames.Add(result.Player1);
+            ret.PlayerNames.Add(result.Player2);
+            ret.PlayerNames.Add(result.Player3);
+            foreach (var h in result.SkatGameHistories)
+            {
+                ret.History.Add(JsonSerializer.Deserialize<GameHistoryModel>(h.History));
+            }
+            return ret;
+        }
+
+        public List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken)
+        {
+            var ret = new List<ResultModel>();
+            var user = pwdManService.GetUser(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            var results = dbContext.DbSkatResults
+                .Where(r => r.Player1 == user.Name || r.Player2 == user.Name || r.Player3 == user.Name)
+                .OrderByDescending(r => r.StartedUtc);
+            if (results.Any())
+            {
+                foreach (var result in results)
+                {
+                    var m = new ResultModel
+                    {
+                        Id = result.Id,
+                        StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
+                        EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
+                        PlayerNames = new List<string>()
+                    };
+                    m.PlayerNames.Add(result.Player1);
+                    m.PlayerNames.Add(result.Player2);
+                    m.PlayerNames.Add(result.Player3);
+                    ret.Add(m);
+                }
+            }
+            return ret;
         }
 
         public bool ConfirmStartGame(string ticket)
@@ -874,12 +927,17 @@ namespace APIServer.Skat
         {
             try
             {
-                var names = new List<string>();
-                foreach (var p in skatTable.Players)
+                var dbContext = pwdManService.GetDbContext();
+                var skatResult = new DbSkatResult
                 {
-                    names.Add(p.Name);
-                }
-                skatResultId = pwdManService.AddSkatResult(names);
+                    Player1 = skatTable.Players[0].Name,
+                    Player2 = skatTable.Players[1].Name,
+                    Player3 = skatTable.Players[2].Name,
+                    StartedUtc = DateTime.UtcNow
+                };
+                dbContext.DbSkatResults.Add(skatResult);
+                dbContext.SaveChanges();
+                skatResultId = skatResult.Id;
             }
             catch (Exception ex)
             {
@@ -894,7 +952,12 @@ namespace APIServer.Skat
                 try
                 {
                     var json = JsonSerializer.Serialize(GetGameHistoryModel(skatTable.CurrentHistory));
-                    pwdManService.AddGameHistory(skatResultId.Value, json);
+                    var dbContext = pwdManService.GetDbContext();
+                    var skatResult = dbContext.DbSkatResults.Single((r) => r.Id == skatResultId);
+                    var gameHistory = new DbSkatGameHistory { DbSkatResultId = skatResultId.Value, History = json };
+                    dbContext.DbSkatGameHistories.Add(gameHistory);
+                    skatResult.EndedUtc = DateTime.UtcNow;
+                    dbContext.SaveChanges();
                 }
                 catch (Exception ex)
                 {

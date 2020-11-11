@@ -68,6 +68,10 @@ td a {
     display: none;
 }
 
+.results-column {
+    float: left;
+}
+
 .layout-chat-button {
     position: absolute;
     top: 2pt;

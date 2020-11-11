@@ -177,6 +177,20 @@ namespace APIServer.Skat
             return new JsonResult(SkatService.GetResultModel(GetTicket()));
         }
 
+        [HttpGet]
+        [Route("api/skat/results")]
+        public IActionResult GetResults()
+        {
+            return new JsonResult(SkatService.GetResultModels(PwdManService, GetToken()));
+        }
+
+        [HttpGet]
+        [Route("api/skat/resultbyid")]
+        public IActionResult GetResultByid([FromQuery]long id)
+        {
+            return new JsonResult(SkatService.GetResultModelById(PwdManService, GetToken(), id));
+        }
+
         // --- authentication with administrative privileges
 
         [HttpPost]

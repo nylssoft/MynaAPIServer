@@ -248,6 +248,7 @@ var skat = (() => {
                     inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "hide", 20, 32);
                     inputUsername.value = user.name;
                     controls.createButton(parent, "Mitspielen", btnLogin_click);
+                    controls.createButton(parent, "Ergebnisse", () => window.open(window.location.href + "?results", "_blank"));
                 },
                 (errmsg) => console.error(errmsg));
         }
@@ -256,6 +257,10 @@ var skat = (() => {
     const renderWaitForUsers = (parent) => {
         controls.create(parent, "p", "activity", "Du musst warten, bis alle angemeldet sind.");
         document.body.className = "inactive-background";
+        let token = utils.get_authentication_token();
+        if (token) {
+            controls.createButton(parent, "Ergebnisse", () => window.open(window.location.href + "?results", "_blank"));
+        }
     };
 
     const renderStartGame = (parent) => {
@@ -642,22 +647,52 @@ var skat = (() => {
         }
     };
 
-    const renderResult = (result) => {
-        document.title = "Skat - Tabelle";
+    const renderResults = (token, results) => {
+        document.title = "Skat - Ergebnisse";
         controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
         let parent = document.body;
+        let div1 = controls.createDiv(parent, "results-column");
+        div1.id = "results-overview-id";
+        let cnt = 1;
+        results.forEach(result => {
+            let started = new Date(result.startedUtc);
+            let p = controls.create(div1, "p");
+            let txt = `${started.toLocaleDateString("de-DE")}`;;
+            controls.createRadiobutton(p, `result-id-${cnt++}`, "result", `${result.id}`, txt, false,
+                (rb) => {
+                    utils.fetch_api_call(`api/skat/resultbyid?id=${rb.value}`, { headers: { "token": token } },
+                        (result) => renderResultTable(div2, result),
+                        (errmsg) => console.error(errmsg));                    
+                });
+        });
+        let div2 = controls.createDiv(parent);
+        let rb = document.getElementById("result-id-1");
+        if (rb) {
+            rb.click();
+        }
+    };
+
+    const renderResult = (result) => {
+        document.title = "Skat - Tabelle";
+        document.body.className = "inactive-background";
+        renderResultTable(document.body, result);
+    };
+
+    const renderResultTable = (parent, result) => {
+        controls.removeAllChildren(parent);
         if (!result || !result.endedUtc) {
             controls.createLabel(parent, undefined, "Die Tabelle ist noch nicht verf\u00FCgbar.");
             return;
         }
         let started = new Date(result.startedUtc);
         let ended = new Date(result.endedUtc);
-        let p1 = controls.create(parent, "p");
-        p1.textContent = `Tabelle f\u00FCr den ${started.toLocaleDateString("de-DE")} von ` +
-            `${started.toLocaleTimeString("de-DE")} bis ${ended.toLocaleTimeString("de-DE")}.`;
+        let topt = { "hour": "numeric", "minute": "numeric" };
+        let caption = `Spiele am ${started.toLocaleDateString("de-DE")} von ` +
+            `${started.toLocaleTimeString("de-DE", topt)} bis ${ended.toLocaleTimeString("de-DE", topt)}.`;
         let cnt = 1;
         let table = controls.create(parent, "table");
+        controls.create(table, "caption", undefined, caption);
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
         controls.create(tr, "th", undefined, " ");
@@ -682,15 +717,17 @@ var skat = (() => {
                 }
             }
             let tddetails = controls.create(tr, "td");
-            controls.createA(tddetails, undefined, "#open", `${h.gameValue}`, () => renderGameHistory(result, h));
+            controls.createA(tddetails, undefined, "#open", `${h.gameValue}`, () => renderGameHistory(parent, result, h));
             cnt++;
         });
     };
 
-    const renderGameHistory = (result, gameHistory) => {
-        controls.removeAllChildren(document.body);
-        document.body.className = "inactive-background";
-        let parent = document.body;
+    const renderGameHistory = (parent, result, gameHistory) => {
+        let div1 = document.getElementById("results-overview-id");
+        if (div1) {
+            div1.className = "hide";
+        }
+        controls.removeAllChildren(parent);
         if (!gameHistory) {
             controls.create(parent, "p", undefined, "Der Spielablauf ist noch nicht verf\u00FCgbar.");
             return;
@@ -698,7 +735,12 @@ var skat = (() => {
         let gameP = controls.create(parent, "p");
         gameP.textContent = `${gameHistory.gamePlayerName} hat ${gameHistory.gameText} gespielt und ${gameHistory.gamePlayerScore} Augen bekommen. Das Spiel wurde mit ${gameHistory.gameValue} Punkten gewertet.`;
         let buttonDiv = controls.createDiv(parent);
-        controls.createButton(buttonDiv, "Zur\u00FCck", () => renderResult(result));
+        controls.createButton(buttonDiv, "Zur\u00FCck", () => {
+            if (div1) {
+                div1.className = "results-column";
+            }
+            renderResultTable(parent, result);
+        });
         controls.create(parent, "p", undefined, "Skat:");
         let divSkat = controls.createDiv(parent);
         renderCards(divSkat, true, gameHistory.skat, true, undefined, true);
@@ -801,6 +843,15 @@ var skat = (() => {
                 .then(result => renderResult(result))
                 .catch(err => console.error(err));
             return;
+        }
+        if (params.has("results")) {
+            let token = utils.get_authentication_token();
+            if (token) {
+                utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
+                    (results) => renderResults(token, results),
+                    (errmsg) => console.error(errmsg));
+                return;
+            }
         }
         timerEnabled = false;
         fetch("api/skat/chat")
