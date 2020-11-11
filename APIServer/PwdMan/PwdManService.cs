@@ -152,7 +152,12 @@ namespace APIServer.PwdMan
             {
                 throw new PwdManInvalidArgumentException("Es liegt keine Registrierungsanfrage für die E-Mail-Adresse vor.");
             }
-            if (string.IsNullOrEmpty(registration.Token))
+            if (confirmation.Reject)
+            {
+                dbContext.DbRegistrations.Remove(registration);
+                dbContext.SaveChanges();
+            }
+            else if (string.IsNullOrEmpty(registration.Token))
             {
                 var pwdgen = new PwdGen
                 {
@@ -173,10 +178,23 @@ namespace APIServer.PwdMan
             }
             if (confirmation.Notification)
             {
-                var subject = $"Myna Portal Registrierungsbestätigung";
-                var body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
-                    "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n" +
-                    "Viele Grüsse!";
+                string subject;
+                string body;
+                if (confirmation.Reject)
+                {
+                    subject = $"Myna Portal Registrierung";
+                    body = $"Hallo!\n\n" +
+                        "Deine E-Mail-Adresse konnten nicht verifiziert werden. Die Registrierung wurde abgelehnt.\n\n" +
+                        "Verwende eine E-Mail-Adresse, die mir bekannt ist oder kontaktiere mich auf anderem Wege.\n\n\n\n" +
+                        "Viele Grüsse!";
+                }
+                else
+                {
+                    subject = $"Myna Portal Registrierung";
+                    body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
+                        "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n" +
+                        "Viele Grüsse!";
+                }
                 notificationService.Send(email, subject, body);
             }
             return registration.Token;
@@ -195,7 +213,7 @@ namespace APIServer.PwdMan
             if (!firstUser)
             {
                 var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
-                if (registration == null || registration.Token != registrationProfile.Token)
+                if (registration == null || registration.Token != registrationProfile.Token.ToUpperInvariant())
                 {
                     throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
                 }

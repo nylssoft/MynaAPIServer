@@ -34,7 +34,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.0.9";
+    let version = "1.1.0";
 
     // helper
 
@@ -448,7 +448,7 @@ var pwdman = (() => {
     const renderRequestRegistration = (parent) => {
         controls.create(parent, "h1", undefined, "Registrieren");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
-            renderError(parent);
+            controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
             controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
             return;
@@ -475,7 +475,7 @@ var pwdman = (() => {
     const renderRegister = (parent) => {
         controls.create(parent, "h1", undefined, "Registrieren");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
-            renderError(parent);
+            controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
             controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
             return;

@@ -23,8 +23,10 @@ namespace APIServer.PwdMan.Model
     {
         public string Email { get; set; }
 
+        public DateTime? RequestedUtc { get; set; }
+
         public bool Notification { get; set; }
 
-        public DateTime? RequestedUtc { get; set; }
+        public bool Reject { get; set; }
     }
 }

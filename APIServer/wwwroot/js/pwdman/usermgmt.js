@@ -10,7 +10,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.0";
+    let version = "1.0.1";
 
     // rendering
 
@@ -40,16 +40,19 @@ var usermgmt = (() => {
                 if (r.errmsg) {
                     div.textContent = `Fehler f\u00FCr E-Mail-Adresse ${r.email}: ${r.errmsg}`;
                 }
-                else {
+                else if (r.token) {
                     div.textContent = `Die E-Mail-Adresse ${r.email} hat den Registrierungscode ${r.token}.`;
+                }
+                else {
+                    div.textContent = `Die Registrierung f\u00FCr die E-Mail-Adresse ${r.email} wurde abgelehnt.`;
                 }
             });
             let p = controls.create(parent, "p");
-            controls.createButton(p, "OK", () => renderCurrentUser());
+            controls.createButton(p, "OK", () => render());
             renderCopyright(parent);
             return;
         }
-        renderHeader(parent, "Offene Registrierungen:");
+        renderHeader(parent, "Registrierungen:");
         let idx = 0;
         confirmations.forEach((confirmation) => {
             let div = controls.createDiv(parent);
@@ -60,12 +63,13 @@ var usermgmt = (() => {
         });
         controls.create(parent, "p", undefined, "Optionen:");
         let sendEmailDiv = controls.createDiv(parent);
-        let emailCheckbox = controls.createCheckbox(sendEmailDiv, undefined, undefined, "E-Mail-Best\u00E4tigung verschicken", true, undefined, false);
+        let emailCheckbox = controls.createCheckbox(sendEmailDiv, undefined, undefined, "Antwort-E-Mail verschicken", false, undefined, false);
         emailCheckbox.id = "send-emailnotification-id";
         let errorDiv = controls.createDiv(parent, "error");
         errorDiv.id = "error-id";
         let p = controls.create(parent, "p");
         controls.createButton(p, "Best\u00E4tigen", () => onConfirmRegistration());
+        controls.createButton(p, "Ablehnen", () => onConfirmRegistration(true));
         controls.createButton(p, "Abbrechen", () => renderCurrentUser());
         renderCopyright(parent);
     };
@@ -115,7 +119,7 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
             if (confirmations) {
                 let mgmtDiv = controls.create(actionsDiv, "p");
-                controls.createButton(mgmtDiv, "Registrierungen best\u00E4tigen", () => renderConfirmRegistrations());
+                controls.createButton(mgmtDiv, "Registrierungen bearbeiten", () => renderConfirmRegistrations());
             }
         }
     };
@@ -154,29 +158,32 @@ var usermgmt = (() => {
 
     // --- callbacks
 
-    const onDoConfirm = (list, results, notification) => {
+    const onDoConfirm = (list, results, notification, reject) => {
         if (list.length > 0) {
             let email = list.pop();
             utils.fetch_api_call("api/pwdman/confirmation",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                    body: JSON.stringify({ "email": email, "notification": notification })
+                    body: JSON.stringify({ "email": email, "notification": notification, "reject": reject })
                 },
                 (token) => {
-                    results.push({"email": email, "token": token});
-                    onDoConfirm(list, results, notification);
+                    results.push({ "email": email, "token": token });
+                    onDoConfirm(list, results, notification, reject);
                 },
                 (errmsg) => {
                     results.push({ "email": email, "errmsg": errmsg });
-                    onDoConfirm(list, results, notification);
+                    onDoConfirm(list, results, notification, reject);
                 });
             return;
         }
         renderConfirmRegistrations(true, results);
     };
 
-    const onConfirmRegistration = () => {
+    const onConfirmRegistration = (reject) => {
+        if (reject == undefined) {
+            reject = false;
+        }
         document.getElementById("error-id").textContent = "";
         let toBeConfirmed = [];
         for (let idx = 0; idx < confirmations.length; idx++) {
@@ -188,7 +195,7 @@ var usermgmt = (() => {
         if (toBeConfirmed.length > 0) {
             let notification = document.getElementById("send-emailnotification-id").checked;
             let results = [];
-            onDoConfirm(toBeConfirmed, results, notification);
+            onDoConfirm(toBeConfirmed, results, notification, reject);
         }
         else {
             document.getElementById("error-id").textContent = "Es wurden keine Best\u00E4tigungen ausgew\u00E4hlt.";
