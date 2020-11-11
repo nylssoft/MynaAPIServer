@@ -40,6 +40,8 @@ namespace APIServer.PwdMan
 
         bool DeleteUser(string authenticationToken, string userName);
 
+        bool UpdateUser2FA(string authenticationToken, bool requires2FA);
+
         // --- authentication
         AuthenticationResponseModel Authenticate(AuthenticationModel authenication);
 

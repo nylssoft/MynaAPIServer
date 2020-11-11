@@ -10,7 +10,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.1";
+    let version = "1.0.2";
 
     // rendering
 
@@ -77,25 +77,26 @@ var usermgmt = (() => {
     const renderCurrentUser = () => {
         let parent = document.body;
         controls.removeAllChildren(parent);
-        renderHeader(parent, "Dein Konto:");
-        let divName = controls.createDiv(parent);
-        controls.createSpan(divName, undefined, "Name: ");
-        controls.createSpan(divName, undefined, currentUser.name);
-        let divEmail = controls.createDiv(parent);
-        controls.createSpan(divEmail, undefined, "E-Mail-Adresse: ");
-        controls.createSpan(divEmail, undefined, currentUser.email);
-        let divFA = controls.createDiv(parent);
-        controls.createSpan(divFA, undefined, "Zwei-Schritt-Verifizierung: ");
-        controls.createSpan(divFA, undefined, currentUser.requires2FA ? "Ein" : "Aus");
-        let lastLoginDiv = controls.createDiv(parent);
+        renderHeader(parent);
+        let nameP = controls.create(parent, "p");
+        controls.createSpan(nameP, undefined, "Name: ");
+        controls.createSpan(nameP, undefined, currentUser.name);
+        let emailP = controls.create(parent, "p");
+        controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");
+        controls.createSpan(emailP, undefined, currentUser.email);
+        let faP = controls.create(parent, "p");
+        controls.createCheckbox(faP, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
+            currentUser.requires2FA,
+            () => renderAccountActions("change2fa"));
+        let lastLoginP = controls.create(parent, "p");
         let dt = new Date(currentUser.lastLoginUtc).toLocaleString("de-DE");
-        controls.createSpan(lastLoginDiv, undefined, "Letzte Anmeldung: ");
-        controls.createSpan(lastLoginDiv, undefined, dt);
-        let registeredDiv = controls.createDiv(parent);
+        controls.createSpan(lastLoginP, undefined, "Letzte Anmeldung: ");
+        controls.createSpan(lastLoginP, undefined, dt);
+        let registeredP = controls.create(parent, "p");
         dt = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
-        controls.createSpan(registeredDiv, undefined, "Registriert seit: ");
-        controls.createSpan(registeredDiv, undefined, dt);
-        controls.create(parent,"p").id = "account-actions-id";
+        controls.createSpan(registeredP, undefined, "Registriert seit: ");
+        controls.createSpan(registeredP, undefined, dt);
+        controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
         renderCopyright(parent);
     };
@@ -112,6 +113,11 @@ var usermgmt = (() => {
             controls.create(actionsDiv, "span", "confirmation", "Willst Du Dich wirklich abmelden? ");
             controls.createButton(actionsDiv, "Ja", () => onLogout());
             controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
+        }
+        else if (confirm == "change2fa") {
+            controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
+            controls.createButton(actionsDiv, "Ja", () => onUpdateCurrentUser());
+            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
         }
         else {
             controls.createButton(actionsDiv, "Abmelden", () => renderAccountActions("logout"));
@@ -229,6 +235,26 @@ var usermgmt = (() => {
             renderCurrentUserDeleted,
             onRejectError,
         );
+    };
+
+    const onUpdateCurrentUser = () => {
+        let checkbox = document.getElementById("account-2fa-id");
+        if (checkbox) {
+            utils.fetch_api_call("api/pwdman/user/2fa",
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(checkbox.checked)
+                },
+                (changed) => {
+                    if (changed) {
+                        currentUser.requires2FA = checkbox.checked;
+                    }
+                    renderCurrentUser();
+                },
+                onRejectError,
+            );
+        }
     };
 
     const onResolveConfirmations = (confirms) => {

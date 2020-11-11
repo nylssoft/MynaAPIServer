@@ -156,6 +156,7 @@ namespace APIServer.PwdMan
             {
                 dbContext.DbRegistrations.Remove(registration);
                 dbContext.SaveChanges();
+                registration.Token = null;
             }
             else if (string.IsNullOrEmpty(registration.Token))
             {
@@ -321,6 +322,19 @@ namespace APIServer.PwdMan
             dbContext.DbUsers.Remove(user);
             dbContext.SaveChanges();
             return true;
+        }
+
+        public bool UpdateUser2FA(string authenticationToken, bool requires2FA)
+        {
+            logger.LogDebug($"Update user two factor authentication...");
+            var user = GetUserFromToken(authenticationToken);
+            if (user.Requires2FA != requires2FA)
+            {
+                user.Requires2FA = requires2FA;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
         }
 
         // --- authentication

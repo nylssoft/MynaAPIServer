@@ -77,6 +77,13 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.DeleteUser(GetToken(), username));
         }
 
+        [HttpPut]
+        [Route("api/pwdman/user/2fa")]
+        public IActionResult UpdateUser2FA([FromBody] bool requires2FA)
+        {
+            return new JsonResult(PwdManService.UpdateUser2FA(GetToken(), requires2FA));
+        }
+
         [HttpPost]
         [Route("api/pwdman/auth")]
         public IActionResult Login([FromBody] AuthenticationModel authentication)
