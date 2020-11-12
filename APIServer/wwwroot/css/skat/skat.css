@@ -145,6 +145,13 @@ td a {
     transform: translate(25pt,-4pt);
 }
 
+.results-img-open {
+    position: absolute;
+    top: 30pt;
+    right: -20pt;
+    z-index: -1;
+}
+
 .active-background {
     background-color: #007400;
 }

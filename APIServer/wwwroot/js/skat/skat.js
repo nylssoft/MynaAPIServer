@@ -32,7 +32,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.3";
+    let version = "1.1.4";
 
     // helper
 
@@ -248,7 +248,6 @@ var skat = (() => {
                     inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "hide", 20, 32);
                     inputUsername.value = user.name;
                     controls.createButton(parent, "Mitspielen", btnLogin_click);
-                    controls.createButton(parent, "Ergebnisse", () => window.open(window.location.href + "?results", "_blank"));
                 },
                 (errmsg) => console.error(errmsg));
         }
@@ -257,10 +256,6 @@ var skat = (() => {
     const renderWaitForUsers = (parent) => {
         controls.create(parent, "p", "activity", "Du musst warten, bis alle angemeldet sind.");
         document.body.className = "inactive-background";
-        let token = utils.get_authentication_token();
-        if (token) {
-            controls.createButton(parent, "Ergebnisse", () => window.open(window.location.href + "?results", "_blank"));
-        }
     };
 
     const renderStartGame = (parent) => {
@@ -398,7 +393,8 @@ var skat = (() => {
             if (model.skatTable.canStartNewGame) {
                 if (!model.currentUser.startGameConfirmed) {
                     controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
-                    controls.createButton(parent, "Tabelle", () => window.open(window.location.href + "?result", "_blank"));
+                    controls.createButton(parent, "Spielverlauf", () => window.open(`${window.location.href}?gamehistory`, "_blank"));
+                    controls.createButton(parent, "Tabelle", () => window.open(`${window.location.href}?result`, "_blank"));
                     active = true;
                 }
                 else {
@@ -613,6 +609,11 @@ var skat = (() => {
             showChat = !showChat;
             render();
         });
+        if (utils.get_authentication_token()) {
+            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/skat/games-card_game.png");
+            imgResults.addEventListener("click", () => window.open(window.location.href + "?results", "_blank"));
+            imgResults.title = "Spielergebnisse";
+        }
         divChat = controls.createDiv(parent, "layout-right");
         let chatState = sessionStorage.getItem("chatstate");
         if (!chatState) {
@@ -648,10 +649,14 @@ var skat = (() => {
     };
 
     const renderResults = (token, results) => {
-        document.title = "Skat - Ergebnisse";
+        document.title = "Skat - Spielergebnisse";
         controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
         let parent = document.body;
+        if (results.length == 0) {
+            controls.createLabel(parent, undefined, "Es liegen noch keine Spielergebnisse f\u00FCr Dich vor.");            
+            return;
+        }
         let div1 = controls.createDiv(parent, "results-column");
         div1.id = "results-overview-id";
         let cnt = 1;
@@ -723,6 +728,10 @@ var skat = (() => {
     };
 
     const renderGameHistory = (parent, result, gameHistory) => {
+        if (!result) {
+            document.title = "Skat - Spielverlauf";
+            document.body.className = "inactive-background";
+        }
         let div1 = document.getElementById("results-overview-id");
         if (div1) {
             div1.className = "hide";
@@ -734,13 +743,15 @@ var skat = (() => {
         }
         let gameP = controls.create(parent, "p");
         gameP.textContent = `${gameHistory.gamePlayerName} hat ${gameHistory.gameText} gespielt und ${gameHistory.gamePlayerScore} Augen bekommen. Das Spiel wurde mit ${gameHistory.gameValue} Punkten gewertet.`;
-        let buttonDiv = controls.createDiv(parent);
-        controls.createButton(buttonDiv, "Zur\u00FCck", () => {
-            if (div1) {
-                div1.className = "results-column";
-            }
-            renderResultTable(parent, result);
-        });
+        if (result) {
+            let buttonDiv = controls.createDiv(parent);
+            controls.createButton(buttonDiv, "Zur\u00FCck", () => {
+                if (div1) {
+                    div1.className = "results-column";
+                }
+                renderResultTable(parent, result);
+            });
+        }
         controls.create(parent, "p", undefined, "Skat:");
         let divSkat = controls.createDiv(parent);
         renderCards(divSkat, true, gameHistory.skat, true, undefined, true);
@@ -837,6 +848,13 @@ var skat = (() => {
             return;
         }
         ticket = getTicket();
+        if (ticket && params.has("gamehistory")) {
+            utils.fetch_api_call("api/skat/gamehistory", { headers: { "ticket": ticket } },
+                gamehistory => renderGameHistory(document.body, undefined, gamehistory),
+                errmsg => console.error(errmsg)
+            );
+            return;
+        }
         if (ticket && params.has("result")) {
             fetch("api/skat/result", { headers: { "ticket": ticket } })
                 .then(response => response.json())

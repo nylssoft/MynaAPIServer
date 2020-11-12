@@ -39,6 +39,8 @@ namespace APIServer.Skat
 
         public SkatModel GetSkatModel(string ticket);
 
+        public GameHistoryModel GetGameHistoryModel(string ticket);
+
         public ResultModel GetResultModel(string ticket);
 
         public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long id);

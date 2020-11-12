@@ -211,6 +211,20 @@ namespace APIServer.Skat
             }
         }
 
+        public GameHistoryModel GetGameHistoryModel(string ticket)
+        {
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && skatTable != null && skatTable.CurrentHistory != null &&
+                    skatTable.GameEnded)
+                {
+                    return GetGameHistoryModel(skatTable.CurrentHistory);
+                }
+                return null;
+            }
+        }
+
         public ResultModel GetResultModel(string ticket)
         {
             lock (mutex)
