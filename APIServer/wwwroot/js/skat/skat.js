@@ -32,7 +32,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.4";
+    let version = "1.1.6";
 
     // helper
 
@@ -738,7 +738,7 @@ var skat = (() => {
         }
         controls.removeAllChildren(parent);
         if (!gameHistory) {
-            controls.create(parent, "p", undefined, "Der Spielablauf ist noch nicht verf\u00FCgbar.");
+            controls.create(parent, "p", undefined, "Der Spielverlauf ist noch nicht verf\u00FCgbar.");
             return;
         }
         let gameP = controls.create(parent, "p");

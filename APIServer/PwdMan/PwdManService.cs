@@ -253,6 +253,17 @@ namespace APIServer.PwdMan
             }
             dbContext.DbUsers.Add(user);
             dbContext.SaveChanges();
+            var skatResults = dbContext.DbSkatResults
+                .Where(r => r.Player1 == user.Name || r.Player2 == user.Name || r.Player3 == user.Name)
+                .Select(r => r.Id);
+            if (skatResults.Any())
+            {
+                foreach (var skatResultId in skatResults)
+                {
+                    dbContext.DbUserSkatResults.Add(new DbUserSkatResult { DbUserId = user.Id, DbSkatResultId = skatResultId });
+                }
+                dbContext.SaveChanges();
+            }
         }
 
         // --- user management
@@ -262,6 +273,32 @@ namespace APIServer.PwdMan
             logger.LogDebug("Check whether username '{username}' is registered...", username);
             var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
             return user != null;
+        }
+
+        public DbUser GetUserFromToken(string authenticationToken)
+        {
+            var opt = GetOptions();
+            if (ValidateToken(authenticationToken, opt))
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var securityToken = tokenHandler.ReadToken(authenticationToken) as JwtSecurityToken;
+                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+                if (claim != null)
+                {
+                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+                    if (user != null)
+                    {
+                        if (user.Requires2FA)
+                        {
+                            var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+                            if (amr != null) throw new Requires2FAException();
+                        }
+                        return user;
+                    }
+                }
+                logger.LogDebug("Claim type 'unique_name' not found.");
+            }
+            throw new InvalidTokenException();
         }
 
         public UserModel GetUser(string authenticationToken)
@@ -320,6 +357,11 @@ namespace APIServer.PwdMan
                 dbContext.DbRoles.RemoveRange(roles);
             }
             dbContext.DbUsers.Remove(user);
+            var userSkatResults = dbContext.DbUserSkatResults.Where(r => r.DbUserId == user.Id);
+            if (userSkatResults.Any())
+            {
+                dbContext.DbUserSkatResults.RemoveRange(userSkatResults);
+            }
             dbContext.SaveChanges();
             return true;
         }
@@ -681,32 +723,6 @@ namespace APIServer.PwdMan
                 return false;
             }
             return true;
-        }
-
-        private DbUser GetUserFromToken(string token)
-        {
-            var opt = GetOptions();
-            if (ValidateToken(token, opt))
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
-                if (claim != null)
-                {
-                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
-                    if (user != null)
-                    {
-                        if (user.Requires2FA)
-                        {
-                            var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
-                            if (amr != null) throw new Requires2FAException();
-                        }
-                        return user;
-                    }
-                }
-                logger.LogDebug("Claim type 'unique_name' not found.");
-            }
-            throw new InvalidTokenException();
         }
 
         private PwdManOptions GetOptions()

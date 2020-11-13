@@ -29,6 +29,7 @@ using APIServer.Skat.Core;
 using System.Threading;
 using APIServer.PwdMan;
 using APIServer.Database;
+using Microsoft.EntityFrameworkCore;
 
 namespace APIServer.Skat
 {
@@ -240,24 +241,29 @@ namespace APIServer.Skat
 
         public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long id)
         {
-            var user = pwdManService.GetUser(authenticationToken);
+            ResultModel ret = null;
+            var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var result = dbContext.DbSkatResults.Single(r =>
-                r.Id == id && (r.Player1 == user.Name || r.Player2 == user.Name || r.Player3 == user.Name));
-            dbContext.Entry(result).Collection(r => r.SkatGameHistories).Load();
-            var ret = new ResultModel
+            var userSkatResults = dbContext.DbUserSkatResults
+                .Include(u => u.DbSkatResult).ThenInclude(s => s.SkatGameHistories)
+                .Where(u => u.DbSkatResultId == id && u.DbUserId == user.Id);
+            if (userSkatResults.Count() == 1)
             {
-                StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
-                EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
-                PlayerNames = new List<string>(),
-                History = new List<GameHistoryModel>()
-            };
-            ret.PlayerNames.Add(result.Player1);
-            ret.PlayerNames.Add(result.Player2);
-            ret.PlayerNames.Add(result.Player3);
-            foreach (var h in result.SkatGameHistories)
-            {
-                ret.History.Add(JsonSerializer.Deserialize<GameHistoryModel>(h.History));
+                var result = userSkatResults.First().DbSkatResult;
+                ret = new ResultModel
+                {
+                    StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
+                    EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
+                    PlayerNames = new List<string>(),
+                    History = new List<GameHistoryModel>()
+                };
+                ret.PlayerNames.Add(result.Player1);
+                ret.PlayerNames.Add(result.Player2);
+                ret.PlayerNames.Add(result.Player3);
+                foreach (var h in result.SkatGameHistories)
+                {
+                    ret.History.Add(JsonSerializer.Deserialize<GameHistoryModel>(h.History));
+                }
             }
             return ret;
         }
@@ -265,27 +271,26 @@ namespace APIServer.Skat
         public List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken)
         {
             var ret = new List<ResultModel>();
-            var user = pwdManService.GetUser(authenticationToken);
+            var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var results = dbContext.DbSkatResults
-                .Where(r => r.Player1 == user.Name || r.Player2 == user.Name || r.Player3 == user.Name)
-                .OrderByDescending(r => r.StartedUtc);
-            if (results.Any())
+            var userSkatResults = dbContext.DbUserSkatResults
+                .Include(u => u.DbSkatResult)
+                .Where(u => u.DbUserId == user.Id)
+                .OrderByDescending(u => u.DbSkatResult.StartedUtc);
+            foreach (var userSkatResult in userSkatResults)
             {
-                foreach (var result in results)
+                var result = userSkatResult.DbSkatResult;
+                var m = new ResultModel
                 {
-                    var m = new ResultModel
-                    {
-                        Id = result.Id,
-                        StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
-                        EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
-                        PlayerNames = new List<string>()
-                    };
-                    m.PlayerNames.Add(result.Player1);
-                    m.PlayerNames.Add(result.Player2);
-                    m.PlayerNames.Add(result.Player3);
-                    ret.Add(m);
-                }
+                    Id = result.Id,
+                    StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
+                    EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
+                    PlayerNames = new List<string>()
+                };
+                m.PlayerNames.Add(result.Player1);
+                m.PlayerNames.Add(result.Player2);
+                m.PlayerNames.Add(result.Player3);
+                ret.Add(m);
             }
             return ret;
         }
@@ -942,16 +947,23 @@ namespace APIServer.Skat
             try
             {
                 var dbContext = pwdManService.GetDbContext();
-                var skatResult = new DbSkatResult
+                var names = skatTable.Players.Select(p => p.Name).ToList();
+                var result = new DbSkatResult
                 {
-                    Player1 = skatTable.Players[0].Name,
-                    Player2 = skatTable.Players[1].Name,
-                    Player3 = skatTable.Players[2].Name,
+                    Player1 = names[0],
+                    Player2 = names[1],
+                    Player3 = names[2],
                     StartedUtc = DateTime.UtcNow
                 };
-                dbContext.DbSkatResults.Add(skatResult);
+                dbContext.DbSkatResults.Add(result);
                 dbContext.SaveChanges();
-                skatResultId = skatResult.Id;
+                skatResultId = result.Id;
+                var userIds = dbContext.DbUsers.Where(u => names.Contains(u.Name)).Select(u => u.Id);
+                foreach (var userId in userIds)
+                {
+                    dbContext.DbUserSkatResults.Add(new DbUserSkatResult { DbUserId = userId, DbSkatResultId = result.Id });
+                }
+                dbContext.SaveChanges();
             }
             catch (Exception ex)
             {

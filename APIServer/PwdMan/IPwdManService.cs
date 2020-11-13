@@ -38,6 +38,8 @@ namespace APIServer.PwdMan
 
         bool IsRegisteredUsername(string username);
 
+        DbUser GetUserFromToken(string authenticationToken);
+
         UserModel GetUser(string authenticationToken);
 
         bool DeleteUser(string authenticationToken, string userName);

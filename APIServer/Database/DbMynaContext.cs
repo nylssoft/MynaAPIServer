@@ -39,6 +39,8 @@ namespace APIServer.Database
 
         public DbSet<DbSkatGameHistory> DbSkatGameHistories { get; set; }
 
+        public DbSet<DbUserSkatResult> DbUserSkatResults { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<DbRegistration>()
