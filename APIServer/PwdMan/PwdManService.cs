@@ -301,6 +301,22 @@ namespace APIServer.PwdMan
             throw new InvalidTokenException();
         }
 
+        public bool HasRole(DbUser user, string roleName)
+        {
+            if (user.Roles == null)
+            {
+                dbContext.Entry(user).Collection(user => user.Roles).Load();
+            }
+            foreach (var role in user.Roles)
+            {
+                if (role.Name == roleName)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public UserModel GetUser(string authenticationToken)
         {
             logger.LogDebug("Get user...");
@@ -588,22 +604,6 @@ namespace APIServer.PwdMan
         }
 
         // --- private
-
-        private bool HasRole(DbUser user, string roleName)
-        {
-            if (user.Roles == null)
-            {
-                dbContext.Entry(user).Collection(user => user.Roles).Load();
-            }
-            foreach (var role in user.Roles)
-            {
-                if (role.Name == roleName)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
 
         private T GetSetting<T>(string key)
         {

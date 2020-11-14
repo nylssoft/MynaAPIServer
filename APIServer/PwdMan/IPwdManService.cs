@@ -40,6 +40,8 @@ namespace APIServer.PwdMan
 
         DbUser GetUserFromToken(string authenticationToken);
 
+        bool HasRole(DbUser user, string roleName);
+
         UserModel GetUser(string authenticationToken);
 
         bool DeleteUser(string authenticationToken, string userName);

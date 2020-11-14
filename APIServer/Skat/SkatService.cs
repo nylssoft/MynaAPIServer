@@ -239,28 +239,42 @@ namespace APIServer.Skat
             }
         }
 
-        public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long id)
+        public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId)
         {
             ResultModel ret = null;
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var userSkatResults = dbContext.DbUserSkatResults
-                .Include(u => u.DbSkatResult).ThenInclude(s => s.SkatGameHistories)
-                .Where(u => u.DbSkatResultId == id && u.DbUserId == user.Id);
-            if (userSkatResults.Count() == 1)
+            DbSkatResult skatResult = null;
+            if (pwdManService.HasRole(user, "skatadmin"))
             {
-                var result = userSkatResults.First().DbSkatResult;
+                skatResult = dbContext.DbSkatResults
+                    .Include(r => r.SkatGameHistories)
+                    .Single(r => r.Id == skatResultId);
+            }
+            else
+            {
+                var userSkatResults = dbContext.DbUserSkatResults
+                    .Include(u => u.DbSkatResult).ThenInclude(s => s.SkatGameHistories)
+                    .Where(u => u.DbSkatResultId == skatResultId && u.DbUserId == user.Id);
+                if (userSkatResults.Count() == 1)
+                {
+                    skatResult = userSkatResults.First().DbSkatResult;
+                }
+            }
+            if (skatResult != null)
+            {
                 ret = new ResultModel
                 {
-                    StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
-                    EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
+                    Id = skatResult.Id,
+                    StartedUtc = pwdManService.GetUtcDateTime(skatResult.StartedUtc),
+                    EndedUtc = pwdManService.GetUtcDateTime(skatResult.EndedUtc),
                     PlayerNames = new List<string>(),
                     History = new List<GameHistoryModel>()
                 };
-                ret.PlayerNames.Add(result.Player1);
-                ret.PlayerNames.Add(result.Player2);
-                ret.PlayerNames.Add(result.Player3);
-                foreach (var h in result.SkatGameHistories)
+                ret.PlayerNames.Add(skatResult.Player1);
+                ret.PlayerNames.Add(skatResult.Player2);
+                ret.PlayerNames.Add(skatResult.Player3);
+                foreach (var h in skatResult.SkatGameHistories)
                 {
                     ret.History.Add(JsonSerializer.Deserialize<GameHistoryModel>(h.History));
                 }
@@ -268,28 +282,63 @@ namespace APIServer.Skat
             return ret;
         }
 
+        public bool DeleteResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId)
+        {
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            if (!pwdManService.HasRole(user, "skatadmin"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var dbContext = pwdManService.GetDbContext();
+            var skatResult = dbContext.DbSkatResults
+                .Include(r => r.SkatGameHistories)
+                .SingleOrDefault(r => r.Id == skatResultId);
+            if (skatResult != null)
+            {
+                var userSkatResults = dbContext.DbUserSkatResults.Where(ur => ur.DbSkatResultId == skatResultId);
+                dbContext.DbUserSkatResults.RemoveRange(userSkatResults);
+                dbContext.DbSkatGameHistories.RemoveRange(skatResult.SkatGameHistories);
+                dbContext.DbSkatResults.Remove(skatResult);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
         public List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken)
         {
             var ret = new List<ResultModel>();
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var userSkatResults = dbContext.DbUserSkatResults
-                .Include(u => u.DbSkatResult)
-                .Where(u => u.DbUserId == user.Id)
-                .OrderByDescending(u => u.DbSkatResult.StartedUtc);
-            foreach (var userSkatResult in userSkatResults)
+            List<DbSkatResult> skatResults;
+            if (pwdManService.HasRole(user, "skatadmin"))
             {
-                var result = userSkatResult.DbSkatResult;
+                skatResults = dbContext.DbSkatResults.OrderByDescending(r => r.StartedUtc).ToList();
+            }
+            else
+            {
+                var userSkatResults = dbContext.DbUserSkatResults
+                    .Include(u => u.DbSkatResult)
+                    .Where(u => u.DbUserId == user.Id)
+                    .OrderByDescending(u => u.DbSkatResult.StartedUtc);
+                skatResults = new List<DbSkatResult>();
+                foreach (var userSkatResult in userSkatResults)
+                {
+                    skatResults.Add(userSkatResult.DbSkatResult);
+                }
+            }
+            foreach (var skatResult in skatResults)
+            {
                 var m = new ResultModel
                 {
-                    Id = result.Id,
-                    StartedUtc = pwdManService.GetUtcDateTime(result.StartedUtc),
-                    EndedUtc = pwdManService.GetUtcDateTime(result.EndedUtc),
+                    Id = skatResult.Id,
+                    StartedUtc = pwdManService.GetUtcDateTime(skatResult.StartedUtc),
+                    EndedUtc = pwdManService.GetUtcDateTime(skatResult.EndedUtc),
                     PlayerNames = new List<string>()
                 };
-                m.PlayerNames.Add(result.Player1);
-                m.PlayerNames.Add(result.Player2);
-                m.PlayerNames.Add(result.Player3);
+                m.PlayerNames.Add(skatResult.Player1);
+                m.PlayerNames.Add(skatResult.Player2);
+                m.PlayerNames.Add(skatResult.Player3);
                 ret.Add(m);
             }
             return ret;

@@ -63,14 +63,14 @@ namespace APIServer.Skat
             return new JsonResult(SkatService.GetChatModel());
         }
 
+        // --- with authentication
+
         [HttpPost]
         [Route("api/skat/chat")]
         public IActionResult Chat([FromBody] string value)
         {
             return new JsonResult(SkatService.Chat(GetTicket(), value));
         }
-
-        // --- with authentication
 
         [HttpPost]
         [Route("api/skat/logout")]
@@ -196,6 +196,13 @@ namespace APIServer.Skat
         public IActionResult GetResultByid([FromQuery]long id)
         {
             return new JsonResult(SkatService.GetResultModelById(PwdManService, GetToken(), id));
+        }
+
+        [HttpDelete]
+        [Route("api/skat/resultbyid")]
+        public IActionResult DeleteResultByid([FromBody] long id)
+        {
+            return new JsonResult(SkatService.DeleteResultModelById(PwdManService, GetToken(), id));
         }
 
         // --- authentication with administrative privileges

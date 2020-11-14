@@ -28,11 +28,12 @@ var skat = (() => {
     let specialSortOption = true;
     let showChat = false;
     let lastChatText = "";
+    let currentSkatResultId;
 
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.6";
+    let version = "1.1.7";
 
     // helper
 
@@ -648,7 +649,7 @@ var skat = (() => {
         }
     };
 
-    const renderResults = (token, results) => {
+    const renderResults = (token, results, skatadmin) => {
         document.title = "Skat - Spielergebnisse";
         controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
@@ -672,6 +673,9 @@ var skat = (() => {
                 });
         });
         let div2 = controls.createDiv(parent);
+        if (skatadmin) {
+            controls.createButton(div1, "L\u00F6schen", () => onDeleteSkatResult(div1, token, true));
+        }
         let rb = document.getElementById("result-id-1");
         if (rb) {
             rb.click();
@@ -690,6 +694,7 @@ var skat = (() => {
             controls.createLabel(parent, undefined, "Die Tabelle ist noch nicht verf\u00FCgbar.");
             return;
         }
+        currentSkatResultId = result.id;
         let started = new Date(result.startedUtc);
         let ended = new Date(result.endedUtc);
         let topt = { "hour": "numeric", "minute": "numeric" };
@@ -865,8 +870,12 @@ var skat = (() => {
         if (params.has("results")) {
             let token = utils.get_authentication_token();
             if (token) {
-                utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
-                    (results) => renderResults(token, results),
+                utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+                    (user) => {
+                        utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
+                            (results) => renderResults(token, results, user.roles.includes("skatadmin")),
+                            (errmsg) => console.error(errmsg));
+                    },
                     (errmsg) => console.error(errmsg));
                 return;
             }
@@ -1211,6 +1220,24 @@ var skat = (() => {
                 })
                 .catch((err) => console.error(err));
         }
+    };
+
+    const onDeleteSkatResult = (parent, token, confirm) => {
+        if (confirm) {
+            controls.removeAllChildren(parent);
+            controls.create(parent, "p", "confirmation", "Willst Du wirklich diese Tabelle l\u00F6schen?");
+            controls.createButton(parent, "Ja", () => onDeleteSkatResult(parent, token, false));
+            controls.createButton(parent, "Nein", () => window.location.replace("/skat?results"));
+            return;
+        }
+        utils.fetch_api_call("api/skat/resultbyid",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(currentSkatResultId)
+            },
+            () => window.location.replace("/skat?results"),
+            (errmsg) => console.error(errmsg));
     };
 
     function ontimer() {
