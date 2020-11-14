@@ -48,6 +48,8 @@ namespace APIServer.PwdMan
 
         bool UpdateUser2FA(string authenticationToken, bool requires2FA);
 
+        List<UserModel> GetUsers(string authenticationToken);
+
         // --- authentication
         AuthenticationResponseModel Authenticate(AuthenticationModel authenication);
 

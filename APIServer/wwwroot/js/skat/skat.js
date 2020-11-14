@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.9";
+    let version = "1.1.10";
 
     // helper
 
@@ -181,6 +181,7 @@ var skat = (() => {
             document.body.className = "inactive-background";
         }
         else {
+            let divParent = controls.createDiv(parent);
             utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
                 (user) => {
                     model.allUsers.forEach((skatuser) => {
@@ -189,9 +190,9 @@ var skat = (() => {
                             return;
                         }
                     });
-                    renderTableFull(parent, true);
+                    renderTableFull(divParent, true);
                 },
-                () => renderTableFull(parent, true));
+                () => renderTableFull(divParent, true));
         }
     };
 

@@ -21,6 +21,7 @@ using APIServer.PasswordGenerator;
 using APIServer.PwdMan.Model;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -398,6 +399,29 @@ namespace APIServer.PwdMan
                 return true;
             }
             return false;
+        }
+
+        public List<UserModel> GetUsers(string authenticationToken)
+        {
+            var user = GetUserFromToken(authenticationToken);
+            if (!HasRole(user, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var ret = new List<UserModel>();
+            var users = dbContext.DbUsers.Include(u => u.Roles).OrderBy(u => u.Name);
+            foreach (var u in users)
+            {
+                ret.Add(new UserModel
+                {
+                    Name = u.Name,
+                    Email = u.Email,
+                    LastLoginUtc = GetUtcDateTime(u.LastLoginTryUtc),
+                    RegisteredUtc = GetUtcDateTime(u.RegisteredUtc),
+                    Roles = u.Roles.Select(r => r.Name).ToList()
+                });
+            }
+            return ret;
         }
 
         // --- authentication

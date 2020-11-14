@@ -10,7 +10,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.2";
+    let version = "1.0.3";
 
     // rendering
 
@@ -35,6 +35,7 @@ var usermgmt = (() => {
         controls.removeAllChildren(parent);
         if (success) {
             renderHeader(parent, "Ergebnisse:");
+            results.reverse();
             results.forEach((r) => {
                 let div = controls.createDiv(parent);
                 if (r.errmsg) {
@@ -70,8 +71,84 @@ var usermgmt = (() => {
         let p = controls.create(parent, "p");
         controls.createButton(p, "Best\u00E4tigen", () => onConfirmRegistration());
         controls.createButton(p, "Ablehnen", () => onConfirmRegistration(true));
-        controls.createButton(p, "Abbrechen", () => renderCurrentUser());
+        controls.createButton(p, "Abbrechen", () => render());
         renderCopyright(parent);
+    };
+
+    const renderEditUsers = (success, results) => {
+        let parent = document.body;
+        controls.removeAllChildren(parent);
+        if (success) {
+            renderHeader(parent, "Ergebnisse:");
+            results.reverse();
+            results.forEach((r) => {
+                let div = controls.createDiv(parent);
+                if (r.errmsg) {
+                    div.textContent = `Fehler f\u00FCr ${r.name}: ${r.errmsg}`;
+                }
+                else if (r.deleted) {
+                    div.textContent = `Der Benutzer ${r.name} wurde gel\u00F6scht.`;
+                }
+                else {
+                    div.textContent = `Der Benutzer ${r.name} wurde nicht gefunden.`;
+                }
+            });
+            let p = controls.create(parent, "p");
+            controls.createButton(p, "OK", () => render());
+            renderCopyright(parent);
+            return;
+        }
+        utils.fetch_api_call("api/pwdman/users", { headers: { "token": token } },
+            (users) => {
+                renderHeader(parent, "Benutzer:");
+                let table = controls.create(parent, "table");
+                let theader = controls.create(table, "thead");
+                let tr = controls.create(theader, "tr");
+                controls.create(tr, "th", undefined, " ");
+                controls.create(tr, "th", undefined, "Name");
+                controls.create(tr, "th", undefined, "E-Mail-Adresse");
+                controls.create(tr, "th", undefined, "Letzte Anmeldung");
+                controls.create(tr, "th", undefined, "Registriert seit");
+                controls.create(tr, "th", undefined, "Rollen");
+                let tbody = controls.create(table, "tbody");
+                let idx = 0;
+                users.forEach(user => {
+                    tr = controls.create(tbody, "tr");
+                    let td = controls.create(tr, "td");
+                    controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => document.getElementById("error-id").textContent = "");
+                    td = controls.create(tr, "td", undefined, `${user.name}`);
+                    td = controls.create(tr, "td", undefined, `${user.email}`);
+                    let lastLogin = "";
+                    if (user.lastLoginUtc) {
+                        lastLogin = new Date(user.lastLoginUtc).toLocaleString("de-DE");
+                    }
+                    td = controls.create(tr, "td", undefined, lastLogin);
+                    td = controls.create(tr, "td", undefined, new Date(user.registeredUtc).toLocaleString("de-DE"));
+                    td = controls.create(tr, "td", undefined, user.roles.join(", "));
+                    idx++;
+                });
+                let errorDiv = controls.createDiv(parent, "error");
+                errorDiv.id = "error-id";
+                controls.create(parent, "p").id = "deleteusers-actions-id";
+                renderDeleteUsersActions(users);
+                renderCopyright(parent);
+            },
+            onRejectError);
+    };
+
+    const renderDeleteUsersActions = (users, confirm) => {
+        let actionsDiv = document.getElementById("deleteusers-actions-id");
+        controls.removeAllChildren(actionsDiv);
+        if (confirm) {
+            document.getElementById("error-id").textContent = "";
+            controls.create(actionsDiv, "span", "confirmation", "Willst Du die Benutzer wirklich l\u00F6schen? ");
+            controls.createButton(actionsDiv, "Ja", () => onDeleteUsers(users));
+            controls.createButton(actionsDiv, "Nein", () => renderDeleteUsersActions(users));
+        }
+        else {
+            controls.createButton(actionsDiv, "L\u00F6schen", () => renderDeleteUsersActions(users, true));
+            controls.createButton(actionsDiv, "Abbrechen", () => render());
+        }
     };
 
     const renderCurrentUser = () => {
@@ -126,6 +203,10 @@ var usermgmt = (() => {
             if (confirmations) {
                 let mgmtDiv = controls.create(actionsDiv, "p");
                 controls.createButton(mgmtDiv, "Registrierungen bearbeiten", () => renderConfirmRegistrations());
+            }
+            if (currentUser.roles.includes("usermanager")) {
+                let usersDiv = controls.create(actionsDiv, "p");
+                controls.createButton(usersDiv, "Benutzer bearbeiten", () => renderEditUsers());
             }
         }
     };
@@ -205,6 +286,47 @@ var usermgmt = (() => {
         }
         else {
             document.getElementById("error-id").textContent = "Es wurden keine Best\u00E4tigungen ausgew\u00E4hlt.";
+        }
+    };
+
+    const onDoDeleteUsers = (list, results) => {
+        if (list.length > 0) {
+            let name = list.pop();
+            utils.fetch_api_call("api/pwdman/user",
+                {
+                    method: "DELETE",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(name)
+                },
+                (deleted) => {
+                    results.push({ "name": name, "deleted": deleted });
+                    onDoDeleteUsers(list, results);
+                },
+                (errmsg) => {
+                    results.push({ "name": name, "errmsg": errmsg });
+                    onDoDeleteUsers(list, results);
+                });
+            return;
+        }
+        renderEditUsers(true, results);
+    };
+
+    const onDeleteUsers = (users) => {
+        document.getElementById("error-id").textContent = "";
+        let toBeDeleted = [];
+        for (let idx = 0; idx < users.length; idx++) {
+            let checkBox = document.getElementById(`delete-user-${idx}`);
+            if (checkBox.checked) {
+                toBeDeleted.push(users[idx].name);
+            }
+        }
+        if (toBeDeleted.length > 0) {
+            let results = [];
+            onDoDeleteUsers(toBeDeleted, results);
+        }
+        else {
+            document.getElementById("error-id").textContent = "Es wurden keine Benutzer ausgew\u00E4hlt.";
+            renderDeleteUsersActions(users);
         }
     };
 
