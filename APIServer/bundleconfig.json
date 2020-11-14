@@ -69,15 +69,6 @@
     "sourceMap": false
   },
   {
-    "outputFileName": "wwwroot/js/skat/skatadmin.min.js",
-    "inputFiles": [ "wwwroot/js/skat/skatadmin.js" ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
-  },
-  {
     "outputFileName": "wwwroot/js/skat/skatticket.min.js",
     "inputFiles": [ "wwwroot/js/skat/skatticket.js" ],
     "minify": {
