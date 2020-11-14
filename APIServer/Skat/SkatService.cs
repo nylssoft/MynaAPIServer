@@ -17,11 +17,9 @@
 */
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using APIServer.Skat.Model;
@@ -43,7 +41,7 @@ namespace APIServer.Skat
 
         private readonly Dictionary<string, Context> userTickets = new Dictionary<string, Context>();
 
-        private ChatModel chatModel = new ChatModel();
+        private long chatState;
 
         private readonly ILogger logger;
 
@@ -53,15 +51,10 @@ namespace APIServer.Skat
 
         private DateTime lastCardPlayed;
 
-        public SkatService(
-            IConfiguration configuration,
-            ILogger<SkatService> logger,
-            IHostApplicationLifetime appLifetime)
+        public SkatService(IConfiguration configuration, ILogger<SkatService> logger)
         {
             Configuration = configuration;
             this.logger = logger;
-            appLifetime.ApplicationStarted.Register(OnStarted);
-            appLifetime.ApplicationStopped.Register(OnStopped);
         }
 
         // --- without authentication
@@ -142,31 +135,41 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public ChatModel GetChatModel()
+        public ChatModel GetChatModel(IPwdManService pwdManService)
         {
+            var dbContext = pwdManService.GetDbContext();
+            var chats = dbContext.DbChats.Include(c => c.DbUser).OrderBy(c => c.CreatedUtc);
+            var chatModel = new ChatModel();
+            lock (mutex)
+            {
+                chatModel.State = chatState;
+            }
+            foreach (var chat in chats)
+            {
+                chatModel.History.Add(new ChatTextModel
+                {
+                    CreatedUtc = pwdManService.GetUtcDateTime(chat.CreatedUtc).Value,
+                    Username = chat.DbUser.Name,
+                    Message = chat.Message
+                });
+            }
             return chatModel;
         }
 
-        public bool Chat(string ticket, string message)
+        public bool Chat(IPwdManService pwdManService, string authenticationToken, string message)
         {
             string msg = message.Trim();
             if (msg.Length == 0 || msg.Length > 200) return false;
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            dbContext.DbChats.Add(new DbChat { CreatedUtc = DateTime.UtcNow, DbUserId = user.Id, Message = msg });
+            dbContext.SaveChanges();
             lock (mutex)
             {
-                var ctx = GetContext(ticket);
-                if (ctx != null)
-                {
-                    while (chatModel.History.Count > 20)
-                    {
-                        chatModel.History.RemoveAt(0);
-                    }
-                    chatModel.History.Add($"{ctx.Name}: {msg}");
-                    stateChanged = DateTime.UtcNow;
-                    chatModel.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
-                    return true;
-                }
+                stateChanged = DateTime.UtcNow;
+                chatState = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
             }
-            return false;
+            return true;
         }
 
         // --- with authentication
@@ -696,13 +699,15 @@ namespace APIServer.Skat
             {
                 throw new AccessDeniedPermissionException();
             }
+            var dbContext = pwdManService.GetDbContext();
+            dbContext.DbChats.RemoveRange(dbContext.DbChats);
+            dbContext.SaveChanges();
             lock (mutex)
             {
                 skatTable = null;
                 userTickets.Clear();
                 stateChanged = DateTime.UtcNow;
-                chatModel.History.Clear();
-                chatModel.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
+                chatState = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
             }
             return true;
         }
@@ -1029,50 +1034,5 @@ namespace APIServer.Skat
                 }
             }
         }
-
-        // --- application life time events
-
-        private const string chatHistoryFilename = "chatHistory.txt";
-
-        private void OnStarted()
-        {
-            try
-            {
-                var opt = GetOptions();
-                if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
-                {
-                    var fn = Path.Combine(opt.DataDirectoy, chatHistoryFilename);
-                    if (File.Exists(fn))
-                    {
-                        logger.LogInformation("Read chat history.");
-                        chatModel =  JsonSerializer.Deserialize<ChatModel>(File.ReadAllText(fn));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to read data.");
-            }
-        }
-
-        private void OnStopped()
-        {
-            try
-            {
-                var opt = GetOptions();
-                if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
-                {
-                    logger.LogInformation("Write chat history.");
-                    File.WriteAllText(
-                        Path.Combine(opt.DataDirectoy, chatHistoryFilename),
-                        JsonSerializer.Serialize(chatModel));
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to write login history file.");
-            }
-        }
-
     }
 }

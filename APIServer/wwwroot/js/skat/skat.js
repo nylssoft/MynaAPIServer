@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.8";
+    let version = "1.1.9";
 
     // helper
 
@@ -611,7 +611,8 @@ var skat = (() => {
             showChat = !showChat;
             render();
         });
-        if (utils.get_authentication_token()) {
+        let token = utils.get_authentication_token();
+        if (token) {
             let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/skat/games-card_game.png");
             imgResults.addEventListener("click", () => window.open(window.location.href + "?results", "_blank"));
             imgResults.title = "Spielergebnisse";
@@ -623,14 +624,18 @@ var skat = (() => {
         }
         let currentChatState = 0;
         if (chatModel && chatModel.history) {
-            chatModel.history.forEach((msg) => {
+            chatModel.history.forEach((tm) => {
                 let divMsg = controls.createDiv(divChat, "chat-message");
-                divMsg.textContent = msg;
+                divMsg.textContent = `${tm.username}: ${tm.message}`;
+                divMsg.title = `${new Date(tm.createdUtc).toLocaleString("de-DE")}`;
+                if (tm.message.startsWith("https://")) {
+                    controls.createA(divMsg, "chat-link", tm.message, "\u00D6ffnen", () => window.open(tm.message, "_blank"));
+                }
             });
             currentChatState = chatModel.state;
         }
-        if (ticket) {
-            inputChatText = controls.createInputField(divChat, "Nachricht", btnChat_click, "chat-input", 36, 200);
+        if (token) {
+            inputChatText = controls.createInputField(divChat, "Nachricht", () => btnChat_click(token), "chat-input", 36, 200);
             inputChatText.placeholder = "Nachricht..."
             if (lastChatText) {
                 inputChatText.value = lastChatText;
@@ -640,6 +645,9 @@ var skat = (() => {
             imgMessage.title = "Chat ausblenden";
             sessionStorage.setItem("chatstate", currentChatState);
             divChat.style.visibility = "visible";
+            if (inputChatText && !utils.is_mobile()) {
+                inputChatText.focus();
+            }
         }
         else {
             imgMessage.title = "Chat einblenden";
@@ -906,13 +914,15 @@ var skat = (() => {
             window.location.replace("/skat");
         }
         timerEnabled = false;
-        fetch("api/skat/chat")
-            .then(response => response.json())
-            .then(chat => {
-                chatModel = chat;
+        utils.fetch_api_call("api/skat/chat", undefined,
+            (cm) => {
+                chatModel = cm;
                 fetchModel(ticket);
-            })
-            .catch((err) => console.error(err));
+            },
+            (errmsg) => {
+                console.error(errmsg);
+                fetchModel(ticket);
+            });
     };
 
     // callbacks
@@ -1226,7 +1236,7 @@ var skat = (() => {
         render();
     };
 
-    const btnChat_click = () => {
+    const btnChat_click = (token) => {
         if (inputChatText && inputChatText.value.trim().length > 0) {
             timerEnabled = false;
             fetch("api/skat/chat", {
@@ -1234,7 +1244,7 @@ var skat = (() => {
                 headers: {
                     "Accept": "application/json",
                     "Content-Type": "application/json",
-                    "ticket": ticket
+                    "token": token
                 },
                 body: JSON.stringify(inputChatText.value)
             })

@@ -41,6 +41,8 @@ namespace APIServer.Database
 
         public DbSet<DbUserSkatResult> DbUserSkatResults { get; set; }
 
+        public DbSet<DbChat> DbChats { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<DbRegistration>()

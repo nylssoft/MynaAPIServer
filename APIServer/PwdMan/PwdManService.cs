@@ -378,6 +378,11 @@ namespace APIServer.PwdMan
             {
                 dbContext.DbUserSkatResults.RemoveRange(userSkatResults);
             }
+            var chats = dbContext.DbChats.Where(c => c.DbUserId == user.Id);
+            if (chats.Any())
+            {
+                dbContext.DbChats.RemoveRange(chats);
+            }
             dbContext.SaveChanges();
             return true;
         }

@@ -15,14 +15,22 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace APIServer.Skat.Model
+namespace APIServer.Database
 {
-    public class ChatModel
+    [Table("Chats")]
+    public class DbChat
     {
-        public List<ChatTextModel> History { get; set; } = new List<ChatTextModel>();
+        public long Id { get; set; }
 
-        public long State { get; set; } = 0L;
+        public long DbUserId { get; set; }
+
+        public DbUser DbUser { get; set; }
+
+        public string Message { get; set; }
+
+        public DateTime CreatedUtc { get; set; }
     }
 }

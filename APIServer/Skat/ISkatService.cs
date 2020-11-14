@@ -29,9 +29,9 @@ namespace APIServer.Skat
 
         public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username);
 
-        public ChatModel GetChatModel();
+        public ChatModel GetChatModel(IPwdManService pwdManService);
 
-        public bool Chat(string ticket, string message);
+        public bool Chat(IPwdManService pwdManService, string authenticationToken, string message);
 
         // --- with authentication (ticket)
 
