@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.7";
+    let version = "1.1.8";
 
     // helper
 
@@ -243,12 +243,13 @@ var skat = (() => {
             });
         }
         else {
+            let parentdiv = controls.create(parent, "p");
             utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
                 (user) => {
-                    controls.create(parent, "p", undefined, `${user.name}! Du kannst noch mitspielen!`);
-                    inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "hide", 20, 32);
+                    controls.create(parentdiv, "p", undefined, `${user.name}! Du kannst noch mitspielen!`);
+                    inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
                     inputUsername.value = user.name;
-                    controls.createButton(parent, "Mitspielen", btnLogin_click);
+                    controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
                 },
                 (errmsg) => console.error(errmsg));
         }
@@ -880,6 +881,30 @@ var skat = (() => {
                 return;
             }
         }
+        if (params.has("admin")) {
+            let token = utils.get_authentication_token();
+            if (token) {
+                utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+                    (user) => {
+                        if (user.roles.includes("skatadmin")) {
+                            let parent = document.body;
+                            parent.className = "inactive-background";
+                            controls.removeAllChildren(parent);
+                            controls.create(parent, "p", undefined, "Skat Administration");
+                            let p = controls.create(parent, "p");
+                            controls.createButton(p, "Reset", () => onReset(p, token, true));
+                            controls.createButton(p, "Tickets", () => onShowTickets(p, token));
+                            controls.createButton(p, "Spielergebnisse", () => window.location.href = "/skat?results");
+                        }
+                        else {
+                            window.location.replace("/skat");
+                        }
+                    },
+                    (errmsg) => console.error(errmsg));
+                return;
+            }
+            window.location.replace("/skat");
+        }
         timerEnabled = false;
         fetch("api/skat/chat")
             .then(response => response.json())
@@ -1237,6 +1262,32 @@ var skat = (() => {
                 body: JSON.stringify(currentSkatResultId)
             },
             () => window.location.replace("/skat?results"),
+            (errmsg) => console.error(errmsg));
+    };
+
+    const onReset = (parent, token, confirm) => {
+        if (confirm) {
+            controls.removeAllChildren(parent);
+            controls.create(parent, "p", "confirmation", "Willst Du wirklich alles zur\u00FCcksetzen?");
+            controls.createButton(parent, "Ja", () => onReset(parent, token, false));
+            controls.createButton(parent, "Nein", () => window.location.replace("/skat?admin"));
+            return;
+        }
+        utils.fetch_api_call("api/skat/reset", { headers: { "token": token } },
+            () => window.location.replace("/skat?admin"),
+            (errmsg) => console.error(errmsg));
+    };
+
+    const onShowTickets = (parent, token) => {
+        utils.fetch_api_call("api/skat/tickets", { headers: { "token": token } },
+            (tickets) => {
+                controls.removeAllChildren(parent);
+                controls.create(parent, "p", undefined, "Tickets:");
+                tickets.forEach(ticket => {
+                    controls.create(parent, "p", undefined, ticket);
+                });
+                controls.createButton(parent, "OK", () => window.location.replace("/skat?admin"));
+            },
             (errmsg) => console.error(errmsg));
     };
 

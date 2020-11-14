@@ -45,8 +45,6 @@ namespace APIServer.Skat
 
         public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
 
-        public bool DeleteResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
-
         public List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken);
     
         public bool PerformBidAction(string ticket, string bidAction);
@@ -73,11 +71,13 @@ namespace APIServer.Skat
 
         public bool ContinuePlay(string ticket);
 
-        // --- with admin privileges
+        // --- with skatadmin user role
 
-        public bool Reset(string ticket);
+        public bool DeleteResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
 
-        public List<string> GetLoggedInUsers(string ticket);
+        public bool Reset(IPwdManService pwdManService, string authenticationToken);
+
+        public List<string> GetLoggedInUsers(IPwdManService pwdManService, string authenticationToken);
 
     }
 }

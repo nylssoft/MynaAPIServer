@@ -198,6 +198,8 @@ namespace APIServer.Skat
             return new JsonResult(SkatService.GetResultModelById(PwdManService, GetToken(), id));
         }
 
+        // --- authenticated users with skatadmin role
+
         [HttpDelete]
         [Route("api/skat/resultbyid")]
         public IActionResult DeleteResultByid([FromBody] long id)
@@ -205,20 +207,18 @@ namespace APIServer.Skat
             return new JsonResult(SkatService.DeleteResultModelById(PwdManService, GetToken(), id));
         }
 
-        // --- authentication with administrative privileges
-
-        [HttpPost]
+        [HttpGet]
         [Route("api/skat/reset")]
         public IActionResult Reset()
         {
-            return new JsonResult(SkatService.Reset(GetTicket()));
+            return new JsonResult(SkatService.Reset(PwdManService, GetToken()));
         }
 
         [HttpGet]
         [Route("api/skat/tickets")]
         public IActionResult GetLoggedInUsers()
         {
-            return new JsonResult(SkatService.GetLoggedInUsers(GetTicket()));
+            return new JsonResult(SkatService.GetLoggedInUsers(PwdManService, GetToken()));
         }
 
         // --- private

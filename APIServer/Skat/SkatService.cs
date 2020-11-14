@@ -43,8 +43,6 @@ namespace APIServer.Skat
 
         private readonly Dictionary<string, Context> userTickets = new Dictionary<string, Context>();
 
-        private readonly List<string> loginHistory = new List<string>();
-
         private ChatModel chatModel = new ChatModel();
 
         private readonly ILogger logger;
@@ -138,11 +136,6 @@ namespace APIServer.Skat
                     };
                     userTickets[ticket] = ctx;
                     stateChanged = DateTime.UtcNow;
-                    if (loginHistory.Count == 100)
-                    {
-                        loginHistory.RemoveAt(0);
-                    }
-                    loginHistory.Add($"{ctx.Created} : {ctx.Name}");
                     ret.Ticket = ticket;
                 }
             }
@@ -280,29 +273,6 @@ namespace APIServer.Skat
                 }
             }
             return ret;
-        }
-
-        public bool DeleteResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId)
-        {
-            var user = pwdManService.GetUserFromToken(authenticationToken);
-            if (!pwdManService.HasRole(user, "skatadmin"))
-            {
-                throw new AccessDeniedPermissionException();
-            }
-            var dbContext = pwdManService.GetDbContext();
-            var skatResult = dbContext.DbSkatResults
-                .Include(r => r.SkatGameHistories)
-                .SingleOrDefault(r => r.Id == skatResultId);
-            if (skatResult != null)
-            {
-                var userSkatResults = dbContext.DbUserSkatResults.Where(ur => ur.DbSkatResultId == skatResultId);
-                dbContext.DbUserSkatResults.RemoveRange(userSkatResults);
-                dbContext.DbSkatGameHistories.RemoveRange(skatResult.SkatGameHistories);
-                dbContext.DbSkatResults.Remove(skatResult);
-                dbContext.SaveChanges();
-                return true;
-            }
-            return false;
         }
 
         public List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken)
@@ -694,41 +664,65 @@ namespace APIServer.Skat
             return ret;
         }
 
-        // --- with admin privileges
+        // --- with skatadmin user role
 
-        public bool Reset(string ticket)
+        public bool DeleteResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId)
         {
-            lock (mutex)
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            if (!pwdManService.HasRole(user, "skatadmin"))
             {
-                if (IsAdminTicket(ticket))
-                {
-                    skatTable = null;
-                    userTickets.Clear();
-                    stateChanged = DateTime.UtcNow;
-                    chatModel.History.Clear();
-                    chatModel.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
-                    return true;
-                }
+                throw new AccessDeniedPermissionException();
+            }
+            var dbContext = pwdManService.GetDbContext();
+            var skatResult = dbContext.DbSkatResults
+                .Include(r => r.SkatGameHistories)
+                .SingleOrDefault(r => r.Id == skatResultId);
+            if (skatResult != null)
+            {
+                var userSkatResults = dbContext.DbUserSkatResults.Where(ur => ur.DbSkatResultId == skatResultId);
+                dbContext.DbUserSkatResults.RemoveRange(userSkatResults);
+                dbContext.DbSkatGameHistories.RemoveRange(skatResult.SkatGameHistories);
+                dbContext.DbSkatResults.Remove(skatResult);
+                dbContext.SaveChanges();
+                return true;
             }
             return false;
         }
 
-        public List<string> GetLoggedInUsers(string ticket)
+        public bool Reset(IPwdManService pwdManService, string authenticationToken)
         {
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            if (!pwdManService.HasRole(user, "skatadmin"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
             lock (mutex)
             {
-                if (IsAdminTicket(ticket))
-                {
-                    var ret = new List<string>();
-                    foreach (var t in userTickets)
-                    {
-                        ret.Add($"[{t.Key}] => {t.Value.Name} / {t.Value.Created} / {t.Value.LastAccess}");
-                    }
-                    ret.AddRange(loginHistory);
-                    return ret;
-                }
+                skatTable = null;
+                userTickets.Clear();
+                stateChanged = DateTime.UtcNow;
+                chatModel.History.Clear();
+                chatModel.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
             }
-            return null;
+            return true;
+        }
+
+        public List<string> GetLoggedInUsers(IPwdManService pwdManService, string authenticationToken)
+        {
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            if (!pwdManService.HasRole(user, "skatadmin"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            lock (mutex)
+            {
+                var ret = new List<string>();
+                foreach (var t in userTickets)
+                {
+                    ret.Add($"[{t.Key}] => {t.Value.Name} / {t.Value.Created} / {t.Value.LastAccess}");
+                }
+                return ret;
+            }
         }
 
         // --- private
@@ -747,11 +741,6 @@ namespace APIServer.Skat
                 ctx.LastAccess = DateTime.Now;
             }
             return ctx;
-        }
-
-        private bool IsAdminTicket(string ticket)
-        {
-            return ticket == GetOptions().AdminTicket;
         }
 
         private Player GetPlayerByName(string username)
@@ -1043,7 +1032,6 @@ namespace APIServer.Skat
 
         // --- application life time events
 
-        private const string loginHistoryFilename = "loginHistory.txt";
         private const string chatHistoryFilename = "chatHistory.txt";
 
         private void OnStarted()
@@ -1053,15 +1041,7 @@ namespace APIServer.Skat
                 var opt = GetOptions();
                 if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
                 {
-                    var fn = Path.Combine(opt.DataDirectoy, loginHistoryFilename);
-                    if (File.Exists(fn))
-                    {
-                        logger.LogInformation("Read login history.");
-                        loginHistory.AddRange(
-                            JsonSerializer.Deserialize<List<string>>(
-                                File.ReadAllText(fn)));
-                    }
-                    fn = Path.Combine(opt.DataDirectoy, chatHistoryFilename);
+                    var fn = Path.Combine(opt.DataDirectoy, chatHistoryFilename);
                     if (File.Exists(fn))
                     {
                         logger.LogInformation("Read chat history.");
@@ -1082,10 +1062,6 @@ namespace APIServer.Skat
                 var opt = GetOptions();
                 if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
                 {
-                    logger.LogInformation("Write login history.");
-                    File.WriteAllText(
-                        Path.Combine(opt.DataDirectoy, loginHistoryFilename),
-                        JsonSerializer.Serialize(loginHistory));
                     logger.LogInformation("Write chat history.");
                     File.WriteAllText(
                         Path.Combine(opt.DataDirectoy, chatHistoryFilename),
