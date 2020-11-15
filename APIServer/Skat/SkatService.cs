@@ -148,7 +148,7 @@ namespace APIServer.Skat
             {
                 chatModel.History.Add(new ChatTextModel
                 {
-                    CreatedUtc = pwdManService.GetUtcDateTime(chat.CreatedUtc).Value,
+                    CreatedUtc = DbMynaContext.GetUtcDateTime(chat.CreatedUtc).Value,
                     Username = chat.DbUser.Name,
                     Message = chat.Message
                 });
@@ -262,8 +262,8 @@ namespace APIServer.Skat
                 ret = new ResultModel
                 {
                     Id = skatResult.Id,
-                    StartedUtc = pwdManService.GetUtcDateTime(skatResult.StartedUtc),
-                    EndedUtc = pwdManService.GetUtcDateTime(skatResult.EndedUtc),
+                    StartedUtc = DbMynaContext.GetUtcDateTime(skatResult.StartedUtc),
+                    EndedUtc = DbMynaContext.GetUtcDateTime(skatResult.EndedUtc),
                     PlayerNames = new List<string>(),
                     History = new List<GameHistoryModel>()
                 };
@@ -305,8 +305,8 @@ namespace APIServer.Skat
                 var m = new ResultModel
                 {
                     Id = skatResult.Id,
-                    StartedUtc = pwdManService.GetUtcDateTime(skatResult.StartedUtc),
-                    EndedUtc = pwdManService.GetUtcDateTime(skatResult.EndedUtc),
+                    StartedUtc = DbMynaContext.GetUtcDateTime(skatResult.StartedUtc),
+                    EndedUtc = DbMynaContext.GetUtcDateTime(skatResult.EndedUtc),
                     PlayerNames = new List<string>()
                 };
                 m.PlayerNames.Add(skatResult.Player1);

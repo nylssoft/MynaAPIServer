@@ -128,7 +128,7 @@ namespace APIServer.PwdMan
                 confirmations.Add(new OutstandingRegistrationModel
                 {
                     Email = registration.Email,
-                    RequestedUtc = GetUtcDateTime(registration.RequestedUtc)
+                    RequestedUtc = DbMynaContext.GetUtcDateTime(registration.RequestedUtc)
                 });
             }
             return confirmations;
@@ -326,9 +326,9 @@ namespace APIServer.PwdMan
             {
                 Name = user.Name,
                 Email = user.Email,
-                LastLoginUtc = GetUtcDateTime(user.LastLoginTryUtc),
+                LastLoginUtc = DbMynaContext.GetUtcDateTime(user.LastLoginTryUtc),
                 Requires2FA = user.Requires2FA,
-                RegisteredUtc = GetUtcDateTime(user.RegisteredUtc),
+                RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
                 HasPasswordManagerFile = user.PasswordFileId != null,
                 PasswordManagerSalt = user.Salt
             };
@@ -416,8 +416,8 @@ namespace APIServer.PwdMan
                 {
                     Name = u.Name,
                     Email = u.Email,
-                    LastLoginUtc = GetUtcDateTime(u.LastLoginTryUtc),
-                    RegisteredUtc = GetUtcDateTime(u.RegisteredUtc),
+                    LastLoginUtc = DbMynaContext.GetUtcDateTime(u.LastLoginTryUtc),
+                    RegisteredUtc = DbMynaContext.GetUtcDateTime(u.RegisteredUtc),
                     Roles = u.Roles.Select(r => r.Name).ToList()
                 });
             }
@@ -619,17 +619,6 @@ namespace APIServer.PwdMan
         public DbMynaContext GetDbContext()
         {
             return dbContext;
-        }
-
-        public DateTime? GetUtcDateTime(DateTime? dbDateTime)
-        {
-            DateTime? ret = null;
-            if (dbDateTime != null)
-            {
-                var ticks = dbDateTime.Value.Ticks;
-                ret = new DateTime(ticks, DateTimeKind.Utc);
-            }
-            return ret;
         }
 
         // --- private

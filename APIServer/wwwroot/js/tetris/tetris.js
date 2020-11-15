@@ -422,10 +422,12 @@ var tetris = (() => {
     let inputUserName;
 
     // --- state
-    let version = "1.2.2";
+    let version = "1.2.3";
 
     let block;
     let nextBlock;
+    let blockMoveDownCount;
+    let isPaused;
     let playground;
     let score;
     let lines;
@@ -602,6 +604,10 @@ var tetris = (() => {
 
     const draw = () => {
         // game logic
+        if (isPaused) {
+            window.requestAnimationFrame(draw);
+            return;
+        }
         if (state == StateEnums.NEWBLOCK) {
             placeNewBlock();
         }
@@ -627,6 +633,9 @@ var tetris = (() => {
         }
         else if (state == StateEnums.MOVEDOWN) {
             let speedcnt = speed[Math.min(29, level)];
+            if (blockMoveDownCount < 3) {
+                speedcnt = speed[Math.min(5, level)];
+            }
             let skipMoveDown = false;
             if (keyPressed) {
                 keyPressedCount++;
@@ -676,6 +685,7 @@ var tetris = (() => {
                 if (moveDownFrameCount >= speedcnt) {
                     moveDownFrameCount = 0;
                     moveDown();
+                    blockMoveDownCount++;
                 }
             }
         }
@@ -743,6 +753,7 @@ var tetris = (() => {
             keyPressedCount = 0;
             dirtyBlock = true;
             dirtyNextBlock = true;
+            blockMoveDownCount = 0;
         }
         else {
             gameOverDiv.textContent = `GAME OVER`;
@@ -755,6 +766,9 @@ var tetris = (() => {
                     highScores = h;
                     if (score > 0 && (highScores.length < 10 || highScores[9].score < score)) {
                         addHighScoreDiv.style.visibility = "visible";
+                        if (!utils.is_mobile()) {
+                            inputUserName.focus();
+                        }
                     }
                     else {
                         highScoreDiv.style.visibility = highScores.length > 0 ? "visible" : "hidden";
@@ -932,6 +946,8 @@ var tetris = (() => {
 
         console.log(`Level ${level}: Speed is ${speed[level]} frames / cell.`);
 
+        blockMoveDownCount = 0;
+        isPaused = false;
         keyPressed = undefined;
         keyPressedCount = 0;
         keyPressedMax = 100;
@@ -1000,6 +1016,7 @@ var tetris = (() => {
                 }
                 keyPressed = undefined;
             }
+            isPaused = !isPaused && e.key == "p";
         });
     };
 

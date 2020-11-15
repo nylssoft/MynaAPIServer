@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace APIServer.Database
 {
@@ -43,6 +44,8 @@ namespace APIServer.Database
 
         public DbSet<DbChat> DbChats { get; set; }
 
+        public DbSet<DbTetrisHighScore> DbTetrisHighScore { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<DbRegistration>()
@@ -57,6 +60,17 @@ namespace APIServer.Database
             builder.Entity<DbSetting>()
                 .HasIndex(s => s.Key)
                 .IsUnique();
+        }
+
+        public static DateTime? GetUtcDateTime(DateTime? dbDateTime)
+        {
+            DateTime? ret = null;
+            if (dbDateTime != null)
+            {
+                var ticks = dbDateTime.Value.Ticks;
+                ret = new DateTime(ticks, DateTimeKind.Utc);
+            }
+            return ret;
         }
 
     }

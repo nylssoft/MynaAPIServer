@@ -15,131 +15,79 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using APIServer.Database;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
+using System.Linq;
 
 namespace APIServer.Tetris
 {
     public class TetrisService : ITetrisService
     {
-        public IConfiguration Configuration { get; }
+        private readonly DbMynaContext dbContext;
 
-        private readonly ILogger logger;
-
-        private List<HighScore> highScores = new List<HighScore>();
-
-        private readonly object mutex = new object();
-
-        public TetrisService(
-            IConfiguration configuration,
-            ILogger<TetrisService> logger,
-            IHostApplicationLifetime appLifetime)
+        public TetrisService(DbMynaContext dbContext)
         {
-            Configuration = configuration;
-            this.logger = logger;
-            appLifetime.ApplicationStarted.Register(OnStarted);
-            appLifetime.ApplicationStopped.Register(OnStopped);
+            this.dbContext = dbContext;
         }
 
         public List<HighScore> GetHighScores()
         {
-            lock (mutex)
+            var ret = new List<HighScore>();
+            var highScores = dbContext.DbTetrisHighScore.OrderByDescending(sc => sc.Score);            
+            foreach (var hs in highScores)
             {
-                var ret = new List<HighScore>();
-                foreach (var h in highScores)
+                ret.Add(new HighScore
                 {
-                    ret.Add(new HighScore(h));
+                    Name = hs.Name,
+                    Created = DbMynaContext.GetUtcDateTime(hs.Created).Value,
+                    Level = hs.Level,
+                    Lines = hs.Lines,
+                    Score = hs.Score
+                });
+                if (ret.Count >= 10)
+                {
+                    break;
                 }
-                return ret;
             }
+            return ret;
         }
 
         public bool AddHighScore(HighScore highScore)
         {
-            lock (mutex)
+            if (highScore == null ||
+                highScore.Name == null || 
+                highScore.Name.Length == 0 ||
+                highScore.Name.Length > 10 ||
+                highScore.Score <= 0 ||
+                highScore.Lines <= 0 ||
+                highScore.Level < 0)
             {
-                if (highScore == null ||
-                    highScore.Name == null || 
-                    highScore.Name.Length == 0 ||
-                    highScore.Name.Length > 10 ||
-                    highScore.Score <= 0 ||
-                    highScore.Lines <= 0 ||
-                    highScore.Level < 0)
+                return false;
+            }
+            if (highScore.Lines / 10 != highScore.Level)
+            {
+                return false;
+            }
+            var highScores = dbContext.DbTetrisHighScore.OrderByDescending(sc => sc.Score).ToList();
+            if (highScores.Count >= 10)
+            {
+                if (highScores[9].Score >= highScore.Score)
                 {
                     return false;
                 }
-                if (highScores.Count == 10)
-                {
-                    if (highScores[9].Score >= highScore.Score)
-                    {
-                        return false;
-                    }
-                    highScores.RemoveAt(9);
-                }
-                highScores.Add(highScore);
-                highScores.Sort((a,b) => b.Score.CompareTo(a.Score));
             }
+            var h = new DbTetrisHighScore
+            {
+                Created = DateTime.UtcNow,
+                Name = highScore.Name,
+                Level = highScore.Level,
+                Lines = highScore.Lines,
+                Score = highScore.Score
+            };
+            dbContext.DbTetrisHighScore.Add(h);
+            dbContext.SaveChanges();
             return true;
         }
-
-        // --- private
-
-        private TetrisOptions GetOptions()
-        {
-            var opt = Configuration.GetSection("Tetris").Get<TetrisOptions>();
-            return opt ?? new TetrisOptions();
-        }
-
-        // --- application life time events
-
-        private const string highScoreFilename = "highScore.txt";
-
-        private void OnStarted()
-        {
-            try
-            {
-                var opt = GetOptions();
-                if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
-                {
-                    var fn = Path.Combine(opt.DataDirectoy, highScoreFilename);
-                    if (File.Exists(fn))
-                    {
-                        logger.LogInformation("Read high scores.");
-                        highScores.AddRange(
-                            JsonSerializer.Deserialize<List<HighScore>>(
-                                File.ReadAllText(fn)));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to high scores.");
-            }
-        }
-
-        private void OnStopped()
-        {
-            try
-            {
-                var opt = GetOptions();
-                if (!string.IsNullOrEmpty(opt.DataDirectoy) && Directory.Exists(opt.DataDirectoy))
-                {
-                    logger.LogInformation("Write high scores.");
-                    File.WriteAllText(
-                        Path.Combine(opt.DataDirectoy, highScoreFilename),
-                        JsonSerializer.Serialize(highScores));
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to write high scores.");
-            }
-        }
-
     }
 }

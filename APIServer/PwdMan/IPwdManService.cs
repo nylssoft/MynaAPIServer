@@ -71,7 +71,5 @@ namespace APIServer.PwdMan
 
         DbMynaContext GetDbContext();
 
-        DateTime? GetUtcDateTime(DateTime? dbDateTime);
-
     }
 }

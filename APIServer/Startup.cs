@@ -46,9 +46,9 @@ namespace APIServer
             services.AddDbContext<DbMynaContext>(builder => builder.UseSqlite($"Data Source={databaseFile}"));
             services.AddScoped<IPwdManService, PwdManService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<ITetrisService, TetrisService>();
             // singletons
             services.AddSingleton<ISkatService, SkatService>();
-            services.AddSingleton<ITetrisService, TetrisService>();
             // enable cshtml pages
             services.AddRazorPages();
             // all urls lower case

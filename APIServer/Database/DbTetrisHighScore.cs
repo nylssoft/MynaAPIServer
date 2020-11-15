@@ -15,10 +15,24 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-namespace APIServer.Tetris
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace APIServer.Database
 {
-    public class TetrisOptions
+    [Table("TetrisHighScores")]
+    public class DbTetrisHighScore
     {
-        public string DataDirectoy { get; set; } = "data";
+        public long Id { get; set; }
+
+        public string Name { get; set; }
+
+        public int Score { get; set; }
+
+        public int Lines { get; set; }
+
+        public int Level { get; set; }
+
+        public DateTime Created { get; set; }
     }
 }
