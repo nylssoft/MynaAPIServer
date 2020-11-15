@@ -58,7 +58,4 @@ Temporary Items
 
 # personal user files
 *.user
-APIServer/wwwroot/downloads/apps.json
-APIServer/wwwroot/images/slideshow/pictures.json
-APIServer/wwwroot/js/skat/skatplayerimages.js
-APIServer/Readme.txt
+
