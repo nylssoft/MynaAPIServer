@@ -10,7 +10,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.3";
+    let version = "1.0.4";
 
     // helper
 
