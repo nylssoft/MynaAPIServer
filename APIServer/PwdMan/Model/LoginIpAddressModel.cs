@@ -16,30 +16,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
-using System.Collections.Generic;
 
 namespace APIServer.PwdMan.Model
 {
-    public class UserModel
+    public class LoginIpAddressModel
     {
-        public string Name { get; set; }
+        public string IpAddress { get; set; }
 
-        public string Email { get; set; }
+        public DateTime LastUsedUtc { get; set; }
 
-        public bool Requires2FA { get; set; }
+        public int Failed { get; set; }
 
-        public DateTime? LastLoginUtc { get; set; }
-
-        public DateTime? RegisteredUtc { get; set; }
-
-        public List<string> Roles { get; set; }
-
-        public bool HasPasswordManagerFile { get; set; }
-
-        public string PasswordManagerSalt { get; set; }
-
-        public bool AccountLocked { get; set; }
-
-        public List<LoginIpAddressModel> LoginIpAddresses { get; set; }
+        public int Succeeded { get; set; }
     }
 }

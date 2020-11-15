@@ -17,7 +17,6 @@
 */
 using APIServer.Database;
 using APIServer.PwdMan.Model;
-using System;
 using System.Collections.Generic;
 
 namespace APIServer.PwdMan
@@ -51,7 +50,8 @@ namespace APIServer.PwdMan
         List<UserModel> GetUsers(string authenticationToken);
 
         // --- authentication
-        AuthenticationResponseModel Authenticate(AuthenticationModel authenication);
+
+        AuthenticationResponseModel Authenticate(AuthenticationModel authenication, string ipAddress);
 
         string AuthenticateTOTP(string token, string totp);
 

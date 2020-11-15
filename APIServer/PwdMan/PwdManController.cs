@@ -95,7 +95,8 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/auth")]
         public IActionResult Login([FromBody] AuthenticationModel authentication)
         {
-            return new JsonResult(PwdManService.Authenticate(authentication));
+            var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+            return new JsonResult(PwdManService.Authenticate(authentication, ipAddress));
         }
 
         [HttpPost]

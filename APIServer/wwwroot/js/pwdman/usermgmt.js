@@ -12,6 +12,18 @@ var usermgmt = (() => {
 
     let version = "1.0.3";
 
+    // helper
+
+    const getLoginPerDeviceText = (ip) => {
+        let txt = `${new Date(ip.lastUsedUtc).toLocaleString("de-DE")} mit Client-IP-Adresse ${ip.ipAddress}.`;
+        txt += ` Insgesamt ${ip.succeeded + ip.failed} Anmeldungen`;
+        if (ip.failed > 0) {
+            txt += `, davon sind ${ip.failed} fehlgeschlagen`;
+        }
+        txt += ".";
+        return txt;
+    };
+
     // rendering
 
     const renderHeader = (parent, intro) => {
@@ -21,7 +33,7 @@ var usermgmt = (() => {
         }
     };
 
-    const renderCopyright = (parent, title) => {
+    const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
@@ -117,6 +129,12 @@ var usermgmt = (() => {
                     let td = controls.create(tr, "td");
                     controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => document.getElementById("error-id").textContent = "");
                     td = controls.create(tr, "td", undefined, `${user.name}`);
+                    let txtarr = [];
+                    user.loginIpAddresses.forEach(ip => txtarr.push(getLoginPerDeviceText(ip)));
+                    td.title = txtarr.join("\n");
+                    if (user.accountLocked) {
+                        td.textContent += " (gesperrt)";
+                    }
                     td = controls.create(tr, "td", undefined, `${user.email}`);
                     let lastLogin = "";
                     if (user.lastLoginUtc) {
@@ -173,6 +191,9 @@ var usermgmt = (() => {
         dt = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
         controls.createSpan(registeredP, undefined, "Registriert seit: ");
         controls.createSpan(registeredP, undefined, dt);
+        let ipAddressesP = controls.create(parent, "p", undefined, "Anmeldungen pro Ger\u00E4t:");
+        let ul = controls.create(ipAddressesP, "ul");
+        currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
         renderCopyright(parent);

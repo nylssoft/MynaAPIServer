@@ -333,6 +333,20 @@ namespace APIServer.PwdMan
                 PasswordManagerSalt = user.Salt
             };
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
+            userModel.LoginIpAddresses = new List<LoginIpAddressModel>();
+            var loginIpAddresses = dbContext.DbLoginIpAddresses
+                .Where(ip => ip.DbUserId == user.Id)
+                .OrderByDescending(ip => ip.LastUsedUtc);
+            foreach (var ip in loginIpAddresses)
+            {
+                userModel.LoginIpAddresses.Add(new LoginIpAddressModel
+                {
+                    IpAddress = ip.IpAddress,
+                    LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value,
+                    Succeeded = ip.Succeeded,
+                    Failed = ip.Failed
+                });
+            }
             return userModel;
         }
 
@@ -409,26 +423,50 @@ namespace APIServer.PwdMan
                 throw new AccessDeniedPermissionException();
             }
             var ret = new List<UserModel>();
+            var opt = GetOptions();
             var users = dbContext.DbUsers.Include(u => u.Roles).OrderBy(u => u.Name);
             foreach (var u in users)
             {
-                ret.Add(new UserModel
+                var userModel = new UserModel
                 {
                     Name = u.Name,
                     Email = u.Email,
                     LastLoginUtc = DbMynaContext.GetUtcDateTime(u.LastLoginTryUtc),
                     RegisteredUtc = DbMynaContext.GetUtcDateTime(u.RegisteredUtc),
-                    Roles = u.Roles.Select(r => r.Name).ToList()
-                });
+                    Roles = u.Roles.Select(r => r.Name).ToList(),
+                    LoginIpAddresses = new List<LoginIpAddressModel>()
+                };
+                if (u.LoginTries >= opt.MaxLoginTryCount)
+                {
+                    var sec = (DateTime.UtcNow - u.LastLoginTryUtc.Value).TotalSeconds;
+                    if (sec < opt.AccountLockTime)
+                    {
+                        userModel.AccountLocked = true;
+                    }                    
+                }
+                var loginIpAddresses = dbContext.DbLoginIpAddresses
+                    .Where(ip => ip.DbUserId == u.Id)
+                    .OrderByDescending(ip => ip.LastUsedUtc);
+                foreach (var ip in loginIpAddresses)
+                {
+                    userModel.LoginIpAddresses.Add(new LoginIpAddressModel
+                    {
+                        IpAddress = ip.IpAddress,
+                        LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value,
+                        Succeeded = ip.Succeeded,
+                        Failed = ip.Failed
+                    });
+                }
+                ret.Add(userModel);
             }
             return ret;
         }
 
         // --- authentication
 
-        public AuthenticationResponseModel Authenticate(AuthenticationModel authentication)
+        public AuthenticationResponseModel Authenticate(AuthenticationModel authentication, string ipAddress)
         {
-            logger.LogDebug("Authenticate '{username}'...", authentication.Username);
+            logger.LogDebug("Authenticate '{username}' with client IP address {ipAddress}...", authentication.Username, ipAddress);
             var opt = GetOptions();
             var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == authentication.Username);
             if (user != null)
@@ -442,6 +480,14 @@ namespace APIServer.PwdMan
                         throw new UnauthorizedException();
                     }
                 }
+                var loginIpAddress = dbContext.DbLoginIpAddresses
+                    .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
+                if (loginIpAddress == null)
+                {
+                    loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
+                    dbContext.DbLoginIpAddresses.Add(loginIpAddress);
+                }
+                loginIpAddress.LastUsedUtc = DateTime.UtcNow;
                 var hasher = new PasswordHasher<string>();
                 hasher.HashPassword(authentication.Username, authentication.Password);
                 if (hasher.VerifyHashedPassword(
@@ -458,6 +504,7 @@ namespace APIServer.PwdMan
                     {
                         user.LoginTries = 0;
                         user.LastLoginTryUtc = DateTime.UtcNow;
+                        loginIpAddress.Succeeded += 1;
                         dbContext.SaveChanges();
                         return new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
                     }
@@ -465,6 +512,7 @@ namespace APIServer.PwdMan
                 logger.LogDebug("Invalid password specified.");
                 user.LoginTries += 1;
                 user.LastLoginTryUtc = DateTime.UtcNow;
+                loginIpAddress.Failed += 1;
                 dbContext.SaveChanges();
             }
             else

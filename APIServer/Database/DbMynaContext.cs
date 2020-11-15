@@ -28,6 +28,8 @@ namespace APIServer.Database
 
         public DbSet<DbUser> DbUsers { get; set; }
 
+        public DbSet<DbLoginIpAddress> DbLoginIpAddresses { get; set; }
+
         public DbSet<DbRole> DbRoles { get; set; }
 
         public DbSet<DbRegistration> DbRegistrations { get; set; }
@@ -59,6 +61,9 @@ namespace APIServer.Database
                 .IsUnique();
             builder.Entity<DbSetting>()
                 .HasIndex(s => s.Key)
+                .IsUnique();
+            builder.Entity<DbLoginIpAddress>()
+                .HasIndex(ip => new { ip.DbUserId, ip.IpAddress })
                 .IsUnique();
         }
 
