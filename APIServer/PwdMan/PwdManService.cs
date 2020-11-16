@@ -372,32 +372,10 @@ namespace APIServer.PwdMan
                 dbContext.DbPasswordFiles.Attach(delpwdfile);
                 dbContext.DbPasswordFiles.Remove(delpwdfile);
             }
-            var regs = dbContext.DbRegistrations.Where(r => r.ConfirmedById == user.Id);
-            if (regs.Any())
-            {
-                dbContext.DbRegistrations.RemoveRange(regs);
-            }
-            regs = dbContext.DbRegistrations.Where(r => r.Email == user.Email);
-            if (regs.Any())
-            {
-                dbContext.DbRegistrations.RemoveRange(regs);
-            }
-            var roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id);
-            if (roles.Any())
-            {
-                dbContext.DbRoles.RemoveRange(roles);
-            }
+            var regs = dbContext.DbRegistrations
+                .Where(r => r.ConfirmedById == user.Id || r.Email == user.Email);
+            dbContext.DbRegistrations.RemoveRange(regs);
             dbContext.DbUsers.Remove(user);
-            var userSkatResults = dbContext.DbUserSkatResults.Where(r => r.DbUserId == user.Id);
-            if (userSkatResults.Any())
-            {
-                dbContext.DbUserSkatResults.RemoveRange(userSkatResults);
-            }
-            var chats = dbContext.DbChats.Where(c => c.DbUserId == user.Id);
-            if (chats.Any())
-            {
-                dbContext.DbChats.RemoveRange(chats);
-            }
             dbContext.SaveChanges();
             return true;
         }

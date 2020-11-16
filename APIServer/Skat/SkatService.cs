@@ -682,9 +682,6 @@ namespace APIServer.Skat
                 .SingleOrDefault(r => r.Id == skatResultId);
             if (skatResult != null)
             {
-                var userSkatResults = dbContext.DbUserSkatResults.Where(ur => ur.DbSkatResultId == skatResultId);
-                dbContext.DbUserSkatResults.RemoveRange(userSkatResults);
-                dbContext.DbSkatGameHistories.RemoveRange(skatResult.SkatGameHistories);
                 dbContext.DbSkatResults.Remove(skatResult);
                 dbContext.SaveChanges();
                 return true;
