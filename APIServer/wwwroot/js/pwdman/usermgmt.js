@@ -10,7 +10,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.4";
+    let version = "1.0.6";
 
     // helper
 
@@ -129,9 +129,6 @@ var usermgmt = (() => {
                     let td = controls.create(tr, "td");
                     controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => document.getElementById("error-id").textContent = "");
                     td = controls.create(tr, "td", undefined, `${user.name}`);
-                    let txtarr = [];
-                    user.loginIpAddresses.forEach(ip => txtarr.push(getLoginPerDeviceText(ip)));
-                    td.title = txtarr.join("\n");
                     if (user.accountLocked) {
                         td.textContent += " (gesperrt)";
                     }
@@ -183,6 +180,10 @@ var usermgmt = (() => {
         controls.createCheckbox(faP, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
             currentUser.requires2FA,
             () => renderAccountActions("change2fa"));
+        let keepLoginP = controls.create(parent, "p");
+        controls.createCheckbox(keepLoginP, "account-keeplogin-id", undefined, "Angemeldet bleiben",
+            currentUser.useLongLivedToken,
+            () => renderAccountActions("changekeeplogin"));
         let lastLoginP = controls.create(parent, "p");
         let dt = new Date(currentUser.lastLoginUtc).toLocaleString("de-DE");
         controls.createSpan(lastLoginP, undefined, "Letzte Anmeldung: ");
@@ -191,9 +192,11 @@ var usermgmt = (() => {
         dt = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
         controls.createSpan(registeredP, undefined, "Registriert seit: ");
         controls.createSpan(registeredP, undefined, dt);
-        let ipAddressesP = controls.create(parent, "p", undefined, "Anmeldungen pro Ger\u00E4t:");
-        let ul = controls.create(ipAddressesP, "ul");
-        currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
+        if (currentUser.loginIpAddresses.length > 0) {
+            let ipAddressesP = controls.create(parent, "p", undefined, "Anmeldungen:");
+            let ul = controls.create(ipAddressesP, "ul");
+            currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
+        }
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
         renderCopyright(parent);
@@ -214,12 +217,20 @@ var usermgmt = (() => {
         }
         else if (confirm == "change2fa") {
             controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
-            controls.createButton(actionsDiv, "Ja", () => onUpdateCurrentUser());
+            controls.createButton(actionsDiv, "Ja", () => onUpdate2FA());
+            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
+        }
+        else if (confirm == "changekeeplogin") {
+            controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
+            controls.createButton(actionsDiv, "Ja", () => onUpdateKeepLogin());
             controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
         }
         else {
             controls.createButton(actionsDiv, "Abmelden", () => renderAccountActions("logout"));
             controls.createButton(actionsDiv, "Kennwort \u00E4ndern", () => onChangePassword());
+            if (currentUser.loginIpAddresses.length > 0) {
+                controls.createButton(actionsDiv, "IP-Adressen l\u00F6schen", () => onDeleteLoginIpAddresses());
+            }
             controls.createButton(actionsDiv, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
             if (confirmations) {
                 let mgmtDiv = controls.create(actionsDiv, "p");
@@ -380,7 +391,17 @@ var usermgmt = (() => {
         );
     };
 
-    const onUpdateCurrentUser = () => {
+    const onDeleteLoginIpAddresses = () => {
+        utils.fetch_api_call("api/pwdman/loginipaddress", { method: "DELETE", headers: { "token": token } },
+            () => {
+                currentUser.loginIpAddresses = [];
+                renderCurrentUser();
+            },
+            onRejectError,
+        );
+    };
+
+    const onUpdate2FA = () => {
         let checkbox = document.getElementById("account-2fa-id");
         if (checkbox) {
             utils.fetch_api_call("api/pwdman/user/2fa",
@@ -392,6 +413,26 @@ var usermgmt = (() => {
                 (changed) => {
                     if (changed) {
                         currentUser.requires2FA = checkbox.checked;
+                    }
+                    renderCurrentUser();
+                },
+                onRejectError,
+            );
+        }
+    };
+
+    const onUpdateKeepLogin = () => {
+        let checkbox = document.getElementById("account-keeplogin-id");
+        if (checkbox) {
+            utils.fetch_api_call("api/pwdman/user/lltoken",
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(checkbox.checked)
+                },
+                (changed) => {
+                    if (changed) {
+                        currentUser.useLongLivedToken = checkbox.checked;
                     }
                     renderCurrentUser();
                 },
@@ -449,5 +490,5 @@ var usermgmt = (() => {
 })();
 
 window.onload = () => {
-    usermgmt.render();
+    utils.auth_lltoken(usermgmt.render);
 };

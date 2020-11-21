@@ -21,6 +21,8 @@ namespace APIServer.PwdMan
     {
         public string SignKey { get; set; }
 
+        public string LongLivedSignKey { get; set; }
+
         public string Issuer { get; set; }
 
         public string Audience { get; set; }

@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.10";
+    let version = "1.1.11";
 
     // helper
 
@@ -1193,7 +1193,7 @@ var skat = (() => {
                 .then(() => {
                     logoutClicked = false;
                     ticket = undefined;
-                    utils.logout(() => render());
+                    utils.logout_skat(() => render());
                 })
                 .catch((err) => console.error(err));
         }
@@ -1328,5 +1328,5 @@ var skat = (() => {
 
 window.onload = () => {
     window.setInterval(skat.ontimer, 1000);
-    skat.render();
+    utils.auth_lltoken(skat.render);
 };

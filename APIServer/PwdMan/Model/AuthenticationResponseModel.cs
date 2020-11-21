@@ -22,5 +22,9 @@ namespace APIServer.PwdMan.Model
         public string Token { get; set; }
 
         public bool RequiresPass2 { get; set; }
+
+        public string LongLivedToken { get; set; }
+
+        public string Username { get; set; }
     }
 }

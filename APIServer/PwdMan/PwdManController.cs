@@ -77,11 +77,25 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.DeleteUser(GetToken(), username));
         }
 
+        [HttpDelete]
+        [Route("api/pwdman/loginipaddress")]
+        public IActionResult DeleteLoginIpAddresses()
+        {
+            return new JsonResult(PwdManService.DeleteLoginIpAddresses(GetToken()));
+        }
+
         [HttpPut]
         [Route("api/pwdman/user/2fa")]
         public IActionResult UpdateUser2FA([FromBody] bool requires2FA)
         {
             return new JsonResult(PwdManService.UpdateUser2FA(GetToken(), requires2FA));
+        }
+
+        [HttpPut]
+        [Route("api/pwdman/user/lltoken")]
+        public IActionResult UpdateUserUseLongLivedToken([FromBody] bool useLongLivedToken)
+        {
+            return new JsonResult(PwdManService.UpdateUserUseLongLivedToken(GetToken(), useLongLivedToken));
         }
 
         [HttpGet]
@@ -104,6 +118,13 @@ namespace APIServer.PwdMan
         public IActionResult LoginPass2([FromBody] string totp)
         {
             return new JsonResult(PwdManService.AuthenticateTOTP(GetToken(), totp));
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/auth/lltoken")]
+        public IActionResult LoginWithLongLivedToken()
+        {
+            return new JsonResult(PwdManService.AuthenticateLongLivedToken(GetToken()));
         }
 
         [HttpPost]

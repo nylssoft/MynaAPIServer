@@ -46,7 +46,7 @@ var utils = (() => {
         return window.matchMedia('(max-width: 480px)').matches;
     };
 
-    // --- pwdpan
+    // --- pwdman
 
     const get_authentication_token = () => {
         let pwdmanState;
@@ -61,9 +61,12 @@ var utils = (() => {
     };
 
     const logout = (resolve, reject) => {
-        // pwdman
         window.sessionStorage.removeItem("pwdman-state");
-        // skat
+        window.localStorage.removeItem("pwdman-lltoken");
+        logout_skat(resolve, reject);
+    };
+
+    const logout_skat = (resolve, reject) => {
         let skatTicket = window.sessionStorage.getItem("ticket");
         if (!skatTicket) {
             skatTicket = window.localStorage.getItem("ticket");
@@ -103,6 +106,33 @@ var utils = (() => {
             });
     };
 
+    const auth_lltoken = (resolve) => {
+        let token = utils.get_authentication_token();
+        if (!token) {
+            let lltoken = window.localStorage.getItem("pwdman-lltoken");
+            if (lltoken) {
+                utils.fetch_api_call("api/pwdman/auth/lltoken", { headers: { "token": lltoken } },
+                    (authResult) => {
+                        let state = {
+                            "token": authResult.token,
+                            "userName": authResult.username,
+                            "requiresPass2": authResult.requiresPass2
+                        };
+                        window.sessionStorage.setItem("pwdman-state", JSON.stringify(state));
+                        window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
+                        resolve();
+                    },
+                    (errmsg) => {
+                        console.error(errmsg);
+                        window.localStorage.removeItem("pwdman-lltoken");
+                        resolve();
+                    });
+                return;
+            }
+        }
+        resolve();
+    };
+
     // --- public API
 
     return {
@@ -111,7 +141,9 @@ var utils = (() => {
         shuffle_array: shuffle_array,
         get_authentication_token: get_authentication_token,
         logout: logout,
+        logout_skat: logout_skat,
         fetch_api_call: fetch_api_call,
-        is_mobile: is_mobile
+        is_mobile: is_mobile,
+        auth_lltoken: auth_lltoken
     };
 })();

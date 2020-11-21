@@ -49,5 +49,7 @@ namespace APIServer.Database
         public DbPasswordFile PasswordFile { get; set; }
 
         public List<DbRole> Roles { get; set; }
+
+        public bool UseLongLivedToken { get; set; }
     }
 }

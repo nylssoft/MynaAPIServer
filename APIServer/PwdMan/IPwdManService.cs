@@ -37,7 +37,7 @@ namespace APIServer.PwdMan
 
         bool IsRegisteredUsername(string username);
 
-        DbUser GetUserFromToken(string authenticationToken);
+        DbUser GetUserFromToken(string authenticationToken, bool useLongLivedToken = false);
 
         bool HasRole(DbUser user, string roleName);
 
@@ -47,13 +47,20 @@ namespace APIServer.PwdMan
 
         bool UpdateUser2FA(string authenticationToken, bool requires2FA);
 
+        bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken);
+
+        int DeleteLoginIpAddresses(string authenticiationToken);
+
         List<UserModel> GetUsers(string authenticationToken);
+
 
         // --- authentication
 
         AuthenticationResponseModel Authenticate(AuthenticationModel authenication, string ipAddress);
 
-        string AuthenticateTOTP(string token, string totp);
+        AuthenticationResponseModel AuthenticateTOTP(string token, string totp);
+
+        AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken);
 
         void SendTOTP(string token);
 

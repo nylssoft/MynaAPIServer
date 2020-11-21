@@ -244,6 +244,7 @@ namespace APIServer.PwdMan
                 PasswordHash = hash,
                 Email = email,
                 Requires2FA = registrationProfile.Requires2FA,
+                UseLongLivedToken = registrationProfile.UseLongLivedToken,
                 RegisteredUtc = DateTime.UtcNow
             };
             // first user has the usermanager role
@@ -276,10 +277,10 @@ namespace APIServer.PwdMan
             return user != null;
         }
 
-        public DbUser GetUserFromToken(string authenticationToken)
+        public DbUser GetUserFromToken(string authenticationToken, bool useLongLivedToken = false)
         {
             var opt = GetOptions();
-            if (ValidateToken(authenticationToken, opt))
+            if (ValidateToken(authenticationToken, opt, useLongLivedToken))
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var securityToken = tokenHandler.ReadToken(authenticationToken) as JwtSecurityToken;
@@ -289,7 +290,7 @@ namespace APIServer.PwdMan
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null)
                     {
-                        if (user.Requires2FA)
+                        if (!useLongLivedToken && user.Requires2FA)
                         {
                             var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
                             if (amr != null) throw new Requires2FAException();
@@ -328,6 +329,7 @@ namespace APIServer.PwdMan
                 Email = user.Email,
                 LastLoginUtc = DbMynaContext.GetUtcDateTime(user.LastLoginTryUtc),
                 Requires2FA = user.Requires2FA,
+                UseLongLivedToken = user.UseLongLivedToken,
                 RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
                 HasPasswordManagerFile = user.PasswordFileId != null,
                 PasswordManagerSalt = user.Salt
@@ -393,6 +395,31 @@ namespace APIServer.PwdMan
             return false;
         }
 
+        public bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken)
+        {
+            logger.LogDebug($"Update user long-lived token...");
+            var user = GetUserFromToken(authenticationToken);
+            if (user.UseLongLivedToken != useLongLivedToken)
+            {
+                user.UseLongLivedToken = useLongLivedToken;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public int DeleteLoginIpAddresses(string authenticationToken)
+        {
+            logger.LogDebug($"Delete login IP addresses...");
+            var user = GetUserFromToken(authenticationToken);
+            var loginIpAddresses = dbContext.DbLoginIpAddresses
+                .Where(ip => ip.DbUserId == user.Id);
+            var ret = loginIpAddresses.Count();
+            dbContext.DbLoginIpAddresses.RemoveRange(loginIpAddresses);
+            dbContext.SaveChanges();
+            return ret;
+        }
+
         public List<UserModel> GetUsers(string authenticationToken)
         {
             var user = GetUserFromToken(authenticationToken);
@@ -420,7 +447,7 @@ namespace APIServer.PwdMan
                     if (sec < opt.AccountLockTime)
                     {
                         userModel.AccountLocked = true;
-                    }                    
+                    }
                 }
                 var loginIpAddresses = dbContext.DbLoginIpAddresses
                     .Where(ip => ip.DbUserId == u.Id)
@@ -438,6 +465,36 @@ namespace APIServer.PwdMan
                 ret.Add(userModel);
             }
             return ret;
+        }
+
+        public bool ResetPassword(UserModel userModel, string ipAddress)
+        {
+            logger.LogDebug("Reset password for username '{username}', email address '{email}' and IP address {ipAddress}...", userModel.Name, userModel.Email, ipAddress);
+            var opt = GetOptions();
+            var email = userModel.Email.ToLowerInvariant();
+            var user = dbContext.DbUsers.SingleOrDefault((u) => u.Name == userModel.Name && u.Email == email);
+            if (user != null)
+            {
+                // @TODO: new password has to be changed immediately from the same(!) IP address
+                // @TODO: allowResetPassword ???
+                var loginIpAddress = dbContext.DbLoginIpAddresses
+                    .SingleOrDefault((ip) => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
+                if (loginIpAddress != null && loginIpAddress.Succeeded > 0)
+                {
+                    var newpwd = new PwdGen().Generate();
+                    var hasher = new PasswordHasher<string>();
+                    user.PasswordHash = hasher.HashPassword(userModel.Name, newpwd);
+                    var subject = $"Myna Portal Benachrichtigung";
+                    var body = $"Dein Kennwort wurde zurückgesetzt. Dein neues Kennwort lautet:\n\n{newpwd}\n\n." +
+                        "Bitte ändere es so früh wie möglich!\n\nViele Grüsse!";
+                    // @TODO: requireChangePwd !! neues token??? wie bei require2FA ???
+                    notificationService.Send(user.Email, subject, body);
+                    loginIpAddress.Succeeded = 0;
+                    loginIpAddress.Failed = 0;
+                    dbContext.SaveChanges();
+                }
+            }
+            return false;
         }
 
         // --- authentication
@@ -484,7 +541,12 @@ namespace APIServer.PwdMan
                         user.LastLoginTryUtc = DateTime.UtcNow;
                         loginIpAddress.Succeeded += 1;
                         dbContext.SaveChanges();
-                        return new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
+                        var ret = new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
+                        if (!user.Requires2FA && user.UseLongLivedToken)
+                        {
+                            ret.LongLivedToken = GenerateLongLivedToken(authentication.Username, opt);
+                        }
+                        return ret;
                     }
                 }
                 logger.LogDebug("Invalid password specified.");
@@ -524,7 +586,7 @@ namespace APIServer.PwdMan
             throw new InvalidTokenException();
         }
 
-        public string AuthenticateTOTP(string token, string totp)
+        public AuthenticationResponseModel AuthenticateTOTP(string token, string totp)
         {
             logger.LogDebug("Authenticate using Time-Based One-Time Password (TOTP)...");
             var opt = GetOptions();
@@ -550,7 +612,16 @@ namespace APIServer.PwdMan
                         dbContext.SaveChanges();
                         if (totp == validTOTP) // verify pass 2
                         {
-                            return GenerateToken(user.Name, opt, false);
+                            var ret = new AuthenticationResponseModel
+                            {
+                                Token = GenerateToken(user.Name, opt, false),
+                                RequiresPass2 = true
+                            };
+                            if (user.UseLongLivedToken)
+                            {
+                                ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
+                            }
+                            return ret;
                         }
                     }
                     logger.LogDebug("User not found or TOTP token already consumed.");
@@ -561,6 +632,23 @@ namespace APIServer.PwdMan
             throw new InvalidTokenException();
         }
 
+        public AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken)
+        {
+            var opt = GetOptions();
+            var user = GetUserFromToken(longLivedToken, true);
+            if (!user.UseLongLivedToken)
+            {
+                throw new InvalidTokenException();
+            }
+            var ret = new AuthenticationResponseModel
+            {
+                Token = GenerateToken(user.Name, opt, false),
+                LongLivedToken = GenerateLongLivedToken(user.Name, opt),
+                RequiresPass2 = false,
+                Username = user.Name
+            };
+            return ret;
+        }
 
         public void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange)
         {
@@ -677,7 +765,7 @@ namespace APIServer.PwdMan
             var totp = TOTP.Generate(user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
             var subject = $"Myna Portal 2-Schritt-Verifizierung";
             var body =
-                $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds/60} Minuten gültig. " +
+                $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds / 60} Minuten gültig. " +
                 "In diesem Zeit kann er genau 1 Mal verwendet werden.";
             notificationService.Send(user.Email, subject, body);
         }
@@ -722,15 +810,33 @@ namespace APIServer.PwdMan
 
         private string GenerateToken(string username, PwdManOptions opt, bool requires2FA)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(opt.TokenConfig.SignKey));
+            return GenerateTokenPerType(false, username, opt, requires2FA);
+        }
+
+        private string GenerateLongLivedToken(string username, PwdManOptions opt)
+        {
+            return GenerateTokenPerType(true, username, opt);
+        }
+
+        private string GenerateTokenPerType(bool useLongLivedToken, string username, PwdManOptions opt, bool requires2FA = false)
+        {
+            var signKey = useLongLivedToken ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
+            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(signKey));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 NotBefore = DateTime.UtcNow,
-                Expires = DateTime.UtcNow.AddMinutes(opt.TokenConfig.ExpireMinutes),
                 Issuer = opt.TokenConfig.Issuer,
                 Audience = opt.TokenConfig.Audience,
                 SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature)
             };
+            if (useLongLivedToken)
+            {
+                tokenDescriptor.Expires = DateTime.UtcNow.AddDays(60);
+            }
+            else
+            {
+                tokenDescriptor.Expires = DateTime.UtcNow.AddMinutes(opt.TokenConfig.ExpireMinutes);
+            }
             tokenDescriptor.Claims = new Dictionary<string, object>();
             tokenDescriptor.Claims[ClaimTypes.Name] = username;
             if (requires2FA)
@@ -742,9 +848,10 @@ namespace APIServer.PwdMan
             return tokenHandler.WriteToken(token);
         }
 
-        private bool ValidateToken(string token, PwdManOptions opt)
+        private bool ValidateToken(string token, PwdManOptions opt, bool useLongLived = false)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(opt.TokenConfig.SignKey));
+            var signKey = useLongLived ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
+            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(signKey));
             var tokenHandler = new JwtSecurityTokenHandler();
             try
             {

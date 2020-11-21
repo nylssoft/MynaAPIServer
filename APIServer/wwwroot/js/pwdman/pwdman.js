@@ -17,6 +17,7 @@ var pwdman = (() => {
     let emailDiv;
     let emailInput;
     let facCheckbox;
+    let keepLoginCheckbox;
 
     // state
 
@@ -34,7 +35,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.1";
+    let version = "1.1.2";
 
     // helper
 
@@ -71,6 +72,7 @@ var pwdman = (() => {
         }
         else {
             window.sessionStorage.removeItem("pwdman-state");
+            window.localStorage.removeItem("pwdman-lltoken");
         }
     };
 
@@ -102,6 +104,9 @@ var pwdman = (() => {
                         userName = userNameInput.value;
                         token = authResult.token;
                         requiresPass2 = authResult.requiresPass2;
+                        if (authResult.longLivedToken) {
+                            window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
+                        }
                         setState({ "token": token, "userName": userName, "requiresPass2": requiresPass2 });
                         renderPage();
                     });
@@ -122,8 +127,11 @@ var pwdman = (() => {
         })
             .then(response => {
                 if (response.ok) {
-                    response.json().then(t => {
-                        token = t;
+                    response.json().then(authResult => {
+                        token = authResult.token;
+                        if (authResult.longLivedToken) {
+                            window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
+                        }
                         requiresPass2 = false;
                         let state = getState();
                         state.token = token;
@@ -248,6 +256,7 @@ var pwdman = (() => {
                 "Password": newPasswordPwd.value,
                 "Email": userEmail,
                 "Requires2FA": facCheckbox.checked,
+                "UseLongLivedToken": keepLoginCheckbox.checked,
                 "Token": codeInput.value.trim()
             })
         })
@@ -434,9 +443,9 @@ var pwdman = (() => {
         newPasswordPwd = controls.createPasswordField(newPwdDiv, "Neues Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         let confirmPwdDiv = controls.createDiv(parent);
-        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Best\u00E4tiges Kennwort:");
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Best\u00E4tiges Kennwort", undefined, undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", undefined, undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "OK", changePassword, undefined, "button");
@@ -507,12 +516,14 @@ var pwdman = (() => {
         newPasswordPwd = controls.createPasswordField(newPwdDiv, "Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         let confirmPwdDiv = controls.createDiv(parent);
-        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Best\u00E4tiges Kennwort:");
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Best\u00E4tiges Kennwort", () => codeInput.focus(), undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         let facDiv = controls.createDiv(parent, "fac");
         facCheckbox = controls.createCheckbox(facDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", false, undefined, false);
+        let keepLoginDiv = controls.createDiv(parent, "fac");
+        keepLoginCheckbox = controls.createCheckbox(keepLoginDiv, undefined, undefined, "Angemeldet bleiben", true, undefined, false);
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
         codeLabel.htmlFor = "code-id";
@@ -712,10 +723,18 @@ var pwdman = (() => {
                         });
                     }
                     else {
-                        response.json().then(apierr => reset(apierr.title));
+                        response.json().then(apierr => {
+                            lastErrorMessage = apierr.title;
+                            cryptoKey = undefined;
+                            renderPage();
+                        });
                     }
                 })
-                .catch(err => reset(err.message));
+                .catch(err => {
+                    lastErrorMessage = err.message;
+                    cryptoKey = undefined;
+                    renderPage();
+                });
         }
     };
 
@@ -746,5 +765,5 @@ var pwdman = (() => {
 })();
 
 window.onload = () => {
-    pwdman.render();
+    utils.auth_lltoken(pwdman.render);
 };

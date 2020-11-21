@@ -177,5 +177,5 @@ window.onload = () => {
                 console.log("Slideshow disabled.");
             }
         })
-    slideshow.render();
+    utils.auth_lltoken(slideshow.render);
 };

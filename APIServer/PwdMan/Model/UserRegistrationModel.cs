@@ -27,6 +27,8 @@ namespace APIServer.PwdMan.Model
 
         public bool Requires2FA { get; set; }
 
+        public bool UseLongLivedToken { get; set; }
+
         public string Token { get; set; }
     }
 }
