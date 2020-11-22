@@ -588,8 +588,9 @@ namespace APIServer.PwdMan
                     {
                         logger.LogDebug("Account disabled. Too many login tries.");
                         int remain = (opt.AccountLockTime - (int)sec) / 60 + 1;
-                        throw new PwdManInvalidArgumentException($"Das Konto ist vorrübergehend gesperrt. Versuche es in {remain} Minuten erneuert.");
+                        throw new PwdManInvalidArgumentException($"Das Konto ist vorrübergehend gesperrt. Versuche es in {remain} Minute(n) erneuert.");
                     }
+                    user.LoginTries = 0;
                 }
                 var loginIpAddress = dbContext.DbLoginIpAddresses
                     .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
