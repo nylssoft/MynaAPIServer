@@ -38,7 +38,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.3";
+    let version = "1.1.4";
 
     // helper
 
@@ -424,6 +424,7 @@ var pwdman = (() => {
         if (userName) {
             userNameInput.value = userName;
         }
+        userNameInput.addEventListener("input", () => errorDiv.textContent = "");
         let passwordDiv = controls.createDiv(parent);
         let userPasswordLabel = controls.createLabel(passwordDiv, undefined, "Kennwort:");
         userPasswordLabel.htmlFor = "userpwd-id";
@@ -437,6 +438,7 @@ var pwdman = (() => {
                 userNameInput.focus();
             }
         }
+        userPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
         let buttonDiv = controls.createDiv(parent);
         controls.createButton(buttonDiv, "Anmelden", authenticate, undefined, "button");
         if (nexturl) {
