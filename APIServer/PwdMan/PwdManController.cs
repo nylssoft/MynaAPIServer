@@ -35,6 +35,22 @@ namespace APIServer.PwdMan
         }
 
         [HttpPost]
+        [Route("api/pwdman/resetpwd")]
+        public IActionResult RequestResetPwd([FromBody] string email)
+        {
+            PwdManService.RequestResetPassword(email);
+            return new JsonResult(true);
+        }
+
+        [HttpPost]
+        [Route("api/pwdman/resetpwd2")]
+        public IActionResult RequestReset([FromBody] UserResetPasswordModel resetPasswordModel)
+        {
+            PwdManService.ResetPassword(resetPasswordModel);
+            return new JsonResult(true);
+        }
+
+        [HttpPost]
         [Route("api/pwdman/register")]
         public IActionResult IsRegisterAllowed([FromBody] string email)
         {
@@ -96,6 +112,13 @@ namespace APIServer.PwdMan
         public IActionResult UpdateUserUseLongLivedToken([FromBody] bool useLongLivedToken)
         {
             return new JsonResult(PwdManService.UpdateUserUseLongLivedToken(GetToken(), useLongLivedToken));
+        }
+
+        [HttpPut]
+        [Route("api/pwdman/user/allowresetpwd")]
+        public IActionResult UpdateUserAllowResetPassword([FromBody] bool allowResetPassword)
+        {
+            return new JsonResult(PwdManService.UpdateUserAllowResetPassword(GetToken(), allowResetPassword));
         }
 
         [HttpGet]

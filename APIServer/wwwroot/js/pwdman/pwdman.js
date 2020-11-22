@@ -18,6 +18,7 @@ var pwdman = (() => {
     let emailInput;
     let facCheckbox;
     let keepLoginCheckbox;
+    let allowResetPwdCheckbox;
 
     // state
 
@@ -28,6 +29,8 @@ var pwdman = (() => {
     let salt
     let cryptoKey;
     let actionChangePwd;
+    let actionResetPwd;
+    let actionResetPwd2;
     let actionRequestRegistration;
     let actionRegister;
     let lastErrorMessage;
@@ -35,7 +38,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.2";
+    let version = "1.1.3";
 
     // helper
 
@@ -82,6 +85,8 @@ var pwdman = (() => {
         cryptoKey = undefined;
         userName = undefined;
         actionChangePwd = false;
+        actionResetPwd = false;
+        actionResetPwd2 = false;
         actionRequestRegistration = false;
         actionRegister = false;
         lastErrorMessage = "";
@@ -257,6 +262,7 @@ var pwdman = (() => {
                 "Email": userEmail,
                 "Requires2FA": facCheckbox.checked,
                 "UseLongLivedToken": keepLoginCheckbox.checked,
+                "AllowResetPassword": allowResetPwdCheckbox.checked,
                 "Token": codeInput.value.trim()
             })
         })
@@ -282,6 +288,8 @@ var pwdman = (() => {
             actionRequestRegistration = false;
             actionRegister = false;
             actionChangePwd = false;
+            actionResetPwd = false;
+            actionResetPwd2 = false;
             successRegister = false;
             renderPage();
         }
@@ -332,6 +340,56 @@ var pwdman = (() => {
         cipherarr.set(data);
         let decrypted = await crypto.subtle.decrypt(options, cryptoKey, cipherbuffer);
         return new TextDecoder().decode(decrypted);
+    };
+
+    const requestResetPassword = () => {
+        let email = emailInput.value.trim();
+        if (email.length == 0 || email.indexOf("@") <= 0) {
+            errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse";
+            return;
+        }
+        utils.fetch_api_call("/api/pwdman/resetpwd", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify(email)
+        },
+            () => {
+                let url = `/pwdman?resetpwd2&email=${encodeURI(email)}`;
+                if (nexturl && nexturl.length > 0) {
+                    url += `&nexturl=${encodeURI(nexturl)}`
+                }
+                window.location.href = url;
+            },
+            (errMsg) => errorDiv.textContent = errMsg
+        );
+    };
+
+    const resetPassword = (parent) => {
+        let email = userEmail.trim();
+        let token = codeInput.value.trim();
+        if (token.length == 0 || newPasswordPwd.value.length == 0 || email.length == 0) {
+            errorDiv.textContent = "Es fehlen Eingabewerte.";
+            return;
+        }
+        if (newPasswordPwd.value != confirmPasswordPwd.value) {
+            errorDiv.textContent = "Das best\u00E4tigte Kennwort passt nicht mit dem neuen Kennwort \u00FCberein.";
+            return;
+        }
+        utils.fetch_api_call("/api/pwdman/resetpwd2", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({
+                "Email": email,
+                "Token": token,
+                "Password": newPasswordPwd.value
+            })
+        },
+            () => {
+                controls.removeAllChildren(parent);
+                renderResetPwd2(parent, true);
+            },
+            (errMsg) => errorDiv.textContent = errMsg
+        );
     };
 
     // rendering
@@ -385,6 +443,8 @@ var pwdman = (() => {
             controls.createButton(buttonDiv, "Abbrechen", cancel, undefined, "button");
         }
         renderError(parent);
+        controls.createA(controls.create(parent, "p"), "copyright", "/pwdman/resetpwd", "Kennwort vergessen?",
+            () => window.location.href = `/pwdman?resetpwd&nexturl=${encodeURI(window.location.href)}`);
         let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du dich registrieren. ");
         controls.createButton(p, "Registrieren", () => {
             window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
@@ -449,6 +509,68 @@ var pwdman = (() => {
         confirmPasswordPwd.id = "confirmpwd-id";
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "OK", changePassword, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
+        renderError(parent);
+        renderCopyright(parent, "Portal");
+    };
+    
+    const renderResetPwd = (parent) => {
+        controls.create(parent, "h1", undefined, "Kennwort vergessen");
+        controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse ein." +
+            " Du bekommst einen Sicherheitscode per E-Mail zugesendet, mit dem Du Dein Kennwort neu vergeben kannst." +
+            " Der Sicherheitscode ist 5 Minuten g\u00Fcltig.");
+        emailDiv = controls.createDiv(parent);
+        let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
+        emailLabel.htmlFor = "email-id";
+        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", requestResetPassword, undefined, 30, 80);
+        emailInput.id = "email-id";
+        emailInput.addEventListener("input", () => errorDiv.textContent = "");
+        if (!utils.is_mobile()) {
+            emailInput.focus();
+        }
+        let okCancelDiv = controls.createDiv(parent);
+        controls.createButton(okCancelDiv, "Weiter", requestResetPassword, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
+        renderError(parent);
+        renderCopyright(parent, "Portal");
+    };
+
+    const renderResetPwd2 = (parent, success) => {
+        controls.create(parent, "h1", undefined, "Kennwort neu vergeben");
+        if (success) {
+            controls.create(parent, "p", undefined, "Die Kennwort\u00E4nderung war erfolgreich! Du kannst Dich jetzt mit dem neuen Kennwort anmelden.");
+            let buttonOKDiv = controls.createDiv(parent);
+            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
+            return;
+        }
+        controls.create(parent, "p", undefined,
+            "W\u00E4hle ein neues Kennwort." +
+            ` Verwende den Sicherheitscode, welcher Dir an die E-Mail-Adresse ${userEmail} geschickt wurde.` +
+            " Das neue Kennwort muss mindestens 8 Zeichen lang sein, mindestens einen Grossbuchstaben (A-Z)," +
+            " einen Kleinbuchstaben (a-z), eine Ziffer (0-9) und ein Sonderzeichen (!@$()=+-,:.) enthalten.");
+        let newPwdDiv = controls.createDiv(parent);
+        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Neues Kennwort:");
+        newPwdLabel.htmlFor = "newpwd-id";
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, "Neues Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd.id = "newpwd-id";
+        if (!utils.is_mobile()) {
+            newPasswordPwd.focus();
+        }
+        newPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
+        let confirmPwdDiv = controls.createDiv(parent);
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
+        confirmPwdLabel.htmlFor = "confirmpwd-id";
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
+        confirmPasswordPwd.id = "confirmpwd-id";
+        confirmPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
+        let codeDiv = controls.createDiv(parent);
+        let codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitscode:");
+        codeLabel.htmlFor = "code-id";
+        codeInput = controls.createInputField(codeDiv, "Sicherheitscode", () => resetPassword(parent), undefined, 16, 16);
+        codeInput.id = "code-id";
+        codeInput.addEventListener("input", () => errorDiv.textContent = "");
+        let okCancelDiv = controls.createDiv(parent);
+        controls.createButton(okCancelDiv, "Kennwort \u00E4ndern", () => resetPassword(parent), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
@@ -524,6 +646,8 @@ var pwdman = (() => {
         facCheckbox = controls.createCheckbox(facDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", false, undefined, false);
         let keepLoginDiv = controls.createDiv(parent, "fac");
         keepLoginCheckbox = controls.createCheckbox(keepLoginDiv, undefined, undefined, "Angemeldet bleiben", true, undefined, false);
+        let allowResetPwdDiv = controls.createDiv(parent, "fac");
+        allowResetPwdCheckbox = controls.createCheckbox(allowResetPwdDiv, undefined, undefined, "Kennwort kann zur\u00FCckgesetzt werden", true, undefined, false);
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
         codeLabel.htmlFor = "code-id";
@@ -673,6 +797,14 @@ var pwdman = (() => {
             document.title = "Registrieren";
             renderRegister(document.body);
         }
+        else if (actionResetPwd) {
+            document.title = "Kennwort vergessen";
+            renderResetPwd(document.body);
+        }
+        else if (actionResetPwd2) {
+            document.title = "Kennwort vergessen";
+            renderResetPwd2(document.body);
+        }
         else if (!token || token.length == 0) {
             document.title = "Anmelden";
             renderAuthentication(document.body);
@@ -752,6 +884,13 @@ var pwdman = (() => {
             else if (params.has("register")) {
                 actionRequestRegistration = true;
                 actionRegister = false;
+            }
+            else if (params.has("resetpwd")) {
+                actionResetPwd = true;
+            }
+            else if (params.has("resetpwd2")) {
+                actionResetPwd2 = true;
+                userEmail = params.get("email");
             }
         }
         renderPage();

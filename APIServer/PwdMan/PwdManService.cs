@@ -46,7 +46,9 @@ namespace APIServer.PwdMan
 
         private readonly INotificationService notificationService;
 
-        private const string LAST_REGISTRATION_REQUEST = "LastReqistrationRequest";
+        private const string LAST_REGISTRATION_REQUEST = "LastRegistrationRequest";
+
+        private const string LAST_RESETPWD_REQUEST = "LastResetPasswordRequest";
 
         public PwdManService(
             IConfiguration configuration,
@@ -58,6 +60,94 @@ namespace APIServer.PwdMan
             this.logger = logger;
             this.dbContext = dbContext;
             this.notificationService = notificationService;
+        }
+
+        // --- reset password
+
+        public void RequestResetPassword(string email)
+        {
+            logger.LogDebug("Request password reset for email addresss '{email}'.", email);
+            email = email.ToLowerInvariant();
+            var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
+            if (user == null || !user.AllowResetPassword)
+            {
+                throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist nicht erlaubt.");
+            }
+            var lastResetPwdRequest = GetSetting<DateTime?>(LAST_RESETPWD_REQUEST);
+            // avoid spam emails, only one request per minute
+            if (lastResetPwdRequest != null)
+            {
+                var diff = (DateTime.UtcNow - lastResetPwdRequest.Value).TotalMinutes;
+                if (diff < 1)
+                {
+                    throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es später noch einmal.");
+                }
+            }
+            SetSetting(LAST_RESETPWD_REQUEST, DateTime.UtcNow);
+            var pwdgen = new PwdGen
+            {
+                Length = 12,
+                LowerCharacters = "",
+                Symbols = "",
+                Digits = "123456789",
+                UpperCharacters = "ABCDEFGHJKLMNPQRSTUVWXYZ",
+                MinDigits = 2,
+                MinUpperCharacters = 2,
+                MinLowerCharacters = 0,
+                MinSymbols = 0
+            };
+            var resetpwd = dbContext.DbResetPasswords.SingleOrDefault((r) => r.Email == email);
+            if (resetpwd == null)
+            {
+                resetpwd = new DbResetPassword
+                {
+                    Email = email,
+                    Token = pwdgen.Generate(),
+                    RequestedUtc = DateTime.UtcNow
+                };
+                dbContext.DbResetPasswords.Add(resetpwd);
+            }
+            else
+            {
+                resetpwd.Token = pwdgen.Generate();
+                resetpwd.RequestedUtc = DateTime.UtcNow;
+            }
+            dbContext.SaveChanges();
+            string subject = $"Myna Portal Kennwort zurücksetzen";
+            string body = $"Hallo {user.Name}!\n\n{resetpwd.Token} ist Dein Sicherheitscode. Er ist 5 Minuten gültig.\n\n" +
+                "Du kannst jetzt Dein Kennwort neu vergeben.\n\n\n\n" +
+                "Viele Grüsse!";
+            notificationService.Send(email, subject, body);
+        }
+
+        public void ResetPassword(UserResetPasswordModel resetPasswordModel)
+        {
+            logger.LogDebug("Reset password for email addresss '{email}'.", resetPasswordModel.Email);
+            var email = resetPasswordModel.Email.ToLowerInvariant();
+            var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
+            var resetpwd = dbContext.DbResetPasswords.SingleOrDefault((r) => r.Email == email);
+            if (user == null || resetpwd == null || !user.AllowResetPassword)
+            {
+                throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist nicht erlaubt.");
+            }
+            if (resetpwd.Token != resetPasswordModel.Token)
+            {
+                throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig.");
+            }
+            var diff = (DateTime.UtcNow - resetpwd.RequestedUtc).TotalMinutes;
+            if (diff > 5)
+            {
+                throw new PwdManInvalidArgumentException("Der Sicherheitscode ist abgelaufen.");
+            }
+            if (!VerifyPasswordStrength(resetPasswordModel.Password))
+            {
+                throw new PasswordNotStrongEnoughException();
+            }
+            var hasher = new PasswordHasher<string>();
+            var hash = hasher.HashPassword(user.Name, resetPasswordModel.Password);
+            user.PasswordHash = hash;
+            dbContext.DbResetPasswords.Remove(resetpwd);
+            dbContext.SaveChanges();
         }
 
         // --- registration
@@ -245,6 +335,7 @@ namespace APIServer.PwdMan
                 Email = email,
                 Requires2FA = registrationProfile.Requires2FA,
                 UseLongLivedToken = registrationProfile.UseLongLivedToken,
+                AllowResetPassword = registrationProfile.AllowResetPassword,
                 RegisteredUtc = DateTime.UtcNow
             };
             // first user has the usermanager role
@@ -330,6 +421,7 @@ namespace APIServer.PwdMan
                 LastLoginUtc = DbMynaContext.GetUtcDateTime(user.LastLoginTryUtc),
                 Requires2FA = user.Requires2FA,
                 UseLongLivedToken = user.UseLongLivedToken,
+                AllowResetPassword = user.AllowResetPassword,
                 RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
                 HasPasswordManagerFile = user.PasswordFileId != null,
                 PasswordManagerSalt = user.Salt
@@ -408,6 +500,19 @@ namespace APIServer.PwdMan
             return false;
         }
 
+        public bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword)
+        {
+            logger.LogDebug($"Update user allow reset password...");
+            var user = GetUserFromToken(authenticationToken);
+            if (user.AllowResetPassword != allowResetPassword)
+            {
+                user.AllowResetPassword = allowResetPassword;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
         public int DeleteLoginIpAddresses(string authenticationToken)
         {
             logger.LogDebug($"Delete login IP addresses...");
@@ -467,36 +572,6 @@ namespace APIServer.PwdMan
             return ret;
         }
 
-        public bool ResetPassword(UserModel userModel, string ipAddress)
-        {
-            logger.LogDebug("Reset password for username '{username}', email address '{email}' and IP address {ipAddress}...", userModel.Name, userModel.Email, ipAddress);
-            var opt = GetOptions();
-            var email = userModel.Email.ToLowerInvariant();
-            var user = dbContext.DbUsers.SingleOrDefault((u) => u.Name == userModel.Name && u.Email == email);
-            if (user != null)
-            {
-                // @TODO: new password has to be changed immediately from the same(!) IP address
-                // @TODO: allowResetPassword ???
-                var loginIpAddress = dbContext.DbLoginIpAddresses
-                    .SingleOrDefault((ip) => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
-                if (loginIpAddress != null && loginIpAddress.Succeeded > 0)
-                {
-                    var newpwd = new PwdGen().Generate();
-                    var hasher = new PasswordHasher<string>();
-                    user.PasswordHash = hasher.HashPassword(userModel.Name, newpwd);
-                    var subject = $"Myna Portal Benachrichtigung";
-                    var body = $"Dein Kennwort wurde zurückgesetzt. Dein neues Kennwort lautet:\n\n{newpwd}\n\n." +
-                        "Bitte ändere es so früh wie möglich!\n\nViele Grüsse!";
-                    // @TODO: requireChangePwd !! neues token??? wie bei require2FA ???
-                    notificationService.Send(user.Email, subject, body);
-                    loginIpAddress.Succeeded = 0;
-                    loginIpAddress.Failed = 0;
-                    dbContext.SaveChanges();
-                }
-            }
-            return false;
-        }
-
         // --- authentication
 
         public AuthenticationResponseModel Authenticate(AuthenticationModel authentication, string ipAddress)
@@ -512,7 +587,8 @@ namespace APIServer.PwdMan
                     if (sec < opt.AccountLockTime)
                     {
                         logger.LogDebug("Account disabled. Too many login tries.");
-                        throw new UnauthorizedException();
+                        int remain = (opt.AccountLockTime - (int)sec) / 60 + 1;
+                        throw new PwdManInvalidArgumentException($"Das Konto ist vorrübergehend gesperrt. Versuche es in {remain} Minuten erneuert.");
                     }
                 }
                 var loginIpAddress = dbContext.DbLoginIpAddresses
@@ -750,11 +826,16 @@ namespace APIServer.PwdMan
         private void SetSetting<T>(string key, T value)
         {
             var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == key);
+            var json = JsonSerializer.Serialize(value);
             if (setting == null)
             {
-                setting = new DbSetting { Key = LAST_REGISTRATION_REQUEST };
+                setting = new DbSetting { Key = key, Value = json };
+                dbContext.DbSettings.Add(setting);
             }
-            setting.Value = JsonSerializer.Serialize(value);
+            else
+            {
+                setting.Value = json;
+            }
         }
 
         private void Send2FAEmail(DbUser user, PwdManOptions opt)

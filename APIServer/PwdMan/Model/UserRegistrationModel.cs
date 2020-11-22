@@ -29,6 +29,8 @@ namespace APIServer.PwdMan.Model
 
         public bool UseLongLivedToken { get; set; }
 
+        public bool AllowResetPassword { get; set; }
+
         public string Token { get; set; }
     }
 }

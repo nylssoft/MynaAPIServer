@@ -15,35 +15,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
 
 namespace APIServer.PwdMan.Model
 {
-    public class UserModel
+    public class UserResetPasswordModel
     {
-        public string Name { get; set; }
-
         public string Email { get; set; }
 
-        public bool Requires2FA { get; set; }
+        public string Token { get; set; }
 
-        public bool UseLongLivedToken { get; set; }
-
-        public bool AllowResetPassword { get; set; }
-
-        public DateTime? LastLoginUtc { get; set; }
-
-        public DateTime? RegisteredUtc { get; set; }
-
-        public List<string> Roles { get; set; }
-
-        public bool HasPasswordManagerFile { get; set; }
-
-        public string PasswordManagerSalt { get; set; }
-
-        public bool AccountLocked { get; set; }
-
-        public List<LoginIpAddressModel> LoginIpAddresses { get; set; }
+        public string Password { get; set; }
     }
 }

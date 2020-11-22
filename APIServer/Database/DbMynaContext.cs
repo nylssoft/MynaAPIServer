@@ -28,6 +28,8 @@ namespace APIServer.Database
 
         public DbSet<DbUser> DbUsers { get; set; }
 
+        public DbSet<DbResetPassword> DbResetPasswords { get; set; }
+
         public DbSet<DbLoginIpAddress> DbLoginIpAddresses { get; set; }
 
         public DbSet<DbRole> DbRoles { get; set; }
@@ -64,6 +66,9 @@ namespace APIServer.Database
                 .IsUnique();
             builder.Entity<DbLoginIpAddress>()
                 .HasIndex(ip => new { ip.DbUserId, ip.IpAddress })
+                .IsUnique();
+            builder.Entity<DbResetPassword>()
+                .HasIndex(r => r.Email)
                 .IsUnique();
         }
 

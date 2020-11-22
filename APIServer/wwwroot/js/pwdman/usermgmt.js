@@ -10,7 +10,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.6";
+    let version = "1.0.7";
 
     // helper
 
@@ -184,6 +184,10 @@ var usermgmt = (() => {
         controls.createCheckbox(keepLoginP, "account-keeplogin-id", undefined, "Angemeldet bleiben",
             currentUser.useLongLivedToken,
             () => renderAccountActions("changekeeplogin"));
+        let allowResetPwdP = controls.create(parent, "p");
+        controls.createCheckbox(allowResetPwdP, "account-allowresetpwd-id", undefined, "Kennwort kann zur\u00FCckgesetzt werden",
+            currentUser.allowResetPassword,
+            () => renderAccountActions("changeallowresetpwd"));
         let lastLoginP = controls.create(parent, "p");
         let dt = new Date(currentUser.lastLoginUtc).toLocaleString("de-DE");
         controls.createSpan(lastLoginP, undefined, "Letzte Anmeldung: ");
@@ -223,6 +227,11 @@ var usermgmt = (() => {
         else if (confirm == "changekeeplogin") {
             controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
             controls.createButton(actionsDiv, "Ja", () => onUpdateKeepLogin());
+            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
+        }
+        else if (confirm == "changeallowresetpwd") {
+            controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
+            controls.createButton(actionsDiv, "Ja", () => onUpdateAllowResetPwd());
             controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
         }
         else {
@@ -433,6 +442,26 @@ var usermgmt = (() => {
                 (changed) => {
                     if (changed) {
                         currentUser.useLongLivedToken = checkbox.checked;
+                    }
+                    renderCurrentUser();
+                },
+                onRejectError,
+            );
+        }
+    };
+
+    const onUpdateAllowResetPwd = () => {
+        let checkbox = document.getElementById("account-allowresetpwd-id");
+        if (checkbox) {
+            utils.fetch_api_call("api/pwdman/user/allowresetpwd",
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(checkbox.checked)
+                },
+                (changed) => {
+                    if (changed) {
+                        currentUser.allowResetPassword = checkbox.checked;
                     }
                     renderCurrentUser();
                 },

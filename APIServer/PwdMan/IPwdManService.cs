@@ -23,6 +23,12 @@ namespace APIServer.PwdMan
 {
     public interface IPwdManService
     {
+        // --- reset password
+
+        void RequestResetPassword(string email);
+
+        void ResetPassword(UserResetPasswordModel resetPasswordModel);
+
         // --- registration
 
         bool IsRegisterAllowed(string email);
@@ -43,16 +49,19 @@ namespace APIServer.PwdMan
 
         UserModel GetUser(string authenticationToken);
 
+        List<UserModel> GetUsers(string authenticationToken);
+
         bool DeleteUser(string authenticationToken, string userName);
+
+        int DeleteLoginIpAddresses(string authenticiationToken);
 
         bool UpdateUser2FA(string authenticationToken, bool requires2FA);
 
         bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken);
 
-        int DeleteLoginIpAddresses(string authenticiationToken);
+        bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword);
 
-        List<UserModel> GetUsers(string authenticationToken);
-
+        void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange);
 
         // --- authentication
 
@@ -63,8 +72,6 @@ namespace APIServer.PwdMan
         AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken);
 
         void SendTOTP(string token);
-
-        void ChangeUserPassword(string token, UserPasswordChangeModel userPassswordChange);
 
         // --- password manager
 

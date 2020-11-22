@@ -16,34 +16,20 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
-using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace APIServer.PwdMan.Model
+namespace APIServer.Database
 {
-    public class UserModel
+
+    [Table("ResetPasswords")]
+    public class DbResetPassword
     {
-        public string Name { get; set; }
+        public long Id { get; set; }
 
         public string Email { get; set; }
 
-        public bool Requires2FA { get; set; }
+        public string Token { get; set; }
 
-        public bool UseLongLivedToken { get; set; }
-
-        public bool AllowResetPassword { get; set; }
-
-        public DateTime? LastLoginUtc { get; set; }
-
-        public DateTime? RegisteredUtc { get; set; }
-
-        public List<string> Roles { get; set; }
-
-        public bool HasPasswordManagerFile { get; set; }
-
-        public string PasswordManagerSalt { get; set; }
-
-        public bool AccountLocked { get; set; }
-
-        public List<LoginIpAddressModel> LoginIpAddresses { get; set; }
+        public DateTime RequestedUtc { get; set; }
     }
 }
