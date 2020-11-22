@@ -59,3 +59,5 @@ Temporary Items
 # personal user files
 *.user
 
+APIServer/wwwroot/downloads/MynaPasswordManager.zip
+APIServer/Readme.txt
