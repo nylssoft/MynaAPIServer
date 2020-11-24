@@ -2,6 +2,10 @@
 
 var usermgmt = (() => {
 
+    // UI elements
+
+    let waitDiv;
+
     // state
 
     let currentUser;
@@ -10,7 +14,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.7";
+    let version = "1.0.8";
 
     // helper
 
@@ -22,6 +26,13 @@ var usermgmt = (() => {
         }
         txt += ".";
         return txt;
+    };
+
+    const setWaitCursor = (wait) => {
+        document.body.style.cursor = wait ? "wait" : "default";
+        if (waitDiv) {
+            waitDiv.className = wait ? "wait-div" : "invisible-div";
+        }
     };
 
     // rendering
@@ -45,6 +56,7 @@ var usermgmt = (() => {
     const renderConfirmRegistrations = (success, results) => {
         let parent = document.body;
         controls.removeAllChildren(parent);
+        waitDiv = controls.createDiv(parent, "invisible-div");
         if (success) {
             renderHeader(parent, "Ergebnisse:");
             results.reverse();
@@ -90,6 +102,7 @@ var usermgmt = (() => {
     const renderEditUsers = (success, results) => {
         let parent = document.body;
         controls.removeAllChildren(parent);
+        waitDiv = controls.createDiv(parent, "invisible-div");
         if (success) {
             renderHeader(parent, "Ergebnisse:");
             results.reverse();
@@ -148,7 +161,9 @@ var usermgmt = (() => {
                 renderDeleteUsersActions(users);
                 renderCopyright(parent);
             },
-            onRejectError);
+            onRejectError,
+            setWaitCursor
+        );
     };
 
     const renderDeleteUsersActions = (users, confirm) => {
@@ -169,6 +184,7 @@ var usermgmt = (() => {
     const renderCurrentUser = () => {
         let parent = document.body;
         controls.removeAllChildren(parent);
+        waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent);
         let nameP = controls.create(parent, "p");
         controls.createSpan(nameP, undefined, "Name: ");
@@ -176,18 +192,19 @@ var usermgmt = (() => {
         let emailP = controls.create(parent, "p");
         controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");
         controls.createSpan(emailP, undefined, currentUser.email);
-        let faP = controls.create(parent, "p");
-        controls.createCheckbox(faP, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
+        let optionsP = controls.create(parent, "p", undefined, "Optionen:");
+        let checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
+        controls.createCheckbox(checkboxDiv, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
             currentUser.requires2FA,
-            () => renderAccountActions("change2fa"));
-        let keepLoginP = controls.create(parent, "p");
-        controls.createCheckbox(keepLoginP, "account-keeplogin-id", undefined, "Angemeldet bleiben",
+            () => onUpdate2FA());
+        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
+        controls.createCheckbox(checkboxDiv, "account-keeplogin-id", undefined, "Angemeldet bleiben",
             currentUser.useLongLivedToken,
-            () => renderAccountActions("changekeeplogin"));
-        let allowResetPwdP = controls.create(parent, "p");
-        controls.createCheckbox(allowResetPwdP, "account-allowresetpwd-id", undefined, "Kennwort kann zur\u00FCckgesetzt werden",
+            () => onUpdateKeepLogin());
+        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
+        controls.createCheckbox(checkboxDiv, "account-allowresetpwd-id", undefined, "Kennwort kann zur\u00FCckgesetzt werden",
             currentUser.allowResetPassword,
-            () => renderAccountActions("changeallowresetpwd"));
+            () => onUpdateAllowResetPwd());
         let lastLoginP = controls.create(parent, "p");
         let dt = new Date(currentUser.lastLoginUtc).toLocaleString("de-DE");
         controls.createSpan(lastLoginP, undefined, "Letzte Anmeldung: ");
@@ -219,21 +236,6 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, "Ja", () => onLogout());
             controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
         }
-        else if (confirm == "change2fa") {
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
-            controls.createButton(actionsDiv, "Ja", () => onUpdate2FA());
-            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
-        }
-        else if (confirm == "changekeeplogin") {
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
-            controls.createButton(actionsDiv, "Ja", () => onUpdateKeepLogin());
-            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
-        }
-        else if (confirm == "changeallowresetpwd") {
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du die \u00C4nderung speichern? ");
-            controls.createButton(actionsDiv, "Ja", () => onUpdateAllowResetPwd());
-            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
-        }
         else {
             controls.createButton(actionsDiv, "Abmelden", () => renderAccountActions("logout"));
             controls.createButton(actionsDiv, "Kennwort \u00E4ndern", () => onChangePassword());
@@ -242,12 +244,10 @@ var usermgmt = (() => {
             }
             controls.createButton(actionsDiv, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
             if (confirmations) {
-                let mgmtDiv = controls.create(actionsDiv, "p");
-                controls.createButton(mgmtDiv, "Registrierungen bearbeiten", () => renderConfirmRegistrations());
+                controls.createButton(actionsDiv, "Registrierungen bearbeiten", () => renderConfirmRegistrations());
             }
             if (currentUser.roles.includes("usermanager")) {
-                let usersDiv = controls.create(actionsDiv, "p");
-                controls.createButton(usersDiv, "Benutzer bearbeiten", () => renderEditUsers());
+                controls.createButton(actionsDiv, "Benutzer bearbeiten", () => renderEditUsers());
             }
         }
     };
@@ -256,6 +256,7 @@ var usermgmt = (() => {
         token = undefined;
         let parent = document.body;
         controls.removeAllChildren(parent);
+        waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent, "Du bist jetzt nicht mehr angemeldet.");
         let p = controls.create(parent, "p");
         controls.createButton(p, "OK", () => onOK());
@@ -267,6 +268,7 @@ var usermgmt = (() => {
         token = undefined;
         utils.logout();
         controls.removeAllChildren(parent);
+        waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent, "Dein Konto wurde gel\u00F6scht. Du bist jetzt nicht mehr angemeldet.");
         let p = controls.create(parent, "p");
         controls.createButton(p, "OK", () => onOK());
@@ -302,7 +304,9 @@ var usermgmt = (() => {
                 (errmsg) => {
                     results.push({ "email": email, "errmsg": errmsg });
                     onDoConfirm(list, results, notification, reject);
-                });
+                },
+                setWaitCursor
+            );
             return;
         }
         renderConfirmRegistrations(true, results);
@@ -346,7 +350,9 @@ var usermgmt = (() => {
                 (errmsg) => {
                     results.push({ "name": name, "errmsg": errmsg });
                     onDoDeleteUsers(list, results);
-                });
+                },
+                setWaitCursor
+            );
             return;
         }
         renderEditUsers(true, results);
@@ -397,6 +403,7 @@ var usermgmt = (() => {
             },
             renderCurrentUserDeleted,
             onRejectError,
+            setWaitCursor
         );
     };
 
@@ -407,6 +414,7 @@ var usermgmt = (() => {
                 renderCurrentUser();
             },
             onRejectError,
+            setWaitCursor
         );
     };
 
@@ -426,6 +434,7 @@ var usermgmt = (() => {
                     renderCurrentUser();
                 },
                 onRejectError,
+                setWaitCursor
             );
         }
     };
@@ -446,6 +455,7 @@ var usermgmt = (() => {
                     renderCurrentUser();
                 },
                 onRejectError,
+                setWaitCursor
             );
         }
     };
@@ -466,6 +476,7 @@ var usermgmt = (() => {
                     renderCurrentUser();
                 },
                 onRejectError,
+                setWaitCursor
             );
         }
     };
@@ -484,7 +495,9 @@ var usermgmt = (() => {
                 "api/pwdman/confirmation",
                 { headers: { "token": token } },
                 onResolveConfirmations,
-                onRejectError);
+                onRejectError,
+                setWaitCursor
+            );
         }
         else {
             renderCurrentUser();
@@ -508,7 +521,8 @@ var usermgmt = (() => {
             "api/pwdman/user",
             { headers: { "token": token } },
             onResolveCurrentUser,
-            onRejectError);
+            onRejectError,
+            setWaitCursor);
     };
 
     // --- public API

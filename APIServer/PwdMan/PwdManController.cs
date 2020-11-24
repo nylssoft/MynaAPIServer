@@ -62,7 +62,7 @@ namespace APIServer.PwdMan
         public IActionResult RegisterUser([FromBody] UserRegistrationModel userRegistration)
         {
             PwdManService.RegisterUser(userRegistration);
-            return Ok();
+            return new JsonResult(true);
         }
 
         [HttpGet]
@@ -155,7 +155,7 @@ namespace APIServer.PwdMan
         public IActionResult SendTOTP()
         {
             PwdManService.SendTOTP(GetToken());
-            return Ok();
+            return new JsonResult(true);
         }
 
         [HttpPost]
@@ -163,7 +163,7 @@ namespace APIServer.PwdMan
         public IActionResult ChangeUserPassword([FromBody] UserPasswordChangeModel userPasswordChange)
         {
             PwdManService.ChangeUserPassword(GetToken(), userPasswordChange);
-            return Ok();
+            return new JsonResult(true);
         }
 
         [HttpPost]
@@ -171,7 +171,7 @@ namespace APIServer.PwdMan
         public IActionResult SavePasswordFile([FromBody] PasswordFileModel passwordFile)
         {
             PwdManService.SavePasswordFile(GetToken(), passwordFile);
-            return Ok();
+            return new JsonResult(true);
         }
 
         [HttpGet]

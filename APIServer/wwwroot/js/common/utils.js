@@ -81,26 +81,31 @@ var utils = (() => {
         }
     };
 
-    const fetch_api_call = (apicall, init, resolve, reject) => {
+    const fetch_api_call = (apicall, init, resolve, reject, set_waitcursor) => {
+        if (set_waitcursor) set_waitcursor(true);
         fetch(apicall, init)
             .then(response => {
                 response.json()
                     .then(json => {
                         if (response.ok) {
+                            if (set_waitcursor) set_waitcursor(false);
                             if (resolve) resolve(json);
                         }
                         else {
+                            if (set_waitcursor) set_waitcursor(false);
                             console.error(json.title);
                             if (reject) reject(json.title);
                         }
                     })
                     .catch((err) => {
+                        if (set_waitcursor) set_waitcursor(false);
                         console.error(err.message);
                         let errmsg = (response.status != 200) ? `${response.status} : ${response.statusText}` : err.message;
                         if (reject) reject(errmsg);
                     });
             })
             .catch(err => {
+                if (set_waitcursor) set_waitcursor(false);
                 console.error(err.message);
                 if (reject) reject(err.message);
             });

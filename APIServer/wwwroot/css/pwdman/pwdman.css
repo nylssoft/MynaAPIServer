@@ -125,6 +125,30 @@ h1 {
     margin-bottom: 20pt;
 }
 
+.wait-div {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0.8;
+    z-index: 10;
+}
+
+.invisible-div {
+    display: block;
+}
+
+.checkbox-div {
+    margin-top: 5pt;
+}
+
+.resetpwd-link {
+    font-family: Arial, Helvetica, sans-serif;
+    color: lightgreen;
+}
+
 .transparent {
     background-color: transparent;
     border: none;

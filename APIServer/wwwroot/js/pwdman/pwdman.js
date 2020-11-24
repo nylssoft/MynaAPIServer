@@ -19,6 +19,7 @@ var pwdman = (() => {
     let facCheckbox;
     let keepLoginCheckbox;
     let allowResetPwdCheckbox;
+    let waitDiv;
 
     // state
 
@@ -38,7 +39,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.4";
+    let version = "1.1.5";
 
     // helper
 
@@ -96,89 +97,78 @@ var pwdman = (() => {
         renderPage();
     };
 
+    const setWaitCursor = (wait) => {
+        document.body.style.cursor = wait ? "wait" : "default";
+        if (waitDiv) {
+            waitDiv.className = wait ? "wait-div" : "invisible-div";
+        }
+    };
+
     const authenticate = () => {
         lastErrorMessage = "";
-        fetch("api/pwdman/auth", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            body: JSON.stringify({ "username": userNameInput.value, "password": userPasswordPwd.value })
-        })
-            .then(response => {
-                if (response.ok) {
-                    response.json().then(authResult => {
-                        userName = userNameInput.value;
-                        token = authResult.token;
-                        requiresPass2 = authResult.requiresPass2;
-                        if (authResult.longLivedToken) {
-                            window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
-                        }
-                        setState({ "token": token, "userName": userName, "requiresPass2": requiresPass2 });
-                        renderPage();
-                    });
+        utils.fetch_api_call("api/pwdman/auth",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ "username": userNameInput.value, "password": userPasswordPwd.value })
+            },
+            (authResult) => {
+                userName = userNameInput.value;
+                token = authResult.token;
+                requiresPass2 = authResult.requiresPass2;
+                if (authResult.longLivedToken) {
+                    window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
                 }
-                else {
-                    response.json().then(apierr => errorDiv.textContent = apierr.title);
-                }
-            })            
-            .catch(err => errorDiv.textContent = err.message);
+                setState({ "token": token, "userName": userName, "requiresPass2": requiresPass2 });
+                renderPage();
+            },
+            (errMsg) => errorDiv.textContent = errMsg,
+            setWaitCursor
+        );
     };
 
     const authenticatePass2 = () => {
         lastErrorMessage = "";
-        fetch("api/pwdman/auth2", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-            body: JSON.stringify(codeInput.value.trim())
-        })
-            .then(response => {
-                if (response.ok) {
-                    response.json().then(authResult => {
-                        token = authResult.token;
-                        if (authResult.longLivedToken) {
-                            window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
-                        }
-                        requiresPass2 = false;
-                        let state = getState();
-                        state.token = token;
-                        state.requiresPass2 = requiresPass2;
-                        setState(state);
-                        renderPage();
-                    });
+        utils.fetch_api_call("api/pwdman/auth2",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(codeInput.value.trim())
+            },
+            (authResult) => {
+                token = authResult.token;
+                if (authResult.longLivedToken) {
+                    window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
                 }
-                else {
-                    response.json().then(apierr => {
-                        lastErrorMessage = apierr.title;
-                        renderPage();
-                    })
-                }
-            })
-            .catch(err => {
-                lastErrorMessage = err.message;
+                requiresPass2 = false;
+                let state = getState();
+                state.token = token;
+                state.requiresPass2 = requiresPass2;
+                setState(state);
                 renderPage();
-            });
+            },
+            (errMsg) => {
+                lastErrorMessage = errMsg;
+                renderPage();
+            },
+            setWaitCursor
+        );
     };
 
     const resendTOTP = () => {
         lastErrorMessage = "";
-        fetch("api/pwdman/totp", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
-        })
-            .then(response => {
-                if (response.ok) {
-                    renderPage();
-                }
-                else {
-                    response.json().then(apierror => {
-                        lastErrorMessage = apierror.title;
-                        renderPage();
-                    });
-                }
-            })
-            .catch(err => {
-                lastErrorMessage = err.message;
+        utils.fetch_api_call("api/pwdman/totp",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            () => renderPage(),
+            (errMsg) => {
+                lastErrorMessage = errMsg;
                 renderPage();
-            });
+            },
+            setWaitCursor
+        );
     };
 
     const changePassword = () => {
@@ -187,20 +177,16 @@ var pwdman = (() => {
             return;
         }
         lastErrorMessage = "";
-        fetch("api/pwdman/userpwd", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-            body: JSON.stringify({ "oldpassword": oldPasswordPwd.value, "newpassword": newPasswordPwd.value })
-        })
-            .then(response => {
-                if (response.ok) {
-                    window.location.replace(window.location.href + "&ok");
-                }
-                else {
-                    response.json().then(apierror => errorDiv.textContent = apierror.title);
-                }
-            })
-            .catch(err => errorDiv.textContent = err.message);            
+        utils.fetch_api_call("api/pwdman/userpwd",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify({ "oldpassword": oldPasswordPwd.value, "newpassword": newPasswordPwd.value })
+            },
+            () => window.location.replace(window.location.href + "&ok"),
+            (errMsg) => errorDiv.textContent = errMsg,
+            setWaitCursor
+        )
     };
 
     const requestRegistration = () => {
@@ -210,29 +196,27 @@ var pwdman = (() => {
             errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse.";
             return;
         }
-        fetch("api/pwdman/register", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            body: JSON.stringify(email)
-        })
-            .then(response => response.json().then(val => {
-                if (response.ok) {
-                    if (val === true) {
-                        actionRequestRegistration = false;
-                        actionRegister = true;
-                        userEmail = email;
-                    }
-                    else {
-                        lastErrorMessage = `Die E-Mail-Adresse ${email} ist noch nicht freigeschaltet.` +
-                            " Du bekommst eine Antwort, sobald Deine Identit\u00E4t best\u00E4tigt wurde.";
-                    }
-                    renderPage();
+        utils.fetch_api_call("api/pwdman/register",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify(email)
+            },
+            (ok) => {
+                if (ok) {
+                    actionRequestRegistration = false;
+                    actionRegister = true;
+                    userEmail = email;
                 }
                 else {
-                    errorDiv.textContent = val.title;
+                    lastErrorMessage = `Die E-Mail-Adresse ${email} ist noch nicht freigeschaltet.` +
+                        " Du bekommst eine Antwort, sobald Deine Identit\u00E4t best\u00E4tigt wurde.";
                 }
-            }))
-            .catch(err => errorDiv.textContent = err.message);
+                renderPage();
+            },
+            (errMsg) => errorDiv.textContent = errMsg,
+            setWaitCursor
+        );
     };
 
     const register = () => {
@@ -253,30 +237,28 @@ var pwdman = (() => {
             errorDiv.textContent = "Die Best\u00E4tigung passt nicht mit dem Kennwort \u00FCberein.";
             return;
         }
-        fetch("api/pwdman/profile", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            body: JSON.stringify({
-                "Username": userNameInput.value.trim(),
-                "Password": newPasswordPwd.value,
-                "Email": userEmail,
-                "Requires2FA": facCheckbox.checked,
-                "UseLongLivedToken": keepLoginCheckbox.checked,
-                "AllowResetPassword": allowResetPwdCheckbox.checked,
-                "Token": codeInput.value.trim()
-            })
-        })
-            .then(response => {
-                if (response.ok) {
-                    successRegister = true;
-                    userName = userNameInput.value.trim();
-                    renderPage();
-                }
-                else {
-                    response.json().then(apierror => errorDiv.textContent = apierror.title);
-                }
-            })
-            .catch(err => errorDiv.textContent = err.message);
+        utils.fetch_api_call("api/pwdman/profile",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "Username": userNameInput.value.trim(),
+                    "Password": newPasswordPwd.value,
+                    "Email": userEmail,
+                    "Requires2FA": facCheckbox.checked,
+                    "UseLongLivedToken": keepLoginCheckbox.checked,
+                    "AllowResetPassword": allowResetPwdCheckbox.checked,
+                    "Token": codeInput.value.trim()
+                })
+            },
+            () => {
+                successRegister = true;
+                userName = userNameInput.value.trim();
+                renderPage();
+            },
+            (errMsg) => errorDiv.textContent = errMsg,
+            setWaitCursor
+        );
     };
 
     const cancel = () => {
@@ -348,11 +330,12 @@ var pwdman = (() => {
             errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse";
             return;
         }
-        utils.fetch_api_call("/api/pwdman/resetpwd", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            body: JSON.stringify(email)
-        },
+        utils.fetch_api_call("/api/pwdman/resetpwd",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify(email)
+            },
             () => {
                 let url = `/pwdman?resetpwd2&email=${encodeURI(email)}`;
                 if (nexturl && nexturl.length > 0) {
@@ -360,7 +343,8 @@ var pwdman = (() => {
                 }
                 window.location.href = url;
             },
-            (errMsg) => errorDiv.textContent = errMsg
+            (errMsg) => errorDiv.textContent = errMsg,
+            setWaitCursor
         );
     };
 
@@ -375,20 +359,22 @@ var pwdman = (() => {
             errorDiv.textContent = "Das best\u00E4tigte Kennwort passt nicht mit dem neuen Kennwort \u00FCberein.";
             return;
         }
-        utils.fetch_api_call("/api/pwdman/resetpwd2", {
-            method: "POST",
-            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-            body: JSON.stringify({
-                "Email": email,
-                "Token": token,
-                "Password": newPasswordPwd.value
-            })
-        },
+        utils.fetch_api_call("/api/pwdman/resetpwd2",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "Email": email,
+                    "Token": token,
+                    "Password": newPasswordPwd.value
+                })
+            },
             () => {
                 controls.removeAllChildren(parent);
                 renderResetPwd2(parent, true);
             },
-            (errMsg) => errorDiv.textContent = errMsg
+            (errMsg) => errorDiv.textContent = errMsg,
+            setWaitCursor
         );
     };
 
@@ -414,6 +400,7 @@ var pwdman = (() => {
     };
 
     const renderAuthentication = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Anmelden");
         controls.create(parent, "p", undefined, "Melde Dich mit Namen und Kennwort an.");
         let loginDiv = controls.createDiv(parent);
@@ -428,7 +415,7 @@ var pwdman = (() => {
         let passwordDiv = controls.createDiv(parent);
         let userPasswordLabel = controls.createLabel(passwordDiv, undefined, "Kennwort:");
         userPasswordLabel.htmlFor = "userpwd-id";
-        userPasswordPwd = controls.createPasswordField(passwordDiv, "Kennwort", authenticate, undefined, 16, 30);
+        userPasswordPwd = controls.createPasswordField(passwordDiv, "Kennwort", () => authenticate(), undefined, 16, 30);
         userPasswordPwd.id = "userpwd-id";
         if (!utils.is_mobile()) {
             if (userName) {
@@ -440,26 +427,25 @@ var pwdman = (() => {
         }
         userPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
         let buttonDiv = controls.createDiv(parent);
-        controls.createButton(buttonDiv, "Anmelden", authenticate, undefined, "button");
+        controls.createButton(buttonDiv, "Anmelden", () => authenticate(), undefined, "button");
         if (nexturl) {
-            controls.createButton(buttonDiv, "Abbrechen", cancel, undefined, "button");
+            controls.createButton(buttonDiv, "Abbrechen", () => cancel(), undefined, "button");
         }
         renderError(parent);
-        controls.createA(controls.create(parent, "p"), "copyright", "/pwdman/resetpwd", "Kennwort vergessen?",
+        controls.createA(controls.create(parent, "p"), "resetpwd-link", "/pwdman/resetpwd", "Kennwort vergessen?",
             () => window.location.href = `/pwdman?resetpwd&nexturl=${encodeURI(window.location.href)}`);
         let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du dich registrieren. ");
-        controls.createButton(p, "Registrieren", () => {
-            window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
-        });
+        controls.createButton(p, "Registrieren", () => window.location.href = `/pwdman?register&nexturl=${encodeURI(window.location.href)}`);
         renderCopyright(parent, "Portal");
     };
 
     const renderPass2 = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Anmelden");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             renderError(parent);
             let buttonResendDiv = controls.createDiv(parent);
-            controls.createButton(buttonResendDiv, "Neuen Code anfordern", resendTOTP, undefined, "button");
+            controls.createButton(buttonResendDiv, "Neuen Code anfordern", () => resendTOTP(), undefined, "button");
         }
         else {
             controls.create(parent, "p", undefined, "Gib den Sicherheitsscode f\u00FCr die Zwei-Schritt-Verifizierung ein. " +
@@ -468,18 +454,19 @@ var pwdman = (() => {
             let codeDiv = controls.createDiv(parent);
             let codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitsscode:");
             codeLabel.htmlFor = "securitycode-id";
-            codeInput = controls.createInputField(codeDiv, "Sicherheitsscode", authenticatePass2, undefined, 10, 10);
+            codeInput = controls.createInputField(codeDiv, "Sicherheitsscode", () => authenticatePass2(), undefined, 10, 10);
             codeInput.id = "securitycode-id";
             if (!utils.is_mobile()) {
                 codeInput.focus();
             }
             let buttonLoginDiv = controls.createDiv(parent);
-            controls.createButton(buttonLoginDiv, "Anmelden", authenticatePass2, undefined, "button");
+            controls.createButton(buttonLoginDiv, "Anmelden", () => authenticatePass2(), undefined, "button");
         }
         renderCopyright(parent, "Portal");
     };
 
     const renderChangePwd = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Kennwort \u00E4ndern");
         if (actionOk === true) {
             controls.create(parent, "p", undefined,
@@ -510,13 +497,14 @@ var pwdman = (() => {
         confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", undefined, undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "OK", changePassword, undefined, "button");
+        controls.createButton(okCancelDiv, "OK", () => changePassword(), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
     
     const renderResetPwd = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Kennwort vergessen");
         controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse ein." +
             " Du bekommst einen Sicherheitscode per E-Mail zugesendet, mit dem Du Dein Kennwort neu vergeben kannst." +
@@ -524,25 +512,26 @@ var pwdman = (() => {
         emailDiv = controls.createDiv(parent);
         let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
         emailLabel.htmlFor = "email-id";
-        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", requestResetPassword, undefined, 30, 80);
+        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", () => requestResetPassword(), undefined, 30, 80);
         emailInput.id = "email-id";
         emailInput.addEventListener("input", () => errorDiv.textContent = "");
         if (!utils.is_mobile()) {
             emailInput.focus();
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "Weiter", requestResetPassword, undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
+        controls.createButton(okCancelDiv, "Weiter", () => requestResetPassword(), undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
 
     const renderResetPwd2 = (parent, success) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Kennwort neu vergeben");
         if (success) {
             controls.create(parent, "p", undefined, "Die Kennwort\u00E4nderung war erfolgreich! Du kannst Dich jetzt mit dem neuen Kennwort anmelden.");
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
+            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
             return;
         }
         controls.create(parent, "p", undefined,
@@ -573,24 +562,25 @@ var pwdman = (() => {
         codeInput.addEventListener("input", () => errorDiv.textContent = "");
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "Kennwort \u00E4ndern", () => resetPassword(parent), undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
 
     const renderRequestRegistration = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Registrieren");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
+            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
             return;
         }
         controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse an. Wenn Sie freigeschaltet wurde, kannst Du Dich mit einem Benutzernamen registrieren.");
         emailDiv = controls.createDiv(parent);
         let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
         emailLabel.htmlFor = "email-id";
-        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", requestRegistration, undefined, 30, 80);
+        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", () => requestRegistration(), undefined, 30, 80);
         emailInput.id = "email-id";
         emailInput.addEventListener("input", () => {
             errorDiv.textContent = "";
@@ -599,25 +589,26 @@ var pwdman = (() => {
             emailInput.focus();
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "Weiter", requestRegistration, undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
+        controls.createButton(okCancelDiv, "Weiter", () => requestRegistration(), undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
 
     const renderRegister = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Registrieren");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
+            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
             return;
         }
         if (successRegister) {
             controls.create(parent, "p", undefined,
                 `Die Registrierung war erfolgreich! Du kannst Dich jetzt mit dem Benutzernamen ${userName} anmelden.`);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
+            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
             return;
         }
         controls.create(parent, "p", undefined,
@@ -644,37 +635,39 @@ var pwdman = (() => {
         confirmPwdLabel.htmlFor = "confirmpwd-id";
         confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
-        let facDiv = controls.createDiv(parent, "fac");
-        facCheckbox = controls.createCheckbox(facDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", false, undefined, false);
-        let keepLoginDiv = controls.createDiv(parent, "fac");
-        keepLoginCheckbox = controls.createCheckbox(keepLoginDiv, undefined, undefined, "Angemeldet bleiben", true, undefined, false);
-        let allowResetPwdDiv = controls.createDiv(parent, "fac");
-        allowResetPwdCheckbox = controls.createCheckbox(allowResetPwdDiv, undefined, undefined, "Kennwort kann zur\u00FCckgesetzt werden", true, undefined, false);
+        let optionsP = controls.create(parent,"p", undefined, "Optionen:");
+        let checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
+        facCheckbox = controls.createCheckbox(checkboxDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", false, undefined, false);
+        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
+        keepLoginCheckbox = controls.createCheckbox(checkboxDiv, undefined, undefined, "Angemeldet bleiben", true, undefined, false);
+        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
+        allowResetPwdCheckbox = controls.createCheckbox(checkboxDiv, undefined, undefined, "Kennwort kann zur\u00FCckgesetzt werden", true, undefined, false);
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
         codeLabel.htmlFor = "code-id";
-        codeInput = controls.createInputField(codeDiv, "Registrierungscode", register, undefined, 10, 10);
+        codeInput = controls.createInputField(codeDiv, "Registrierungscode", () => register(), undefined, 16, 16);
         codeInput.id = "code-id";
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "Registrieren", register, undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
+        controls.createButton(okCancelDiv, "Registrieren", () => register(), undefined, "button");
+        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
 
     const renderSecretKey = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Passw\u00F6rter dekodieren");
         controls.create(parent, "p", undefined, "Gib den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
         let keyPwdDiv = controls.createDiv(parent);
         let keyPwdLabel = controls.createLabel(keyPwdDiv, undefined, "Schl\u00FCssel:");
         keyPwdLabel.htmlFor = "keypwd-id";
-        secretKeyPwd = controls.createPasswordField(keyPwdDiv, "Schl\u00FCssel", setCryptoKey, undefined, 32, 100);
+        secretKeyPwd = controls.createPasswordField(keyPwdDiv, "Schl\u00FCssel", () => setCryptoKey(), undefined, 32, 100);
         secretKeyPwd.id = "keypwd-id";
         if (!utils.is_mobile()) {
             secretKeyPwd.focus();
         }
         let buttonDecodeDiv = controls.createDiv(parent);
-        controls.createButton(buttonDecodeDiv, "Dekodieren", setCryptoKey, undefined, "button");
+        controls.createButton(buttonDecodeDiv, "Dekodieren", () => setCryptoKey(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
     };
@@ -832,43 +825,33 @@ var pwdman = (() => {
         }
         else {
             lastErrorMessage = "";
-            fetch("api/pwdman/file", { headers: { "token": token } })
-                .then(response => {
-                    if (response.ok) {
-                        response.json().then(datastr => {
-                            let iv = hex2arr(datastr.substr(0, 12 * 2));
-                            let data = hex2arr(datastr.substr(12 * 2));
-                            let options = { name: "AES-GCM", iv: new Uint8Array(iv) };
-                            let cipherbuffer = new ArrayBuffer(data.length);
-                            let cipherarr = new Uint8Array(cipherbuffer);
-                            cipherarr.set(data);
-                            crypto.subtle.decrypt(options, cryptoKey, cipherbuffer)
-                                .then(decrypted => {
-                                    let str = new TextDecoder().decode(decrypted);
-                                    let pwdItems = JSON.parse(str);
-                                    pwdItems.sort((a, b) => a.Name.localeCompare(b.Name));
-                                    renderPasswordItems(document.body, pwdItems);
-                                })
-                                .catch(() => {
-                                    lastErrorMessage = "Die Passwortdatei kann nicht entschl\u00FCsselt werden.";
-                                    cryptoKey = undefined;
-                                    renderPage();
-                                });
-                        });
-                    }
-                    else {
-                        response.json().then(apierr => {
-                            lastErrorMessage = apierr.title;
+            utils.fetch_api_call("api/pwdman/file", { headers: { "token": token } },
+                (datastr) => {
+                    let iv = hex2arr(datastr.substr(0, 12 * 2));
+                    let data = hex2arr(datastr.substr(12 * 2));
+                    let options = { name: "AES-GCM", iv: new Uint8Array(iv) };
+                    let cipherbuffer = new ArrayBuffer(data.length);
+                    let cipherarr = new Uint8Array(cipherbuffer);
+                    cipherarr.set(data);
+                    crypto.subtle.decrypt(options, cryptoKey, cipherbuffer)
+                        .then(decrypted => {
+                            let str = new TextDecoder().decode(decrypted);
+                            let pwdItems = JSON.parse(str);
+                            pwdItems.sort((a, b) => a.Name.localeCompare(b.Name));
+                            renderPasswordItems(document.body, pwdItems);
+                        })
+                        .catch(() => {
+                            lastErrorMessage = "Die Passwortdatei kann nicht entschl\u00FCsselt werden.";
                             cryptoKey = undefined;
                             renderPage();
                         });
-                    }
-                })
-                .catch(err => {
-                    lastErrorMessage = err.message;
+                },
+                (errMsg) => {
+                    lastErrorMessage = errMsg;
                     cryptoKey = undefined;
                     renderPage();
-                });
+                }
+            );
         }
     };
 
