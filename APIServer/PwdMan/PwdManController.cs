@@ -121,6 +121,13 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.UpdateUserAllowResetPassword(GetToken(), allowResetPassword));
         }
 
+        [HttpPut]
+        [Route("api/pwdman/user/role")]
+        public IActionResult UpdateUserRole([FromBody] UserUpdateRoleModel userUpdateRoleModel)
+        {
+            return new JsonResult(PwdManService.UpdateUserRole(GetToken(), userUpdateRoleModel));
+        }
+
         [HttpGet]
         [Route("api/pwdman/users")]
         public IActionResult GetUsers()

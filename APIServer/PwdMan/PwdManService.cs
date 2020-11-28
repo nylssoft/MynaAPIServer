@@ -446,7 +446,7 @@ namespace APIServer.PwdMan
 
         public bool DeleteUser(string authenticationToken, string userName)
         {
-            logger.LogDebug($"Delete username {userName}...");
+            logger.LogDebug($"Delete username '{userName}'...");
             var user = GetUserFromToken(authenticationToken);
             if (user.Name != userName)
             {
@@ -458,6 +458,15 @@ namespace APIServer.PwdMan
                 if (user == null)
                 {
                     return false;
+                }
+            }
+            var usermanagerRole = dbContext.DbRoles.SingleOrDefault((r) => r.DbUserId == user.Id && r.Name == "usermanager");
+            if (usermanagerRole != null)
+            {
+                var cntUserManagers = dbContext.DbRoles.Count((r) => r.Name == "usermanager");
+                if (cntUserManagers == 1)
+                {
+                    throw new PwdManInvalidArgumentException("Es muss mindestens ein Benutzer mit der Rolle 'usermanager' vorhanden sein.");
                 }
             }
             if (user.PasswordFileId.HasValue)
@@ -476,7 +485,7 @@ namespace APIServer.PwdMan
 
         public bool UpdateUser2FA(string authenticationToken, bool requires2FA)
         {
-            logger.LogDebug($"Update user two factor authentication...");
+            logger.LogDebug($"Update user two factor authentication to {requires2FA}...");
             var user = GetUserFromToken(authenticationToken);
             if (user.Requires2FA != requires2FA)
             {
@@ -489,7 +498,7 @@ namespace APIServer.PwdMan
 
         public bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken)
         {
-            logger.LogDebug($"Update user long-lived token...");
+            logger.LogDebug($"Update user use long-lived token to {useLongLivedToken}...");
             var user = GetUserFromToken(authenticationToken);
             if (user.UseLongLivedToken != useLongLivedToken)
             {
@@ -502,7 +511,7 @@ namespace APIServer.PwdMan
 
         public bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword)
         {
-            logger.LogDebug($"Update user allow reset password...");
+            logger.LogDebug($"Update user allow reset password to {allowResetPassword}...");
             var user = GetUserFromToken(authenticationToken);
             if (user.AllowResetPassword != allowResetPassword)
             {
@@ -511,6 +520,51 @@ namespace APIServer.PwdMan
                 return true;
             }
             return false;
+        }
+
+        public bool UpdateUserRole(string authenticationToken, UserUpdateRoleModel model)
+        {
+            logger.LogDebug($"Update role '{model.RoleName}' for user '{model.UserName}', set assigned to {model.Assigned}...");
+            var adminuser = GetUserFromToken(authenticationToken);
+            if (!HasRole(adminuser, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var changed = false;
+            var user = dbContext.DbUsers
+                .Include((u) => u.Roles)
+                .SingleOrDefault((u) => u.Name == model.UserName);
+            if (user != null)
+            {
+                var role = dbContext.DbRoles.SingleOrDefault((r) => r.DbUserId == user.Id && r.Name == model.RoleName);
+                if (model.Assigned && role == null)
+                {
+                    user.Roles.Add(new DbRole { DbUserId = user.Id, Name = model.RoleName });
+                    changed = true;
+                }
+                else if (!model.Assigned && role != null)
+                {
+                    if (role.Name == "usermanager")
+                    {
+                        if (adminuser.Id == user.Id)
+                        {
+                            throw new PwdManInvalidArgumentException("Du kannst Dir selber nicht die Rolle 'usermanager' entziehen.");
+                        }
+                        var cntUserManagers = dbContext.DbRoles.Count((r) => r.Name == "usermanager");
+                        if (cntUserManagers == 1)
+                        {
+                            throw new PwdManInvalidArgumentException("Es muss mindestens ein Benutzer mit der Rolle 'usermanager' vorhanden sein.");
+                        }
+                    }
+                    user.Roles.Remove(role);
+                    changed = true;
+                }
+                if (changed)
+                {
+                    dbContext.SaveChanges();
+                }
+            }
+            return changed;
         }
 
         public int DeleteLoginIpAddresses(string authenticationToken)

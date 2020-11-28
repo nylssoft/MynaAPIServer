@@ -61,6 +61,8 @@ namespace APIServer.PwdMan
 
         bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword);
 
+        bool UpdateUserRole(string authenticationToken, UserUpdateRoleModel userUpdateRoleModel);
+
         void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange);
 
         // --- authentication

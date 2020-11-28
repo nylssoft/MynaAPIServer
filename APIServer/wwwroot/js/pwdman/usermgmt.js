@@ -14,7 +14,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.8";
+    let version = "1.0.9";
 
     // helper
 
@@ -99,6 +99,64 @@ var usermgmt = (() => {
         renderCopyright(parent);
     };
 
+    const renderUserDetails = (parent, users, user) => {
+        controls.removeAllChildren(parent);
+        waitDiv = controls.createDiv(parent, "invisible-div");
+        controls.create(parent, "h1", undefined, "Benutzer");
+        controls.create(parent, "p", undefined, `Name: ${user.name}`);
+        controls.create(parent, "p", undefined, `E-Mail-Adresse: ${user.email}`);
+        if (user.lastLoginUtc) {
+            controls.create(parent, "p", undefined, `Letzte Anmeldung am ${new Date(user.lastLoginUtc).toLocaleString("de-DE")}`);
+        }
+        controls.create(parent, "p", undefined, `Registriert seit ${new Date(user.registeredUtc).toLocaleString("de-DE")}`);
+        let rolesP = controls.create(parent, "p", undefined, "Rollen:");
+        let checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
+        controls.createCheckbox(checkboxDiv, "roles-skatadmin-id", undefined, "skatadmin",
+            user.roles.includes("skatadmin"),
+            () => onUpdateRole(parent, users, user, "skatadmin"));
+        checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
+        controls.createCheckbox(checkboxDiv, "roles-usermanager-id", undefined, "usermanager",
+            user.roles.includes("usermanager"),
+            () => onUpdateRole(parent, users, user, "usermanager"));
+        controls.createDiv(parent, "error").id="error-id";
+        let buttonBackDiv = controls.createDiv(parent);
+        controls.createButton(buttonBackDiv, "Zur\u00FCck zur Liste", () => {
+            controls.removeAllChildren(parent);
+            renderUsersTable(parent, users);
+        }, undefined, "button");
+        renderCopyright(parent);
+    };
+
+    const renderUsersTable = (parent, users) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
+        renderHeader(parent, "Benutzer:");
+        let table = controls.create(parent, "table");
+        let theader = controls.create(table, "thead");
+        let tr = controls.create(theader, "tr");
+        controls.create(tr, "th", undefined, " ");
+        controls.create(tr, "th", undefined, "Name");
+        controls.create(tr, "th", undefined, "Rollen");
+        let tbody = controls.create(table, "tbody");
+        let idx = 0;
+        users.forEach(user => {
+            tr = controls.create(tbody, "tr");
+            let td = controls.create(tr, "td");
+            controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => document.getElementById("error-id").textContent = "");
+            td = controls.create(tr, "td");
+            controls.createA(td, undefined, "#open", user.name, () => renderUserDetails(document.body, users, user));
+            if (user.accountLocked) {
+                td.textContent += " (gesperrt)";
+            }
+            td = controls.create(tr, "td", undefined, user.roles.join(", "));
+            idx++;
+        });
+        let errorDiv = controls.createDiv(parent, "error");
+        errorDiv.id = "error-id";
+        controls.create(parent, "p").id = "deleteusers-actions-id";
+        renderDeleteUsersActions(users);
+        renderCopyright(parent);
+    };
+
     const renderEditUsers = (success, results) => {
         let parent = document.body;
         controls.removeAllChildren(parent);
@@ -124,43 +182,7 @@ var usermgmt = (() => {
             return;
         }
         utils.fetch_api_call("api/pwdman/users", { headers: { "token": token } },
-            (users) => {
-                renderHeader(parent, "Benutzer:");
-                let table = controls.create(parent, "table");
-                let theader = controls.create(table, "thead");
-                let tr = controls.create(theader, "tr");
-                controls.create(tr, "th", undefined, " ");
-                controls.create(tr, "th", undefined, "Name");
-                controls.create(tr, "th", undefined, "E-Mail-Adresse");
-                controls.create(tr, "th", undefined, "Letzte Anmeldung");
-                controls.create(tr, "th", undefined, "Registriert seit");
-                controls.create(tr, "th", undefined, "Rollen");
-                let tbody = controls.create(table, "tbody");
-                let idx = 0;
-                users.forEach(user => {
-                    tr = controls.create(tbody, "tr");
-                    let td = controls.create(tr, "td");
-                    controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => document.getElementById("error-id").textContent = "");
-                    td = controls.create(tr, "td", undefined, `${user.name}`);
-                    if (user.accountLocked) {
-                        td.textContent += " (gesperrt)";
-                    }
-                    td = controls.create(tr, "td", undefined, `${user.email}`);
-                    let lastLogin = "";
-                    if (user.lastLoginUtc) {
-                        lastLogin = new Date(user.lastLoginUtc).toLocaleString("de-DE");
-                    }
-                    td = controls.create(tr, "td", undefined, lastLogin);
-                    td = controls.create(tr, "td", undefined, new Date(user.registeredUtc).toLocaleString("de-DE"));
-                    td = controls.create(tr, "td", undefined, user.roles.join(", "));
-                    idx++;
-                });
-                let errorDiv = controls.createDiv(parent, "error");
-                errorDiv.id = "error-id";
-                controls.create(parent, "p").id = "deleteusers-actions-id";
-                renderDeleteUsersActions(users);
-                renderCopyright(parent);
-            },
+            (users) => renderUsersTable(parent, users),
             onRejectError,
             setWaitCursor
         );
@@ -218,6 +240,7 @@ var usermgmt = (() => {
             let ul = controls.create(ipAddressesP, "ul");
             currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
         }
+        controls.createA(parent, undefined, "/skat/results", "Skatergebnisse", () => window.open("/skat?results", "_blank"));
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
         renderCopyright(parent);
@@ -282,7 +305,7 @@ var usermgmt = (() => {
         let errorDiv = controls.createDiv(parent, "error");
         errorDiv.textContent = errorMessage;
         let p = controls.create(parent, "p");
-        controls.createButton(p, "OK", () => onOK());
+        controls.createButton(p, "OK", () => renderCurrentUser());
         renderCopyright(parent);
     };
 
@@ -476,6 +499,36 @@ var usermgmt = (() => {
                     renderCurrentUser();
                 },
                 onRejectError,
+                setWaitCursor
+            );
+        }
+    };
+
+    const onUpdateRole = (parent, users, user, role) => {
+        let checkbox = document.getElementById(`roles-${role}-id`);
+        if (checkbox) {
+            utils.fetch_api_call("api/pwdman/user/role",
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify({ "UserName": user.name, "RoleName": role, "Assigned": checkbox.checked })
+                },
+                (changed) => {
+                    if (changed) {
+                        if (checkbox.checked) {
+                            user.roles.push(role);
+                        }
+                        else {
+                            let pos = user.roles.indexOf(role);
+                            user.roles.splice(pos, 1);
+                        }
+                    }
+                    renderUserDetails(parent, users, user);
+                },
+                (errMsg) => {
+                    document.getElementById("error-id").textContent = errMsg;
+                    checkbox.checked = !checkbox.checked;
+                },
                 setWaitCursor
             );
         }
