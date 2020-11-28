@@ -69,9 +69,22 @@ namespace APIServer.PwdMan
             logger.LogDebug("Request password reset for email addresss '{email}'.", email);
             email = email.ToLowerInvariant();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
-            if (user == null || !user.AllowResetPassword)
+            if (user == null)
+            {
+                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse ist ungültig.");
+            }
+            if (!user.AllowResetPassword)
             {
                 throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist nicht erlaubt.");
+            }
+            var opt = GetOptions();
+            if (user.LoginTries >= opt.MaxLoginTryCount)
+            {
+                var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
+                if (sec < opt.AccountLockTime)
+                {
+                    throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
+                }
             }
             var lastResetPwdRequest = GetSetting<DateTime?>(LAST_RESETPWD_REQUEST);
             // avoid spam emails, only one request per minute
@@ -296,7 +309,7 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Register user '{username}', email '{email}...", registrationProfile.Username, registrationProfile.Email);
             if (string.IsNullOrEmpty(registrationProfile.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
-            if (string.IsNullOrEmpty(registrationProfile.Email)) throw new PwdManInvalidArgumentException("E-Mail-Addresse ungültig.");
+            if (string.IsNullOrEmpty(registrationProfile.Email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             if (string.IsNullOrEmpty(registrationProfile.Token)) throw new PwdManInvalidArgumentException("Registrierungscode ist ungültig.");
             var email = registrationProfile.Email.ToLowerInvariant();
             var opt = GetOptions();
@@ -442,6 +455,29 @@ namespace APIServer.PwdMan
                 });
             }
             return userModel;
+        }
+
+        public bool UnlockUser(string authenticationToken, string userName)
+        {
+            logger.LogDebug($"Unlock username '{userName}'...");
+            var adminuser = GetUserFromToken(authenticationToken);
+            if (!HasRole(adminuser, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var opt = GetOptions();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == userName);
+            if (user != null && user.LoginTries >= opt.MaxLoginTryCount)
+            {
+                var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
+                if (sec < opt.AccountLockTime)
+                {
+                    user.LoginTries = 0;
+                    dbContext.SaveChanges();
+                    return true;
+                }
+            }
+            return false;
         }
 
         public bool DeleteUser(string authenticationToken, string userName)
@@ -641,8 +677,7 @@ namespace APIServer.PwdMan
                     if (sec < opt.AccountLockTime)
                     {
                         logger.LogDebug("Account disabled. Too many login tries.");
-                        int remain = (opt.AccountLockTime - (int)sec) / 60 + 1;
-                        throw new PwdManInvalidArgumentException($"Das Konto ist vorrübergehend gesperrt. Versuche es in {remain} Minute(n) erneuert.");
+                        throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
                     }
                     user.LoginTries = 0;
                 }

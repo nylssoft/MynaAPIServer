@@ -86,6 +86,13 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.GetUser(GetToken()));
         }
 
+        [HttpPost]
+        [Route("api/pwdman/user/unlock")]
+        public IActionResult UnlockUser([FromBody] string userName)
+        {
+            return new JsonResult(PwdManService.UnlockUser(GetToken(), userName));
+        }
+
         [HttpDelete]
         [Route("api/pwdman/user")]
         public IActionResult DeleteUser([FromBody] string username)

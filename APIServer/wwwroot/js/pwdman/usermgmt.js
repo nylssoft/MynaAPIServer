@@ -14,7 +14,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.9";
+    let version = "1.0.10";
 
     // helper
 
@@ -103,7 +103,10 @@ var usermgmt = (() => {
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Benutzer");
-        controls.create(parent, "p", undefined, `Name: ${user.name}`);
+        let nameP = controls.create(parent, "p", undefined, `Name: ${user.name}`);
+        if (user.accountLocked) {
+            nameP.textContent += " (gesperrt)";
+        }
         controls.create(parent, "p", undefined, `E-Mail-Adresse: ${user.email}`);
         if (user.lastLoginUtc) {
             controls.create(parent, "p", undefined, `Letzte Anmeldung am ${new Date(user.lastLoginUtc).toLocaleString("de-DE")}`);
@@ -119,8 +122,11 @@ var usermgmt = (() => {
             user.roles.includes("usermanager"),
             () => onUpdateRole(parent, users, user, "usermanager"));
         controls.createDiv(parent, "error").id="error-id";
-        let buttonBackDiv = controls.createDiv(parent);
-        controls.createButton(buttonBackDiv, "Zur\u00FCck zur Liste", () => {
+        let actionsDiv = controls.createDiv(parent);
+        if (user.accountLocked) {
+            controls.createButton(actionsDiv, "Konto entsperren", () => onUnlockUser(parent, users, user), undefined, "button");
+        }
+        controls.createButton(actionsDiv, "Zur\u00FCck", () => {
             controls.removeAllChildren(parent);
             renderUsersTable(parent, users);
         }, undefined, "button");
@@ -141,11 +147,11 @@ var usermgmt = (() => {
         users.forEach(user => {
             tr = controls.create(tbody, "tr");
             let td = controls.create(tr, "td");
-            controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => document.getElementById("error-id").textContent = "");
+            controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => onUpdateDeleteUsersActions());
             td = controls.create(tr, "td");
-            controls.createA(td, undefined, "#open", user.name, () => renderUserDetails(document.body, users, user));
+            let a = controls.createA(td, undefined, "#open", user.name, () => renderUserDetails(document.body, users, user));
             if (user.accountLocked) {
-                td.textContent += " (gesperrt)";
+                a.textContent += " (gesperrt)";
             }
             td = controls.create(tr, "td", undefined, user.roles.join(", "));
             idx++;
@@ -198,8 +204,10 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, "Nein", () => renderDeleteUsersActions(users));
         }
         else {
-            controls.createButton(actionsDiv, "L\u00F6schen", () => renderDeleteUsersActions(users, true));
-            controls.createButton(actionsDiv, "Abbrechen", () => render());
+            let b = controls.createButton(actionsDiv, "Konto l\u00F6schen", () => renderDeleteUsersActions(users, true));
+            b.id = "delete-account-button-id";
+            controls.createButton(actionsDiv, "Zur\u00FCck", () => render());
+            onUpdateDeleteUsersActions();
         }
     };
 
@@ -398,6 +406,42 @@ var usermgmt = (() => {
             document.getElementById("error-id").textContent = "Es wurden keine Benutzer ausgew\u00E4hlt.";
             renderDeleteUsersActions(users);
         }
+    };
+
+    const onUpdateDeleteUsersActions = () => {
+        document.getElementById("error-id").textContent = "";
+        let cntSelected = 0;
+        let idx = 0;
+        while (true) {
+            let cb = document.getElementById(`delete-user-${idx}`);
+            if (!cb) {
+                break;
+            }
+            if (cb.checked) {
+                cntSelected += 1;
+            }
+            idx++;
+        }
+        let deleteButton = document.getElementById("delete-account-button-id");
+        if (deleteButton) {
+            deleteButton.style.display = cntSelected == 0 ? "none" : "";
+        }
+    };
+
+    const onUnlockUser = (parent, users, user) => {
+        utils.fetch_api_call("api/pwdman/user/unlock",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(user.name)
+            },
+            () => {
+                user.accountLocked = false;
+                renderUserDetails(parent, users, user);
+            },
+            (errMsg) => document.getElementById("error-id").textContent = errMsg,
+            setWaitCursor
+        );
     };
 
     const onOK = () => {

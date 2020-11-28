@@ -51,6 +51,8 @@ namespace APIServer.PwdMan
 
         List<UserModel> GetUsers(string authenticationToken);
 
+        bool UnlockUser(string authenticationToken, string userName);
+
         bool DeleteUser(string authenticationToken, string userName);
 
         int DeleteLoginIpAddresses(string authenticiationToken);

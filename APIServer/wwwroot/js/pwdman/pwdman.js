@@ -39,7 +39,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.5";
+    let version = "1.1.6";
 
     // helper
 
@@ -507,8 +507,7 @@ var pwdman = (() => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Kennwort vergessen");
         controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse ein." +
-            " Du bekommst einen Sicherheitscode per E-Mail zugesendet, mit dem Du Dein Kennwort neu vergeben kannst." +
-            " Der Sicherheitscode ist 5 Minuten g\u00Fcltig.");
+            " Du bekommst einen Sicherheitscode per E-Mail zugesendet, mit dem Du Dein Kennwort neu vergeben kannst.");
         emailDiv = controls.createDiv(parent);
         let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
         emailLabel.htmlFor = "email-id";

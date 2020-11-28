@@ -38,7 +38,15 @@ namespace APIServer.PwdMan
     public class UnauthorizedAndLockedException : APIException
     {
         public UnauthorizedAndLockedException() :
-            base("Ungültiges Kennwort. Das Konto ist jetzt vorrübergehend gesperrt. Versuche es in 5 Minute(n) erneuert.", 401)
+            base("Ungültiges Kennwort. Das Konto ist jetzt vorrübergehend gesperrt.", 401)
+        {
+        }
+    }
+
+    public class AccountLockedException : APIException
+    {
+        public AccountLockedException(int remain):
+            base($"Das Konto ist vorrübergehend gesperrt.Versuche es in {remain} Minute(n) erneuert.", 401)
         {
         }
     }
