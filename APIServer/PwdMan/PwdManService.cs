@@ -685,6 +685,10 @@ namespace APIServer.PwdMan
                 user.LastLoginTryUtc = DateTime.UtcNow;
                 loginIpAddress.Failed += 1;
                 dbContext.SaveChanges();
+                if (user.LoginTries >= opt.MaxLoginTryCount)
+                {
+                    throw new UnauthorizedAndLockedException();
+                }
             }
             else
             {
