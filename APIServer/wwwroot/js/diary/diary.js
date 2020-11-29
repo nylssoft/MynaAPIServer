@@ -151,7 +151,7 @@ var diary = (() => {
                     year -= 1;
                     month = 11;
                 }
-                let d = new Date(year, month);
+                let d = new Date(Date.UTC(year, month));
                 utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
                     (days) => {
                         daySet = new Set(days);
@@ -168,7 +168,7 @@ var diary = (() => {
                     month = 0;
                     year += 1;
                 }
-                let d = new Date(year, month);
+                let d = new Date(Date.UTC(year, month));
                 utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
                     (days) => {
                         daySet = new Set(days);
@@ -179,7 +179,7 @@ var diary = (() => {
             },
             "/images/diary/arrow-right-2.png", 32, "transparent");
         renderText(textDiv);
-        controls.createButton(calenderDiv, "Zusammenfassung", () => onShowSummary(textDiv, date));
+        controls.createButton(calenderDiv, "Zusammenfassung", () => onShowSummary(textDiv, new Date(Date.UTC(year, month))));
         renderCopyright(calenderDiv);
     };
 
@@ -219,7 +219,6 @@ var diary = (() => {
         txt.readOnly = true;
         decodeDiaries(diaries, [],
             (decodedDiaries) => {
-                console.log(decodedDiaries);
                 let content = "";
                 const options = { year: 'numeric', month: 'long', day: 'numeric' };
                 decodedDiaries.forEach(diary => {
