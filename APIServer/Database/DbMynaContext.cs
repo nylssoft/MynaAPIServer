@@ -50,6 +50,8 @@ namespace APIServer.Database
 
         public DbSet<DbTetrisHighScore> DbTetrisHighScore { get; set; }
 
+        public DbSet<DbDiary> DbDiaries { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<DbRegistration>()
@@ -69,6 +71,9 @@ namespace APIServer.Database
                 .IsUnique();
             builder.Entity<DbResetPassword>()
                 .HasIndex(r => r.Email)
+                .IsUnique();
+            builder.Entity<DbDiary>()
+                .HasIndex(d => new { d.DbUserId, d.Date })
                 .IsUnique();
         }
 

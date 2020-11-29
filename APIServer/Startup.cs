@@ -26,6 +26,7 @@ using APIServer.Tetris;
 using APIServer.PwdMan;
 using APIServer.Database;
 using Microsoft.AspNetCore.HttpOverrides;
+using APIServer.Diary;
 
 namespace APIServer
 {
@@ -48,6 +49,7 @@ namespace APIServer
             services.AddScoped<IPwdManService, PwdManService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ITetrisService, TetrisService>();
+            services.AddScoped<IDiaryService, DiaryService>();
             // singletons
             services.AddSingleton<ISkatService, SkatService>();
             // enable cshtml pages

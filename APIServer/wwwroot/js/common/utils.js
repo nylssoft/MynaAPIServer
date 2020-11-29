@@ -138,6 +138,61 @@ var utils = (() => {
         resolve();
     };
 
+    // --- encryption / decryption
+
+    const hex2arr = (str) => {
+        let ret = [];
+        let l = str.length;
+        for (let idx = 0; idx < l; idx += 2) {
+            let h = str.substr(idx, 2);
+            ret.push(parseInt(h, 16));
+        }
+        return ret;
+    };
+
+    const buf2hex = (buffer) => {
+        let arr = new Uint8Array(buffer);
+        return Array.prototype.map.call(arr, x => ("00" + x.toString(16)).slice(-2)).join("");
+    }
+
+    const create_crypto_key = (key, salt, resolve, reject) => {
+        let encoded = new TextEncoder().encode(key);
+        crypto.subtle.importKey("raw", encoded, "PBKDF2", false, ["deriveKey"])
+            .then(key => {
+                let algo = {
+                    "name": "PBKDF2",
+                    "hash": "SHA-256",
+                    "salt": new TextEncoder().encode(salt),
+                    "iterations": 1000
+                };
+                crypto.subtle.deriveKey(algo, key, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])
+                    .then(c => resolve(c))
+                    .catch(err => reject(err.message));
+            })
+            .catch(err => reject(err.message));
+    };
+
+    const decode_message = (cryptoKey, msg, resolve, reject) => {
+        let iv = hex2arr(msg.substr(0, 12 * 2));
+        let data = hex2arr(msg.substr(12 * 2));
+        let options = { name: "AES-GCM", iv: new Uint8Array(iv) };
+        let cipherbuffer = new ArrayBuffer(data.length);
+        let cipherarr = new Uint8Array(cipherbuffer);
+        cipherarr.set(data);
+        crypto.subtle.decrypt(options, cryptoKey, cipherbuffer)
+            .then(decrypted => resolve(new TextDecoder().decode(decrypted)))
+            .catch(err => reject(err.message));
+    };
+
+    const encode_message = (cryptoKey, msg, resolve, reject) => {
+        let arr = new TextEncoder().encode(msg);
+        let iv = crypto.getRandomValues(new Uint8Array(12));
+        let options = { name: "AES-GCM", iv: iv };
+        window.crypto.subtle.encrypt(options, cryptoKey, arr)
+            .then(cipherText => resolve(buf2hex(iv) + buf2hex(cipherText)))
+            .catch(err => reject(err.message));
+    };
+
     // --- public API
 
     return {
@@ -149,6 +204,11 @@ var utils = (() => {
         logout_skat: logout_skat,
         fetch_api_call: fetch_api_call,
         is_mobile: is_mobile,
-        auth_lltoken: auth_lltoken
+        auth_lltoken: auth_lltoken,
+        hex2arr: hex2arr,
+        buf2hex: buf2hex,
+        create_crypto_key: create_crypto_key,
+        decode_message: decode_message,
+        encode_message: encode_message
     };
 })();
