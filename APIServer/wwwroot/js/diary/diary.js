@@ -191,9 +191,14 @@ var diary = (() => {
             let txt = controls.create(div, "textarea");
             txt.id = "textarea-entry-id";
             txt.rows = 11;
-            txt.cols = 40;
             txt.spellcheck = false;
-            txt.focus();
+            if (!utils.is_mobile()) {
+                txt.cols = 40;
+                txt.focus();
+            }
+            else {
+                txt.cols = 35;
+            }
             txt.addEventListener("input", (ev) => {
                 changeDate = Date.now();
                 dayClickedElem.className = ev.target.value.length > 0 ? "filled" : undefined;
@@ -213,7 +218,12 @@ var diary = (() => {
         let txt = controls.create(div, "textarea");
         txt.id = "textarea-entry-id";
         txt.rows = 14;
-        txt.cols = 40;
+        if (!utils.is_mobile()) {
+            txt.cols = 40;
+        }
+        else {
+            txt.cols = 35;
+        }
         txt.readOnly = true;
         txt.spellcheck = false;
         decodeDiaries(diaries, [],
@@ -267,6 +277,7 @@ var diary = (() => {
         }
         let itemKey = getLocalStorageKey();
         let encryptKey = window.localStorage.getItem(itemKey);
+        renderCopyright(parent);
         renderHeader(parent, `Hallo ${currentUser.name}! Klicke auf einen Tag, um einen Tagebucheintrag vorzunehmen.`);
         let p = controls.create(parent, "p");
         let elem = controls.createCheckbox(p, "checkbox-show-encryptkey-id", undefined,
@@ -300,7 +311,6 @@ var diary = (() => {
         let leftDiv = controls.createDiv(parentDiv, "calendar-column");
         let rightDiv = controls.createDiv(parentDiv, "text-column");
         renderCalender(leftDiv, rightDiv, today.getMonth(), today.getFullYear());
-        renderCopyright(parent);
     };
 
     // --- callbacks
