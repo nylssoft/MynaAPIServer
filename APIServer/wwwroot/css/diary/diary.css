@@ -63,7 +63,7 @@ textarea {
     border-radius: 5px;
     border: 1px solid #ccc;
     box-shadow: 1px 1px 1px #999;
-    height: 100%;
+    margin-bottom: 10pt;
 }
 
 .selected {
@@ -83,12 +83,20 @@ textarea {
 .calendar-column {
     float: left;
     margin-right: 10pt;
+    margin-bottom: 10pt;
+}
+
+.text-column {
+    float: left;
 }
 
 .copyright {
     font-size: 8pt;
     font-family: Arial, Helvetica, sans-serif;
     color: lightgreen;
+    position: absolute;    
+    top: 10pt;
+    left: 10pt;
 }
 
 .error {

@@ -33,8 +33,8 @@ var slideshow = (() => {
         let div = controls.createDiv(parent);
         controls.createA(div, "footer-link", "/skat", "Skat");
         controls.createA(div, "footer-link", "/tetris", "Tetris");
+        controls.createA(div, "footer-link", "/diary", "Tagebuch");
         if (currentUser) {
-            controls.createA(div, "footer-link", "/diary", "Tagebuch");
             if (currentUser.hasPasswordManagerFile) {
                 controls.createA(div, "footer-link", "/pwdman", "Passwort\u00A0Manager");
             }

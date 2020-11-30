@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.0";
+    let version = "1.0.1";
 
     let changeDate;
     let selectedISODate;
@@ -85,12 +85,12 @@ var diary = (() => {
     };
 
     const renderCopyright = (parent) => {
-        let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Diary ${version}. Copyright 2020 `);
-        let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
+        let div = controls.createDiv(parent, "copyright");
+        controls.create(div, "span", undefined, `Myna Diary ${version}. Copyright 2020 `);
+        let a = controls.createA(div, undefined, "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
-        controls.createA(div, "copyright", "/slideshow", "Home");
+        controls.create(div, "span", undefined, `. Alle Rechte vorbehalten. `);
+        controls.createA(div, undefined, "/slideshow", "Home");
     };
 
     const renderCalender = (calenderDiv, textDiv, month, year) => {
@@ -99,8 +99,8 @@ var diary = (() => {
         let date = new Date(year, month);
         let firstDay = (date.getDay() + 6) % 7;
         let daysInMonth = 32 - new Date(year, month, 32).getDate();
-        const options = { year: 'numeric', month: 'long' };
         let table = controls.create(calenderDiv, "table");
+        controls.create(table, "caption", undefined, date.toLocaleDateString("de-DE", { year: "numeric", month: "long" }));
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
         let th = controls.create(tr, "th", undefined, "Mon");
@@ -143,7 +143,6 @@ var diary = (() => {
                 }
             }
         }
-        controls.create(calenderDiv, "tfoot", undefined, date.toLocaleDateString("de-DE", options));
         controls.createImageButton(calenderDiv, "Vorheriger Monat",
             () => {
                 month -= 1;
@@ -180,7 +179,6 @@ var diary = (() => {
             "/images/diary/arrow-right-2.png", 32, "transparent");
         renderText(textDiv);
         controls.createButton(calenderDiv, "Zusammenfassung", () => onShowSummary(textDiv, new Date(Date.UTC(year, month))));
-        renderCopyright(calenderDiv);
     };
 
     const renderText = (div, dd, diary) => {
@@ -188,13 +186,13 @@ var diary = (() => {
         selectedISODate = undefined;
         if (dd) {
             selectedISODate = dd.toISOString();
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            let dt = dd.toLocaleDateString("de-DE", options);
-            controls.create(div, "p", undefined, `Eintrag vom ${dt}`);
+            let dt = dd.toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" });
+            controls.createDiv(div).textContent = `Eintrag vom ${dt}`;
             let txt = controls.create(div, "textarea");
             txt.id = "textarea-entry-id";
-            txt.rows = 10;
+            txt.rows = 11;
             txt.cols = 40;
+            txt.spellcheck = false;
             txt.focus();
             txt.addEventListener("input", (ev) => {
                 changeDate = Date.now();
@@ -217,6 +215,7 @@ var diary = (() => {
         txt.rows = 14;
         txt.cols = 40;
         txt.readOnly = true;
+        txt.spellcheck = false;
         decodeDiaries(diaries, [],
             (decodedDiaries) => {
                 let content = "";
@@ -297,10 +296,11 @@ var diary = (() => {
             "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
         showEncryptKey(show);
         let today = new Date();
-        let leftDiv = controls.createDiv(parent, "calendar-column");
-        controls.create(leftDiv, "p", undefined, "Kalendar");
-        let rightDiv = controls.createDiv(parent);
+        let parentDiv = controls.createDiv(parent);
+        let leftDiv = controls.createDiv(parentDiv, "calendar-column");
+        let rightDiv = controls.createDiv(parentDiv, "text-column");
         renderCalender(leftDiv, rightDiv, today.getMonth(), today.getFullYear());
+        renderCopyright(parent);
     };
 
     // --- callbacks
