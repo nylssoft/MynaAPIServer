@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.1";
+    let version = "1.0.2";
 
     let changeDate;
     let selectedISODate;
@@ -322,9 +322,7 @@ var diary = (() => {
         else {
             window.localStorage.setItem(itemKey, val);
         }
-        elem = document.getElementById("checkbox-show-encryptkey-id");
-        elem.checked = false;
-        onSelectShowEncryptKey();
+        cryptoKey = undefined;
     };
 
     const onClickCalendarDate = (textDiv, a, year, month, day) => {
