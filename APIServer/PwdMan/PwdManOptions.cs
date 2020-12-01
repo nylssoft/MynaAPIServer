@@ -28,5 +28,7 @@ namespace APIServer.PwdMan
         public int MaxLoginTryCount { get; set; } = 3;
 
         public int AccountLockTime { get; set; } = 300;
+
+        public string Hostname { get; set; }
     }
 }

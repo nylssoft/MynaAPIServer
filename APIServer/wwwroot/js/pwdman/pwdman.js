@@ -25,6 +25,7 @@ var pwdman = (() => {
 
     let userName;
     let userEmail;
+    let confirmRegistrationCode;
     let token;
     let requiresPass2;
     let salt
@@ -39,7 +40,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.6";
+    let version = "1.1.7";
 
     // helper
 
@@ -253,6 +254,7 @@ var pwdman = (() => {
             },
             () => {
                 successRegister = true;
+                confirmRegistrationCode = undefined;
                 userName = userNameInput.value.trim();
                 renderPage();
             },
@@ -273,6 +275,7 @@ var pwdman = (() => {
             actionResetPwd = false;
             actionResetPwd2 = false;
             successRegister = false;
+            confirmRegistrationCode = undefined;
             renderPage();
         }
     };
@@ -646,6 +649,9 @@ var pwdman = (() => {
         codeLabel.htmlFor = "code-id";
         codeInput = controls.createInputField(codeDiv, "Registrierungscode", () => register(), undefined, 16, 16);
         codeInput.id = "code-id";
+        if (confirmRegistrationCode) {
+            codeInput.value = confirmRegistrationCode;
+        }
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "Registrieren", () => register(), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
@@ -868,6 +874,12 @@ var pwdman = (() => {
             else if (params.has("register")) {
                 actionRequestRegistration = true;
                 actionRegister = false;
+            }
+            else if (params.has("confirm") && params.has("email")) {
+                confirmRegistrationCode = params.get("confirm");
+                userEmail = params.get("email");
+                actionRequestRegistration = false;
+                actionRegister = true;
             }
             else if (params.has("resetpwd")) {
                 actionResetPwd = true;

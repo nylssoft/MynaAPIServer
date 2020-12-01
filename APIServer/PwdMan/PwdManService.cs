@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -297,8 +298,15 @@ namespace APIServer.PwdMan
                 {
                     subject = $"Myna Portal Registrierung";
                     body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
-                        "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n" +
-                        "Viele Grüsse!";
+                        "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n";
+                    var opt = GetOptions();
+                    if (!string.IsNullOrEmpty(opt.Hostname))
+                    {                        
+                        body += $"https://{opt.Hostname}/pwdman?confirm={registration.Token}" +
+                            $"&email={WebUtility.UrlEncode(email)}" +
+                            $"&nexturl={WebUtility.UrlEncode(@"\index")}\n\n\n\n";
+                    }
+                    body += "Viele Grüsse!";
                 }
                 notificationService.Send(email, subject, body);
             }

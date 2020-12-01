@@ -14,7 +14,7 @@ var usermgmt = (() => {
     let token;
     let nexturl;
 
-    let version = "1.0.10";
+    let version = "1.0.11";
 
     // helper
 
@@ -38,7 +38,7 @@ var usermgmt = (() => {
     // rendering
 
     const renderHeader = (parent, intro) => {
-        controls.create(parent, "h1", undefined, "Kontoverwaltung");
+        controls.create(parent, "h1", undefined, "Konto");
         if (intro) {
             controls.create(parent, "p", undefined, intro);
         }
