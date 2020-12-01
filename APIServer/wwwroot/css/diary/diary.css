@@ -25,6 +25,14 @@ table {
     background-color: blue;
 }
 
+table caption {
+    margin: 5pt;
+}
+
+table caption a {
+    color: white;
+}
+
 td {
     padding: 20px;
     letter-spacing: 1px;
@@ -80,14 +88,23 @@ textarea {
     outline: none;
 }
 
+.box {
+    display: flex;
+    flex-wrap: wrap;
+}
+
 .calendar-column {
-    float: left;
-    margin-right: 10pt;
-    margin-bottom: 10pt;
+    margin: 5pt;
+    /*    flex: 1 1 auto; */
 }
 
 .text-column {
-    float: left;
+    margin: 5pt;
+    /*    flex: 1 1 auto; */
+}
+
+.caption {
+    margin: 5pt;
 }
 
 .copyright {

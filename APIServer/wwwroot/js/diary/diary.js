@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.2";
+    let version = "1.0.3";
 
     let changeDate;
     let selectedISODate;
@@ -20,6 +20,11 @@ var diary = (() => {
 
     const getLocalStorageKey = () => {
         return `diary-${currentUser.email}-encryptkey`;
+    }
+
+    const hasEncryptKey = () => {
+        let elem = document.getElementById("input-encryptkey-id");
+        return elem && elem.value.trim().length > 0;
     }
 
     const initCryptoKey = (resolve, reject) => {
@@ -85,22 +90,31 @@ var diary = (() => {
     };
 
     const renderCopyright = (parent) => {
-        let div = controls.createDiv(parent, "copyright");
-        controls.create(div, "span", undefined, `Myna Diary ${version}. Copyright 2020 `);
-        let a = controls.createA(div, undefined, "https://github.com/nylssoft/", "Niels Stockfleth");
+        let div = controls.createDiv(parent);
+        controls.create(div, "span", "copyright", `Myna Diary Manager ${version}. Copyright 2020 `);
+        let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", undefined, `. Alle Rechte vorbehalten. `);
-        controls.createA(div, undefined, "/slideshow", "Home");
+        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
+        controls.createA(div, "copyright", "/slideshow", "Home");
     };
 
-    const renderCalender = (calenderDiv, textDiv, month, year) => {
-        controls.removeAllChildren(calenderDiv);
+    const renderCalendar = (calendarDiv, textDiv, month, year) => {
+        controls.removeAllChildren(calendarDiv);
         let today = new Date();
         let date = new Date(year, month);
         let firstDay = (date.getDay() + 6) % 7;
         let daysInMonth = 32 - new Date(year, month, 32).getDate();
-        let table = controls.create(calenderDiv, "table");
-        controls.create(table, "caption", undefined, date.toLocaleDateString("de-DE", { year: "numeric", month: "long" }));
+        let table = controls.create(calendarDiv, "table");
+        let caption = controls.create(table, "caption");
+        controls.createA(caption, undefined, "#summary",
+            date.toLocaleDateString("de-DE", { year: "numeric", month: "long" }),
+            () => onShowSummary(textDiv, new Date(Date.UTC(year, month))));
+        controls.createImageButton(caption, "Vorheriger Monat",
+            () => onPrevButton(parent, calendarDiv, textDiv, year, month),
+            "/images/diary/arrow-left-2.png", 16, "transparent");
+        controls.createImageButton(caption, "N\u00E4chster Monat",
+            () => onNextButton(parent, calendarDiv, textDiv, year, month),
+            "/images/diary/arrow-right-2.png", 16, "transparent");
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
         let th = controls.create(tr, "th", undefined, "Mon");
@@ -143,58 +157,22 @@ var diary = (() => {
                 }
             }
         }
-        controls.createImageButton(calenderDiv, "Vorheriger Monat",
-            () => {
-                month -= 1;
-                if (month < 0) {
-                    year -= 1;
-                    month = 11;
-                }
-                let d = new Date(Date.UTC(year, month));
-                utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
-                    (days) => {
-                        daySet = new Set(days);
-                        renderCalender(calenderDiv, textDiv, month, year);
-                    },
-                    (errMsg) => renderError(parent, errMsg)
-                );
-            },
-            "/images/diary/arrow-left-2.png", 32, "transparent");
-        controls.createImageButton(calenderDiv, "N\u00E4chster Monat",
-            () => {
-                month += 1;
-                if (month >= 12) {
-                    month = 0;
-                    year += 1;
-                }
-                let d = new Date(Date.UTC(year, month));
-                utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
-                    (days) => {
-                        daySet = new Set(days);
-                        renderCalender(calenderDiv, textDiv, month, year);
-                    },
-                    (errMsg) => renderError(parent, errMsg)
-                );
-            },
-            "/images/diary/arrow-right-2.png", 32, "transparent");
         renderText(textDiv);
-        controls.createButton(calenderDiv, "Zusammenfassung", () => onShowSummary(textDiv, new Date(Date.UTC(year, month))));
     };
 
     const renderText = (div, dd, diary) => {
         controls.removeAllChildren(div);
         selectedISODate = undefined;
-        if (dd) {
+        if (dd && hasEncryptKey()) {
             selectedISODate = dd.toISOString();
             let dt = dd.toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" });
-            controls.createDiv(div).textContent = `Eintrag vom ${dt}`;
+            controls.createDiv(div, "caption").textContent = `Eintrag vom ${dt}`;
             let txt = controls.create(div, "textarea");
             txt.id = "textarea-entry-id";
             txt.rows = 11;
             txt.spellcheck = false;
             if (!utils.is_mobile()) {
                 txt.cols = 40;
-                txt.focus();
             }
             else {
                 txt.cols = 35;
@@ -213,11 +191,13 @@ var diary = (() => {
         }
     };
 
-    const renderSummary = (div, diaries) => {
+    const renderSummary = (div, diaries, date) => {
         controls.removeAllChildren(div);
+        let dt = date.toLocaleDateString("de-DE", { month: "long" });
+        controls.createDiv(div, "caption").textContent = `Eintr\u00E4ge f\u00FCr ${dt}`;
         let txt = controls.create(div, "textarea");
         txt.id = "textarea-entry-id";
-        txt.rows = 14;
+        txt.rows = 11;
         if (!utils.is_mobile()) {
             txt.cols = 40;
         }
@@ -277,7 +257,6 @@ var diary = (() => {
         }
         let itemKey = getLocalStorageKey();
         let encryptKey = window.localStorage.getItem(itemKey);
-        renderCopyright(parent);
         renderHeader(parent, `Hallo ${currentUser.name}! Klicke auf einen Tag, um einen Tagebucheintrag vorzunehmen.`);
         let p = controls.create(parent, "p");
         let elem = controls.createCheckbox(p, "checkbox-show-encryptkey-id", undefined,
@@ -307,13 +286,46 @@ var diary = (() => {
             "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
         showEncryptKey(show);
         let today = new Date();
-        let parentDiv = controls.createDiv(parent);
-        let leftDiv = controls.createDiv(parentDiv, "calendar-column");
-        let rightDiv = controls.createDiv(parentDiv, "text-column");
-        renderCalender(leftDiv, rightDiv, today.getMonth(), today.getFullYear());
+        let boxDiv = controls.createDiv(parent, "box");
+        let leftDiv = controls.createDiv(boxDiv, "calendar-column");
+        let rightDiv = controls.createDiv(boxDiv, "text-column");
+        renderCalendar(leftDiv, rightDiv, today.getMonth(), today.getFullYear());
+        renderCopyright(parent);
     };
 
     // --- callbacks
+
+    const onPrevButton = (parent, calendarDiv, textDiv, year, month) => {
+        month -= 1;
+        if (month < 0) {
+            year -= 1;
+            month = 11;
+        }
+        let d = new Date(Date.UTC(year, month));
+        utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
+            (days) => {
+                daySet = new Set(days);
+                renderCalendar(calendarDiv, textDiv, month, year);
+            },
+            (errMsg) => renderError(parent, errMsg)
+        );
+    };
+
+    const onNextButton = (parent, calendarDiv, textDiv, year, month) => {
+        month += 1;
+        if (month >= 12) {
+            month = 0;
+            year += 1;
+        }
+        let d = new Date(Date.UTC(year, month));
+        utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
+            (days) => {
+                daySet = new Set(days);
+                renderCalendar(calendarDiv, textDiv, month, year);
+            },
+            (errMsg) => renderError(parent, errMsg)
+        );
+    };
 
     const onSelectShowEncryptKey = () => {
         let elem = document.getElementById("checkbox-show-encryptkey-id");
@@ -366,8 +378,11 @@ var diary = (() => {
     };
 
     const onShowSummary = (div, date) => {
+        if (!hasEncryptKey()) {
+            return;
+        }
         utils.fetch_api_call(`api/diary/month?date=${date.toISOString()}`, { headers: { "token": token } },
-            (diaries) => renderSummary(div, diaries),
+            (diaries) => renderSummary(div, diaries, date),
             (errMsg) => renderError(div, errMsg)
         );
         return;
