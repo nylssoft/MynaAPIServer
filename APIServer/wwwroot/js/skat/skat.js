@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.13";
+    let version = "1.1.14";
 
     // helper
 
@@ -706,11 +706,11 @@ var skat = (() => {
 
     const renderResultTable = (parent, result) => {
         controls.removeAllChildren(parent);
+        currentSkatResultId = result ? result.id : undefined;
         if (!result || !result.endedUtc) {
             controls.createLabel(parent, undefined, "Die Tabelle ist noch nicht verf\u00FCgbar.");
             return;
         }
-        currentSkatResultId = result.id;
         let started = new Date(result.startedUtc);
         let ended = new Date(result.endedUtc);
         let topt = { "hour": "numeric", "minute": "numeric" };
@@ -1220,6 +1220,7 @@ var skat = (() => {
     };
 
     const onDeleteSkatResult = (parent, confirm) => {
+        if (!currentSkatResultId) return;
         if (confirm) {
             controls.removeAllChildren(parent);
             controls.create(parent, "p", "confirmation", "Willst Du wirklich diese Tabelle l\u00F6schen?");
