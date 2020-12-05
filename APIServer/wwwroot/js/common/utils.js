@@ -81,7 +81,7 @@ var utils = (() => {
         }
     };
 
-    const fetch_api_call = (apicall, init, resolve, reject, set_waitcursor) => {
+    const fetch_api_call = (apicall, init, resolve, reject, set_waitcursor, retry) => {
         if (set_waitcursor) set_waitcursor(true);
         fetch(apicall, init)
             .then(response => {
@@ -93,30 +93,49 @@ var utils = (() => {
                         }
                         else {
                             if (set_waitcursor) set_waitcursor(false);
-                            console.error(json.title);
+                            if (!retry && json.status == 401) {
+                                let token = get_authentication_token();
+                                if (token) {
+                                    window.sessionStorage.removeItem("pwdman-state");
+                                    if (init && init.headers && init.headers.token) {
+                                        auth_lltoken(() => {
+                                            let newtoken = get_authentication_token();
+                                            if (newtoken && token != newtoken) {
+                                                init.headers.token = newtoken;
+                                                fetch_api_call(apicall, init, resolve, reject, set_waitcursor, true);
+                                                return;
+                                            }
+                                            console.error(json);
+                                            if (reject) reject(json.title);
+                                        });
+                                        return;
+                                    }
+                                }
+                            }
+                            console.error(json);
                             if (reject) reject(json.title);
                         }
                     })
                     .catch((err) => {
                         if (set_waitcursor) set_waitcursor(false);
-                        console.error(err.message);
+                        console.error(err);
                         let errmsg = (response.status != 200) ? `${response.status} : ${response.statusText}` : err.message;
                         if (reject) reject(errmsg);
                     });
             })
             .catch(err => {
                 if (set_waitcursor) set_waitcursor(false);
-                console.error(err.message);
+                console.error(err);
                 if (reject) reject(err.message);
             });
     };
 
     const auth_lltoken = (resolve) => {
-        let token = utils.get_authentication_token();
+        let token = get_authentication_token();
         if (!token) {
             let lltoken = window.localStorage.getItem("pwdman-lltoken");
             if (lltoken) {
-                utils.fetch_api_call("api/pwdman/auth/lltoken", { headers: { "token": lltoken } },
+                fetch_api_call("api/pwdman/auth/lltoken", { headers: { "token": lltoken } },
                     (authResult) => {
                         let state = {
                             "token": authResult.token,

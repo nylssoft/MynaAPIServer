@@ -11,10 +11,9 @@ var usermgmt = (() => {
     let currentUser;
     let confirmations;
     let errorMessage;
-    let token;
     let nexturl;
 
-    let version = "1.0.11";
+    let version = "1.0.12";
 
     // helper
 
@@ -187,6 +186,7 @@ var usermgmt = (() => {
             renderCopyright(parent);
             return;
         }
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/users", { headers: { "token": token } },
             (users) => renderUsersTable(parent, users),
             onRejectError,
@@ -284,7 +284,6 @@ var usermgmt = (() => {
     };
 
     const renderLogout = () => {
-        token = undefined;
         let parent = document.body;
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
@@ -296,7 +295,6 @@ var usermgmt = (() => {
 
     const renderCurrentUserDeleted = () => {
         let parent = document.body;
-        token = undefined;
         utils.logout();
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
@@ -322,14 +320,15 @@ var usermgmt = (() => {
     const onDoConfirm = (list, results, notification, reject) => {
         if (list.length > 0) {
             let email = list.pop();
+            let token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/confirmation",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                     body: JSON.stringify({ "email": email, "notification": notification, "reject": reject })
                 },
-                (token) => {
-                    results.push({ "email": email, "token": token });
+                (registerToken) => {
+                    results.push({ "email": email, "token": registerToken });
                     onDoConfirm(list, results, notification, reject);
                 },
                 (errmsg) => {
@@ -368,6 +367,7 @@ var usermgmt = (() => {
     const onDoDeleteUsers = (list, results) => {
         if (list.length > 0) {
             let name = list.pop();
+            let token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/user",
                 {
                     method: "DELETE",
@@ -429,6 +429,7 @@ var usermgmt = (() => {
     };
 
     const onUnlockUser = (parent, users, user) => {
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/user/unlock",
             {
                 method: "POST",
@@ -462,6 +463,7 @@ var usermgmt = (() => {
     };
 
     const onDeleteCurrentUser = () => {
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/user",
             {
                 method: "DELETE",
@@ -475,6 +477,7 @@ var usermgmt = (() => {
     };
 
     const onDeleteLoginIpAddresses = () => {
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/loginipaddress", { method: "DELETE", headers: { "token": token } },
             () => {
                 currentUser.loginIpAddresses = [];
@@ -488,6 +491,7 @@ var usermgmt = (() => {
     const onUpdate2FA = () => {
         let checkbox = document.getElementById("account-2fa-id");
         if (checkbox) {
+            let token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/user/2fa",
                 {
                     method: "PUT",
@@ -509,6 +513,7 @@ var usermgmt = (() => {
     const onUpdateKeepLogin = () => {
         let checkbox = document.getElementById("account-keeplogin-id");
         if (checkbox) {
+            let token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/user/lltoken",
                 {
                     method: "PUT",
@@ -530,6 +535,7 @@ var usermgmt = (() => {
     const onUpdateAllowResetPwd = () => {
         let checkbox = document.getElementById("account-allowresetpwd-id");
         if (checkbox) {
+            let token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/user/allowresetpwd",
                 {
                     method: "PUT",
@@ -551,6 +557,7 @@ var usermgmt = (() => {
     const onUpdateRole = (parent, users, user, role) => {
         let checkbox = document.getElementById(`roles-${role}-id`);
         if (checkbox) {
+            let token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/user/role",
                 {
                     method: "PUT",
@@ -588,6 +595,7 @@ var usermgmt = (() => {
     const onResolveCurrentUser = (user) => {
         currentUser = user;
         if (user.roles.includes("usermanager")) {
+            let token = utils.get_authentication_token();
             utils.fetch_api_call(
                 "api/pwdman/confirmation",
                 { headers: { "token": token } },
@@ -612,8 +620,8 @@ var usermgmt = (() => {
         confirmations = undefined;
         currentUser = undefined;
         errorMessage = undefined;
-        token = utils.get_authentication_token();
         nexturl = new URLSearchParams(window.location.search).get("nexturl");
+        let token = utils.get_authentication_token();
         utils.fetch_api_call(
             "api/pwdman/user",
             { headers: { "token": token } },

@@ -26,7 +26,7 @@ var pwdman = (() => {
     let userName;
     let userEmail;
     let confirmRegistrationCode;
-    let token;
+    let authToken;
     let requiresPass2;
     let salt
     let cryptoKey;
@@ -40,7 +40,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.7";
+    let version = "1.1.8";
 
     // helper
 
@@ -83,7 +83,7 @@ var pwdman = (() => {
 
     const reset = (errmsg) => {
         setState();
-        token = undefined;
+        authToken = undefined;
         cryptoKey = undefined;
         userName = undefined;
         actionChangePwd = false;
@@ -115,12 +115,12 @@ var pwdman = (() => {
             },
             (authResult) => {
                 userName = userNameInput.value;
-                token = authResult.token;
+                authToken = authResult.token;
                 requiresPass2 = authResult.requiresPass2;
                 if (authResult.longLivedToken) {
                     window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
                 }
-                setState({ "token": token, "userName": userName, "requiresPass2": requiresPass2 });
+                setState({ "token": authToken, "userName": userName, "requiresPass2": requiresPass2 });
                 renderPage();
             },
             (errMsg) => errorDiv.textContent = errMsg,
@@ -133,17 +133,17 @@ var pwdman = (() => {
         utils.fetch_api_call("api/pwdman/auth2",
             {
                 method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": authToken },
                 body: JSON.stringify(codeInput.value.trim())
             },
             (authResult) => {
-                token = authResult.token;
+                authToken = authResult.token;
                 if (authResult.longLivedToken) {
                     window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
                 }
                 requiresPass2 = false;
                 let state = getState();
-                state.token = token;
+                state.token = authToken;
                 state.requiresPass2 = requiresPass2;
                 setState(state);
                 renderPage();
@@ -161,7 +161,7 @@ var pwdman = (() => {
         utils.fetch_api_call("api/pwdman/totp",
             {
                 method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": authToken }
             },
             () => renderPage(),
             (errMsg) => {
@@ -178,6 +178,7 @@ var pwdman = (() => {
             return;
         }
         lastErrorMessage = "";
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/userpwd",
             {
                 method: "POST",
@@ -437,7 +438,7 @@ var pwdman = (() => {
         renderError(parent);
         controls.createA(controls.create(parent, "p"), "resetpwd-link", "/pwdman/resetpwd", "Kennwort vergessen?",
             () => window.location.href = `/pwdman?resetpwd&nexturl=${encodeURI(window.location.href)}`);
-        let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du dich registrieren. ");
+        let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du Dich registrieren. ");
         controls.createButton(p, "Registrieren", () => window.location.href = `/pwdman?register&nexturl=${encodeURI(window.location.href)}`);
         renderCopyright(parent, "Portal");
     };
@@ -784,8 +785,8 @@ var pwdman = (() => {
             if (requiresPass2 == undefined) {
                 requiresPass2 = state.requiresPass2;
             }
-            if (!token || token.length == 0) {
-                token = state.token;
+            if (!authToken || authToken.length == 0) {
+                authToken = state.token;
                 userName = state.userName;
             }
         }
@@ -805,7 +806,7 @@ var pwdman = (() => {
             document.title = "Kennwort vergessen";
             renderResetPwd2(document.body);
         }
-        else if (!token || token.length == 0) {
+        else if (!authToken || authToken.length == 0) {
             document.title = "Anmelden";
             renderAuthentication(document.body);
         }
@@ -821,6 +822,7 @@ var pwdman = (() => {
             window.location.replace(nexturl);
         }
         else if (cryptoKey === undefined) {
+            let token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
                 (user) => {
                     salt = user.passwordManagerSalt;
@@ -829,6 +831,7 @@ var pwdman = (() => {
                 (errmsg) => reset(errmsg));
         }
         else {
+            let token = utils.get_authentication_token();
             lastErrorMessage = "";
             utils.fetch_api_call("api/pwdman/file", { headers: { "token": token } },
                 (datastr) => {

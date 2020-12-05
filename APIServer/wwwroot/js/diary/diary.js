@@ -4,14 +4,13 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.3";
+    let version = "1.0.4";
 
     let changeDate;
     let selectedISODate;
     let daySet;
     let dayClickedElem;
 
-    let token;
     let currentUser;
 
     let cryptoKey;
@@ -91,7 +90,7 @@ var diary = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Diary Manager ${version}. Copyright 2020 `);
+        controls.create(div, "span", "copyright", `Myna Diary ${version}. Copyright 2020 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
@@ -228,7 +227,7 @@ var diary = (() => {
 
     const renderDiary = (parent) => {
         controls.removeAllChildren(parent);
-        token = utils.get_authentication_token();
+        let token = utils.get_authentication_token();
         if (!token) {
             let nexturl = "/diary";
             window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl);
@@ -302,6 +301,7 @@ var diary = (() => {
             month = 11;
         }
         let d = new Date(Date.UTC(year, month));
+        let token = utils.get_authentication_token();
         utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
             (days) => {
                 daySet = new Set(days);
@@ -318,6 +318,7 @@ var diary = (() => {
             year += 1;
         }
         let d = new Date(Date.UTC(year, month));
+        let token = utils.get_authentication_token();
         utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
             (days) => {
                 daySet = new Set(days);
@@ -350,6 +351,7 @@ var diary = (() => {
     const onClickCalendarDate = (textDiv, a, year, month, day) => {
         dayClickedElem = a;
         let d = new Date(Date.UTC(year, month, day));
+        let token = utils.get_authentication_token();
         utils.fetch_api_call(`api/diary/entry?date=${d.toISOString()}`, { headers: { "token": token } },
             (diary) => renderText(textDiv, d, diary),
             (errMsg) => renderError(textDiv, errMsg)
@@ -362,6 +364,7 @@ var diary = (() => {
             changeDate = undefined;
             encodeEntry(elem.value.trim(),
                 (msg) => {
+                    let token = utils.get_authentication_token();
                     utils.fetch_api_call("api/diary/entry",
                         {
                             method: "POST",
@@ -381,6 +384,7 @@ var diary = (() => {
         if (!hasEncryptKey()) {
             return;
         }
+        let token = utils.get_authentication_token();
         utils.fetch_api_call(`api/diary/month?date=${date.toISOString()}`, { headers: { "token": token } },
             (diaries) => renderSummary(div, diaries, date),
             (errMsg) => renderError(div, errMsg)
