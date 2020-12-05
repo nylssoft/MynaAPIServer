@@ -33,9 +33,14 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.11";
+    let version = "1.1.12";
 
     // helper
+
+    const handleError = (err) => {
+        console.error(err);
+        timerEnabled = true;
+    }
 
     const clearTicket = () => {
         ticket = undefined;
@@ -605,7 +610,7 @@ var skat = (() => {
         }
     };
 
-    const renderChat = (parent, ticket) => {
+    const renderChat = (parent) => {
         let divChatButton = controls.createDiv(parent, "layout-chat-button");
         let imgMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/skat/mail-unread-3.png");
         imgMessage.addEventListener("click", (e) => {
@@ -803,7 +808,7 @@ var skat = (() => {
         }
         divLayoutLeft = controls.createDiv(document.body, "layout-left");
         divMain = controls.createDiv(divLayoutLeft);
-        renderChat(document.body, ticket);
+        renderChat(document.body);
         if (!ticket) {
             renderUserList(divMain);
             if (model.allUsers.length == 3) {
@@ -825,7 +830,7 @@ var skat = (() => {
         fetch("api/skat/model", { headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(m => renderModel(m))
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const login = (name) => {
@@ -960,7 +965,7 @@ var skat = (() => {
                     }
                     render();
                 })
-                .catch((err) => console.error(err));
+                .catch(handleError);
         }
     };
 
@@ -969,7 +974,7 @@ var skat = (() => {
         fetch("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render())
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const btnConfirmStartGame_click = () => {
@@ -977,7 +982,7 @@ var skat = (() => {
         fetch("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render())
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const btnGiveUp_click = (elem) => {
@@ -989,7 +994,7 @@ var skat = (() => {
                     giveUpClicked = false;
                     render();
                 })
-                .catch((err) => console.error(err));
+                .catch(handleError);
         }
         else if (elem.value == "GiveUpNo") {
             giveUpClicked = false;
@@ -1010,7 +1015,7 @@ var skat = (() => {
                     speedUpClicked = false;
                     render();
                 })
-                .catch((err) => console.error(err));
+                .catch(handleError);
         }
         else if (elem.value == "SpeedUpNo") {
             speedUpClicked = false;
@@ -1027,7 +1032,7 @@ var skat = (() => {
         fetch("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render())
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const btnContinuePlay_click = () => {
@@ -1035,7 +1040,7 @@ var skat = (() => {
         fetch("api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } })
             .then(response => response.json())
             .then(() => render())
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const btnGameType_click = (elem) => {
@@ -1062,7 +1067,7 @@ var skat = (() => {
         })
             .then(response => response.json())
             .then(() => render())
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const btnGameOption_click = () => {
@@ -1083,7 +1088,7 @@ var skat = (() => {
         })
             .then(response => response.json())
             .then(() => render())
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const btnAction_click = (elem) => {
@@ -1105,7 +1110,7 @@ var skat = (() => {
             })
                 .then(response => response.json())
                 .then(() => render())
-                .catch((err) => console.error(err));
+                .catch(handleError);
         }
     };
 
@@ -1139,7 +1144,7 @@ var skat = (() => {
                 document.body.style.cursor = "default";
             })
             .catch((err) => {
-                console.error(err);
+                handleError(err);
                 document.body.style.cursor = "default";
             });
     };
@@ -1158,7 +1163,7 @@ var skat = (() => {
         })
             .then(response => response.json())
             .then(() => render())
-            .catch((err) => console.error(err));
+            .catch(handleError);
     };
 
     const btnLastStitchCard_click = () => {
@@ -1180,7 +1185,7 @@ var skat = (() => {
                 render();
             })
             .catch((err) => {
-                console.error(err);
+                handleError(err);
                 document.body.style.cursor = "default";
             });
     };
@@ -1195,7 +1200,7 @@ var skat = (() => {
                     ticket = undefined;
                     utils.logout_skat(() => render());
                 })
-                .catch((err) => console.error(err));
+                .catch(handleError);
         }
         else if (elem.value == "LogoutNo") {
             logoutClicked = false;
@@ -1224,7 +1229,7 @@ var skat = (() => {
                     letsStartClicked = false;
                     render();
                 })
-                .catch((err) => console.error(err));
+                .catch(handleError);
         }
         else if (elem.value == "LetsStartNo") {
             letsStartClicked = false;
@@ -1254,7 +1259,7 @@ var skat = (() => {
                     inputChatText.value = "";
                     render();
                 })
-                .catch((err) => console.error(err));
+                .catch(handleError);
         }
     };
 
@@ -1315,7 +1320,7 @@ var skat = (() => {
                     }
                 }
             })
-            .catch((err) => console.error(err));
+            .catch(handleError);
     }
 
     // --- public API
