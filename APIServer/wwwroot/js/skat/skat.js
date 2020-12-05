@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.12";
+    let version = "1.1.13";
 
     // helper
 
@@ -257,7 +257,7 @@ var skat = (() => {
                     inputUsername.value = user.name;
                     controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
                 },
-                (errmsg) => console.error(errmsg));
+                handleError);
         }
     };
 
@@ -641,7 +641,7 @@ var skat = (() => {
             currentChatState = chatModel.state;
         }
         if (token) {
-            inputChatText = controls.createInputField(divChat, "Nachricht", () => btnChat_click(token), "chat-input", 36, 200);
+            inputChatText = controls.createInputField(divChat, "Nachricht", () => btnChat_click(), "chat-input", 36, 200);
             inputChatText.placeholder = "Nachricht..."
             if (lastChatText) {
                 inputChatText.value = lastChatText;
@@ -664,7 +664,7 @@ var skat = (() => {
         }
     };
 
-    const renderResults = (token, results, skatadmin) => {
+    const renderResults = (results, skatadmin) => {
         document.title = "Skat - Spielergebnisse";
         controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
@@ -682,14 +682,15 @@ var skat = (() => {
             let txt = `${started.toLocaleDateString("de-DE")}`;;
             controls.createRadiobutton(p, `result-id-${cnt++}`, "result", `${result.id}`, txt, false,
                 (rb) => {
+                    let token = utils.get_authentication_token();
                     utils.fetch_api_call(`api/skat/resultbyid?id=${rb.value}`, { headers: { "token": token } },
                         (result) => renderResultTable(div2, result),
-                        (errmsg) => console.error(errmsg));                    
+                        handleError);                    
                 });
         });
         let div2 = controls.createDiv(parent);
         if (skatadmin) {
-            controls.createButton(div1, "L\u00F6schen", () => onDeleteSkatResult(div1, token, true));
+            controls.createButton(div1, "L\u00F6schen", () => onDeleteSkatResult(div1, true));
         }
         let rb = document.getElementById("result-id-1");
         if (rb) {
@@ -827,10 +828,9 @@ var skat = (() => {
 
     const fetchModel = (ticket) => {
         timerEnabled = false;
-        fetch("api/skat/model", { headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(m => renderModel(m))
-            .catch(handleError);
+        utils.fetch_api_call("api/skat/model", { headers: { "ticket": ticket } },
+            (m) => renderModel(m),
+            handleError);
     };
 
     const login = (name) => {
@@ -839,24 +839,20 @@ var skat = (() => {
             window.location.replace("/skat");
             return;
         }
-        fetch("api/skat/login", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "token": token
+        utils.fetch_api_call("api/skat/login",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(name)
             },
-            body: JSON.stringify(name)
-        })
-            .then(response => response.json())
-            .then((loginModel) => {
+            (loginModel) => {
                 if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
                 window.location.replace("/skat");
-            })
-            .catch((err) => {
-                console.error(err);
+            },
+            (errMsg) => {
+                handleError(errMsg);
                 window.location.replace("/skat");
             });
     };
@@ -871,15 +867,13 @@ var skat = (() => {
         if (ticket && params.has("gamehistory")) {
             utils.fetch_api_call("api/skat/gamehistory", { headers: { "ticket": ticket } },
                 gamehistory => renderGameHistory(document.body, undefined, gamehistory),
-                errmsg => console.error(errmsg)
-            );
+                handleError);
             return;
         }
         if (ticket && params.has("result")) {
-            fetch("api/skat/result", { headers: { "ticket": ticket } })
-                .then(response => response.json())
-                .then(result => renderResult(result))
-                .catch(err => console.error(err));
+            utils.fetch_api_call("api/skat/result", { headers: { "ticket": ticket } },
+                (result) => renderResult(result),
+                handleError);
             return;
         }
         if (params.has("results")) {
@@ -887,11 +881,12 @@ var skat = (() => {
             if (token) {
                 utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
                     (user) => {
-                        utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
-                            (results) => renderResults(token, results, user.roles.includes("skatadmin")),
-                            (errmsg) => console.error(errmsg));
+                        let nextToken = utils.get_authentication_token();
+                        utils.fetch_api_call("api/skat/results", { headers: { "token": nextToken } },
+                            (results) => renderResults(results, user.roles.includes("skatadmin")),
+                            handleError);
                     },
-                    (errmsg) => console.error(errmsg));
+                    handleError);
                 return;
             }
         }
@@ -906,15 +901,15 @@ var skat = (() => {
                             controls.removeAllChildren(parent);
                             controls.create(parent, "p", undefined, "Skat Administration");
                             let p = controls.create(parent, "p");
-                            controls.createButton(p, "Reset", () => onReset(p, token, true));
-                            controls.createButton(p, "Tickets", () => onShowTickets(p, token));
+                            controls.createButton(p, "Reset", () => onReset(p, true));
+                            controls.createButton(p, "Tickets", () => onShowTickets(p));
                             controls.createButton(p, "Spielergebnisse", () => window.location.href = "/skat?results");
                         }
                         else {
                             window.location.replace("/skat");
                         }
                     },
-                    (errmsg) => console.error(errmsg));
+                    handleError);
                 return;
             }
             window.location.replace("/skat");
@@ -925,8 +920,8 @@ var skat = (() => {
                 chatModel = cm;
                 fetchModel(ticket);
             },
-            (errmsg) => {
-                console.error(errmsg);
+            (errMsg) => {
+                handleError(errMsg);
                 fetchModel(ticket);
             });
     };
@@ -941,17 +936,13 @@ var skat = (() => {
             if (!token) {
                 token = "";
             }
-            fetch("api/skat/login", {
-                method: "POST",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "token": token
+            utils.fetch_api_call("api/skat/login",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(name)
                 },
-                body: JSON.stringify(name)
-            })
-                .then(response => response.json())
-                .then((loginModel) => {
+                (loginModel) => {
                     if (loginModel) {
                         if (loginModel.isAuthenticationRequired) {
                             let nexturl = `/skat?login=${name}`;
@@ -964,37 +955,34 @@ var skat = (() => {
                         }
                     }
                     render();
-                })
-                .catch(handleError);
+                },
+                handleError);
         }
     };
 
     const btnStartGame_click = () => {
         timerEnabled = false;
-        fetch("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => render())
-            .catch(handleError);
+        utils.fetch_api_call("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } },
+            () => render(),
+            handleError);
     };
 
     const btnConfirmStartGame_click = () => {
         timerEnabled = false;
-        fetch("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => render())
-            .catch(handleError);
+        utils.fetch_api_call("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } },
+            () => render(),
+            handleError);
     };
 
     const btnGiveUp_click = (elem) => {
         if (elem.value == "GiveUpYes") {
             timerEnabled = false;
-            fetch("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } })
-                .then(response => response.json())
-                .then(() => {
+            utils.fetch_api_call("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } },
+                () => {
                     giveUpClicked = false;
                     render();
-                })
-                .catch(handleError);
+                },
+                handleError);
         }
         else if (elem.value == "GiveUpNo") {
             giveUpClicked = false;
@@ -1009,13 +997,12 @@ var skat = (() => {
     const btnSpeedUp_click = (elem) => {
         if (elem.value == "SpeedUpYes") {
             timerEnabled = false;
-            fetch("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } })
-                .then(response => response.json())
-                .then(() => {
+            utils.fetch_api_call("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } },
+                () => {
                     speedUpClicked = false;
                     render();
-                })
-                .catch(handleError);
+                },
+                handleError);
         }
         else if (elem.value == "SpeedUpNo") {
             speedUpClicked = false;
@@ -1029,18 +1016,16 @@ var skat = (() => {
 
     const btnSpeedUpConfirm_click = () => {
         timerEnabled = false;
-        fetch("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => render())
-            .catch(handleError);
+        utils.fetch_api_call("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } },
+            () => render(),
+            handleError);
     };
 
     const btnContinuePlay_click = () => {
         timerEnabled = false;
-        fetch("api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => render())
-            .catch(handleError);
+        utils.fetch_api_call("api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } },
+            () => render(),
+            handleError);
     };
 
     const btnGameType_click = (elem) => {
@@ -1056,39 +1041,31 @@ var skat = (() => {
         else {
             gamecolor = elem.value;
         }
-        fetch("api/skat/game", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "ticket": ticket
+        utils.fetch_api_call("api/skat/game",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                body: JSON.stringify({ "Type": gametype, "Color": gamecolor })
             },
-            body: JSON.stringify({ "Type": gametype, "Color": gamecolor })
-        })
-            .then(response => response.json())
-            .then(() => render())
-            .catch(handleError);
+            () => render(),
+            handleError);
     };
 
     const btnGameOption_click = () => {
         timerEnabled = false;
-        fetch("api/skat/gameoption", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "ticket": ticket
+        utils.fetch_api_call("api/skat/gameoption",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                body: JSON.stringify({
+                    "ouvert": checkBoxOuvert.checked,
+                    "hand": checkBoxHand.checked,
+                    "schneider": checkBoxSchneider.checked,
+                    "schwarz": checkBoxSchwarz.checked
+                })
             },
-            body: JSON.stringify({
-                "ouvert": checkBoxOuvert.checked,
-                "hand": checkBoxHand.checked,
-                "schneider": checkBoxSchneider.checked,
-                "schwarz": checkBoxSchwarz.checked
-            })
-        })
-            .then(response => response.json())
-            .then(() => render())
-            .catch(handleError);
+            () => render(),
+            handleError);
     };
 
     const btnAction_click = (elem) => {
@@ -1099,18 +1076,14 @@ var skat = (() => {
             render();
         }
         else {
-            fetch("api/skat/bid", {
-                method: "POST",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "ticket": ticket
+            utils.fetch_api_call("api/skat/bid",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                    body: JSON.stringify(action)
                 },
-                body: JSON.stringify(action)
-            })
-                .then(response => response.json())
-                .then(() => render())
-                .catch(handleError);
+                () => render(),
+                handleError);
         }
     };
 
@@ -1129,22 +1102,18 @@ var skat = (() => {
         if (!found) return;
         timerEnabled = false;
         document.body.style.cursor = "wait";
-        fetch("api/skat/playcard", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "ticket": ticket
+        utils.fetch_api_call("api/skat/playcard",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                body: JSON.stringify(card.orderNumber)
             },
-            body: JSON.stringify(card.orderNumber)
-        })
-            .then(response => response.json())
-            .then(() => {
+            () => {
                 render();
                 document.body.style.cursor = "default";
-            })
-            .catch((err) => {
-                handleError(err);
+            },
+            (errMsg) => {
+                handleError(errMsg);
                 document.body.style.cursor = "default";
             });
     };
@@ -1152,18 +1121,14 @@ var skat = (() => {
     const btnSkatCard_click = (card) => {
         if (!model.skatTable.player || !card || showLastStitch || !model.skatTable.canPickupSkat) return;
         timerEnabled = false;
-        fetch("api/skat/pickupskat", {
-            method: "POST",
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "ticket": ticket
+        utils.fetch_api_call("api/skat/pickupskat",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                body: JSON.stringify(card.orderNumber)
             },
-            body: JSON.stringify(card.orderNumber)
-        })
-            .then(response => response.json())
-            .then(() => render())
-            .catch(handleError);
+            () => render(),
+            handleError);
     };
 
     const btnLastStitchCard_click = () => {
@@ -1178,14 +1143,13 @@ var skat = (() => {
             model.skatTable.isSpeedUp) return;
         timerEnabled = false;
         document.body.style.cursor = "wait";
-        fetch("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } })
-            .then(response => response.json())
-            .then(() => {
+        utils.fetch_api_call("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } },
+            () => {
                 document.body.style.cursor = "default";
                 render();
-            })
-            .catch((err) => {
-                handleError(err);
+            },
+            (errMsg) => {
+                handleError(errMsg);
                 document.body.style.cursor = "default";
             });
     };
@@ -1193,14 +1157,13 @@ var skat = (() => {
     const btnLogout_click = (elem) => {
         if (elem.value == "LogoutYes" || !model.skatTable) {
             timerEnabled = false;
-            fetch("api/skat/logout", { method: "POST", headers: { "ticket": ticket } })
-                .then(response => response.json())
-                .then(() => {
+            utils.fetch_api_call("api/skat/logout", { method: "POST", headers: { "ticket": ticket } },
+                () => {
                     logoutClicked = false;
                     ticket = undefined;
                     utils.logout_skat(() => render());
-                })
-                .catch(handleError);
+                },
+                handleError);
         }
         else if (elem.value == "LogoutNo") {
             logoutClicked = false;
@@ -1215,21 +1178,17 @@ var skat = (() => {
     const btnLetsStart_click = (elem) => {
         if (elem.value == "LetsStartYes") {
             timerEnabled = false;
-            fetch("api/skat/bid", {
-                method: "POST",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "ticket": ticket
+            utils.fetch_api_call("api/skat/bid",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                    body: JSON.stringify("StartGame")
                 },
-                body: JSON.stringify("StartGame")
-            })
-                .then(response => response.json())
-                .then(() => {
+                () => {
                     letsStartClicked = false;
                     render();
-                })
-                .catch(handleError);
+                },
+                handleError);
         }
         else if (elem.value == "LetsStartNo") {
             letsStartClicked = false;
@@ -1242,35 +1201,33 @@ var skat = (() => {
         render();
     };
 
-    const btnChat_click = (token) => {
+    const btnChat_click = () => {
         if (inputChatText && inputChatText.value.trim().length > 0) {
             timerEnabled = false;
-            fetch("api/skat/chat", {
-                method: "POST",
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "token": token
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call("api/skat/chat",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(inputChatText.value)
                 },
-                body: JSON.stringify(inputChatText.value)
-            })
-                .then(response => response.json())
-                .then(() => {
+                () => {
                     inputChatText.value = "";
                     render();
-                })
-                .catch(handleError);
+                },
+                handleError);
         }
     };
 
-    const onDeleteSkatResult = (parent, token, confirm) => {
+    const onDeleteSkatResult = (parent, confirm) => {
         if (confirm) {
             controls.removeAllChildren(parent);
             controls.create(parent, "p", "confirmation", "Willst Du wirklich diese Tabelle l\u00F6schen?");
-            controls.createButton(parent, "Ja", () => onDeleteSkatResult(parent, token, false));
+            controls.createButton(parent, "Ja", () => onDeleteSkatResult(parent, false));
             controls.createButton(parent, "Nein", () => window.location.replace("/skat?results"));
             return;
         }
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/skat/resultbyid",
             {
                 method: "DELETE",
@@ -1278,23 +1235,25 @@ var skat = (() => {
                 body: JSON.stringify(currentSkatResultId)
             },
             () => window.location.replace("/skat?results"),
-            (errmsg) => console.error(errmsg));
+            handleError);
     };
 
-    const onReset = (parent, token, confirm) => {
+    const onReset = (parent, confirm) => {
         if (confirm) {
             controls.removeAllChildren(parent);
             controls.create(parent, "p", "confirmation", "Willst Du wirklich alles zur\u00FCcksetzen?");
-            controls.createButton(parent, "Ja", () => onReset(parent, token, false));
+            controls.createButton(parent, "Ja", () => onReset(parent, false));
             controls.createButton(parent, "Nein", () => window.location.replace("/skat?admin"));
             return;
         }
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/skat/reset", { headers: { "token": token } },
             () => window.location.replace("/skat?admin"),
-            (errmsg) => console.error(errmsg));
+            handleError);
     };
 
-    const onShowTickets = (parent, token) => {
+    const onShowTickets = (parent) => {
+        let token = utils.get_authentication_token();
         utils.fetch_api_call("api/skat/tickets", { headers: { "token": token } },
             (tickets) => {
                 controls.removeAllChildren(parent);
@@ -1304,14 +1263,13 @@ var skat = (() => {
                 });
                 controls.createButton(parent, "OK", () => window.location.replace("/skat?admin"));
             },
-            (errmsg) => console.error(errmsg));
+            handleError);
     };
 
-    function ontimer() {
+    const ontimer = () => {
         if (!timerEnabled) return;
-        fetch("api/skat/state")
-            .then(response => response.json())
-            .then((d) => {
+        utils.fetch_api_call("api/skat/state", undefined,
+            (d) => {
                 if (d && d > 0) {
                     let statechanged = controls.getState();
                     if (!statechanged || d > statechanged) {
@@ -1319,8 +1277,8 @@ var skat = (() => {
                         render();
                     }
                 }
-            })
-            .catch(handleError);
+            },
+            handleError);
     }
 
     // --- public API
