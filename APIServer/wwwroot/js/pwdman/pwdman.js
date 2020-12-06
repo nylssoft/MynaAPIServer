@@ -539,7 +539,7 @@ var pwdman = (() => {
         let confirmPwdDiv = controls.createDiv(parent);
         let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", undefined, undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => changePassword(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
 

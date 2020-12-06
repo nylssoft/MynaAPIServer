@@ -42,8 +42,8 @@ var utils = (() => {
 
     const count_characters = (txt, charset) => {
         let cnt = 0;
-        for (let c of txt) {
-            cnt += charset.includes(c) ? 1 : 0;
+        for (let idx = 0; idx < txt.length; idx++) {
+            cnt += charset.includes(txt[idx]) ? 1 : 0;
         }
         return cnt;
     };
