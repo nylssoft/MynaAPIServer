@@ -40,6 +40,14 @@ var utils = (() => {
         return arr;
     };
 
+    const count_characters = (txt, charset) => {
+        let cnt = 0;
+        for (let c of txt) {
+            cnt += charset.includes(c) ? 1 : 0;
+        }
+        return cnt;
+    };
+
     // --- mobile support
 
     const is_mobile = () => {
@@ -157,6 +165,17 @@ var utils = (() => {
         resolve();
     };
 
+    const verify_password_strength = (pwd) => {
+        if (pwd.length >= 8) {
+            let cntSymbols = count_characters(pwd, "!@$()=+-,:.");
+            let cntUpper = count_characters(pwd, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            let cntLower = count_characters(pwd, "abcdefghijklmnopqrstuvwxyz");
+            let cntDigits = count_characters(pwd, "0123456789");
+            return cntSymbols > 0 && cntUpper > 0 && cntLower > 0 && cntDigits > 0;
+        }
+        return false;
+    };
+
     // --- encryption / decryption
 
     const hex2arr = (str) => {
@@ -218,12 +237,14 @@ var utils = (() => {
         concat_strings: concat_strings,
         format_date: format_date,
         shuffle_array: shuffle_array,
+        count_characters: count_characters,
         get_authentication_token: get_authentication_token,
         logout: logout,
         logout_skat: logout_skat,
         fetch_api_call: fetch_api_call,
         is_mobile: is_mobile,
         auth_lltoken: auth_lltoken,
+        verify_password_strength,
         hex2arr: hex2arr,
         buf2hex: buf2hex,
         create_crypto_key: create_crypto_key,

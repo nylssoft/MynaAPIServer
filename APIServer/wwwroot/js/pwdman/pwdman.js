@@ -41,7 +41,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.9";
+    let version = "1.1.10";
 
     // helper
 
@@ -374,6 +374,42 @@ var pwdman = (() => {
         );
     };
 
+    const updatePasswordStatus = (pwdid, imgpwdid, confirmpwdid, imgconfirmpwdid) => {
+        errorDiv.textContent = "";
+        let pwd = document.getElementById(pwdid);
+        let pwdimg = document.getElementById(imgpwdid);
+        let confirmpwd = document.getElementById(confirmpwdid);
+        let confirmpwdimg = document.getElementById(imgconfirmpwdid);
+        if (pwd && pwdimg && confirmpwd && confirmpwdimg) {
+            if (pwd.value.length == 0) {
+                pwdimg.style.visibility = "hidden";
+                confirmpwdimg.style.visibility = "hidden";
+            }
+            else {
+                let ok = utils.verify_password_strength(pwd.value);
+                if (ok) {
+                    pwdimg.src = "/images/pwdman/dialog-clean.png";
+                    pwdimg.title = "Kennwort ist stark genug";
+                }
+                else {
+                    pwdimg.src = "/images/pwdman/dialog-error.png";
+                    pwdimg.title = "Kennwort ist nicht stark genug";
+                }
+                ok = pwd.value == confirmpwd.value;
+                if (ok) {
+                    confirmpwdimg.src = "/images/pwdman/dialog-clean.png";
+                    confirmpwdimg.title = "Kennwort stimmt \u00FCberein";
+                }
+                else {
+                    confirmpwdimg.src = "/images/pwdman/dialog-error.png";
+                    confirmpwdimg.title = "Kennwort stimmt nicht \u00FCberein";
+                }
+                pwdimg.style.visibility = "visible";
+                confirmpwdimg.style.visibility = "visible";
+            }
+        }
+    };
+
     // rendering
 
     const renderError = (parent) => {
@@ -393,6 +429,19 @@ var pwdman = (() => {
         a.target = "_blank";
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
         controls.createA(div, "copyright", "/slideshow", "Home");
+    };
+
+    const renderUpdatePasswordStatus = (pwdDiv, pwdid, confirmPwdDiv, confirmpwdid) => {
+        let imgPwd = controls.createImg(pwdDiv, "img-pwd-status", 24, 24);
+        imgPwd.id = "img-pwd-id";
+        imgPwd.style.visibility = "hidden";
+        let imgConfirmPwd = controls.createImg(confirmPwdDiv, "img-pwd-status", 24, 24);
+        imgConfirmPwd.id = "img-confirmpwd-id";
+        imgConfirmPwd.style.visibility = "hidden";
+        newPasswordPwd.addEventListener("input", () =>
+            updatePasswordStatus(pwdid, imgPwd.id, confirmpwdid, imgConfirmPwd.id));
+        confirmPasswordPwd.addEventListener("input", () =>
+            updatePasswordStatus(pwdid, imgPwd.id, confirmpwdid, imgConfirmPwd.id));
     };
 
     const renderAuthentication = (parent) => {
@@ -492,13 +541,15 @@ var pwdman = (() => {
         confirmPwdLabel.htmlFor = "confirmpwd-id";
         confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", undefined, undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
+        renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
+
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "OK", () => changePassword(), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent, "Portal");
     };
-    
+
     const renderResetPwd = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Kennwort vergessen");
@@ -542,13 +593,13 @@ var pwdman = (() => {
         if (!utils.is_mobile()) {
             newPasswordPwd.focus();
         }
-        newPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
         let confirmPwdDiv = controls.createDiv(parent);
         let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
         confirmPwdLabel.htmlFor = "confirmpwd-id";
         confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
-        confirmPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
+        renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
+
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitscode:");
         codeLabel.htmlFor = "code-id";
@@ -633,6 +684,8 @@ var pwdman = (() => {
         confirmPwdLabel.htmlFor = "confirmpwd-id";
         confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
+        renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
+
         let optionsP = controls.create(parent,"p", undefined, "Optionen:");
         let checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
         facCheckbox = controls.createCheckbox(checkboxDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", false, undefined, false);

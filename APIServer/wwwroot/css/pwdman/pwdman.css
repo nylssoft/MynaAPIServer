@@ -54,6 +54,10 @@ h1 {
     color: lightgreen;
 }
 
+.img-pwd-status {
+    margin-left: 10pt;
+}
+
 .pwditem {
     vertical-align: top;
     margin-left: 20pt;
