@@ -9,11 +9,10 @@ var usermgmt = (() => {
     // state
 
     let currentUser;
-    let confirmations;
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.12";
+    let version = "1.0.13";
 
     // helper
 
@@ -36,8 +35,8 @@ var usermgmt = (() => {
 
     // rendering
 
-    const renderHeader = (parent, intro) => {
-        controls.create(parent, "h1", undefined, "Konto");
+    const renderHeader = (parent, intro, title) => {
+        controls.create(parent, "h1", undefined, title ? title : "Konto");
         if (intro) {
             controls.create(parent, "p", undefined, intro);
         }
@@ -72,30 +71,38 @@ var usermgmt = (() => {
                 }
             });
             let p = controls.create(parent, "p");
-            controls.createButton(p, "OK", () => render());
+            controls.createButton(p, "OK", () => render()).focus();
             renderCopyright(parent);
             return;
         }
-        renderHeader(parent, "Registrierungen:");
-        let idx = 0;
-        confirmations.forEach((confirmation) => {
-            let div = controls.createDiv(parent);
-            let dt = new Date(confirmation.requestedUtc).toLocaleString("de-DE");
-            controls.createCheckbox(div, `confirm-registration-${idx}`, undefined, undefined, false, () => { });
-            controls.create(div, "span", undefined, `E-Mail-Adresse ${confirmation.email} vom ${dt}.`);
-            idx++;
-        });
-        controls.create(parent, "p", undefined, "Optionen:");
-        let sendEmailDiv = controls.createDiv(parent);
-        let emailCheckbox = controls.createCheckbox(sendEmailDiv, undefined, undefined, "Antwort-E-Mail verschicken", false, undefined, false);
-        emailCheckbox.id = "send-emailnotification-id";
-        let errorDiv = controls.createDiv(parent, "error");
-        errorDiv.id = "error-id";
-        let p = controls.create(parent, "p");
-        controls.createButton(p, "Best\u00E4tigen", () => onConfirmRegistration());
-        controls.createButton(p, "Ablehnen", () => onConfirmRegistration(true));
-        controls.createButton(p, "Abbrechen", () => render());
-        renderCopyright(parent);
+        let token = utils.get_authentication_token();
+        utils.fetch_api_call(
+            "api/pwdman/confirmation",
+            { headers: { "token": token } },
+            (confirmations) => {
+                renderHeader(parent, "Offene Registrierungsanfragen:", "Anfragen");
+                let idx = 0;
+                confirmations.forEach((confirmation) => {
+                    let div = controls.createDiv(parent);
+                    let dt = new Date(confirmation.requestedUtc).toLocaleString("de-DE");
+                    controls.createCheckbox(div, `confirm-registration-${idx}`);
+                    controls.create(div, "span", undefined, `E-Mail-Adresse ${confirmation.email} vom ${dt}.`);
+                    idx++;
+                });
+                controls.create(parent, "p", undefined, "Optionen:");
+                let sendEmailDiv = controls.createDiv(parent);
+                controls.createCheckbox(sendEmailDiv, "send-emailnotification-id", undefined, "Antwort-E-Mail verschicken");
+                let errorDiv = controls.createDiv(parent, "error");
+                errorDiv.id = "error-id";
+                let p = controls.create(parent, "p");
+                controls.createButton(p, "Best\u00E4tigen", () => onConfirmRegistration(confirmations));
+                controls.createButton(p, "Ablehnen", () => onConfirmRegistration(confirmations, true));
+                controls.createButton(p, "Zur\u00FCck", () => render());
+                renderCopyright(parent);
+            },
+            onRejectError,
+            setWaitCursor
+        );
     };
 
     const renderUserDetails = (parent, users, user) => {
@@ -134,7 +141,7 @@ var usermgmt = (() => {
 
     const renderUsersTable = (parent, users) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Benutzer:");
+        renderHeader(parent, "Registrierte Benutzer:", "Benutzer");
         let table = controls.create(parent, "table");
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
@@ -182,7 +189,7 @@ var usermgmt = (() => {
                 }
             });
             let p = controls.create(parent, "p");
-            controls.createButton(p, "OK", () => render());
+            controls.createButton(p, "OK", () => render()).focus();
             renderCopyright(parent);
             return;
         }
@@ -244,7 +251,8 @@ var usermgmt = (() => {
         controls.createSpan(registeredP, undefined, "Registriert seit: ");
         controls.createSpan(registeredP, undefined, dt);
         if (currentUser.loginIpAddresses.length > 0) {
-            let ipAddressesP = controls.create(parent, "p", undefined, "Anmeldungen:");
+            let ipAddressesP = controls.create(parent, "p", undefined, "Anmeldungen: ");
+            controls.createButton(ipAddressesP, "Aufr\u00E4umen", () => onDeleteLoginIpAddresses());
             let ul = controls.create(ipAddressesP, "ul");
             currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
         }
@@ -269,16 +277,13 @@ var usermgmt = (() => {
         }
         else {
             controls.createButton(actionsDiv, "Abmelden", () => renderAccountActions("logout"));
-            controls.createButton(actionsDiv, "Kennwort \u00E4ndern", () => onChangePassword());
-            if (currentUser.loginIpAddresses.length > 0) {
-                controls.createButton(actionsDiv, "IP-Adressen l\u00F6schen", () => onDeleteLoginIpAddresses());
-            }
-            controls.createButton(actionsDiv, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
-            if (confirmations) {
-                controls.createButton(actionsDiv, "Registrierungen bearbeiten", () => renderConfirmRegistrations());
-            }
+            let div = controls.createDiv(actionsDiv);
+            controls.createButton(div, "Kennwort \u00E4ndern", () => onChangePassword());
+            controls.createButton(div, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
             if (currentUser.roles.includes("usermanager")) {
-                controls.createButton(actionsDiv, "Benutzer bearbeiten", () => renderEditUsers());
+                let adminDiv = controls.createDiv(actionsDiv);
+                controls.createButton(adminDiv, "Anfragen bearbeiten", () => renderConfirmRegistrations());
+                controls.createButton(adminDiv, "Benutzer bearbeiten", () => renderEditUsers());
             }
         }
     };
@@ -289,7 +294,7 @@ var usermgmt = (() => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent, "Du bist jetzt nicht mehr angemeldet.");
         let p = controls.create(parent, "p");
-        controls.createButton(p, "OK", () => onOK());
+        controls.createButton(p, "OK", () => onOK()).focus();
         renderCopyright(parent);
     }
 
@@ -300,7 +305,7 @@ var usermgmt = (() => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent, "Dein Konto wurde gel\u00F6scht. Du bist jetzt nicht mehr angemeldet.");
         let p = controls.create(parent, "p");
-        controls.createButton(p, "OK", () => onOK());
+        controls.createButton(p, "OK", () => onOK()).focus();
         renderCopyright(parent);
     };
 
@@ -311,7 +316,7 @@ var usermgmt = (() => {
         let errorDiv = controls.createDiv(parent, "error");
         errorDiv.textContent = errorMessage;
         let p = controls.create(parent, "p");
-        controls.createButton(p, "OK", () => renderCurrentUser());
+        controls.createButton(p, "OK", () => renderCurrentUser()).focus();
         renderCopyright(parent);
     };
 
@@ -342,7 +347,7 @@ var usermgmt = (() => {
         renderConfirmRegistrations(true, results);
     };
 
-    const onConfirmRegistration = (reject) => {
+    const onConfirmRegistration = (confirmations, reject) => {
         if (reject == undefined) {
             reject = false;
         }
@@ -585,28 +590,9 @@ var usermgmt = (() => {
         }
     };
 
-    const onResolveConfirmations = (confirms) => {
-        if (confirms.length > 0) {
-            confirmations = confirms;
-        }
-        renderCurrentUser();
-    };
-
     const onResolveCurrentUser = (user) => {
         currentUser = user;
-        if (user.roles.includes("usermanager")) {
-            let token = utils.get_authentication_token();
-            utils.fetch_api_call(
-                "api/pwdman/confirmation",
-                { headers: { "token": token } },
-                onResolveConfirmations,
-                onRejectError,
-                setWaitCursor
-            );
-        }
-        else {
-            renderCurrentUser();
-        }
+        renderCurrentUser();
     };
 
     const onRejectError = (errmsg) => {
@@ -617,7 +603,6 @@ var usermgmt = (() => {
     // --- start rendering
 
     const render = () => {
-        confirmations = undefined;
         currentUser = undefined;
         errorMessage = undefined;
         nexturl = new URLSearchParams(window.location.search).get("nexturl");
