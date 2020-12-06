@@ -129,8 +129,14 @@ namespace APIServer.PwdMan
             dbContext.SaveChanges();
             string subject = $"Myna Portal Kennwort zurücksetzen";
             string body = $"Hallo {user.Name}!\n\n{resetpwd.Token} ist Dein Sicherheitscode. Er ist 5 Minuten gültig.\n\n" +
-                "Du kannst jetzt Dein Kennwort neu vergeben.\n\n\n\n" +
-                "Viele Grüsse!";
+                "Du kannst jetzt Dein Kennwort neu vergeben.\n\n\n\n";
+            if (!string.IsNullOrEmpty(opt.Hostname))
+            {
+                body += $"https://{opt.Hostname}/pwdman?resetcode={resetpwd.Token}" +
+                    $"&email={WebUtility.UrlEncode(email)}" +
+                    $"&nexturl={WebUtility.UrlEncode(@"\index")}\n\n\n\n";
+            }
+            body += "Viele Grüsse!";
             notificationService.Send(email, subject, body);
         }
 

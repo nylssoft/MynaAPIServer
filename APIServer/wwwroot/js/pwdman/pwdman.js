@@ -26,6 +26,7 @@ var pwdman = (() => {
     let userName;
     let userEmail;
     let confirmRegistrationCode;
+    let resetPwdCode;
     let authToken;
     let requiresPass2;
     let salt
@@ -40,19 +41,9 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.8";
+    let version = "1.1.9";
 
     // helper
-
-    const hex2arr = (str) => {
-        let ret = [];
-        let l = str.length;
-        for (let idx = 0; idx < l; idx += 2) {
-            let h = str.substr(idx, 2);
-            ret.push(parseInt(h, 16));
-        }
-        return ret;
-    };
 
     const getHostFromUrl = (urlstr) => {
         urlstr = urlstr.toLowerCase();
@@ -277,6 +268,7 @@ var pwdman = (() => {
             actionResetPwd2 = false;
             successRegister = false;
             confirmRegistrationCode = undefined;
+            resetPwdCode = undefined;
             renderPage();
         }
     };
@@ -318,8 +310,8 @@ var pwdman = (() => {
     };
 
     const decodePassword = async (encodedPwd) => {
-        let iv = hex2arr(encodedPwd.substr(0, 12 * 2));
-        let data = hex2arr(encodedPwd.substr(12 * 2));
+        let iv = utils.hex2arr(encodedPwd.substr(0, 12 * 2));
+        let data = utils.hex2arr(encodedPwd.substr(12 * 2));
         let options = { name: "AES-GCM", iv: new Uint8Array(iv) };
         let cipherbuffer = new ArrayBuffer(data.length);
         let cipherarr = new Uint8Array(cipherbuffer);
@@ -563,6 +555,9 @@ var pwdman = (() => {
         codeInput = controls.createInputField(codeDiv, "Sicherheitscode", () => resetPassword(parent), undefined, 16, 16);
         codeInput.id = "code-id";
         codeInput.addEventListener("input", () => errorDiv.textContent = "");
+        if (resetPwdCode) {
+            codeInput.value = resetPwdCode;
+        }
         let okCancelDiv = controls.createDiv(parent);
         controls.createButton(okCancelDiv, "Kennwort \u00E4ndern", () => resetPassword(parent), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
@@ -835,8 +830,8 @@ var pwdman = (() => {
             lastErrorMessage = "";
             utils.fetch_api_call("api/pwdman/file", { headers: { "token": token } },
                 (datastr) => {
-                    let iv = hex2arr(datastr.substr(0, 12 * 2));
-                    let data = hex2arr(datastr.substr(12 * 2));
+                    let iv = utils.hex2arr(datastr.substr(0, 12 * 2));
+                    let data = utils.hex2arr(datastr.substr(12 * 2));
                     let options = { name: "AES-GCM", iv: new Uint8Array(iv) };
                     let cipherbuffer = new ArrayBuffer(data.length);
                     let cipherarr = new Uint8Array(cipherbuffer);
@@ -890,6 +885,11 @@ var pwdman = (() => {
             else if (params.has("resetpwd2")) {
                 actionResetPwd2 = true;
                 userEmail = params.get("email");
+            }
+            else if (params.has("resetcode") && params.has("email")) {
+                actionResetPwd2 = true;
+                resetPwdCode = params.get("resetcode");
+                userEmail = params.get("email");                
             }
         }
         renderPage();
