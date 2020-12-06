@@ -41,7 +41,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.10";
+    let version = "1.1.11";
 
     // helper
 
@@ -164,6 +164,10 @@ var pwdman = (() => {
     };
 
     const changePassword = () => {
+        if (oldPasswordPwd.value.length == 0 || newPasswordPwd.value.length == 0) {
+            errorDiv.textContent = "Es fehlen Eingabewerte.";
+            return;
+        }
         if (newPasswordPwd.value != confirmPasswordPwd.value) {
             errorDiv.textContent = "Das best\u00E4tigte Kennwort passt nicht mit dem neuen Kennwort \u00FCberein.";
             return;
