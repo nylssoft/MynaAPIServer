@@ -17,16 +17,17 @@
 */
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using APIServer.Skat;
-using APIServer.Email;
-using APIServer.Tetris;
-using APIServer.PwdMan;
 using APIServer.Database;
-using Microsoft.AspNetCore.HttpOverrides;
 using APIServer.Diary;
+using APIServer.Email;
+using APIServer.Notes;
+using APIServer.PwdMan;
+using APIServer.Skat;
+using APIServer.Tetris;
 
 namespace APIServer
 {
@@ -50,6 +51,7 @@ namespace APIServer
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ITetrisService, TetrisService>();
             services.AddScoped<IDiaryService, DiaryService>();
+            services.AddScoped<INotesService, NotesService>();
             // singletons
             services.AddSingleton<ISkatService, SkatService>();
             // enable cshtml pages

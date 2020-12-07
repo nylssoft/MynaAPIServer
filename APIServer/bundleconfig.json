@@ -28,6 +28,10 @@
     "inputFiles": [ "wwwroot/css/diary/diary.css" ]
   },
   {
+    "outputFileName": "wwwroot/css/notes/notes.min.css",
+    "inputFiles": [ "wwwroot/css/notes/notes.css" ]
+  },
+  {
     "outputFileName": "wwwroot/js/slideshow/slideshow.min.js",
     "inputFiles": [ "wwwroot/js/slideshow/slideshow.js" ],
     "minify": {
@@ -120,6 +124,15 @@
   {
     "outputFileName": "wwwroot/js/diary/diary.min.js",
     "inputFiles": [ "wwwroot/js/diary/diary.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/notes/notes.min.js",
+    "inputFiles": [ "wwwroot/js/notes/notes.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true

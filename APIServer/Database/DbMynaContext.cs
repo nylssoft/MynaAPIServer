@@ -52,6 +52,8 @@ namespace APIServer.Database
 
         public DbSet<DbDiary> DbDiaries { get; set; }
 
+        public DbSet<DbNote> DbNotes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<DbRegistration>()
@@ -75,6 +77,8 @@ namespace APIServer.Database
             builder.Entity<DbDiary>()
                 .HasIndex(d => new { d.DbUserId, d.Date })
                 .IsUnique();
+            builder.Entity<DbNote>()
+                .HasIndex(n => n.DbUserId);
         }
 
         public static DateTime? GetUtcDateTime(DateTime? dbDateTime)
