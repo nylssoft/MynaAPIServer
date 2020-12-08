@@ -4,9 +4,10 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.4";
+    let version = "1.0.5";
 
     let changeDate;
+    let inSaveDiary;
     let selectedISODate;
     let daySet;
     let dayClickedElem;
@@ -82,9 +83,21 @@ var diary = (() => {
     // rendering
 
     const renderHeader = (parent, intro) => {
-        controls.create(parent, "h1", undefined, "Mein Tagebuch");
+        controls.create(parent, "h1", undefined, "Tagebuch");
         if (intro) {
             controls.create(parent, "p", undefined, intro);
+        }
+        if (currentUser) {
+            let url;
+            if (skatPlayerImages) {
+                url = skatPlayerImages[currentUser.name.toLowerCase()];
+            }
+            if (!url) {
+                url = "/images/skat/profiles/Player1.png";
+            }
+            let img = controls.createImg(parent, "img-profile", 32, 45, url);
+            img.title = `Angemeldet als ${currentUser.name}`;
+            img.addEventListener("click", () => window.location.href = "/usermgmt?nexturl=" + encodeURI(window.location.href));
         }
     };
 
@@ -256,7 +269,7 @@ var diary = (() => {
         }
         let itemKey = getLocalStorageKey();
         let encryptKey = window.localStorage.getItem(itemKey);
-        renderHeader(parent, `Hallo ${currentUser.name}! Klicke auf einen Tag, um einen Tagebucheintrag vorzunehmen.`);
+        renderHeader(parent);
         let p = controls.create(parent, "p");
         let elem = controls.createCheckbox(p, "checkbox-show-encryptkey-id", undefined,
             "Schl\u00FCssel anzeigen", encryptKey == undefined,
@@ -267,9 +280,8 @@ var diary = (() => {
         p.id = "p-encryptkey-notice-id";
         controls.create(p, "p", undefined,
             "Die Texte werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du die Texte lesen kannst." +
-            " Dazu ist ein Schl\u00FCssel erforderlich, der in deinem Browser lokal gespeichert werden kann." +
-            " Notiere den Schl\u00FCssel, z.B. in einem Passwort-Manager." +
-            " Wenn Du ihn nicht mehr wei\u00DFt, k\u00F6nnen keine Texte mehr angezeigt werden. Alle Daten sind dann verloren.");
+            " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
+            " Notiere den Schl\u00FCssel, z.B. in einem Passwort-Manager.");
         p = controls.create(div, "p");
         elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
         elem.htmlFor = "input-encryptkey-id";
@@ -359,6 +371,8 @@ var diary = (() => {
     };
 
     const onSaveDiaryEntry = () => {
+        if (inSaveDiary || !changeDate) return;
+        inSaveDiary = true;
         let elem = document.getElementById("textarea-entry-id");
         if (elem && changeDate && selectedISODate) {
             changeDate = undefined;
@@ -371,13 +385,22 @@ var diary = (() => {
                             headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                             body: JSON.stringify({ "Date": selectedISODate, "Entry": msg })
                         },
-                        undefined,
-                        (errMsg) => console.error(errMsg)
+                        () => {
+                            inSaveDiary = false;
+                        },
+                        (errMsg) => {
+                            console.error(errMsg);
+                            inSaveDiary = false;
+                        }
                     );
                 },
-                (errMsg) => console.error(errMsg)
-            );
+                (errMsg) => {
+                    console.error(errMsg);
+                    inSaveDiary = false;
+                });
+            return;
         }
+        inSaveDiary = false;
     };
 
     const onShowSummary = (div, date) => {

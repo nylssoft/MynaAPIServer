@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.13";
+    let version = "1.0.14";
 
     // helper
 
@@ -39,6 +39,17 @@ var usermgmt = (() => {
         controls.create(parent, "h1", undefined, title ? title : "Konto");
         if (intro) {
             controls.create(parent, "p", undefined, intro);
+        }
+        if (currentUser) {
+            let url;
+            if (skatPlayerImages) {
+                url = skatPlayerImages[currentUser.name.toLowerCase()];
+            }
+            if (!url) {
+                url = "/images/skat/profiles/Player1.png";
+            }
+            let img = controls.createImg(parent, "img-profile", 32, 45, url);
+            img.title = `Angemeldet als ${currentUser.name}`;
         }
     };
 
@@ -277,6 +288,9 @@ var usermgmt = (() => {
         }
         else {
             controls.createButton(actionsDiv, "Abmelden", () => renderAccountActions("logout"));
+            if (nexturl) {
+                controls.createButton(actionsDiv, "Zur\u00FCck", () => onOK());
+            }
             let div = controls.createDiv(actionsDiv);
             controls.createButton(div, "Kennwort \u00E4ndern", () => onChangePassword());
             controls.createButton(div, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
@@ -289,6 +303,7 @@ var usermgmt = (() => {
     };
 
     const renderLogout = () => {
+        currentUser = undefined;
         let parent = document.body;
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
@@ -611,7 +626,10 @@ var usermgmt = (() => {
             "api/pwdman/user",
             { headers: { "token": token } },
             onResolveCurrentUser,
-            onRejectError,
+            (errMsg) => {
+                console.error(errMsg);
+                onOK();
+            },
             setWaitCursor);
     };
 

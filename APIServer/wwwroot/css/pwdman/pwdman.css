@@ -54,6 +54,15 @@ h1 {
     color: lightgreen;
 }
 
+.img-profile {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    position: absolute;
+    top: 5pt;
+    right: 5pt;
+}
+
 .img-pwd-status {
     margin-left: 10pt;
 }

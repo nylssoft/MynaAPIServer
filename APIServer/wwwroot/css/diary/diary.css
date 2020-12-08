@@ -74,6 +74,15 @@ textarea {
     margin-bottom: 10pt;
 }
 
+.img-profile {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    position: absolute;
+    top: 5pt;
+    right: 5pt;
+}
+
 .selected {
     color: yellow;
 }

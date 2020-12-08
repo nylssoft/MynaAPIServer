@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.0";
+    let version = "1.0.1";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -108,7 +108,11 @@ var notes = (() => {
                     decodeNotes(notes, decodedNotes, resolve, reject);
                 }
             },
-            reject);
+            (errMsg) => {
+                console.log(errMsg);
+                decodedNotes.push({ "id": note.id, "title": "?" });
+                decodeNotes(notes, decodedNotes, resolve, reject);
+            });
     };
 
     const showEncryptKey = (show) => {
@@ -122,6 +126,18 @@ var notes = (() => {
         controls.create(parent, "h1", undefined, "Notizen");
         if (intro) {
             controls.create(parent, "p", undefined, intro);
+        }
+        if (currentUser) {
+            let url;
+            if (skatPlayerImages) {
+                url = skatPlayerImages[currentUser.name.toLowerCase()];
+            }
+            if (!url) {
+                url = "/images/skat/profiles/Player1.png";
+            }
+            let img = controls.createImg(parent, "img-profile", 32, 45, url);
+            img.title = `Angemeldet als ${currentUser.name}`;
+            img.addEventListener("click", () => window.location.href = "/usermgmt?nexturl=" + encodeURI(window.location.href));
         }
     };
 
@@ -151,7 +167,7 @@ var notes = (() => {
     const renderEncryptKey = (parent) => {
         let itemKey = getLocalStorageKey();
         let encryptKey = window.localStorage.getItem(itemKey);
-        renderHeader(parent, `Hallo ${currentUser.name}!`);
+        renderHeader(parent);
         let p = controls.create(parent, "p");
         let elem = controls.createCheckbox(p, "checkbox-show-encryptkey-id", undefined,
             "Schl\u00FCssel anzeigen", encryptKey == undefined,
@@ -162,13 +178,12 @@ var notes = (() => {
         p.id = "p-encryptkey-notice-id";
         controls.create(p, "p", undefined,
             "Die Notizen werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du die Notizen lesen kannst." +
-            " Dazu ist ein Schl\u00FCssel erforderlich, der in deinem Browser lokal gespeichert werden kann." +
-            " Notiere den Schl\u00FCssel, z.B. in einem Passwort-Manager." +
-            " Wenn Du ihn nicht mehr wei\u00DFt, k\u00F6nnen keine Notizen mehr angezeigt werden. Alle Daten sind dann verloren.");
+            " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
+            " Notiere den Schl\u00FCssel, z.B. in einem Passwort-Manager.");
         p = controls.create(div, "p");
         elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
         elem.htmlFor = "input-encryptkey-id";
-        elem = controls.createInputField(p, "Schl\u00FCssel", () => { }, undefined, 32, 32);
+        elem = controls.createInputField(p, "Schl\u00FCssel", () => onChangeEncryptKey(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
         elem.addEventListener("change", () => onChangeEncryptKey());
         if (encryptKey && encryptKey.length > 0) {
@@ -249,28 +264,41 @@ var notes = (() => {
 
     const renderPage = (parent, notes) => {
         renderEncryptKey(parent);
-        let boxDiv = controls.createDiv(parent, "box");
+        controls.createDiv(parent, "box").id = "box-id";
         controls.createDiv(parent, "content").id = "content-id";
         controls.createDiv(parent, "error").id = "error-id";
-        let actionDiv = controls.createDiv(parent, "action");
-        actionDiv.id = "action-id";
-        renderActions();
-        decodeNotes(notes, [],
-            (decodedNotes) => {
-                decodedNotes.forEach((note) => {
-                    let div = controls.createDiv(boxDiv, "note");
-                    div.id = `note-id-${note.id}`;
-                    div.textContent = note.title;
-                    let id = note.id;
-                    div.addEventListener("click", () => {
-                        let token = utils.get_authentication_token();
-                        utils.fetch_api_call(`api/notes/note/${id}`, { headers: { "token": token } },
-                            (note) => renderNote(note),
-                            (errMsg) => renderError(errMsg));
-                    });
-                });
-            }, (errMsg) => console.log(errMsg));
+        controls.createDiv(parent, "action").id = "action-id";
         renderCopyright(parent);
+        renderNotesBox(notes);
+        renderActions();
+    };
+
+    const renderNotesBox = (notes) => {
+        renderError("");
+        selectedNoteId = undefined;
+        let content = document.getElementById("content-id");
+        if (content) {
+            controls.removeAllChildren(content);
+        }
+        let boxDiv = document.getElementById("box-id");
+        if (boxDiv) {
+            controls.removeAllChildren(boxDiv);
+            decodeNotes(notes, [],
+                (decodedNotes) => {
+                    decodedNotes.forEach((note) => {
+                        let div = controls.createDiv(boxDiv, "note");
+                        div.id = `note-id-${note.id}`;
+                        div.textContent = note.title;
+                        let id = note.id;
+                        div.addEventListener("click", () => {
+                            let token = utils.get_authentication_token();
+                            utils.fetch_api_call(`api/notes/note/${id}`, { headers: { "token": token } },
+                                (note) => renderNote(note),
+                                (errMsg) => renderError(errMsg));
+                        });
+                    });
+                }, (errMsg) => console.log(errMsg));
+        }
     };
 
     const render = () => {
@@ -298,7 +326,18 @@ var notes = (() => {
 
     // --- callbacks
 
+    const onRefreshNotes = () => {
+        let token = utils.get_authentication_token();
+        utils.fetch_api_call("api/notes/note", { headers: { "token": token } },
+            (notes) => renderNotesBox(notes),
+            (errMsg) => renderError(errMsg));
+    };
+
     const onNewNote = () => {
+        if (!hasEncryptKey()) {
+            renderError("Der Schl\u00FCssel fehlt.");
+            return;
+        }
         let note = { "title": "Neue Notiz" };
         encodeNote(note,
             (encodedNote) => {
@@ -309,7 +348,7 @@ var notes = (() => {
                         headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                         body: JSON.stringify(encodedNote)
                     },
-                    () => render(),
+                    () => onRefreshNotes(),
                     (errMsg) => console.error(errMsg)
                 );
             },
@@ -319,7 +358,7 @@ var notes = (() => {
     const onDeleteNote = (id) => {
         let token = utils.get_authentication_token();
         utils.fetch_api_call(`api/notes/note/${id}`, { method: "DELETE", headers: { "token": token } },
-            () => render(),
+            () => onRefreshNotes(),
             (errMsg) => console.error(errMsg)
         );
     };
@@ -377,6 +416,7 @@ var notes = (() => {
             window.localStorage.setItem(itemKey, val);
         }
         cryptoKey = undefined;
+        onRefreshNotes();
     };
 
     const onTimer = () => {
