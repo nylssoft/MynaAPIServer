@@ -86,7 +86,7 @@ namespace APIServer.Notes
             return false;
         }
 
-        public void AddNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel)
+        public long AddNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel)
         {
             logger.LogDebug("Add note...");
             var user = pwdManService.GetUserFromToken(authenticationToken);
@@ -100,6 +100,7 @@ namespace APIServer.Notes
             };
             dbContext.DbNotes.Add(note);
             dbContext.SaveChanges();
+            return note.Id;
         }
 
         public bool DeleteNote(IPwdManService pwdManService, string authenticationToken, long id)

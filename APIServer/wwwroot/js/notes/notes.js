@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.1";
+    let version = "1.0.2";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -16,10 +16,6 @@ var notes = (() => {
     const hasEncryptKey = () => {
         let elem = document.getElementById("input-encryptkey-id");
         return elem && elem.value.trim().length > 0;
-    }
-
-    const getLocalStorageKey = () => {        
-        return `diary-${currentUser.email}-encryptkey`;
     }
 
     const initCryptoKey = (resolve, reject) => {
@@ -165,8 +161,7 @@ var notes = (() => {
     };
 
     const renderEncryptKey = (parent) => {
-        let itemKey = getLocalStorageKey();
-        let encryptKey = window.localStorage.getItem(itemKey);
+        let encryptKey = utils.get_encryption_key(currentUser);
         renderHeader(parent);
         let p = controls.create(parent, "p");
         let elem = controls.createCheckbox(p, "checkbox-show-encryptkey-id", undefined,
@@ -186,7 +181,7 @@ var notes = (() => {
         elem = controls.createInputField(p, "Schl\u00FCssel", () => onChangeEncryptKey(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
         elem.addEventListener("change", () => onChangeEncryptKey());
-        if (encryptKey && encryptKey.length > 0) {
+        if (encryptKey) {
             elem.value = encryptKey;
         }
         p = controls.create(div, "p");
@@ -197,6 +192,7 @@ var notes = (() => {
     };
 
     const renderActions = (confirm) => {
+        renderError("");        
         let actionDiv = document.getElementById("action-id");
         controls.removeAllChildren(actionDiv);
         if (confirm == "delete") {
@@ -225,40 +221,47 @@ var notes = (() => {
             noteDiv.className = "note";
         }
         selectedNoteId = note ? note.id : undefined;
-        if (note && hasEncryptKey()) {
+        if (note) {
             let noteDiv = document.getElementById(`note-id-${note.id}`);
-            noteDiv.className += " note-selected";
-            let label = controls.createLabel(parent, undefined, "Titel:");
-            label.htmlFor = "titel-id";
-            let titleInput = controls.createInputField(parent, "Titel", undefined, undefined, 32, 255);
-            titleInput.id = "title-id";
-            titleInput.addEventListener("input", () => {
-                noteDiv.textContent = titleInput.value;
-                changeDate = Date.now();
-            });
-            titleInput.addEventListener("change", () => onSaveNote());
-            let d = new Date(note.lastModifiedUtc);
-            controls.createDiv(parent, "caption").textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
-            let txt = controls.create(parent, "textarea");
-            txt.id = "textarea-entry-id";
-            txt.rows = 8;
-            txt.spellcheck = false;
-            if (!utils.is_mobile()) {
-                txt.cols = 40;
+            if (noteDiv) {
+                noteDiv.className += " note-selected";
             }
-            else {
-                txt.cols = 35;
+            if (hasEncryptKey()) {
+                let label = controls.createLabel(parent, undefined, "Titel:");
+                label.htmlFor = "titel-id";
+                let titleInput = controls.createInputField(parent, "Titel", undefined, undefined, 32, 255);
+                titleInput.id = "title-id";
+                titleInput.addEventListener("input", () => {
+                    noteDiv.textContent = titleInput.value;
+                    onChangeNote();
+                });
+                titleInput.addEventListener("change", () => onSaveNote());
+                let imgStatus = controls.createImg(parent, "img-status", 24, 24);
+                imgStatus.id = "img-status-id";
+                imgStatus.style.visibility = "hidden";
+                let d = new Date(note.lastModifiedUtc);
+                controls.createDiv(parent, "caption").textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
+                let txt = controls.create(parent, "textarea");
+                txt.id = "textarea-entry-id";
+                txt.rows = 8;
+                txt.spellcheck = false;
+                if (!utils.is_mobile()) {
+                    txt.cols = 40;
+                }
+                else {
+                    txt.cols = 35;
+                }
+                txt.addEventListener("input", () => onChangeNote());
+                txt.addEventListener("change", () => onSaveNote());
+                decodeNote(note,
+                    (decodedNote) => {
+                        titleInput.value = decodedNote.title;
+                        if (decodedNote.content) {
+                            txt.value = decodedNote.content;
+                        }
+                    },
+                    (errMsg) => console.error(errMsg));
             }
-            txt.addEventListener("input", () => changeDate = Date.now());
-            txt.addEventListener("change", () => onSaveNote());
-            decodeNote(note,
-                (decodedNote) => {
-                    titleInput.value = decodedNote.title;
-                    if (decodedNote.content) {
-                        txt.value = decodedNote.content;
-                    }
-                },
-                (errMsg) => console.error(errMsg));
         }
     };
 
@@ -270,12 +273,12 @@ var notes = (() => {
         controls.createDiv(parent, "action").id = "action-id";
         renderCopyright(parent);
         renderNotesBox(notes);
-        renderActions();
     };
 
-    const renderNotesBox = (notes) => {
+    const renderNotesBox = (notes, selectNoteId) => {
         renderError("");
         selectedNoteId = undefined;
+        renderActions();
         let content = document.getElementById("content-id");
         if (content) {
             controls.removeAllChildren(content);
@@ -296,6 +299,12 @@ var notes = (() => {
                                 (note) => renderNote(note),
                                 (errMsg) => renderError(errMsg));
                         });
+                        if (id == selectNoteId) {
+                            let token = utils.get_authentication_token();
+                            utils.fetch_api_call(`api/notes/note/${id}`, { headers: { "token": token } },
+                                (note) => renderNote(note),
+                                (errMsg) => renderError(errMsg));
+                        }
                     });
                 }, (errMsg) => console.log(errMsg));
         }
@@ -326,10 +335,29 @@ var notes = (() => {
 
     // --- callbacks
 
-    const onRefreshNotes = () => {
+    const onUpdateStatus = () => {
+        let statusimg = document.getElementById("img-status-id");
+        if (statusimg) {
+            if (!changeDate) {
+                statusimg.style.visibility = "hidden";
+            }
+            else {
+                statusimg.src = "/images/notes/document-save-3.png";
+                statusimg.title = "\u00C4nderung wird gespeichert...";
+                statusimg.style.visibility = "visible";
+            }
+        }
+    };
+
+    const onChangeNote = () => {
+        changeDate = Date.now();
+        onUpdateStatus();
+    };
+
+    const onRefreshNotes = (selectNoteId) => {
         let token = utils.get_authentication_token();
         utils.fetch_api_call("api/notes/note", { headers: { "token": token } },
-            (notes) => renderNotesBox(notes),
+            (notes) => renderNotesBox(notes, selectNoteId),
             (errMsg) => renderError(errMsg));
     };
 
@@ -348,7 +376,7 @@ var notes = (() => {
                         headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                         body: JSON.stringify(encodedNote)
                     },
-                    () => onRefreshNotes(),
+                    (newNoteId) => onRefreshNotes(newNoteId),
                     (errMsg) => console.error(errMsg)
                 );
             },
@@ -382,20 +410,24 @@ var notes = (() => {
                         },
                         () => {
                             inSaveNote = false;
+                            onUpdateStatus();
                         },
                         (errMsg) => {
                             console.error(errMsg);
                             inSaveNote = false;
+                            onUpdateStatus();
                         }
                     );
                 },
                 (errMsg) => {
                     console.error(errMsg);
                     inSaveNote = false;
+                    onUpdateStatus();
                 });
             return;
         }
         inSaveNote = false;
+        onUpdateStatus();
     };
 
     const onSelectShowEncryptKey = () => {
@@ -406,14 +438,13 @@ var notes = (() => {
     const onChangeEncryptKey = () => {
         let elem = document.getElementById("checkbox-save-encryptkey-id");
         let saveInBrowser = elem.checked;
-        let itemKey = getLocalStorageKey();
         elem = document.getElementById("input-encryptkey-id");
         let val = elem.value.trim();
         if (val.length == 0 || !saveInBrowser) {
-            window.localStorage.removeItem(itemKey);
+            utils.set_encryption_key(currentUser);
         }
         else {
-            window.localStorage.setItem(itemKey, val);
+            utils.set_encryption_key(currentUser, val);
         }
         cryptoKey = undefined;
         onRefreshNotes();
@@ -423,7 +454,7 @@ var notes = (() => {
         if (changeDate) {
             let end = Date.now();
             let elapsed = end - changeDate;
-            if (elapsed > 5000) {
+            if (elapsed > 1000) {
                 onSaveNote();
             }
         }
@@ -438,6 +469,6 @@ var notes = (() => {
 })();
 
 window.onload = () => {
-    window.setInterval(notes.onTimer, 5000);
+    window.setInterval(notes.onTimer, 1000);
     utils.auth_lltoken(notes.render);
 };

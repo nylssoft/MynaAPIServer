@@ -29,7 +29,7 @@ namespace APIServer.Notes
 
         bool UpdateNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel);
 
-        void AddNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel);
+        long AddNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel);
 
         bool DeleteNote(IPwdManService pwdManService, string authenticationToken, long id);
     }

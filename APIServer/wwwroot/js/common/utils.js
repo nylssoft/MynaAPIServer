@@ -231,6 +231,29 @@ var utils = (() => {
             .catch(err => reject(err.message));
     };
 
+    const get_encryption_key = (user) => {
+        if (user) {
+            let storageKey = `diary-${user.email}-encryptkey`;
+            let encryptKey = window.localStorage.getItem(storageKey);
+            if (encryptKey && encryptKey.length > 0) {
+                return encryptKey;
+            }
+        }
+        return undefined;
+    };
+
+    const set_encryption_key = (user, encryptKey) => {
+        if (user) {
+            let storageKey = `diary-${user.email}-encryptkey`;
+            if (encryptKey && encryptKey.length > 0) {
+                window.localStorage.setItem(storageKey, encryptKey);
+            }
+            else {
+                window.localStorage.removeItem(storageKey, encryptKey);
+            }
+        }
+    };
+
     // --- public API
 
     return {
@@ -249,6 +272,8 @@ var utils = (() => {
         buf2hex: buf2hex,
         create_crypto_key: create_crypto_key,
         decode_message: decode_message,
-        encode_message: encode_message
+        encode_message: encode_message,
+        get_encryption_key: get_encryption_key,
+        set_encryption_key: set_encryption_key
     };
 })();

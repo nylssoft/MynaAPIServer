@@ -66,8 +66,7 @@ namespace APIServer.Notes
         [Route("api/notes/note")]
         public IActionResult AddNote([FromBody] NoteModel noteModel)
         {
-            NotesService.AddNote(PwdManService, GetToken(), noteModel);
-            return new JsonResult(true);
+            return new JsonResult(NotesService.AddNote(PwdManService, GetToken(), noteModel));
         }
 
         // --- private
