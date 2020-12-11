@@ -83,6 +83,10 @@ textarea {
     right: 5pt;
 }
 
+.img-status {
+    margin-left: 10pt;
+}
+
 .selected {
     color: yellow;
 }

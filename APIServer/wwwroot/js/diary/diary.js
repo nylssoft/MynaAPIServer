@@ -4,23 +4,19 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.5";
+    let version = "1.0.6";
 
     let changeDate;
     let inSaveDiary;
     let selectedISODate;
     let daySet;
-    let dayClickedElem;
+    let dayClicked;
 
     let currentUser;
 
     let cryptoKey;
 
     // helper
-
-    const getLocalStorageKey = () => {
-        return `diary-${currentUser.email}-encryptkey`;
-    }
 
     const hasEncryptKey = () => {
         let elem = document.getElementById("input-encryptkey-id");
@@ -178,7 +174,11 @@ var diary = (() => {
         if (dd && hasEncryptKey()) {
             selectedISODate = dd.toISOString();
             let dt = dd.toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" });
-            controls.createDiv(div, "caption").textContent = `Eintrag vom ${dt}`;
+            let caption = controls.createDiv(div, "caption");
+            caption.textContent = `Eintrag vom ${dt}`;
+            let imgStatus = controls.createImg(caption, "img-status", 24, 24);
+            imgStatus.id = "img-status-id";
+            imgStatus.style.visibility = "hidden";
             let txt = controls.create(div, "textarea");
             txt.id = "textarea-entry-id";
             txt.rows = 11;
@@ -191,19 +191,29 @@ var diary = (() => {
             }
             txt.addEventListener("input", (ev) => {
                 changeDate = Date.now();
-                dayClickedElem.className = ev.target.value.length > 0 ? "filled" : undefined;
+                if (dayClicked && dayClicked.elem) {
+                    dayClicked.elem.className = ev.target.value.length > 0 ? "filled" : undefined;
+                }
+                onUpdateStatus();
             });
             txt.addEventListener("change", () => onSaveDiaryEntry());
             if (diary) {
                 decodeEntry(diary.entry,
                     (msg) => txt.value = msg,
-                    (errMsg) => console.error(errMsg)
+                    (errMsg) => {
+                        txt.value = "?";
+                        console.error(errMsg);
+                    }
                 );
             }
+        }
+        else {
+            dayClicked = undefined;
         }
     };
 
     const renderSummary = (div, diaries, date) => {
+        dayClicked = undefined;
         controls.removeAllChildren(div);
         let dt = date.toLocaleDateString("de-DE", { month: "long" });
         controls.createDiv(div, "caption").textContent = `Eintr\u00E4ge f\u00FCr ${dt}`;
@@ -230,7 +240,10 @@ var diary = (() => {
                 });
                 txt.value = content;
             },
-            (errMsg) => console.error(errMsg)
+            (errMsg) => {
+                txt.value = "?";
+                console.error(errMsg);
+            }
         );
     };
 
@@ -267,8 +280,7 @@ var diary = (() => {
             );
             return;
         }
-        let itemKey = getLocalStorageKey();
-        let encryptKey = window.localStorage.getItem(itemKey);
+        let encryptKey = utils.get_encryption_key(currentUser);
         renderHeader(parent);
         let p = controls.create(parent, "p");
         let elem = controls.createCheckbox(p, "checkbox-show-encryptkey-id", undefined,
@@ -300,11 +312,26 @@ var diary = (() => {
         let boxDiv = controls.createDiv(parent, "box");
         let leftDiv = controls.createDiv(boxDiv, "calendar-column");
         let rightDiv = controls.createDiv(boxDiv, "text-column");
+        rightDiv.id = "text-column-id";
         renderCalendar(leftDiv, rightDiv, today.getMonth(), today.getFullYear());
         renderCopyright(parent);
     };
 
     // --- callbacks
+
+    const onUpdateStatus = () => {
+        let statusimg = document.getElementById("img-status-id");
+        if (statusimg) {
+            if (!changeDate) {
+                statusimg.style.visibility = "hidden";
+            }
+            else {
+                statusimg.src = "/images/diary/document-save-3.png";
+                statusimg.title = "\u00C4nderung wird gespeichert...";
+                statusimg.style.visibility = "visible";
+            }
+        }
+    };
 
     const onPrevButton = (parent, calendarDiv, textDiv, year, month) => {
         month -= 1;
@@ -348,20 +375,28 @@ var diary = (() => {
     const onChangeEncryptKey = () => {
         let elem = document.getElementById("checkbox-save-encryptkey-id");
         let saveInBrowser = elem.checked;
-        let itemKey = getLocalStorageKey();
         elem = document.getElementById("input-encryptkey-id");
         let val = elem.value.trim();
         if (val.length == 0 || !saveInBrowser) {
-            window.localStorage.removeItem(itemKey);
+            utils.set_encryption_key(currentUser);
         }
         else {
-            window.localStorage.setItem(itemKey, val);
+            utils.set_encryption_key(currentUser, val);
         }
         cryptoKey = undefined;
+        elem = document.getElementById("text-column-id");
+        if (elem) {
+            if (dayClicked) {
+                onClickCalendarDate(elem, dayClicked.elem, dayClicked.year, dayClicked.month, dayClicked.day);
+            }
+            else {
+                renderText(elem);
+            }
+        }
     };
 
     const onClickCalendarDate = (textDiv, a, year, month, day) => {
-        dayClickedElem = a;
+        dayClicked = { "elem": a, "year": year, "month": month, "day": day };
         let d = new Date(Date.UTC(year, month, day));
         let token = utils.get_authentication_token();
         utils.fetch_api_call(`api/diary/entry?date=${d.toISOString()}`, { headers: { "token": token } },
@@ -387,20 +422,24 @@ var diary = (() => {
                         },
                         () => {
                             inSaveDiary = false;
+                            onUpdateStatus();
                         },
                         (errMsg) => {
                             console.error(errMsg);
                             inSaveDiary = false;
+                            onUpdateStatus();
                         }
                     );
                 },
                 (errMsg) => {
                     console.error(errMsg);
                     inSaveDiary = false;
+                    onUpdateStatus();
                 });
             return;
         }
         inSaveDiary = false;
+        onUpdateStatus();
     };
 
     const onShowSummary = (div, date) => {
@@ -419,7 +458,7 @@ var diary = (() => {
         if (changeDate) {
             let end = Date.now();
             let elapsed = end - changeDate;
-            if (elapsed > 5000) {
+            if (elapsed > 1000) {
                 onSaveDiaryEntry();
             }
         }
@@ -440,6 +479,6 @@ var diary = (() => {
 })();
 
 window.onload = () => {
-    window.setInterval(diary.onTimer, 5000);
+    window.setInterval(diary.onTimer, 1000);
     utils.auth_lltoken(diary.render);
 };
