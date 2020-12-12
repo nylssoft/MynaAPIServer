@@ -420,14 +420,16 @@ var tetris = (() => {
     let highScoreDiv;
     let addHighScoreDiv;
     let inputUserName;
+    let helpDiv;
 
     // --- state
-    let version = "1.2.3";
+    let version = "1.2.4";
 
     let block;
     let nextBlock;
     let blockMoveDownCount;
     let isPaused;
+    let isHelpPage;
     let playground;
     let score;
     let lines;
@@ -856,7 +858,42 @@ var tetris = (() => {
         renderHighScoreEntries();
     };
 
+    const onUpdateHelp = (show) => {
+        if (helpDiv) {
+            helpDiv.className = show ? "help-div" : "invisible-div";
+            controls.removeAllChildren(helpDiv);
+            isHelpPage = show;
+            isPaused = show;
+            if (show) {
+                let contentDiv = controls.createDiv(helpDiv, "help-content");
+                controls.createDiv(contentDiv, "help-item").textContent = "Punkte = Wert x ( Stufe + 1 )";
+                controls.createDiv(contentDiv, "help-item").textContent = "40 f\u00FCr eine Linie";
+                controls.createDiv(contentDiv, "help-item").textContent = "100 f\u00FCr zwei Linien";
+                controls.createDiv(contentDiv, "help-item").textContent = "300 f\u00FCr drei Linien";
+                controls.createDiv(contentDiv, "help-item").textContent = "1200 f\u00FCr vier Linien";
+                controls.createDiv(contentDiv, "help-item").textContent = "\u00A0";
+                controls.createDiv(contentDiv, "help-item").textContent = "Steuerung";
+                controls.createDiv(contentDiv, "help-item").textContent = "Links: Cursor links";
+                controls.createDiv(contentDiv, "help-item").textContent = "Rechts: Cursor rechts";
+                controls.createDiv(contentDiv, "help-item").textContent = "Drehen: Cursor oben oder Taste 'a'";
+                controls.createDiv(contentDiv, "help-item").textContent = "Fallen: Cursor runter oder Leerzeichen";
+                controls.createDiv(contentDiv, "help-item").textContent = "Pause: Taste 'p'";
+                controls.createDiv(contentDiv, "help-item").textContent = "Hilfe: Taste 'h'";
+                controls.createDiv(contentDiv, "help-item").textContent = "\u00A0";
+                controls.createDiv(contentDiv, "help-item").textContent = "Fallen kann mit jeder Taste gestoppt werden.";
+                controls.createButton(contentDiv, "Weiterspielen", () => onUpdateHelp(false), undefined, "help-continue").focus();
+            }
+        }
+    };
+
+    const renderHelp = (parent) => {
+        let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/tetris/help.png");
+        helpImg.addEventListener("click", () => onUpdateHelp(true));
+        helpDiv = controls.createDiv(parent, "invisible-div");
+    };
+
     const renderTetris = (parent) => {
+        renderHelp(parent);
         renderHighScores(parent);
         let info = controls.createDiv(parent, "info");
         scoreDiv = controls.createDiv(info);
@@ -995,6 +1032,7 @@ var tetris = (() => {
 
     const initKeyDownEvent = () => {
         document.addEventListener("keydown", e => {
+            if (isHelpPage) return;
             if (state != StateEnums.GAMEOVER) {
                 if (e.key.startsWith("Arrow")) {
                     e.preventDefault();
@@ -1007,6 +1045,14 @@ var tetris = (() => {
             }
         });
         document.addEventListener("keyup", (e) => {
+            if (isHelpPage) {
+                onUpdateHelp(false);
+                return;
+            }
+            if (e.key == "h") {
+                onUpdateHelp(true);
+                return;
+            }
             if (state != StateEnums.GAMEOVER) {
                 if (e.key.startsWith("Arrow")) {
                     e.preventDefault();

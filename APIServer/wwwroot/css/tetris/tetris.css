@@ -23,6 +23,51 @@ input {
     background-color: black;
 }
 
+.help-div {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0.8;
+    z-index: 10;
+}
+
+.help-content {
+    position: absolute;
+    left: 200px;
+    top: 20px;
+}
+
+.help-item {
+    display: block;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+}
+
+.help-continue {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    background-color: black;
+    color: lightgreen;
+    border: 2px solid lightgreen;
+    padding: 10pt;
+    margin-top: 10pt;
+}
+
+.invisible-div {
+    display: block;
+}
+
+.help-button {
+    position: absolute;
+    left: 600px;
+    top: 270px;
+    z-index: 1;
+}
+
 .highscores {
     color: white;
     font-family: Arial, Helvetica, sans-serif;
@@ -107,7 +152,6 @@ input {
     position: absolute;
     left: 425px;
     top: 250px;
-    color: white;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 11pt;
     z-index: 1;
@@ -160,6 +204,15 @@ a {
         height: 160px;
         padding-left: 10px;
         font-size: 11pt;
+    }
+
+    .help-content {
+        left: 30px;
+    }
+
+    .help-button {
+        left: 320px;
+        top: 280px;
     }
 
     .arrow-div {
