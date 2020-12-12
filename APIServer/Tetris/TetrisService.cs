@@ -58,7 +58,7 @@ namespace APIServer.Tetris
             if (highScore == null ||
                 highScore.Name == null || 
                 highScore.Name.Length == 0 ||
-                highScore.Name.Length > 10 ||
+                highScore.Name.Length > Limits.MAX_HIGHSCORE_NAME ||
                 highScore.Score <= 0 ||
                 highScore.Lines <= 0 ||
                 highScore.Level < 0)

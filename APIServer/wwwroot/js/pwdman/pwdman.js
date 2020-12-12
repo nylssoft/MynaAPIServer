@@ -41,7 +41,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.11";
+    let version = "1.1.12";
 
     // helper
 
@@ -455,7 +455,7 @@ var pwdman = (() => {
         let loginDiv = controls.createDiv(parent);
         let userNameLabel = controls.createLabel(loginDiv, undefined, "Name:");
         userNameLabel.htmlFor = "username-id";
-        userNameInput = controls.createInputField(loginDiv, "Name", () => userPasswordPwd.focus(), undefined, 16, 20);
+        userNameInput = controls.createInputField(loginDiv, "Name", () => userPasswordPwd.focus(), undefined, 16, 32);
         userNameInput.id = "username-id";
         if (userName) {
             userNameInput.value = userName;
@@ -464,7 +464,7 @@ var pwdman = (() => {
         let passwordDiv = controls.createDiv(parent);
         let userPasswordLabel = controls.createLabel(passwordDiv, undefined, "Kennwort:");
         userPasswordLabel.htmlFor = "userpwd-id";
-        userPasswordPwd = controls.createPasswordField(passwordDiv, "Kennwort", () => authenticate(), undefined, 16, 30);
+        userPasswordPwd = controls.createPasswordField(passwordDiv, "Kennwort", () => authenticate(), undefined, 16, 100);
         userPasswordPwd.id = "userpwd-id";
         if (!utils.is_mobile()) {
             if (userName) {
@@ -673,7 +673,7 @@ var pwdman = (() => {
         let userNameDiv = controls.createDiv(parent);
         let nameNameLabel = controls.createLabel(userNameDiv, undefined, "Benutzername:");
         nameNameLabel.htmlFor = "username-id";
-        userNameInput = controls.createInputField(userNameDiv, "Benutzername", () => newPasswordPwd.focus(), undefined, 16, 20);
+        userNameInput = controls.createInputField(userNameDiv, "Benutzername", () => newPasswordPwd.focus(), undefined, 16, 32);
         userNameInput.id = "username-id";
         if (!utils.is_mobile()) {
             userNameInput.focus();

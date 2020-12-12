@@ -159,7 +159,7 @@ namespace APIServer.Skat
         public bool Chat(IPwdManService pwdManService, string authenticationToken, string message)
         {
             string msg = message.Trim();
-            if (msg.Length == 0 || msg.Length > 200) return false;
+            if (msg.Length == 0) return false;
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
             dbContext.DbChats.Add(new DbChat { CreatedUtc = DateTime.UtcNow, DbUserId = user.Id, Message = msg });

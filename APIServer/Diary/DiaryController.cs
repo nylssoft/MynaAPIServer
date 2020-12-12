@@ -39,6 +39,7 @@ namespace APIServer.Diary
         [Route("api/diary/entry")]
         public IActionResult SetEntry([FromBody] DiaryEntryModel model)
         {
+            if (model?.Entry?.Length > Limits.MAX_DIARY_ENTRY) throw new InputValueTooLargeException();
             DiaryService.SetEntry(PwdManService, GetToken(), model);
             return new JsonResult(true);
         }

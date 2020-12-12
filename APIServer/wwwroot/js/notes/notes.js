@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.3";
+    let version = "1.0.4";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -229,7 +229,7 @@ var notes = (() => {
             if (hasEncryptKey()) {
                 let label = controls.createLabel(parent, undefined, "Titel:");
                 label.htmlFor = "titel-id";
-                let titleInput = controls.createInputField(parent, "Titel", undefined, undefined, 32, 255);
+                let titleInput = controls.createInputField(parent, "Titel", undefined, undefined, 32, 200);
                 titleInput.id = "title-id";
                 titleInput.addEventListener("input", () => {
                     noteDiv.textContent = titleInput.value;
@@ -245,7 +245,7 @@ var notes = (() => {
                 let txt = controls.create(parent, "textarea");
                 txt.id = "textarea-entry-id";
                 txt.rows = 8;
-                txt.spellcheck = false;
+                txt.maxLength = 90000;
                 if (!utils.is_mobile()) {
                     txt.cols = 40;
                 }

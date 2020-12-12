@@ -17,7 +17,6 @@
 */
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 
 using APIServer.Skat.Model;
 using APIServer.PwdMan;
@@ -27,15 +26,12 @@ namespace APIServer.Skat
     [ApiController]
     public class SkatController : ControllerBase
     {
-        public IConfiguration Configuration { get; }
-
         public ISkatService SkatService { get; }
 
         public IPwdManService PwdManService { get; }
 
-        public SkatController(IConfiguration configuration, ISkatService skatService, IPwdManService pwdManService)
+        public SkatController(ISkatService skatService, IPwdManService pwdManService)
         {
-            Configuration = configuration;
             SkatService = skatService;
             PwdManService = pwdManService;
         }
@@ -53,6 +49,7 @@ namespace APIServer.Skat
         [Route("api/skat/login")]
         public IActionResult Login([FromBody] string username)
         {
+            if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             return new JsonResult(SkatService.Login(PwdManService, GetToken(), username));
         }
 
@@ -69,6 +66,7 @@ namespace APIServer.Skat
         [Route("api/skat/chat")]
         public IActionResult Chat([FromBody] string message)
         {
+            if (message?.Length > Limits.MAX_CHAT_MESSAGE) throw new InputValueTooLargeException();
             return new JsonResult(SkatService.Chat(PwdManService, GetToken(), message));
         }
 

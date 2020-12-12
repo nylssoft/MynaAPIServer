@@ -59,6 +59,8 @@ namespace APIServer.Notes
         [Route("api/notes/note")]
         public IActionResult UpdateNote([FromBody] NoteModel noteModel)
         {
+            if (noteModel?.Title?.Length > Limits.MAX_NOTE_TITLE) throw new InputValueTooLargeException();
+            if (noteModel?.Content?.Length > Limits.MAX_NOTE_CONTENT) throw new InputValueTooLargeException();
             return new JsonResult(NotesService.UpdateNote(PwdManService, GetToken(), noteModel));
         }
 
@@ -66,6 +68,8 @@ namespace APIServer.Notes
         [Route("api/notes/note")]
         public IActionResult AddNote([FromBody] NoteModel noteModel)
         {
+            if (noteModel?.Title?.Length > Limits.MAX_NOTE_TITLE) throw new InputValueTooLargeException();
+            if (noteModel?.Content?.Length > Limits.MAX_NOTE_CONTENT) throw new InputValueTooLargeException();
             return new JsonResult(NotesService.AddNote(PwdManService, GetToken(), noteModel));
         }
 

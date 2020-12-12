@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.6";
+    let version = "1.0.7";
 
     let changeDate;
     let inSaveDiary;
@@ -182,7 +182,7 @@ var diary = (() => {
             let txt = controls.create(div, "textarea");
             txt.id = "textarea-entry-id";
             txt.rows = 11;
-            txt.spellcheck = false;
+            txt.maxLength = 90000;
             if (!utils.is_mobile()) {
                 txt.cols = 40;
             }
