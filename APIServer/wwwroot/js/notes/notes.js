@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.2";
+    let version = "1.0.3";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -236,11 +236,12 @@ var notes = (() => {
                     onChangeNote();
                 });
                 titleInput.addEventListener("change", () => onSaveNote());
-                let imgStatus = controls.createImg(parent, "img-status", 24, 24);
+                let d = new Date(note.lastModifiedUtc);
+                let caption = controls.createDiv(parent, "caption");
+                caption.textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
+                let imgStatus = controls.createImg(caption, "img-status", 24, 24);
                 imgStatus.id = "img-status-id";
                 imgStatus.style.visibility = "hidden";
-                let d = new Date(note.lastModifiedUtc);
-                controls.createDiv(parent, "caption").textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
                 let txt = controls.create(parent, "textarea");
                 txt.id = "textarea-entry-id";
                 txt.rows = 8;

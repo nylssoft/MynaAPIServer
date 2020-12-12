@@ -53,17 +53,17 @@ textarea {
 
 .note {
     margin: 5pt;
-    color: black;
-    background-color: yellow;
-    border: 2px solid yellowgreen;
-    border-radius: 25px;
     padding: 5pt;
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    border-radius: 25px;
+    cursor: pointer;
 }
 
 .note:hover {
     background-color: #008CBA;
-    color: yellowgreen;
-    cursor: pointer;
+    color: darkblue;
 }
 
 .note-selected {
