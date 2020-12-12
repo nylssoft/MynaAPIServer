@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.14";
+    let version = "1.0.15";
 
     // helper
 
@@ -96,20 +96,25 @@ var usermgmt = (() => {
                 confirmations.forEach((confirmation) => {
                     let div = controls.createDiv(parent);
                     let dt = new Date(confirmation.requestedUtc).toLocaleString("de-DE");
-                    controls.createCheckbox(div, `confirm-registration-${idx}`);
+                    controls.createCheckbox(div, `confirm-registration-${idx}`, undefined, undefined, false, () => onUpdateRegisterActions());
                     controls.create(div, "span", undefined, `E-Mail-Adresse ${confirmation.email} vom ${dt}.`);
                     idx++;
                 });
-                controls.create(parent, "p", undefined, "Optionen:");
-                let sendEmailDiv = controls.createDiv(parent);
+                let divOptions = controls.createDiv(parent);
+                divOptions.id = "register-options-id";
+                controls.create(divOptions, "p", undefined, "Optionen:");
+                let sendEmailDiv = controls.createDiv(divOptions);
                 controls.createCheckbox(sendEmailDiv, "send-emailnotification-id", undefined, "Antwort-E-Mail verschicken");
                 let errorDiv = controls.createDiv(parent, "error");
                 errorDiv.id = "error-id";
                 let p = controls.create(parent, "p");
-                controls.createButton(p, "Best\u00E4tigen", () => onConfirmRegistration(confirmations));
-                controls.createButton(p, "Ablehnen", () => onConfirmRegistration(confirmations, true));
+                let b = controls.createButton(p, "Best\u00E4tigen", () => onConfirmRegistration(confirmations));
+                b.id = "confirm-register-button-id";
+                b = controls.createButton(p, "Ablehnen", () => onConfirmRegistration(confirmations, true));
+                b.id = "reject-register-button-id";
                 controls.createButton(p, "Zur\u00FCck", () => render());
                 renderCopyright(parent);
+                onUpdateRegisterActions();
             },
             onRejectError,
             setWaitCursor
@@ -445,6 +450,31 @@ var usermgmt = (() => {
         let deleteButton = document.getElementById("delete-account-button-id");
         if (deleteButton) {
             deleteButton.style.display = cntSelected == 0 ? "none" : "";
+        }
+    };
+
+    const onUpdateRegisterActions = () => {
+        document.getElementById("error-id").textContent = "";
+        let cntSelected = 0;
+        let idx = 0;
+        while (true) {
+            let cb = document.getElementById(`confirm-registration-${idx}`);
+            if (!cb) {
+                break;
+            }
+            if (cb.checked) {
+                cntSelected += 1;
+            }
+            idx++;
+        }
+        let confirmButton = document.getElementById("confirm-register-button-id");
+        let rejectButton = document.getElementById("reject-register-button-id");
+        let registerOptionsDiv = document.getElementById("register-options-id");
+        let s = cntSelected == 0 ? "none" : "";
+        if (confirmButton && rejectButton && registerOptionsDiv) {
+            confirmButton.style.display = s;
+            rejectButton.style.display = s;
+            registerOptionsDiv.style.display = s;
         }
     };
 
