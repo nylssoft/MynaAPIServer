@@ -5,6 +5,10 @@
     -ms-user-select: none; /* Internet Explorer/Edge */
 }
 
+body {
+    background-color: black;
+}
+
 .footer {
     position: absolute;
     bottom: 0pt;

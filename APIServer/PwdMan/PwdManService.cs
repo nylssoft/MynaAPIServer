@@ -28,6 +28,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
@@ -910,6 +911,47 @@ namespace APIServer.PwdMan
             logger.LogDebug("Has password file...");
             var user = GetUserFromToken(authenticationToken);
             return user.PasswordFileId != null;
+        }
+
+        // --- slideshow
+
+        public SlideShowModel GetSlideShow(string authenticationToken)
+        {
+            var opt = GetOptions();
+            var model = new SlideShowModel { Interval = 10, Pictures = new List<SlideShowPictureModel>() };
+            try
+            {
+                if (!string.IsNullOrEmpty(authenticationToken) && authenticationToken != "undefined")
+                {
+                    var user = GetUserFromToken(authenticationToken);
+                    if (HasRole(user, "family"))
+                    {
+                        if (!string.IsNullOrEmpty(opt.SlideShowFamilyPhotos) && File.Exists(opt.SlideShowFamilyPhotos))
+                        {
+                            var familyModel = JsonSerializer.Deserialize<SlideShowModel>(File.ReadAllText(opt.SlideShowFamilyPhotos, Encoding.UTF8));
+                            model.Interval = familyModel.Interval;
+                            foreach (var pic in familyModel.Pictures)
+                            {
+                                model.Pictures.Add(pic);
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                logger.LogDebug("Invalid token.");
+            }
+            if (!string.IsNullOrEmpty(opt.SlideShowPublicPhotos) && File.Exists(opt.SlideShowPublicPhotos))
+            {
+                var publicModel = JsonSerializer.Deserialize<SlideShowModel>(File.ReadAllText(opt.SlideShowPublicPhotos, Encoding.UTF8));
+                model.Interval = publicModel.Interval;
+                foreach (var pic in publicModel.Pictures)
+                {
+                    model.Pictures.Add(pic);
+                }
+            }
+            return model;
         }
 
         // --- database access

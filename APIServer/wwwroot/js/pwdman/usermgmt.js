@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.15";
+    let version = "1.0.16";
 
     // helper
 
@@ -143,6 +143,10 @@ var usermgmt = (() => {
         controls.createCheckbox(checkboxDiv, "roles-usermanager-id", undefined, "usermanager",
             user.roles.includes("usermanager"),
             () => onUpdateRole(parent, users, user, "usermanager"));
+        checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
+        controls.createCheckbox(checkboxDiv, "roles-family-id", undefined, "family",
+            user.roles.includes("family"),
+            () => onUpdateRole(parent, users, user, "family"));
         controls.createDiv(parent, "error").id="error-id";
         let actionsDiv = controls.createDiv(parent);
         if (user.accountLocked) {

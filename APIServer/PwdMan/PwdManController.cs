@@ -146,6 +146,13 @@ namespace APIServer.PwdMan
         }
 
         [HttpGet]
+        [Route("api/pwdman/slideshow")]
+        public IActionResult GetSlideShow()
+        {
+            return new JsonResult(PwdManService.GetSlideShow(GetToken()));
+        }
+
+        [HttpGet]
         [Route("api/pwdman/users")]
         public IActionResult GetUsers()
         {

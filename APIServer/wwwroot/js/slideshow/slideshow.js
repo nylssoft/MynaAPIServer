@@ -149,11 +149,13 @@ var slideshow = (() => {
 
     const initSlideShow = (pictures, interval) => {
         slideShowPictures = pictures;
-        utils.shuffle_array(slideShowPictures);
-        if (interval) {
-            slideShowInterval = interval;
-            ontimer();
-            window.setInterval(ontimer, interval * 1000);
+        if (pictures && pictures.length > 0) {
+            utils.shuffle_array(slideShowPictures);
+            if (interval) {
+                slideShowInterval = interval;
+                ontimer();
+                window.setInterval(ontimer, interval * 1000);
+            }
         }
     };
 
@@ -167,17 +169,16 @@ var slideshow = (() => {
 })();
 
 window.onload = () => {
-    fetch("/images/slideshow/pictures.json", { cache: "no-cache" })
-        .then(response => {
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                response.json().then(model => {
-                    slideshow.initSlideShow(model.pictures, model.interval);
-                });
-            }
-            else {
-                console.log("Slideshow disabled.");
-            }
-        })
-    utils.auth_lltoken(slideshow.render);
+    utils.auth_lltoken(() => {
+        let token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+            (model) => {
+                slideshow.initSlideShow(model.pictures, model.interval);
+                slideshow.render();
+            },
+            (errMsg) => {
+                console.error(errMsg);
+                slideshow.render();
+            });
+    });
 };

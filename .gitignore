@@ -53,6 +53,7 @@ Temporary Items
 /bin
 /APIServer/wwwroot/images/skat/profiles
 /APIServer/wwwroot/images/slideshow/*.jpg
+/APIServer/wwwroot/images/slideshow/family/*.jpg
 /APIServer/wwwroot/**/*.min.*
 /APIServer/data
 

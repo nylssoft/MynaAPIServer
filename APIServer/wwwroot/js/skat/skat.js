@@ -33,12 +33,13 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.14";
+    let version = "1.1.15";
 
     // helper
 
     const handleError = (err) => {
         console.error(err);
+        controls.clearState();
         timerEnabled = true;
     }
 
@@ -1271,12 +1272,10 @@ var skat = (() => {
         if (!timerEnabled) return;
         utils.fetch_api_call("api/skat/state", undefined,
             (d) => {
-                if (d && d > 0) {
-                    let statechanged = controls.getState();
-                    if (!statechanged || d > statechanged) {
-                        controls.setState(d);
-                        render();
-                    }
+                let statechanged = controls.getState();
+                if (!statechanged || d > statechanged) {
+                    controls.setState(d);
+                    render();
                 }
             },
             handleError);

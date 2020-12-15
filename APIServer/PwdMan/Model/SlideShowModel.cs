@@ -15,24 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-namespace APIServer.PwdMan
+using System.Collections.Generic;
+
+namespace APIServer.PwdMan.Model
 {
-    public class PwdManOptions
+    public class SlideShowModel
     {
-        public TokenConfig TokenConfig { get; set; }
+        public int Interval { get; set; }
 
-        public TOTPConfig TOTPConfig { get; set; }
-
-        public string RegistrationEmail { get; set; }
-
-        public int MaxLoginTryCount { get; set; } = 3;
-
-        public int AccountLockTime { get; set; } = 300;
-
-        public string Hostname { get; set; }
-
-        public string SlideShowPublicPhotos { get; set; }
-
-        public string SlideShowFamilyPhotos { get; set; }
+        public List<SlideShowPictureModel> Pictures { get; set; }
     }
 }

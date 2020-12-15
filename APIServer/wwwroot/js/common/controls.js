@@ -200,7 +200,7 @@ var controls = (() => {
     }
 
     const clearState = () => {
-        return window.sessionStorage.getItem("state");
+        return window.sessionStorage.removeItem("state");
     }
 
     const setState = (state) => {

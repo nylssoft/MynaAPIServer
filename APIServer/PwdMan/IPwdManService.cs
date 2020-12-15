@@ -18,6 +18,7 @@
 using APIServer.Database;
 using APIServer.PwdMan.Model;
 using System.Collections.Generic;
+using System.IO;
 
 namespace APIServer.PwdMan
 {
@@ -84,6 +85,10 @@ namespace APIServer.PwdMan
         string GetEncodedPasswordFile(string token);
 
         bool HasPasswordFile(string authenticationToken);
+
+        // --- slideshow
+
+        SlideShowModel GetSlideShow(string authenticationToken);
 
         // --- database access
 
