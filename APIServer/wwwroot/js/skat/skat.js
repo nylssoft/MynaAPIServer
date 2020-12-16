@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.15";
+    let version = "1.1.16";
 
     // helper
 
@@ -674,8 +674,10 @@ var skat = (() => {
             controls.createLabel(parent, undefined, "Es liegen noch keine Spielergebnisse f\u00FCr Dich vor.");            
             return;
         }
-        let div1 = controls.createDiv(parent, "results-column");
+        let boxDiv = controls.createDiv(parent, "box");
+        let div1 = controls.createDiv(boxDiv, "box-item");
         div1.id = "results-overview-id";
+        let div2 = controls.createDiv(boxDiv, "box-item");
         let cnt = 1;
         results.forEach(result => {
             let started = new Date(result.startedUtc);
@@ -689,7 +691,6 @@ var skat = (() => {
                         handleError);                    
                 });
         });
-        let div2 = controls.createDiv(parent);
         if (skatadmin) {
             controls.createButton(div1, "L\u00F6schen", () => onDeleteSkatResult(div1, true));
         }
@@ -729,6 +730,9 @@ var skat = (() => {
         controls.create(tr, "th", undefined, "Spiel");
         let tbody = controls.create(table, "tbody");
         let scores = [0, 0, 0];
+        let playerWins = [0, 0, 0];
+        let playerLoss = [0, 0, 0];
+        let otherWins = [0, 0, 0];
         result.history.forEach((h) => {
             tr = controls.create(tbody, "tr");
             controls.create(tr, "td", undefined, `${cnt}`);
@@ -743,10 +747,36 @@ var skat = (() => {
                     td.textContent = "-";
                 }
             }
+            if (h.gameValue > 0) {
+                playerWins[idx] += 1;
+            }
+            else {
+                playerLoss[idx] += 1;
+                otherWins[(idx + 1) % 3] += 1;
+                otherWins[(idx + 2) % 3] += 1;
+            }
             let tddetails = controls.create(tr, "td");
             controls.createA(tddetails, undefined, "#open", `${h.gameValue}`, () => renderGameHistory(parent, result, h));
             cnt++;
         });
+        table = controls.create(parent, "table");
+        controls.create(table, "caption", undefined, "Turnierwertung");
+        theader = controls.create(table, "thead");
+        tr = controls.create(theader, "tr");
+        for (let idx = 0; idx < 3; idx++) {
+            controls.create(tr, "th", undefined, `${result.playerNames[idx]}`);
+        }
+        tbody = controls.create(table, "tbody");
+        tr = controls.create(tbody, "tr");
+        for (let idx = 0; idx < 3; idx++) {
+            let points = scores[idx] + playerWins[idx] * 50 - playerLoss[idx] * 50 + otherWins[idx] * 40;
+            let td = controls.create(tr, "td");
+            controls.create(td, "div", undefined, `${scores[idx]}`);
+            controls.create(td, "div", undefined, `+ ${playerWins[idx]} * 50`);
+            controls.create(td, "div", undefined, `- ${playerLoss[idx]} * 50`);
+            controls.create(td, "div", undefined, `+ ${otherWins[idx]} * 40`);
+            controls.create(td, "div", undefined, `= ${points}`);
+        }
     };
 
     const renderGameHistory = (parent, result, gameHistory) => {
@@ -769,7 +799,7 @@ var skat = (() => {
             let buttonDiv = controls.createDiv(parent);
             controls.createButton(buttonDiv, "Zur\u00FCck", () => {
                 if (div1) {
-                    div1.className = "results-column";
+                    div1.className = "box-item";
                 }
                 renderResultTable(parent, result);
             });

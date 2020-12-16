@@ -29,6 +29,11 @@ body {
     margin-left: 20pt;
 }
 
+caption {
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
 table {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 18pt;
@@ -68,8 +73,13 @@ td a {
     display: none;
 }
 
-.results-column {
-    float: left;
+.box {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.box-item {
+    margin: 5pt;
 }
 
 .layout-chat-button {
