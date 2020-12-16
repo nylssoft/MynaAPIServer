@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.4";
+    let version = "1.2.5";
 
     let block;
     let nextBlock;
@@ -1091,11 +1091,10 @@ var tetris = (() => {
 // --- window loaded event
 
 window.onload = () => {
-    fetch("/images/slideshow/pictures.json", { cache: "no-cache" })
-        .then(response => {
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                response.json().then(model => tetris.init(model));
-            }
-        });
+    utils.auth_lltoken(() => {
+        let token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+            (model) => tetris.init(model),
+            (errMsg) => console.error(errMsg));
+    });
 };
