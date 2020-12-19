@@ -103,8 +103,6 @@ namespace APIServer.Skat.Core
 
         public bool BidSaid { get; set; } = false;
 
-        public bool BidExceeded { get; set; } = false;
-
         private int BidValueIndex { get; set; } = -1;
 
         private List<int> BidValues = new List<int>();
@@ -258,7 +256,6 @@ namespace APIServer.Skat.Core
             }
             BidSaid = false;
             BidValueIndex = -1;
-            BidExceeded = false;
         }
 
         public void MoveNextBidValue()
@@ -543,19 +540,12 @@ namespace APIServer.Skat.Core
 
         public void StartGame(Player player)
         {
-            List<Card> skat = null;
             if (!player.Game.Option.HasFlag(GameOption.Hand))
             {
-                skat = Skat;
-                CurrentHistory.Back.AddRange(skat);
+                CurrentHistory.Back.AddRange(Skat);
             }
             CurrentHistory.GameText = player.Game.GetGameAndOptionText();
             CurrentHistory.GamePlayerName = player.Name;
-            var jackStraight = player.Game.GetMatadorsJackStraight(player.Cards, skat);
-            if (player.Game.GetBidValue(jackStraight) < CurrentBidValue)
-            {
-                BidExceeded = true;
-            }
             GameStarted = true;
             foreach (var p in Players)
             {
@@ -566,7 +556,7 @@ namespace APIServer.Skat.Core
                 }
             }
             // spitzen mit skat
-            MatadorsJackStraight = player.Game.GetMatadorsJackStraight(player.Cards, skat);
+            MatadorsJackStraight = player.Game.GetMatadorsJackStraight(player.Cards, Skat);
         }
 
         public Player GetActivePlayer()
