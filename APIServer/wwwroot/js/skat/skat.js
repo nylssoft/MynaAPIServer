@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.2.3";
+    let version = "1.2.4";
 
     // helper
 
