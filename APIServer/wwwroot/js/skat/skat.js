@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.2.0";
+    let version = "1.2.1";
 
     // helper
 
@@ -809,8 +809,9 @@ var skat = (() => {
         }
         tbody = controls.create(table, "tbody");
         tr = controls.create(tbody, "tr");
+        let otherScore = result.playerNames.length == 4 ? 30 : 40;
         for (let idx = 0; idx < result.playerNames.length; idx++) {
-            let points = scores[idx] + playerWins[idx] * 50 - playerLoss[idx] * 50 + otherWins[idx] * 40;
+            let points = scores[idx] + playerWins[idx] * 50 - playerLoss[idx] * 50 + otherWins[idx] * otherScore;
             let td = controls.create(tr, "td");
             controls.create(td, "div", undefined, `${scores[idx]}`);
             controls.create(td, "div", undefined, `+ ${playerWins[idx]} * 50`);
