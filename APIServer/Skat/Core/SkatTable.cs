@@ -41,6 +41,10 @@ namespace APIServer.Skat.Core
 
         public List<Player> Players { get; set; } = new List<Player>();
 
+        public List<Player> TablePlayers { get; set; } = new List<Player>();
+
+        public Player InactivePlayer { get; set; } = null;
+
         public List<Card> Skat { get; set; } = new List<Card>();
 
         public List<Card> Stitch { get; set; } = new List<Card>();
@@ -105,11 +109,24 @@ namespace APIServer.Skat.Core
 
         private List<int> BidValues = new List<int>();
 
-        public SkatTable(string player1, string player2, string player3)
+        public SkatTable(string player1, string player2, string player3, string player4 = null)
         {
-            Players.Add(new Player(player1, PlayerPosition.Rearhand));
-            Players.Add(new Player(player2, PlayerPosition.Forehand));
-            Players.Add(new Player(player3, PlayerPosition.Middlehand));
+            if (player4 != null)
+            {
+                Players.Add(new Player(player1, PlayerPosition.Forehand));
+                Players.Add(new Player(player2, PlayerPosition.Middlehand));
+                Players.Add(new Player(player3, PlayerPosition.Rearhand));
+                InactivePlayer = new Player(player4, PlayerPosition.Inactive);
+                TablePlayers.Add(InactivePlayer);
+                TablePlayers.AddRange(Players);
+            }
+            else
+            {
+                Players.Add(new Player(player1, PlayerPosition.Rearhand));
+                Players.Add(new Player(player2, PlayerPosition.Forehand));
+                Players.Add(new Player(player3, PlayerPosition.Middlehand));
+                TablePlayers.AddRange(Players);
+            }
             SkatResult = new SkatResult();
             CurrentHistory = new GameHistory();
             using (var rng = new RNGCryptoServiceProvider())
@@ -153,28 +170,68 @@ namespace APIServer.Skat.Core
         public void StartNewRound()
         {
             GameCounter += 1;
-            foreach (var p in Players)
+            if (InactivePlayer == null)
             {
-                p.Stitches.Clear();
-                p.Cards.Clear();
-                p.Game = new Game(GameType.Grand);
-                switch (p.Position)
+                foreach (var p in Players)
                 {
-                    case PlayerPosition.Middlehand:
+                    p.Stitches.Clear();
+                    p.Cards.Clear();
+                    p.Game = new Game(GameType.Grand);
+                    switch (p.Position)
+                    {
+                        case PlayerPosition.Middlehand:
+                            p.Position = PlayerPosition.Forehand;
+                            p.BidStatus = BidStatus.Accept;
+                            break;
+                        case PlayerPosition.Rearhand:
+                            p.Position = PlayerPosition.Middlehand;
+                            p.BidStatus = BidStatus.Bid;
+                            break;
+                        case PlayerPosition.Forehand:
+                            p.Position = PlayerPosition.Rearhand;
+                            p.BidStatus = BidStatus.Wait;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                var nextPlayers = new Player[3];
+                var newPlayer = InactivePlayer;
+                newPlayer.Position = PlayerPosition.Rearhand;
+                newPlayer.BidStatus = BidStatus.Wait;
+                newPlayer.Stitches.Clear();
+                newPlayer.Cards.Clear();
+                newPlayer.Game = new Game(GameType.Grand);
+                nextPlayers[2] = newPlayer;
+                foreach (var p in Players)
+                {
+                    p.Stitches.Clear();
+                    p.Cards.Clear();
+                    p.Game = new Game(GameType.Grand);
+                    if (p.Position == PlayerPosition.Forehand)
+                    {
+                        InactivePlayer = p;
+                        p.Position = PlayerPosition.Inactive;
+                        p.BidStatus = BidStatus.Wait;
+                    }
+                    else if (p.Position == PlayerPosition.Middlehand)
+                    {
                         p.Position = PlayerPosition.Forehand;
                         p.BidStatus = BidStatus.Accept;
-                        break;
-                    case PlayerPosition.Rearhand:
+                        nextPlayers[0] = p;
+                    }
+                    else if (p.Position == PlayerPosition.Rearhand)
+                    {
                         p.Position = PlayerPosition.Middlehand;
                         p.BidStatus = BidStatus.Bid;
-                        break;
-                    case PlayerPosition.Forehand:
-                        p.Position = PlayerPosition.Rearhand;
-                        p.BidStatus = BidStatus.Wait;
-                        break;
-                    default:
-                        break;
+                        nextPlayers[1] = p;
+                    }
                 }
+                Players.Clear();
+                Players.AddRange(nextPlayers);
             }
             MatadorsJackStraight = null;
             GameStarted = false;
@@ -635,12 +692,20 @@ namespace APIServer.Skat.Core
             else
             {
                 // Game ended
-                if (player.Cards.Count == 0 && Stitch.Count == 0)
+                if (GamePlayer.Cards.Count == 0 && Stitch.Count == 0)
                 {
                     ret.Header += "Das Spiel ist beendet. ";
-                    // exclude Skat for Null games
-                    ret.Header += $"Du hast {GetScore(player)} Augen. ";
-                    var next1 = GetNextPlayer(player);
+                    Player next0 = player;
+                    if (player.Position == PlayerPosition.Inactive)
+                    {
+                        next0 = Players.Single((p) => p.Position == PlayerPosition.Forehand);
+                        ret.Header += $"{next0.Name} hat {GetScore(next0)} Augen. ";
+                    }
+                    else
+                    {
+                        ret.Header += $"Du hast {GetScore(player)} Augen. ";
+                    }
+                    var next1 = GetNextPlayer(next0);
                     var next2 = GetNextPlayer(next1);
                     ret.Header += $"{next1.Name} hat {GetScore(next1)} Augen. ";
                     ret.Header += $"{next2.Name} hat {GetScore(next2)} Augen. ";

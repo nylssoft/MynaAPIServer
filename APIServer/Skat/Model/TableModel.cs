@@ -27,6 +27,8 @@ namespace APIServer.Skat.Model
 
         public PlayerModel GamePlayer { get; set; } = null;
 
+        public PlayerModel InactivePlayer { get; set; } = null;
+
         public string Message { get; set; } = "";
 
         public List<CardModel> Cards { get; set; } = new List<CardModel>();

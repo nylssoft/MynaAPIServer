@@ -375,7 +375,7 @@ namespace APIServer.PwdMan
             dbContext.DbUsers.Add(user);
             dbContext.SaveChanges();
             var skatResults = dbContext.DbSkatResults
-                .Where(r => r.Player1 == user.Name || r.Player2 == user.Name || r.Player3 == user.Name)
+                .Where(r => r.Player1 == user.Name || r.Player2 == user.Name || r.Player3 == user.Name || r.Player4 == user.Name)
                 .Select(r => r.Id);
             if (skatResults.Any())
             {

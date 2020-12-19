@@ -22,5 +22,7 @@ namespace APIServer.Skat.Model
         public string Name { get; set; } = "";
 
         public bool StartGameConfirmed { get; set; } = false;
+
+        public bool IsPlaying { get; set; } = true;
     }
 }

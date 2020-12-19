@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.1.16";
+    let version = "1.2.0";
 
     // helper
 
@@ -72,9 +72,15 @@ var skat = (() => {
     };
 
     const getNextPlayer = (player) => {
-        for (let idx = 0; idx < model.skatTable.players.length; idx++) {
-            if (player.name == model.skatTable.players[idx].name) {
-                return model.skatTable.players[(idx + 1) % model.skatTable.players.length];
+        if (player) {
+            for (let idx = 0; idx < model.skatTable.players.length; idx++) {
+                if (player.name == model.skatTable.players[idx].name) {
+                    player = model.skatTable.players[(idx + 1) % model.skatTable.players.length];
+                    if (player.name == model.skatTable.inactivePlayer.name) {
+                        player = model.skatTable.players[(idx + 2) % model.skatTable.players.length];
+                    }
+                    return player;
+                }
             }
         }
         return undefined;
@@ -86,6 +92,7 @@ var skat = (() => {
             model.skatTable.gameStarted &&
             !model.skatTable.gameEnded &&
             model.skatTable.gamePlayer &&
+            model.skatTable.player &&
             model.skatTable.gamePlayer.name != model.skatTable.player.name &&
             (model.skatTable.gamePlayer.game.option.ouvert || model.skatTable.isSpeedUp);
     };
@@ -178,6 +185,18 @@ var skat = (() => {
         return cards;
     };
 
+    const getPlayerName = () => {
+        if (model && model.skatTable) {
+            if (model.skatTable.player) {
+                return model.skatTable.player.name;
+            }
+            if (model.skatTable.inactivePlayer) {
+                return model.skatTable.inactivePlayer.name;
+            }
+        }
+        return "";
+    }
+
     // rendering
 
     const renderTableFull = (parent, ignoreToken) => {
@@ -268,7 +287,12 @@ var skat = (() => {
     };
 
     const renderStartGame = (parent) => {
-        controls.create(parent, "p", undefined, "Alle sind angemeldet! Starte das Spiel!");
+        if (model.allUsers.length < 4) {
+            controls.create(parent, "p", undefined, "Warte auf einen vierten Spieler oder starte das Spiel zu dritt!");
+        }
+        else {
+            controls.create(parent, "p", undefined, "Alle sind angemeldet! Starte das Spiel!");
+        }
         controls.createButton(parent, "Spiel starten", btnStartGame_click);
         document.body.className = "active-background";
     };
@@ -392,7 +416,7 @@ var skat = (() => {
             controls.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
             active = true;
         }
-        else if (letsStartClicked) {
+        else if (letsStartClicked && model.skatTable.player) {
             controls.create(parent, "span", "confirmation", `Willst Du Dich wirklich ${model.skatTable.player.game.description} spielen?`);
             controls.createButton(parent, "Ja", btnLetsStart_click, "LetsStartYes");
             controls.createButton(parent, "Nein", btnLetsStart_click, "LetsStartNo");
@@ -401,15 +425,17 @@ var skat = (() => {
         else {
             if (model.skatTable.canStartNewGame) {
                 if (!model.currentUser.startGameConfirmed) {
-                    controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
+                    if (model.skatTable.player) {
+                        controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
+                    }
                     controls.createButton(parent, "Spielverlauf", () => window.open(`${window.location.href}?gamehistory`, "_blank"));
                     controls.createButton(parent, "Tabelle", () => window.open(`${window.location.href}?result`, "_blank"));
                     active = true;
                 }
-                else {
+                else if (model.skatTable.player) {
                     let wait = false;
                     model.allUsers.forEach((user) => {
-                        if (!user.startGameConfirmed) {
+                        if (user.isPlaying && !user.startGameConfirmed) {
                             wait = true;
                         }
                     });
@@ -419,6 +445,7 @@ var skat = (() => {
                     }
                     else {
                         controls.create(parent, "p", undefined, "Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                        document.body.className = "inactive-background";
                     }
                 }
             }
@@ -527,19 +554,29 @@ var skat = (() => {
     const renderSummary = (parent, left, right, bottom) => {
         controls.create(parent, "div", "summary-currentplayer", `Spiel ${model.skatTable.gameCounter}`);
         model.skatTable.players.forEach((p) => {
-            let classname = p.name == model.skatTable.player.name ? "summary-currentplayer" : "summary-otherplayer";
+            let classname = p.name == getPlayerName() ? "summary-currentplayer" : "summary-otherplayer";
             controls.create(parent, "div", classname, p.summary);
         });
         if (!model.skatTable.gameEnded) {
-            let leftPlayer = getNextPlayer(model.skatTable.player);
-            let rightPlayer = getNextPlayer(leftPlayer);
+            let leftPlayer
+            let middlePlayer;
+            let rightPlayer;
+            if (!model.skatTable.player) {
+                middlePlayer = getNextPlayer(model.skatTable.inactivePlayer);
+                leftPlayer = getNextPlayer(middlePlayer);
+            }
+            else {
+                leftPlayer = getNextPlayer(model.skatTable.player);
+                middlePlayer = model.skatTable.player;
+            }
+            rightPlayer = getNextPlayer(leftPlayer);
             if (isOuvert() && model.skatTable.ouvert.length > 0) {
                 left.className += "-ouvert";
                 right.className += "-ouvert";
             }
             renderSummaryPlayer(left, leftPlayer);
             renderSummaryPlayer(right, rightPlayer);
-            renderSummaryPlayer(bottom, model.skatTable.player);
+            renderSummaryPlayer(bottom, middlePlayer);
         }
     };
 
@@ -570,13 +607,14 @@ var skat = (() => {
         let divActions = controls.createDiv(parent, "actions-section");
         let divGame = controls.createDiv(parent);
         let divCopyright = controls.createDiv(parent);
-        if (model.skatTable.player &&
-            model.skatTable.currentPlayer &&
-            model.skatTable.player.name == model.skatTable.currentPlayer.name ||
-            !model.skatTable.gameStarted &&
-            model.skatTable.gamePlayer &&
-            model.skatTable.gamePlayer.name == model.skatTable.player.name) {
-            document.body.className = "active-background";
+        if (model.skatTable.player) {
+            if (model.skatTable.currentPlayer &&
+                model.skatTable.player.name == model.skatTable.currentPlayer.name ||
+                !model.skatTable.gameStarted &&
+                model.skatTable.gamePlayer &&
+                model.skatTable.gamePlayer.name == model.skatTable.player.name) {
+                document.body.className = "active-background";
+            }
         }
         renderSummary(divSummary, divLeft, divRight, divBottom);
         renderHeader(divHeader);
@@ -727,18 +765,21 @@ var skat = (() => {
         controls.create(tr, "th", undefined, `${result.playerNames[0]}`);
         controls.create(tr, "th", undefined, `${result.playerNames[1]}`);
         controls.create(tr, "th", undefined, `${result.playerNames[2]}`);
+        if (result.playerNames.length > 3) {
+            controls.create(tr, "th", undefined, `${result.playerNames[3]}`);
+        }
         controls.create(tr, "th", undefined, "Spiel");
         let tbody = controls.create(table, "tbody");
-        let scores = [0, 0, 0];
-        let playerWins = [0, 0, 0];
-        let playerLoss = [0, 0, 0];
-        let otherWins = [0, 0, 0];
+        let scores = [0, 0, 0, 0];
+        let playerWins = [0, 0, 0, 0];
+        let playerLoss = [0, 0, 0, 0];
+        let otherWins = [0, 0, 0, 0];
         result.history.forEach((h) => {
             tr = controls.create(tbody, "tr");
             controls.create(tr, "td", undefined, `${cnt}`);
             let idx = result.playerNames.findIndex((e) => e == h.gamePlayerName);
             scores[idx] += h.gameValue;
-            for (let col = 0; col < 3; col++) {
+            for (let col = 0; col < result.playerNames.length; col++) {
                 let td = controls.create(tr, "td");
                 if (col == idx) {
                     td.textContent = `${scores[idx]}`;
@@ -763,12 +804,12 @@ var skat = (() => {
         controls.create(table, "caption", undefined, "Turnierwertung");
         theader = controls.create(table, "thead");
         tr = controls.create(theader, "tr");
-        for (let idx = 0; idx < 3; idx++) {
+        for (let idx = 0; idx < result.playerNames.length; idx++) {
             controls.create(tr, "th", undefined, `${result.playerNames[idx]}`);
         }
         tbody = controls.create(table, "tbody");
         tr = controls.create(tbody, "tr");
-        for (let idx = 0; idx < 3; idx++) {
+        for (let idx = 0; idx < result.playerNames.length; idx++) {
             let points = scores[idx] + playerWins[idx] * 50 - playerLoss[idx] * 50 + otherWins[idx] * 40;
             let td = controls.create(tr, "td");
             controls.create(td, "div", undefined, `${scores[idx]}`);
@@ -843,7 +884,8 @@ var skat = (() => {
         renderChat(document.body);
         if (!ticket) {
             renderUserList(divMain);
-            if (model.allUsers.length == 3) {
+            console.log(model);
+            if (model.allUsers.length > 3 || model.isTableFull) {
                 renderTableFull(divMain);
             }
             else {

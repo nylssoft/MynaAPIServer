@@ -36,6 +36,8 @@ namespace APIServer.Database
 
         public string Player3 { get; set; }
 
+        public string Player4 { get; set; }
+
         public List<DbSkatGameHistory> SkatGameHistories { get; set; }
     }
 }

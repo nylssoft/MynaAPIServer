@@ -19,7 +19,7 @@ using System.Collections.Generic;
 
 namespace APIServer.Skat.Core
 {
-    public enum PlayerPosition { Rearhand, Forehand, Middlehand };
+    public enum PlayerPosition { Rearhand, Forehand, Middlehand, Inactive };
 
     public enum BidStatus { Bid, Accept, Pass, Wait };
 

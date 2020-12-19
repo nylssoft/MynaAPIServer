@@ -28,5 +28,7 @@ namespace APIServer.Skat.Model
         public UserModel CurrentUser { get; set; }
 
         public TableModel SkatTable { get; set; }
+
+        public bool IsTableFull { get; set; } = false;
     }
 }
