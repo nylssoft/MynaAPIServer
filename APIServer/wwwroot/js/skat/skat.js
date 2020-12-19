@@ -197,6 +197,15 @@ var skat = (() => {
         return "";
     }
 
+    const isPlaying = (user) => {
+        if (model && model.skatTable) {
+            if (!model.skatTable.inactivePlayer || user.name != model.skatTable.inactivePlayer.name) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     // rendering
 
     const renderTableFull = (parent, ignoreToken) => {
@@ -435,7 +444,7 @@ var skat = (() => {
                 else if (model.skatTable.player) {
                     let wait = false;
                     model.allUsers.forEach((user) => {
-                        if (user.isPlaying && !user.startGameConfirmed) {
+                        if (isPlaying(user) && !user.startGameConfirmed) {
                             wait = true;
                         }
                     });

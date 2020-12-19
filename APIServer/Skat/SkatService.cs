@@ -19,15 +19,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 using APIServer.Skat.Model;
 using APIServer.Skat.Core;
-using System.Threading;
 using APIServer.PwdMan;
 using APIServer.Database;
-using Microsoft.EntityFrameworkCore;
 
 namespace APIServer.Skat
 {
@@ -125,8 +125,7 @@ namespace APIServer.Skat
                     {
                         Name = username,
                         Created = DateTime.Now,
-                        LastAccess = DateTime.Now,
-                        IsPlaying = false
+                        LastAccess = DateTime.Now
                     };
                     userTickets[ticket] = ctx;
                     stateChanged = DateTime.UtcNow;
@@ -378,7 +377,8 @@ namespace APIServer.Skat
                 if (ctx != null && skatTable?.IsSpeedUp == true && !ctx.SpeedUpConfirmed)
                 {
                     ctx.SpeedUpConfirmed = true;
-                    var confirmedCount = userTickets.Values.Count((ctx) => ctx.IsPlaying && ctx.SpeedUpConfirmed);
+                    var playerNames = skatTable.Players.Select((p) => p.Name).ToList();
+                    var confirmedCount = userTickets.Values.Count((ctx) => playerNames.Contains(ctx.Name) && ctx.SpeedUpConfirmed);
                     if (confirmedCount == 3)
                     {
                         skatTable.SpeedUpConfirmed();
@@ -461,27 +461,16 @@ namespace APIServer.Skat
                             var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
                             var inactivePlayerName = userTickets.Count == 4 ? users[3].Name : null;
                             skatTable = new SkatTable(users[0].Name, users[1].Name, users[2].Name, inactivePlayerName);
-                            for (int idx = 0; idx < userTickets.Count; idx++)
-                            {
-                                users[idx].IsPlaying = idx < 3;
-                            }
                             ret = true;
                             AddSkatResult(pwdManService);
                         }
                     }
                     else if (skatTable != null && skatTable.CanStartNewGame())
                     {
-                        if (userTickets.Values.Count((user) => user.IsPlaying && user.StartGameConfirmed == true) == 3)
+                        var playerNames = skatTable.Players.Select((p) => p.Name).ToList();
+                        if (userTickets.Values.Count((user) => playerNames.Contains(user.Name) && user.StartGameConfirmed == true) == 3)
                         {
                             skatTable.StartNewRound();
-                            foreach (var p in skatTable.TablePlayers)
-                            {
-                                var playerCtx = userTickets.Values.SingleOrDefault((ctx) => ctx.Name == p.Name);
-                                if (playerCtx != null)
-                                {
-                                    playerCtx.IsPlaying = skatTable.InactivePlayer != p;
-                                }
-                            }
                             ret = true;
                         }
                     }
@@ -786,14 +775,14 @@ namespace APIServer.Skat
             var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
             foreach (var user in users)
             {
-                ret.Add(new UserModel { Name = user.Name, StartGameConfirmed = user.StartGameConfirmed, IsPlaying = user.IsPlaying });
+                ret.Add(new UserModel { Name = user.Name, StartGameConfirmed = user.StartGameConfirmed });
             }
             return ret;
         }
 
         private static UserModel GetCurrentUser(Context ctx)
         {
-            return new UserModel { Name = ctx.Name, StartGameConfirmed = ctx.StartGameConfirmed, IsPlaying = ctx.IsPlaying };
+            return new UserModel { Name = ctx.Name, StartGameConfirmed = ctx.StartGameConfirmed };
         }
 
         private static GameModel GetSkatGameModel(Game game)

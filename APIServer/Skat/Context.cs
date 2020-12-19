@@ -30,8 +30,6 @@ namespace APIServer.Skat
         public bool StartGameConfirmed { get; set; } = false;
 
         public bool SpeedUpConfirmed { get; set; } = false;
-
-        public bool IsPlaying { get; set; } = true;
     };
 
 }
