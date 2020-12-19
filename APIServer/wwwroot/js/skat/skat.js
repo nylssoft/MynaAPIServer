@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.2.2";
+    let version = "1.2.3";
 
     // helper
 
@@ -76,7 +76,7 @@ var skat = (() => {
             for (let idx = 0; idx < model.skatTable.players.length; idx++) {
                 if (player.name == model.skatTable.players[idx].name) {
                     player = model.skatTable.players[(idx + 1) % model.skatTable.players.length];
-                    if (player.name == model.skatTable.inactivePlayer.name) {
+                    if (model.skatTable.inactivePlayer && player.name == model.skatTable.inactivePlayer.name) {
                         player = model.skatTable.players[(idx + 2) % model.skatTable.players.length];
                     }
                     return player;
