@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.2.1";
+    let version = "1.2.2";
 
     // helper
 
@@ -816,7 +816,7 @@ var skat = (() => {
             controls.create(td, "div", undefined, `${scores[idx]}`);
             controls.create(td, "div", undefined, `+ ${playerWins[idx]} * 50`);
             controls.create(td, "div", undefined, `- ${playerLoss[idx]} * 50`);
-            controls.create(td, "div", undefined, `+ ${otherWins[idx]} * 40`);
+            controls.create(td, "div", undefined, `+ ${otherWins[idx]} * ${otherScore}`);
             controls.create(td, "div", undefined, `= ${points}`);
         }
     };
