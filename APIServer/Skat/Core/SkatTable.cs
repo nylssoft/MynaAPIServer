@@ -685,37 +685,44 @@ namespace APIServer.Skat.Core
                 if (GamePlayer.Cards.Count == 0 && Stitch.Count == 0)
                 {
                     ret.Header += "Das Spiel ist beendet. ";
-                    Player next0 = player;
-                    if (player.Position == PlayerPosition.Inactive)
+                    if (GameValue.Score == 0)
                     {
-                        next0 = Players.Single((p) => p.Position == PlayerPosition.Forehand);
-                        ret.Header += $"{next0.Name} hat {GetScore(next0)} Augen. ";
+                        ret.Header += "Alle Spieler haben gepasst. ";
                     }
                     else
                     {
-                        ret.Header += $"Du hast {GetScore(player)} Augen. ";
+                        Player next0 = player;
+                        if (player.Position == PlayerPosition.Inactive)
+                        {
+                            next0 = Players.Single((p) => p.Position == PlayerPosition.Forehand);
+                            ret.Header += $"{next0.Name} hat {GetScore(next0)} Augen. ";
+                        }
+                        else
+                        {
+                            ret.Header += $"Du hast {GetScore(player)} Augen. ";
+                        }
+                        var next1 = GetNextPlayer(next0);
+                        var next2 = GetNextPlayer(next1);
+                        ret.Header += $"{next1.Name} hat {GetScore(next1)} Augen. ";
+                        ret.Header += $"{next2.Name} hat {GetScore(next2)} Augen. ";
+                        if (player == GamePlayer)
+                        {
+                            ret.Header += "Du hast gespielt und ";
+                        }
+                        else
+                        {
+                            ret.Header += $"{GamePlayer.Name} hat gespielt und ";
+                        }
+                        if (GameValue.IsWinner)
+                        {
+                            ret.Header += "gewonnen. ";
+                        }
+                        else
+                        {
+                            ret.Header += "verloren. ";
+                        }
+                        ret.Header += $"{GameValue.Description} ";
                     }
-                    var next1 = GetNextPlayer(next0);
-                    var next2 = GetNextPlayer(next1);
-                    ret.Header += $"{next1.Name} hat {GetScore(next1)} Augen. ";
-                    ret.Header += $"{next2.Name} hat {GetScore(next2)} Augen. ";
-                    if (player == GamePlayer)
-                    {
-                        ret.Header += "Du hast gespielt und ";
-                    }
-                    else
-                    {
-                        ret.Header += $"{GamePlayer.Name} hat gespielt und ";
-                    }
-                    if (GameValue.IsWinner)
-                    {
-                        ret.Header += "gewonnen. ";
-                    }
-                    else
-                    {
-                        ret.Header += "verloren. ";
-                    }
-                    ret.Header += $"{GameValue.Description} ";
                 }
                 // Game in progress
                 else
@@ -820,7 +827,20 @@ namespace APIServer.Skat.Core
                 // all gave up
                 if (cntPassen == 3)
                 {
-                    StartNewRound();
+                    GamePlayer = Players[0];
+                    GameValue = new GameValue { Score = 0 };
+                    GameStarted = true;
+                    foreach (var p in Players)
+                    {
+                        p.Cards.Clear();
+                        p.Stitches.Clear();
+                    }
+                    Skat.Clear();
+                    Stitch.Clear();
+                    CurrentHistory.GamePlayerScore = 0;
+                    CurrentHistory.GameValue = 0;
+                    SkatResult.History.Add(CurrentHistory);
+                    SkatResult.EndedUtc = DateTime.UtcNow;
                 }
                 // two player gave up, remaing playing is the game player
                 else if (gamePlayer != null && cntPassen == 2)

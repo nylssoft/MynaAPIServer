@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.2.4";
+    let version = "1.2.5";
 
     // helper
 
@@ -845,7 +845,12 @@ var skat = (() => {
             return;
         }
         let gameP = controls.create(parent, "p");
-        gameP.textContent = `${gameHistory.gamePlayerName} hat ${gameHistory.gameText} gespielt und ${gameHistory.gamePlayerScore} Augen bekommen. Das Spiel wurde mit ${gameHistory.gameValue} Punkten gewertet.`;
+        if (gameHistory.gameValue == 0) {
+            gameP.textContent = "Alle Spieler haben gepasst.";
+        }
+        else {
+            gameP.textContent = `${gameHistory.gamePlayerName} hat ${gameHistory.gameText} gespielt und ${gameHistory.gamePlayerScore} Augen bekommen. Das Spiel wurde mit ${gameHistory.gameValue} Punkten gewertet.`;
+        }
         if (result) {
             let buttonDiv = controls.createDiv(parent);
             controls.createButton(buttonDiv, "Zur\u00FCck", () => {
