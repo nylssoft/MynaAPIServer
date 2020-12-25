@@ -81,7 +81,7 @@ namespace APIServer.Skat
         [Route("api/skat/bid")]
         public IActionResult PerformBidAction([FromBody] string value)
         {
-            return new JsonResult(SkatService.PerformBidAction(GetTicket(), value));
+            return new JsonResult(SkatService.PerformBidAction(PwdManService, GetTicket(), value));
         }
 
         [HttpPost]

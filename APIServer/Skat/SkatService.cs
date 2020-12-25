@@ -417,7 +417,7 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public bool PerformBidAction(string ticket, string bidAction)
+        public bool PerformBidAction(IPwdManService pwdManService, string ticket, string bidAction)
         {
             bool ret = false;
             lock (mutex)
@@ -434,6 +434,10 @@ namespace APIServer.Skat
                         if (stat.ActionTypes.Contains(actionType))
                         {
                             skatTable.PerformPlayerAction(player, actionType);
+                            if (skatTable.GameEnded)
+                            {
+                                AddGameHistory(pwdManService);
+                            }
                             ret = true;
                         }
                     }
