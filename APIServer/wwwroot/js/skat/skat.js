@@ -33,7 +33,7 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.2.5";
+    let version = "1.2.6";
 
     // helper
 
@@ -92,8 +92,7 @@ var skat = (() => {
             model.skatTable.gameStarted &&
             !model.skatTable.gameEnded &&
             model.skatTable.gamePlayer &&
-            model.skatTable.player &&
-            model.skatTable.gamePlayer.name != model.skatTable.player.name &&
+            (!model.skatTable.player || model.skatTable.player && model.skatTable.gamePlayer.name != model.skatTable.player.name) &&
             (model.skatTable.gamePlayer.game.option.ouvert || model.skatTable.isSpeedUp);
     };
 
