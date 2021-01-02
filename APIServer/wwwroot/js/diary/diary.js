@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.9";
+    let version = "1.0.10";
 
     let changeDate;
     let inSaveDiary;
@@ -89,7 +89,6 @@ var diary = (() => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
         let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/diary/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
-            console.log(document.getElementById("dropdown-id"));
             document.getElementById("dropdown-id").classList.toggle("show");
         });
         let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");

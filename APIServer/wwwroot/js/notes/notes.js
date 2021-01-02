@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.6";
+    let version = "1.0.7";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -129,7 +129,6 @@ var notes = (() => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
         let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/notes/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
-            console.log(document.getElementById("dropdown-id"));
             document.getElementById("dropdown-id").classList.toggle("show");
         });
         let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");

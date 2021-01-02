@@ -18,7 +18,8 @@ label {
 }
 
 h1 {
-    color: lightgreen;
+    padding: 2pt;
+    color: white;
     position: absolute;
     top: 5pt;
     left: 40pt;

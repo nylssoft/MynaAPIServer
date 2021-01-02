@@ -7,6 +7,19 @@
 
 body {
     background-color: black;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+}
+
+.header {
+    padding: 2pt;
+    color: white;
+    background-color: black;
+    position: absolute;
+    top: 5pt;
+    left: 40pt;
+    font-size: 18pt;
+    margin: 0pt;
 }
 
 .footer {
@@ -14,17 +27,8 @@ body {
     bottom: 0pt;
     left: 0pt;
     right: 0pt;
-    height: 50pt;
+    height: 30pt;
     background-color: black;
-}
-
-.footer-link {
-    color: lightgreen;
-    font-size: 11pt;
-    font-family: Arial, Helvetica, sans-serif;
-    margin-left: 20pt;
-    margin-right: 20pt;
-    display: inline-block;
 }
 
 .slideshow-info {
@@ -39,7 +43,7 @@ body {
     border: none;
     outline: none;
     position: absolute;
-    bottom: 28pt;
+    bottom: 6pt;
     right: 0pt;
 }
 
@@ -52,13 +56,83 @@ body {
     right: 5pt;
 }
 
+/* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
+.dropbtn {
+    position: fixed;
+    top: 5pt;
+    left: 5pt;
+    background-color: lightgrey;
+    color: white;
+    padding: 3px;
+    border: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #2980B9;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: fixed;
+    top: 40pt;
+    left: 5pt;
+    max-width: 300px;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    right: 5pt;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+    background-color: #ddd
+}
+
+.hide {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
 @media (max-width: 480px) {
+
+    body {
+        font-size: 11pt;
+    }
+
+    .slideshow-info {
+        font-size: 11pt;
+    }
+
     .footer {
         height: 350pt;
     }
+
     .slideshow-action {
         bottom: 350pt;
     }
+
     .footer-link {
         margin: 2pt;
     }

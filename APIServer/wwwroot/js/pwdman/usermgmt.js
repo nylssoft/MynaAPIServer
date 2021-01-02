@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.18";
+    let version = "1.0.19";
 
     // helper
 
@@ -39,7 +39,6 @@ var usermgmt = (() => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
         let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/pwdman/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
-            console.log(document.getElementById("dropdown-id"));
             document.getElementById("dropdown-id").classList.toggle("show");
         });
         let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");

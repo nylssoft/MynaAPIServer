@@ -29,25 +29,42 @@ var slideshow = (() => {
 
     // --- rendering
 
-    const renderLinks = (parent) => {
-        let div = controls.createDiv(parent);
-        controls.createA(div, "footer-link", "/skat", "Skat");
-        controls.createA(div, "footer-link", "/tetris", "Tetris");
-        controls.createA(div, "footer-link", "/diary", "Tagebuch");
-        controls.createA(div, "footer-link", "/notes", "Notizen");
+    const renderDropdown = (parent) => {
+        let dropdownDiv = controls.create(parent, "div", "dropdown");
+        dropdownDiv.id = "div-dropdown-id";
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/slideshow/hamburger.svg");
+        dropdownButton.addEventListener("click", () => {
+            document.getElementById("dropdown-id").classList.toggle("show");
+        });
+        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
+        dropdownContentDiv.id = "dropdown-id";
+    };
+
+    const renderDropdownContent = () => {
+        let parent = document.getElementById("dropdown-id");
+        if (!parent) return;
+        controls.removeAllChildren(parent);
+        controls.createA(parent, undefined, "/notes", "Notizen");
+        controls.createA(parent, undefined, "/skat", "Skat");
+        controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.createA(parent, undefined, "/tetris", "Tetris");
         if (currentUser) {
+            controls.create(parent, "hr");
             if (currentUser.hasPasswordManagerFile) {
-                controls.createA(div, "footer-link", "/pwdman", "Passwort\u00A0Manager");
+                controls.createA(parent, undefined, "/pwdman", "Passwort\u00A0Manager");
             }
-            controls.createA(div, "footer-link", "/usermgmt", "Konto", () => onEditAccount());
+            controls.createA(parent, undefined, "/usermgmt", "Profil");
+            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         }
-        else {
-            controls.createA(div, "footer-link", "/pwdman", "Anmelden", () => {
-                window.location.href = "/pwdman?nexturl=" + encodeURI(window.location.href);
-            });
-        }
-        controls.createA(div, "footer-link", "/downloads", "Downloads");
-        controls.createA(div, "footer-link", "/impressum", "Impressum");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/downloads", "Downloads");
+        controls.createA(parent, undefined, "/impressum", "Impressum");
+    };
+
+    const renderHeader = (parent) => {
+        let title = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";
+        let header = controls.create(parent, "h1", "header", title);
+        header.id = "header-id";
     };
 
     const renderSlideshowInfo = (parent) => {
@@ -76,28 +93,37 @@ var slideshow = (() => {
 
     const renderPage = () => {
         controls.removeAllChildren(document.body);
-        if (currentUser) {
-            let url;
-            if (skatPlayerImages) {
-                url = skatPlayerImages[currentUser.name.toLowerCase()];
-            }
-            if (!url) {
-                url = "/images/skat/profiles/Player1.png";
-            }
-            let img = controls.createImg(document.body, "img-profile", 32, 45, url);
-            img.title = `Angemeldet als ${currentUser.name}`;
-            img.addEventListener("click", () => onEditAccount());
-        }
+        renderDropdown(document.body);
+        renderHeader(document.body);
         divFooter = controls.createDiv(document.body, "footer");
         renderSlideshowInfo(divFooter);
-        renderLinks(divFooter);
-        window.onclick = (e) => {
-            if (e.target.tagName == "HTML") {
-                if (divFooter.style.visibility != "hidden") {
-                    divFooter.style.visibility = "hidden";
+        renderDropdownContent();
+        window.onclick = (event) => {
+            let dropdownClosed = false;
+            if (!event.target.matches(".dropbtn")) {
+                let dropdowns = document.getElementsByClassName("dropdown-content");
+                for (let i = 0; i < dropdowns.length; i++) {
+                    let openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains("show")) {
+                        openDropdown.classList.remove("show");
+                        dropdownClosed = true;
+                    }
                 }
-                else {
-                    divFooter.style.visibility = "visible";
+            }
+            if (!dropdownClosed) {
+                let dropdownDivElem = document.getElementById("div-dropdown-id");
+                let headerElem = document.getElementById("header-id");
+                if (event.target.tagName == "HTML") {
+                    if (divFooter.style.visibility != "hidden") {
+                        divFooter.style.visibility = "hidden";
+                        dropdownDivElem.style.visibility = "hidden";
+                        headerElem.style.visibility = "hidden";
+                    }
+                    else {
+                        divFooter.style.visibility = "visible";
+                        dropdownDivElem.style.visibility = "visible";
+                        headerElem.style.visibility = "visible";
+                    }
                 }
             }
         };
