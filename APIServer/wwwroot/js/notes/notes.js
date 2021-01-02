@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.5";
+    let version = "1.0.6";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -168,8 +168,7 @@ var notes = (() => {
         controls.create(div, "span", "copyright", `Myna Notes ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
-        controls.createA(div, "copyright", "/slideshow", "Home");
+        controls.create(div, "span", "copyright", ".");
     };
 
     const renderError = (errMsg) => {

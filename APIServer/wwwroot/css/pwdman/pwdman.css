@@ -362,12 +362,26 @@ h1 {
 }
 
 @media (max-width: 480px) {
+    body {
+        font-size: 11pt;
+        margin: 10pt;
+    }
+
     table {
         min-width: 200pt;
         width: 200pt;
     }
 
     input {
+        font-size: 11pt;
         width: 200pt;
+    }
+
+    .container-checkbox {
+        font-size: 11pt;
+    }
+
+    .button {
+        font-size: 11pt;
     }
 }

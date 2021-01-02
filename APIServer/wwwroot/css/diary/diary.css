@@ -366,6 +366,7 @@ textarea {
 
     input {
         font-size: 11pt;
+        width: 200pt;
     }
 
     table {
@@ -377,10 +378,6 @@ textarea {
     td, th {
         padding: 7px;
         letter-spacing: 1px;
-    }
-
-    input {
-        width: 200pt;
     }
 
     textarea {

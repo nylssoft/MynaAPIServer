@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.17";
+    let version = "1.0.18";
 
     // helper
 
@@ -78,8 +78,7 @@ var usermgmt = (() => {
         controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
-        controls.createA(div, "copyright", "/slideshow", "Home");
+        controls.create(div, "span", "copyright", ".");
     };
 
     const renderConfirmRegistrations = (success, results) => {

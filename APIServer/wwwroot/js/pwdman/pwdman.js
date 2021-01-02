@@ -41,7 +41,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.13";
+    let version = "1.1.14";
 
     // helper
 
@@ -428,11 +428,10 @@ var pwdman = (() => {
             title = "Password Manager";
         }
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna ${title} ${version}. Copyright 2020 `);
+        controls.create(div, "span", "copyright", `Myna ${title} ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
-        controls.createA(div, "copyright", "/slideshow", "Home");
+        controls.create(div, "span", "copyright", ".");
     };
 
     const renderUpdatePasswordStatus = (pwdDiv, pwdid, confirmPwdDiv, confirmpwdid) => {

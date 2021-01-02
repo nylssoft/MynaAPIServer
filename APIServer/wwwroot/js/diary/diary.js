@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.8";
+    let version = "1.0.9";
 
     let changeDate;
     let inSaveDiary;
@@ -128,8 +128,7 @@ var diary = (() => {
         controls.create(div, "span", "copyright", `Myna Diary ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
-        controls.createA(div, "copyright", "/slideshow", "Home");
+        controls.create(div, "span", "copyright", ".");
     };
 
     const renderCalendar = (calendarDiv, textDiv, month, year) => {
