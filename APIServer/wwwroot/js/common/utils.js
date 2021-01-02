@@ -254,6 +254,18 @@ var utils = (() => {
         }
     };
 
+    const generate_encryption_key = (len) => {
+        let chars = "!@$()=+-,:.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        let arr = new Uint32Array(len);
+        window.crypto.getRandomValues(arr);
+        let encryptKey = "";
+        for (let i = 0; i < arr.length; i++) {
+            let idx = (arr[i] % chars.length);
+            encryptKey += chars[idx];
+        }
+        return encryptKey;
+    };
+
     // --- public API
 
     return {
@@ -274,6 +286,7 @@ var utils = (() => {
         decode_message: decode_message,
         encode_message: encode_message,
         get_encryption_key: get_encryption_key,
-        set_encryption_key: set_encryption_key
+        set_encryption_key: set_encryption_key,
+        generate_encryption_key: generate_encryption_key
     };
 })();

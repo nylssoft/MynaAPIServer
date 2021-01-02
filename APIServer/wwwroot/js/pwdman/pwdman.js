@@ -41,7 +41,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.12";
+    let version = "1.1.13";
 
     // helper
 
@@ -662,6 +662,13 @@ var pwdman = (() => {
                 `Die Registrierung war erfolgreich! Du kannst Dich jetzt mit dem Benutzernamen ${userName} anmelden.`);
             let buttonOKDiv = controls.createDiv(parent);
             controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
+            if (userEmail) {
+                let user = { "email": userEmail.trim().toLowerCase() };
+                let encryptKey = utils.get_encryption_key(user);
+                if (!encryptKey) {
+                    utils.set_encryption_key(user, utils.generate_encryption_key(16));
+                }
+            }
             return;
         }
         controls.create(parent, "p", undefined,

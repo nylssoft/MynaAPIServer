@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.16";
+    let version = "1.0.17";
 
     // helper
 
@@ -60,7 +60,7 @@ var usermgmt = (() => {
     };
 
     const renderHeader = (parent, intro, title) => {
-        if (title || !currentUser) {
+        if (title || intro || !currentUser) {
             if (title) {
                 controls.create(parent, "h1", title);
             }
