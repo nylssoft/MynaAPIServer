@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.4";
+    let version = "1.0.5";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -112,34 +112,60 @@ var notes = (() => {
     };
 
     const showEncryptKey = (show) => {
-        let elem = document.getElementById("div-encryptkey-id");
-        elem.style.display = show ? "" : "none";
+        let encryptKeyElem = document.getElementById("div-encryptkey-id");
+        if (!encryptKeyElem) return;
+        if (show) {
+            encryptKeyElem.classList.add("show");
+        }
+        else {
+            encryptKeyElem.classList.remove("show");
+        }
+        renderDropdownContent();
     };
 
     // rendering
 
-    const renderHeader = (parent, intro) => {
-        controls.create(parent, "h1", undefined, "Notizen");
-        if (intro) {
-            controls.create(parent, "p", undefined, intro);
+    const renderDropdown = (parent) => {
+        let dropdownDiv = controls.create(parent, "div", "dropdown");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/notes/hamburger.svg");
+        dropdownButton.addEventListener("click", () => {
+            console.log(document.getElementById("dropdown-id"));
+            document.getElementById("dropdown-id").classList.toggle("show");
+        });
+        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
+        dropdownContentDiv.id = "dropdown-id";
+    };
+
+    const renderDropdownContent = () => {
+        let parent = document.getElementById("dropdown-id");
+        let encryptKeyElem = document.getElementById("div-encryptkey-id");
+        if (!parent || !encryptKeyElem) return;
+        controls.removeAllChildren(parent);
+        if (encryptKeyElem.classList.contains("show")) {
+            controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
+                () => showEncryptKey(false));
         }
-        if (currentUser) {
-            let url;
-            if (skatPlayerImages) {
-                url = skatPlayerImages[currentUser.name.toLowerCase()];
-            }
-            if (!url) {
-                url = "/images/skat/profiles/Player1.png";
-            }
-            let img = controls.createImg(parent, "img-profile", 32, 45, url);
-            img.title = `Angemeldet als ${currentUser.name}`;
-            img.addEventListener("click", () => window.location.href = "/usermgmt?nexturl=" + encodeURI(window.location.href));
+        else {
+            controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
+                () => showEncryptKey(true));
         }
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/skat", "Skat");
+        controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.createA(parent, undefined, "/tetris", "Tetris");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/usermgmt", "Profil");
+        controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+    };
+
+    const renderHeader = (parent) => {
+        controls.create(parent, "h1", undefined, `${currentUser.name} - Notizen`);
     };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Notes ${version}. Copyright 2020 `);
+        controls.create(div, "span", "copyright", `Myna Notes ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
@@ -161,22 +187,19 @@ var notes = (() => {
     };
 
     const renderEncryptKey = (parent) => {
-        let encryptKey = utils.get_encryption_key(currentUser);
+        renderDropdown(parent);
         renderHeader(parent);
-        let p = controls.create(parent, "p");
-        let elem = controls.createCheckbox(p, "checkbox-show-encryptkey-id", undefined,
-            "Schl\u00FCssel anzeigen", encryptKey == undefined,
-            () => onSelectShowEncryptKey());
-        let div = controls.createDiv(parent);
+        let encryptKey = utils.get_encryption_key(currentUser);
+        let div = controls.createDiv(parent, "hide");
         div.id = "div-encryptkey-id";
-        p = controls.create(div, "p");
+        let p = controls.create(div, "p");
         p.id = "p-encryptkey-notice-id";
         controls.create(p, "p", undefined,
             "Die Notizen werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du die Notizen lesen kannst." +
             " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
             " Notiere den Schl\u00FCssel, z.B. in einem Passwort-Manager.");
         p = controls.create(div, "p");
-        elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
+        let elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
         elem.htmlFor = "input-encryptkey-id";
         elem = controls.createInputField(p, "Schl\u00FCssel", () => onChangeEncryptKey(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
@@ -189,6 +212,7 @@ var notes = (() => {
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
             "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
         showEncryptKey(show);
+        renderDropdownContent();
     };
 
     const renderActions = (confirm) => {
@@ -430,11 +454,6 @@ var notes = (() => {
         inSaveNote = false;
         onUpdateStatus();
     };
-
-    const onSelectShowEncryptKey = () => {
-        let elem = document.getElementById("checkbox-show-encryptkey-id");
-        showEncryptKey(elem.checked);
-    };
     
     const onChangeEncryptKey = () => {
         let elem = document.getElementById("checkbox-save-encryptkey-id");
@@ -472,4 +491,16 @@ var notes = (() => {
 window.onload = () => {
     window.setInterval(notes.onTimer, 1000);
     utils.auth_lltoken(notes.render);
+};
+
+window.onclick = (event) => {
+    if (!event.target.matches(".dropbtn")) {
+        let dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            let openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains("show")) {
+                openDropdown.classList.remove("show");
+            }
+        }
+    }
 };

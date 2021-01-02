@@ -35,27 +35,47 @@ var usermgmt = (() => {
 
     // rendering
 
+    const renderDropdown = (parent) => {
+        let dropdownDiv = controls.create(parent, "div", "dropdown");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/pwdman/hamburger.svg");
+        dropdownButton.addEventListener("click", () => {
+            console.log(document.getElementById("dropdown-id"));
+            document.getElementById("dropdown-id").classList.toggle("show");
+        });
+        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
+        dropdownContentDiv.id = "dropdown-id";
+    };
+
+    const renderDropdownContent = () => {
+        let parent = document.getElementById("dropdown-id");
+        if (!parent) return;
+        controls.removeAllChildren(parent);
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/notes", "Notizen");
+        controls.createA(parent, undefined, "/skat", "Skat");
+        controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.createA(parent, undefined, "/tetris", "Tetris");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/logout", "Abmelden", () => onLogout());
+    };
+
     const renderHeader = (parent, intro, title) => {
-        controls.create(parent, "h1", undefined, title ? title : "Konto");
-        if (intro) {
-            controls.create(parent, "p", undefined, intro);
+        if (title || !currentUser) {
+            if (title) {
+                controls.create(parent, "h1", title);
+            }
+            if (intro) {
+                controls.create(parent, "p", undefined, intro);
+            }
         }
-        if (currentUser) {
-            let url;
-            if (skatPlayerImages) {
-                url = skatPlayerImages[currentUser.name.toLowerCase()];
-            }
-            if (!url) {
-                url = "/images/skat/profiles/Player1.png";
-            }
-            let img = controls.createImg(parent, "img-profile", 32, 45, url);
-            img.title = `Angemeldet als ${currentUser.name}`;
+        else {
+            controls.create(parent, "h1", "header", `${currentUser.name} - Profil`);
         }
     };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020 `);
+        controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. `);
@@ -242,10 +262,8 @@ var usermgmt = (() => {
         let parent = document.body;
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
+        renderDropdown(parent);
         renderHeader(parent);
-        let nameP = controls.create(parent, "p");
-        controls.createSpan(nameP, undefined, "Name: ");
-        controls.createSpan(nameP, undefined, currentUser.name);
         let emailP = controls.create(parent, "p");
         controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");
         controls.createSpan(emailP, undefined, currentUser.email);
@@ -280,6 +298,7 @@ var usermgmt = (() => {
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
         renderCopyright(parent);
+        renderDropdownContent();
     };
 
     const renderAccountActions = (confirm) => {
@@ -296,10 +315,6 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
         }
         else {
-            controls.createButton(actionsDiv, "Abmelden", () => renderAccountActions("logout"));
-            if (nexturl) {
-                controls.createButton(actionsDiv, "Zur\u00FCck", () => onOK());
-            }
             let div = controls.createDiv(actionsDiv);
             controls.createButton(div, "Kennwort \u00E4ndern", () => onChangePassword());
             controls.createButton(div, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
@@ -654,7 +669,12 @@ var usermgmt = (() => {
     const render = () => {
         currentUser = undefined;
         errorMessage = undefined;
-        nexturl = new URLSearchParams(window.location.search).get("nexturl");
+        let urlParams = new URLSearchParams(window.location.search);
+        nexturl = urlParams.get("nexturl");
+        if (urlParams.has("logout")) {
+            onLogout();
+            return;
+        }
         let token = utils.get_authentication_token();
         utils.fetch_api_call(
             "api/pwdman/user",
@@ -676,4 +696,16 @@ var usermgmt = (() => {
 
 window.onload = () => {
     utils.auth_lltoken(usermgmt.render);
+};
+
+window.onclick = (event) => {
+    if (!event.target.matches(".dropbtn")) {
+        let dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            let openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains("show")) {
+                openDropdown.classList.remove("show");
+            }
+        }
+    }
 };
