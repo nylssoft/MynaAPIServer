@@ -8,14 +8,19 @@
 body {
     margin-left: 20pt;
     background-color: black;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    color: white;
+    margin: 20pt;
 }
 
 h1 {
-    color: darkgreen;
-    font-size: 36pt;
-    font-family: Arial, Helvetica, sans-serif;
-    margin-top: 5pt;
-    margin-bottom: 5pt;
+    color: white;
+    position: absolute;
+    top: 5pt;
+    left: 40pt;
+    font-size: 18pt;
+    margin: 0pt;
 }
 
 h2 {
@@ -44,8 +49,6 @@ p {
 }
 
 .prepare {
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
     color: Blue;
     margin-left: 10pt;
 }
@@ -73,4 +76,90 @@ p {
 .button:hover {
     background-color: #008CBA;
     color: darkblue;
+}
+
+/* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
+.dropbtn {
+    position: fixed;
+    top: 5pt;
+    left: 5pt;
+    background-color: lightgrey;
+    color: white;
+    padding: 3px;
+    border: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #2980B9;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: fixed;
+    top: 40pt;
+    left: 5pt;
+    max-width: 300px;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    right: 5pt;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+    background-color: #ddd
+}
+
+.hide {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
+@media (max-width: 480px) {
+
+    body {
+        font-size: 11pt;
+        margin: 10pt;
+    }
+
+    h2 {
+        font-size: 11pt;
+    }
+
+    .button {
+        font-size: 11pt;
+    }
+
+    p {
+        font-size: 11pt;
+    }
+
+    .github, .prepare {
+        font-size: 11pt;
+        font-family: Arial, Helvetica, sans-serif;
+        color: Blue;
+    }
+
 }
