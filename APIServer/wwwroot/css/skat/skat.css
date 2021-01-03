@@ -27,6 +27,18 @@ label, ul {
 
 body {
     margin-left: 20pt;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+}
+
+h1 {
+    color: white;
+    position: absolute;
+    top: 5pt;
+    left: 20pt;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0pt;
 }
 
 caption {
@@ -69,8 +81,8 @@ td a {
     color: white;
 }
 
-.hide {
-    display: none;
+.infoimages {
+    margin-top: 20pt;
 }
 
 .box {
@@ -501,7 +513,69 @@ td a {
     color: darkblue;
 }
 
+/* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
+.dropbtn {
+    position: fixed;
+    top: 5pt;
+    left: 5pt;
+    background-color: lightgrey;
+    color: white;
+    padding: 3px;
+    border: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #2980B9;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: fixed;
+    top: 40pt;
+    left: 5pt;
+    max-width: 300px;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    right: 5pt;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+    background-color: #ddd
+}
+
+.hide {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
 @media (max-width: 480px) {
+    body {
+        font-size: 11pt;
+    }
     table {
         min-width: 200pt;
         width: 200pt;

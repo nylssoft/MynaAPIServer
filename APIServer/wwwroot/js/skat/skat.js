@@ -33,7 +33,9 @@ var skat = (() => {
     let imgHeight = 140;
     let imgWidth = 90;
 
-    let version = "1.2.6";
+    let currentUser;
+
+    let version = "1.2.7";
 
     // helper
 
@@ -207,6 +209,34 @@ var skat = (() => {
 
     // rendering
 
+    const renderDropdown = (parent) => {
+        let dropdownDiv = controls.create(parent, "div", "dropdown");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/skat/hamburger.svg");
+        dropdownButton.addEventListener("click", () => {
+            document.getElementById("dropdown-id").classList.toggle("show");
+        });
+        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
+        dropdownContentDiv.id = "dropdown-id";
+    };
+
+    const renderDropdownContent = () => {
+        let parent = document.getElementById("dropdown-id");
+        if (!parent) return;
+        controls.removeAllChildren(parent);
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/notes", "Notizen");
+        controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.createA(parent, undefined, "/tetris", "Tetris");
+        if (currentUser) {
+            controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/usermgmt", "Profil");
+            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        }
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/downloads", "Downloads");
+        controls.createA(parent, undefined, "/impressum", "Impressum");
+    };
+
     const renderTableFull = (parent, ignoreToken) => {
         let token = utils.get_authentication_token();
         if (ignoreToken || !token) {
@@ -230,8 +260,10 @@ var skat = (() => {
     };
 
     const renderUserList = (parent) => {
-        controls.create(parent, "p", "welcome", "Willkommen beim Skat!");
-        let divInfoImages = controls.createDiv(parent);
+        renderDropdown(parent);
+        let title = currentUser ? `${currentUser.name} - Skat` : "Skat";
+        controls.create(parent, "h1", undefined, title);
+        let divInfoImages = controls.createDiv(parent, "infoimages");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
@@ -255,6 +287,7 @@ var skat = (() => {
                 controls.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
             });
         }
+        renderDropdownContent();
     };
 
     const renderLogin = (parent) => {
@@ -590,12 +623,11 @@ var skat = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Skat Version ${version}. Copyright 2020 `);
+        controls.create(div, "span", "copyright", `Myna Skat ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         let time = new Date().toLocaleTimeString("de-DE");
-        controls.create(div, "span", "copyright", `. Alle Rechte vorbehalten. Letzte Aktualisierung: ${time}. `);
-        controls.createA(div, "copyright", "/slideshow", "Home");
+        controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `);
         if (ticket) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
@@ -1013,6 +1045,25 @@ var skat = (() => {
             });
     };
 
+    const renderInit = () => {
+        currentUser = undefined;
+        let token = utils.get_authentication_token();
+        if (!token) {
+            render();
+            return;
+        }
+        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+            (user) => {
+                currentUser = user;
+                render();
+            },
+            (errmsg) => {
+                console.error(errmsg);
+                utils.logout();
+                render();
+            });
+    };
+
     // callbacks
 
     const btnLogin_click = () => {
@@ -1370,12 +1421,24 @@ var skat = (() => {
     // --- public API
 
     return {
-        render: render,
+        renderInit: renderInit,
         ontimer: ontimer
     };
 })();
 
 window.onload = () => {
     window.setInterval(skat.ontimer, 1000);
-    utils.auth_lltoken(skat.render);
+    utils.auth_lltoken(skat.renderInit);
+};
+
+window.onclick = (event) => {
+    if (!event.target.matches(".dropbtn")) {
+        let dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            let openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains("show")) {
+                openDropdown.classList.remove("show");
+            }
+        }
+    }
 };
