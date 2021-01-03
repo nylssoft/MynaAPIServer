@@ -2,6 +2,8 @@
 
 var downloads = (() => {
 
+    let currentUser;
+
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
         let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/downloads/hamburger.svg");
@@ -21,11 +23,18 @@ var downloads = (() => {
         controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
         controls.createA(parent, undefined, "/tetris", "Tetris");
+        if (currentUser) {
+            controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/usermgmt", "Profil");
+            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        }
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/impressum", "Impressum");
     };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", "Myna Downloads. Copyright 2020-2021 ");
+        controls.create(div, "span", "copyright", "Myna Downloads 1.0.2. Copyright 2020-2021 ");
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", "copyright", ".");
@@ -33,7 +42,8 @@ var downloads = (() => {
 
     const renderMainPage = (parent, apps) => {
         renderDropdown(parent);
-        controls.create(parent, "h1", undefined, "Downloads f\u00FCr Windows 10");
+        let title = currentUser ? `${currentUser.name} - Downloads` : "Downloads";
+        controls.create(parent, "h1", undefined, title);
         apps.forEach( (app) => {
             let divApp = controls.createDiv(parent, "app");
             let p = controls.create(divApp, "h2", undefined, `${app.title} - ${app.version}`);
@@ -54,10 +64,29 @@ var downloads = (() => {
         renderDropdownContent();
     };
 
-    const render = (json) => {
+    const renderPage = (json) => {
         controls.removeAllChildren(document.body);
         let divMain = controls.createDiv(document.body);
         renderMainPage(divMain, json.apps);
+    };
+
+    const render = (json) => {
+        currentUser = undefined;
+        let token = utils.get_authentication_token();
+        if (!token) {
+            renderPage(json);
+            return;
+        }
+        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+            (user) => {
+                currentUser = user;
+                renderPage(json);
+            },
+            (errmsg) => {
+                console.error(errmsg);
+                utils.logout();
+                renderPage(json);
+            });
     };
 
     // --- public API
@@ -68,7 +97,21 @@ var downloads = (() => {
 })();
 
 window.onload = () => {
-    fetch("/downloads/apps.json", { cache: "no-cache" })
-        .then(response => response.json())
-        .then(json => downloads.render(json));
+    utils.auth_lltoken(() => {
+        fetch("/downloads/apps.json", { cache: "no-cache" })
+            .then(response => response.json())
+            .then(json => downloads.render(json));
+    });
+};
+
+window.onclick = (event) => {
+    if (!event.target.matches(".dropbtn")) {
+        let dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            let openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains("show")) {
+                openDropdown.classList.remove("show");
+            }
+        }
+    }
 };

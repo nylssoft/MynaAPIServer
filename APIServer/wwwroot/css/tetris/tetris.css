@@ -9,6 +9,9 @@ body {
     margin: 0pt;
     border: none;
     background-color: black;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    color: white;
 }
 
 input {
@@ -19,7 +22,7 @@ input {
 .playground {
     position: absolute;
     left: 100px;
-    top: 10px;
+    top: 50px;
     background-color: black;
 }
 
@@ -64,7 +67,7 @@ input {
 .help-button {
     position: absolute;
     left: 600px;
-    top: 270px;
+    top: 310px;
     z-index: 1;
 }
 
@@ -75,7 +78,7 @@ input {
     background-color: black;
     position: absolute;
     left: 420px;
-    top: 310px;
+    top: 350px;
     width: 198px;
     height: 230px;
     padding-left: 10px;
@@ -88,7 +91,7 @@ input {
     background-color: black;
     position: absolute;
     left: 420px;
-    top: 310px;
+    top: 350px;
     width: 198px;
     height: 230px;
     padding-left: 10px;
@@ -102,7 +105,7 @@ input {
     background-color: black;
     position: absolute;
     left: 420px;
-    top: 10px;
+    top: 50px;
     width: 198px;
     height: 290px;
     padding-left: 10px;
@@ -111,35 +114,35 @@ input {
 .arrow-left {
     position: absolute;
     left: 516px;
-    top: 175px;
+    top: 215px;
     border: 2px solid green;
 }
 
 .arrow-right {
     position: absolute;
     left: 573px;
-    top: 175px;
+    top: 215px;
     border: 2px solid green;
 }
 
 .arrow-up {
     position: absolute;
     left: 545px;
-    top: 130px;
+    top: 170px;
     border: 2px solid green;
 }
 
 .arrow-down {
     position: absolute;
     left: 545px;
-    top: 220px;
+    top: 260px;
     border: 2px solid green;
 }
 
 .gameover {
     position: absolute;
     left: 160px;
-    top: 190px;
+    top: 230px;
     color: white;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 18pt;
@@ -151,7 +154,7 @@ input {
 .newgame {
     position: absolute;
     left: 425px;
-    top: 250px;
+    top: 290px;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 11pt;
     z-index: 1;
@@ -164,7 +167,7 @@ input {
 .copyright {
     position: absolute;
     left: 100px;
-    top: 540px;
+    top: 580px;
     padding: 10pt;
     font-size: 8pt;
     font-family: Arial, Helvetica, sans-serif;
@@ -175,14 +178,88 @@ a {
     color: lightgreen;
 }
 
+.header {
+    padding: 2pt;
+    color: white;
+    background-color: black;
+    position: absolute;
+    top: 5pt;
+    left: 40pt;
+    font-size: 18pt;
+    margin: 0pt;
+}
+
+/* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
+.dropbtn {
+    position: fixed;
+    top: 5pt;
+    left: 5pt;
+    background-color: lightgrey;
+    color: white;
+    padding: 3px;
+    border: none;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #2980B9;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: fixed;
+    top: 40pt;
+    left: 5pt;
+    max-width: 300px;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 2;
+    right: 5pt;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+    background-color: #ddd
+}
+
+.hide {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
 @media (max-width: 480px) {
+    body {
+        font-size: 11pt;
+    }
+
     .playground {
         left: 10px;
     }
 
     .highscores {
         left: 30px;
-        top: 80px;
+        top: 120px;
         width: 190px;
         height: 230px;
         padding-left: 0px;
@@ -191,7 +268,7 @@ a {
 
     .addhighscore {
         left: 30px;
-        top: 80px;
+        top: 120px;
         width: 190px;
         height: 230px;
         padding-left: 0px;
@@ -199,7 +276,7 @@ a {
 
     .info {
         left: 240px;
-        top: 10px;
+        top: 50px;
         width: 100px;
         height: 160px;
         padding-left: 10px;
@@ -212,14 +289,14 @@ a {
 
     .help-button {
         left: 320px;
-        top: 140px;
+        top: 180px;
     }
 
     .arrow-div {
         background-color: black;
         position: absolute;
         left: 240px;
-        top: 175px;
+        top: 215px;
         width: 110px;
         height: 130px;
         z-index: -2;
@@ -227,43 +304,43 @@ a {
 
     .arrow-left {
         left: 250px;
-        top: 225px;
+        top: 265px;
         border: 2px solid green;
     }
 
     .arrow-right {
         left: 307px;
-        top: 225px;
+        top: 265px;
         border: 2px solid green;
     }
 
     .arrow-up {
         left: 278px;
-        top: 180px;
+        top: 220px;
         border: 2px solid green;
     }
 
     .arrow-down {
         left: 278px;
-        top: 270px;
+        top: 310px;
         border: 2px solid green;
     }
 
     .gameover {
         left: 30px;
-        top: 30px;
+        top: 70px;
         padding: 5pt;
     }
 
     .newgame {
         left: 240px;
-        top: 320px;
+        top: 360px;
         padding: 10pt;
     }
 
     .copyright {
         left: 10px;
-        top: 420px;
+        top: 460px;
         padding: 0;
         font-size: 8pt;
     }

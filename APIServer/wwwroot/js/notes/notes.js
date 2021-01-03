@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.7";
+    let version = "1.0.8";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -156,6 +156,9 @@ var notes = (() => {
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/downloads", "Downloads");
+        controls.createA(parent, undefined, "/impressum", "Impressum");
     };
 
     const renderHeader = (parent) => {

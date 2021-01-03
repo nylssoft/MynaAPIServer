@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.5";
+    let version = "1.2.7";
 
     let block;
     let nextBlock;
@@ -454,6 +454,8 @@ var tetris = (() => {
 
     let backgroundPictures;
     let highScores;
+
+    let currentUser;
 
     // --- background
 
@@ -813,13 +815,46 @@ var tetris = (() => {
         });
     }
 
+    const renderDropdown = (parent) => {
+        let dropdownDiv = controls.create(parent, "div", "dropdown");
+        dropdownDiv.id = "div-dropdown-id";
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/tetris/hamburger.svg");
+        dropdownButton.addEventListener("click", () => {
+            document.getElementById("dropdown-id").classList.toggle("show");
+        });
+        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
+        dropdownContentDiv.id = "dropdown-id";
+    };
+
+    const renderDropdownContent = () => {
+        let parent = document.getElementById("dropdown-id");
+        if (!parent) return;
+        controls.removeAllChildren(parent);
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/notes", "Notizen");
+        controls.createA(parent, undefined, "/skat", "Skat");
+        controls.createA(parent, undefined, "/diary", "Tagebuch");
+        if (currentUser) {
+            controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/usermgmt", "Profil");
+            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        }
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/downloads", "Downloads");
+        controls.createA(parent, undefined, "/impressum", "Impressum");
+    };
+
+    const renderHeader = (parent) => {
+        let title = currentUser ? `${currentUser.name} - Tetris` : "Tetris";
+        controls.create(parent, "h1", "header", title);
+    };
+
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
-        controls.create(div, "span", undefined, `Myna Tetris Version ${version}. Copyright 2020 `);
+        controls.create(div, "span", undefined, `Myna Tetris ${version}. Copyright 2020-2021 `);
         let a = controls.createA(div, undefined, "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
-        controls.create(div, "span", undefined, ". Alle Rechte vorbehalten. ");
-        controls.createA(div, "undefined", "/slideshow", "Home");
+        controls.create(div, "span", undefined, ".");
     };
 
     const renderHighScoreEntries = () => {
@@ -1000,10 +1035,35 @@ var tetris = (() => {
         controls.removeAllChildren(document.body);
 
         let all = controls.createDiv(document.body);
+        renderDropdown(all);
+        renderHeader(all);
         renderTetris(all);
         renderCopyright(all);
+        renderDropdownContent();
 
         setBackgroundPicture();
+    };
+
+    const renderInit = () => {
+        currentUser = undefined;
+        let token = utils.get_authentication_token();
+        if (!token) {
+            render();
+            window.requestAnimationFrame(draw);
+            return;
+        }
+        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+            (user) => {
+                currentUser = user;
+                render();
+                window.requestAnimationFrame(draw);
+            },
+            (errmsg) => {
+                console.error(errmsg);
+                utils.logout();
+                render();
+                window.requestAnimationFrame(draw);
+            });
     };
 
     // --- callbacks
@@ -1077,8 +1137,7 @@ var tetris = (() => {
         }
         initBackgroundPictures(sm.pictures);
         initKeyDownEvent();
-        render();
-        window.requestAnimationFrame(draw);
+        renderInit();
     };
 
     // --- public API
@@ -1097,4 +1156,16 @@ window.onload = () => {
             (model) => tetris.init(model),
             (errMsg) => console.error(errMsg));
     });
+};
+
+window.onclick = (event) => {
+    if (!event.target.matches(".dropbtn")) {
+        let dropdowns = document.getElementsByClassName("dropdown-content");
+        for (let i = 0; i < dropdowns.length; i++) {
+            let openDropdown = dropdowns[i];
+            if (openDropdown.classList.contains("show")) {
+                openDropdown.classList.remove("show");
+            }
+        }
+    }
 };

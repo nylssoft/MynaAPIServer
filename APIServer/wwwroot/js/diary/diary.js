@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.10";
+    let version = "1.0.11";
 
     let changeDate;
     let inSaveDiary;
@@ -116,6 +116,9 @@ var diary = (() => {
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/downloads", "Downloads");
+        controls.createA(parent, undefined, "/impressum", "Impressum");
     };
 
     const renderHeader = (parent) => {

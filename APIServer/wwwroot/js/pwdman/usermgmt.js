@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.19";
+    let version = "1.0.20";
 
     // helper
 
@@ -56,6 +56,9 @@ var usermgmt = (() => {
         controls.createA(parent, undefined, "/tetris", "Tetris");
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/logout", "Abmelden", () => onLogout());
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/downloads", "Downloads");
+        controls.createA(parent, undefined, "/impressum", "Impressum");
     };
 
     const renderHeader = (parent, intro, title) => {
