@@ -64,7 +64,7 @@ var usermgmt = (() => {
     const renderHeader = (parent, intro, title) => {
         if (title || intro || !currentUser) {
             if (title) {
-                controls.create(parent, "h1", title);
+                controls.create(parent, "h1", undefined, title);
             }
             if (intro) {
                 controls.create(parent, "p", undefined, intro);
