@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.8";
+    let version = "1.0.9";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -114,7 +114,7 @@ var notes = (() => {
     const showEncryptKey = (show) => {
         let encryptKeyElem = document.getElementById("div-encryptkey-id");
         if (!encryptKeyElem) return;
-        if (show) {
+        if (show || !utils.has_viewed_encryption_key(currentUser)) {
             encryptKeyElem.classList.add("show");
         }
         else {
@@ -142,7 +142,10 @@ var notes = (() => {
         controls.removeAllChildren(parent);
         if (encryptKeyElem.classList.contains("show")) {
             controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
-                () => showEncryptKey(false));
+                () => {
+                    utils.set_viewed_encryption_key(currentUser, true);
+                    showEncryptKey(false);
+                });
         }
         else {
             controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
@@ -195,10 +198,12 @@ var notes = (() => {
         div.id = "div-encryptkey-id";
         let p = controls.create(div, "p");
         p.id = "p-encryptkey-notice-id";
-        controls.create(p, "p", undefined,
+        controls.create(p, "p", "encryptkey-notice",
             "Die Notizen werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du die Notizen lesen kannst." +
             " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
-            " Notiere den Schl\u00FCssel, z.B. in einem Passwort-Manager.");
+            " Notiere den Schl\u00FCssel." +
+            " Danach w\u00E4hle im Men\u00FC 'Schl\u00FCssel verbergen', um diesen Text auszublenden." +
+            " Wenn der Schl\u00FCssel verloren geht, sind auch alle Daten verloren.");
         p = controls.create(div, "p");
         let elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
         elem.htmlFor = "input-encryptkey-id";

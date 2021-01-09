@@ -80,6 +80,10 @@ textarea {
     margin-bottom: 10pt;
 }
 
+.encryptkey-notice {
+    color: red;
+}
+
 .img-status {
     margin-left: 10pt;
 }

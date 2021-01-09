@@ -235,6 +235,9 @@ var utils = (() => {
         if (user) {
             let storageKey = `diary-${user.email}-encryptkey`;
             let encryptKey = window.localStorage.getItem(storageKey);
+            if (!encryptKey) {
+                encryptKey = window.sessionStorage.getItem(storageKey);
+            }
             if (encryptKey && encryptKey.length > 0) {
                 return encryptKey;
             }
@@ -247,9 +250,37 @@ var utils = (() => {
             let storageKey = `diary-${user.email}-encryptkey`;
             if (encryptKey && encryptKey.length > 0) {
                 window.localStorage.setItem(storageKey, encryptKey);
+                window.sessionStorage.setItem(storageKey, encryptKey);
             }
             else {
-                window.localStorage.removeItem(storageKey, encryptKey);
+                window.localStorage.removeItem(storageKey);
+                window.sessionStorage.removeItem(storageKey);
+            }
+        }
+    };
+
+    const has_viewed_encryption_key = (user) => {
+        if (user) {
+            let storageKey = `diary-${user.email}-viewed-encryptkey`;
+            let viewed = window.localStorage.getItem(storageKey);
+            if (!viewed) {
+                viewed = window.sessionStorage.getItem(storageKey);
+            }
+            return viewed && viewed == "true";
+        }
+        return false;
+    };
+
+    const set_viewed_encryption_key = (user, viewed) => {
+        if (user) {
+            let storageKey = `diary-${user.email}-viewed-encryptkey`;
+            if (viewed) {
+                window.localStorage.setItem(storageKey, "true");
+                window.sessionStorage.setItem(storageKey, "true");
+            }
+            else {
+                window.localStorage.removeItem(storageKey);
+                window.sessionStorage.removeItem(storageKey);
             }
         }
     };
@@ -287,6 +318,8 @@ var utils = (() => {
         encode_message: encode_message,
         get_encryption_key: get_encryption_key,
         set_encryption_key: set_encryption_key,
+        has_viewed_encryption_key: has_viewed_encryption_key,
+        set_viewed_encryption_key: set_viewed_encryption_key,
         generate_encryption_key: generate_encryption_key
     };
 })();
