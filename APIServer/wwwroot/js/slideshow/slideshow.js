@@ -21,12 +21,6 @@ var slideshow = (() => {
 
     let currentUser;
 
-    // --- helper
-
-    const onEditAccount = () => {
-        window.location.href = "/usermgmt?nexturl=" + encodeURI(window.location.href);
-    };
-
     // --- rendering
 
     const renderDropdown = (parent) => {
@@ -55,6 +49,10 @@ var slideshow = (() => {
             }
             controls.createA(parent, undefined, "/usermgmt", "Profil");
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        }
+        else {
+            controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/pwdman?nexturl=/slideshow", "Anmelden");
         }
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/downloads", "Downloads");
