@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 */
 using APIServer.Notes.Model;
 using APIServer.PwdMan;
+using System;
 using System.Collections.Generic;
 
 namespace APIServer.Notes
@@ -27,7 +28,7 @@ namespace APIServer.Notes
 
         NoteModel GetNote(IPwdManService pwdManService, string authenticationToken, long id);
 
-        bool UpdateNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel);
+        DateTime? UpdateNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel);
 
         long AddNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel);
 

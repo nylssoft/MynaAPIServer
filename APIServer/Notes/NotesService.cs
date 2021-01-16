@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ namespace APIServer.Notes
             return null;
         }
 
-        public bool UpdateNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel)
+        public DateTime? UpdateNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel)
         {
             logger.LogDebug("Update note ID {noteModel.Id}...", noteModel.Id);
             var user = pwdManService.GetUserFromToken(authenticationToken);
@@ -81,9 +81,9 @@ namespace APIServer.Notes
                 note.Content = noteModel.Content;
                 note.ModifiedUtc = DateTime.UtcNow;
                 dbContext.SaveChanges();
-                return true;
+                return DbMynaContext.GetUtcDateTime(note.ModifiedUtc).Value;
             }
-            return false;
+            return null;
         }
 
         public long AddNote(IPwdManService pwdManService, string authenticationToken, NoteModel noteModel)

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -43,14 +43,14 @@ namespace APIServer.Notes
 
         [HttpGet]
         [Route("api/notes/note/{id}")]
-        public IActionResult GetNode(long id)
+        public IActionResult GetNote(long id)
         {
             return new JsonResult(NotesService.GetNote(PwdManService, GetToken(), id));
         }
 
         [HttpDelete]
         [Route("api/notes/note/{id}")]
-        public IActionResult DeleteNode(long id)
+        public IActionResult DeleteNote(long id)
         {
             return new JsonResult(NotesService.DeleteNote(PwdManService, GetToken(), id));
         }

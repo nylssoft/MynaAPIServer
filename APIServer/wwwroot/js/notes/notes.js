@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.9";
+    let version = "1.0.10";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -268,7 +268,9 @@ var notes = (() => {
                 titleInput.addEventListener("change", () => onSaveNote());
                 let d = new Date(note.lastModifiedUtc);
                 let caption = controls.createDiv(parent, "caption");
-                caption.textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
+                let captiontxt = controls.createSpan(caption, undefined);
+                captiontxt.textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
+                captiontxt.id = "captiontxt-id";
                 let imgStatus = controls.createImg(caption, "img-status", 24, 24);
                 imgStatus.id = "img-status-id";
                 imgStatus.style.visibility = "hidden";
@@ -439,8 +441,13 @@ var notes = (() => {
                             headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                             body: JSON.stringify(encodedNote)
                         },
-                        () => {
+                        (lastModifiedUtc) => {
                             inSaveNote = false;
+                            let captiontxt = document.getElementById("captiontxt-id");
+                            if (captiontxt && lastModifiedUtc) {
+                                let d = new Date(lastModifiedUtc);
+                                captiontxt.textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
+                            }
                             onUpdateStatus();
                         },
                         (errMsg) => {
