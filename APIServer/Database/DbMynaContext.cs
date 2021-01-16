@@ -59,6 +59,8 @@ namespace APIServer.Database
             builder.Entity<DbRegistration>()
                 .HasIndex(r => r.Email)
                 .IsUnique();
+            builder.Entity<DbRegistration>()
+                .HasIndex(r => r.IpAddress);
             builder.Entity<DbUser>()
                 .HasIndex(u => u.Name)
                 .IsUnique();
@@ -74,6 +76,8 @@ namespace APIServer.Database
             builder.Entity<DbResetPassword>()
                 .HasIndex(r => r.Email)
                 .IsUnique();
+            builder.Entity<DbResetPassword>()
+                .HasIndex(r => r.IpAddress);
             builder.Entity<DbDiary>()
                 .HasIndex(d => new { d.DbUserId, d.Date })
                 .IsUnique();

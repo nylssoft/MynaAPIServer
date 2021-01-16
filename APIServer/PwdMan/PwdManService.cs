@@ -48,10 +48,6 @@ namespace APIServer.PwdMan
 
         private readonly INotificationService notificationService;
 
-        private const string LAST_REGISTRATION_REQUEST = "LastRegistrationRequest";
-
-        private const string LAST_RESETPWD_REQUEST = "LastResetPasswordRequest";
-
         public PwdManService(
             IConfiguration configuration,
             ILogger<PwdManService> logger,
@@ -66,9 +62,9 @@ namespace APIServer.PwdMan
 
         // --- reset password
 
-        public void RequestResetPassword(string email)
+        public void RequestResetPassword(string email, string ipAddress)
         {
-            logger.LogDebug("Request password reset for email addresss '{email}'.", email);
+            logger.LogDebug("Request password reset for email addresss '{email}' from IP address {ipAddress}.", email, ipAddress);
             if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             email = email.ToLowerInvariant();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
@@ -89,17 +85,15 @@ namespace APIServer.PwdMan
                     throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
                 }
             }
-            var lastResetPwdRequest = GetSetting<DateTime?>(LAST_RESETPWD_REQUEST);
-            // avoid spam emails, only one request in 60 seconds
-            if (lastResetPwdRequest != null)
+            var lastRequestedUtc = dbContext.DbResetPasswords.Where((r) => r.IpAddress == ipAddress).Max<DbResetPassword,DateTime?>((r) => r.RequestedUtc);
+            if (lastRequestedUtc != null)
             {
-                int sec = Convert.ToInt32((DateTime.UtcNow - lastResetPwdRequest.Value).TotalSeconds);
-                if (sec < 60)
+                int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
+                if (min < 5)
                 {
-                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {60-sec} Sekunden noch einmal.");
+                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {5 - min} Minuten noch einmal.");
                 }
             }
-            SetSetting(LAST_RESETPWD_REQUEST, DateTime.UtcNow);
             var pwdgen = new PwdGen
             {
                 Length = 12,
@@ -119,7 +113,8 @@ namespace APIServer.PwdMan
                 {
                     Email = email,
                     Token = pwdgen.Generate(),
-                    RequestedUtc = DateTime.UtcNow
+                    RequestedUtc = DateTime.UtcNow,
+                    IpAddress = ipAddress
                 };
                 dbContext.DbResetPasswords.Add(resetpwd);
             }
@@ -127,6 +122,7 @@ namespace APIServer.PwdMan
             {
                 resetpwd.Token = pwdgen.Generate();
                 resetpwd.RequestedUtc = DateTime.UtcNow;
+                resetpwd.IpAddress = ipAddress;
             }
             dbContext.SaveChanges();
             string subject = $"Myna Portal Kennwort zurücksetzen";
@@ -174,9 +170,9 @@ namespace APIServer.PwdMan
 
         // --- registration
 
-        public bool IsRegisterAllowed(string email)
+        public bool IsRegisterAllowed(string email, string ipAddress)
         {
-            logger.LogDebug("Check whether email addresss '{email}' is allowed to register...", email);
+            logger.LogDebug("Check whether email addresss '{email}' is allowed to register from IP address {ipAddress}...", email, ipAddress);
             if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             email = email.ToLowerInvariant();
             var opt = GetOptions();
@@ -184,7 +180,7 @@ namespace APIServer.PwdMan
             {
                 throw new PwdManInvalidArgumentException("Registrieren ist deaktiviert.");
             }
-            // first user can register without confirmation and token
+            // setup: first user can register without confirmation and token
             if (dbContext.DbUsers.Count() == 0)
             {
                 return true;
@@ -204,18 +200,16 @@ namespace APIServer.PwdMan
                 }
                 return true;
             }
-            var lastRegistrationRequest = GetSetting<DateTime?>(LAST_REGISTRATION_REQUEST);
-            // avoid spam emails, only one request in 60 seconds
-            if (lastRegistrationRequest != null)
+            var lastRequestedUtc = dbContext.DbRegistrations.Where((r) => r.IpAddress == ipAddress).Max((r) => r.RequestedUtc);
+            if (lastRequestedUtc != null)
             {
-                int sec = Convert.ToInt32((DateTime.UtcNow - lastRegistrationRequest.Value).TotalSeconds);
-                if (sec < 60)
+                int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
+                if (min < 5)
                 {
-                    throw new PwdManInvalidArgumentException($"Registrieren ist z.Zt. nicht möglich. Versuche es in {60-sec} Sekunden noch einmal.");
+                    throw new PwdManInvalidArgumentException($"Registrieren ist z.Zt. nicht möglich. Versuche es in {5-min} Minuten noch einmal.");
                 }
             }
-            SetSetting(LAST_REGISTRATION_REQUEST, DateTime.UtcNow);
-            dbContext.DbRegistrations.Add(new DbRegistration { Email = email, RequestedUtc = DateTime.UtcNow });
+            dbContext.DbRegistrations.Add(new DbRegistration { Email = email, RequestedUtc = DateTime.UtcNow, IpAddress = ipAddress });
             dbContext.SaveChanges();
             var subject = "Myna Portal Registrierungsanfrage";
             var body = $"Ein Benutzer möchte sich mit folgender E-Mail-Adresse registrieren:\n\n{email}.";

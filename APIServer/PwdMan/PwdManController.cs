@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,7 +35,8 @@ namespace APIServer.PwdMan
         public IActionResult RequestResetPwd([FromBody] string email)
         {
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
-            PwdManService.RequestResetPassword(email);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+            PwdManService.RequestResetPassword(email, ipAddress);
             return new JsonResult(true);
         }
 
@@ -55,7 +56,8 @@ namespace APIServer.PwdMan
         public IActionResult IsRegisterAllowed([FromBody] string email)
         {
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
-            return new JsonResult(PwdManService.IsRegisterAllowed(email));
+            var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+            return new JsonResult(PwdManService.IsRegisterAllowed(email, ipAddress));
         }
 
         [HttpPost]

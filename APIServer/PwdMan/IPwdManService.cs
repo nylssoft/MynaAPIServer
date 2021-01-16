@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 using APIServer.Database;
 using APIServer.PwdMan.Model;
 using System.Collections.Generic;
-using System.IO;
 
 namespace APIServer.PwdMan
 {
@@ -26,13 +25,13 @@ namespace APIServer.PwdMan
     {
         // --- reset password
 
-        void RequestResetPassword(string email);
+        void RequestResetPassword(string email, string ipAddress);
 
         void ResetPassword(UserResetPasswordModel resetPasswordModel);
 
         // --- registration
 
-        bool IsRegisterAllowed(string email);
+        bool IsRegisterAllowed(string email, string ipAddress);
 
         List<OutstandingRegistrationModel> GetOutstandingRegistrations(string authenticationToken);
 

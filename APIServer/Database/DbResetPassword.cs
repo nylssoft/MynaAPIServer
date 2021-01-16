@@ -31,5 +31,7 @@ namespace APIServer.Database
         public string Token { get; set; }
 
         public DateTime RequestedUtc { get; set; }
+
+        public string IpAddress { get; set; }
     }
 }
