@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -69,6 +69,7 @@ namespace APIServer.PwdMan
         public void RequestResetPassword(string email)
         {
             logger.LogDebug("Request password reset for email addresss '{email}'.", email);
+            if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             email = email.ToLowerInvariant();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
             if (user == null)
@@ -89,13 +90,13 @@ namespace APIServer.PwdMan
                 }
             }
             var lastResetPwdRequest = GetSetting<DateTime?>(LAST_RESETPWD_REQUEST);
-            // avoid spam emails, only one request per minute
+            // avoid spam emails, only one request in 60 seconds
             if (lastResetPwdRequest != null)
             {
-                var diff = (DateTime.UtcNow - lastResetPwdRequest.Value).TotalMinutes;
-                if (diff < 1)
+                int sec = Convert.ToInt32((DateTime.UtcNow - lastResetPwdRequest.Value).TotalSeconds);
+                if (sec < 60)
                 {
-                    throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es später noch einmal.");
+                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {60-sec} Sekunden noch einmal.");
                 }
             }
             SetSetting(LAST_RESETPWD_REQUEST, DateTime.UtcNow);
@@ -176,6 +177,7 @@ namespace APIServer.PwdMan
         public bool IsRegisterAllowed(string email)
         {
             logger.LogDebug("Check whether email addresss '{email}' is allowed to register...", email);
+            if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             email = email.ToLowerInvariant();
             var opt = GetOptions();
             if (string.IsNullOrEmpty(opt.RegistrationEmail))
@@ -203,13 +205,13 @@ namespace APIServer.PwdMan
                 return true;
             }
             var lastRegistrationRequest = GetSetting<DateTime?>(LAST_REGISTRATION_REQUEST);
-            // avoid spam emails, only one request in 5 minutes
+            // avoid spam emails, only one request in 60 seconds
             if (lastRegistrationRequest != null)
             {
-                var min = (DateTime.UtcNow - lastRegistrationRequest.Value).TotalMinutes;
-                if (min < 5)
+                int sec = Convert.ToInt32((DateTime.UtcNow - lastRegistrationRequest.Value).TotalSeconds);
+                if (sec < 60)
                 {
-                    throw new PwdManInvalidArgumentException("Registrieren ist z.Zt. nicht möglich. Versuche es später noch einmal.");
+                    throw new PwdManInvalidArgumentException($"Registrieren ist z.Zt. nicht möglich. Versuche es in {60-sec} Sekunden noch einmal.");
                 }
             }
             SetSetting(LAST_REGISTRATION_REQUEST, DateTime.UtcNow);
@@ -322,9 +324,9 @@ namespace APIServer.PwdMan
 
         public void RegisterUser(UserRegistrationModel registrationProfile)
         {
-            logger.LogDebug("Register user '{username}', email '{email}...", registrationProfile.Username, registrationProfile.Email);
-            if (string.IsNullOrEmpty(registrationProfile.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
-            if (string.IsNullOrEmpty(registrationProfile.Email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
+            logger.LogDebug("Register user '{username}', email '{email}'...", registrationProfile.Username, registrationProfile.Email);
+            if (!IsValidUsername(registrationProfile.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
+            if (!IsValidEmailAddress(registrationProfile.Email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             if (string.IsNullOrEmpty(registrationProfile.Token)) throw new PwdManInvalidArgumentException("Registrierungscode ist ungültig.");
             var email = registrationProfile.Email.ToLowerInvariant();
             var opt = GetOptions();
@@ -337,7 +339,7 @@ namespace APIServer.PwdMan
                 {
                     throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
                 }
-                var exsitingUser = dbContext.DbUsers.SingleOrDefault(u => u.Name == registrationProfile.Username);
+                var exsitingUser = GetDbUserByName(registrationProfile.Username);
                 if (exsitingUser != null)
                 {
                     throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
@@ -392,7 +394,7 @@ namespace APIServer.PwdMan
         public bool IsRegisteredUsername(string username)
         {
             logger.LogDebug("Check whether username '{username}' is registered...", username);
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
+            var user = GetDbUserByName(username);
             return user != null;
         }
 
@@ -683,7 +685,7 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Authenticate '{username}' with client IP address {ipAddress}...", authentication.Username, ipAddress);
             var opt = GetOptions();
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == authentication.Username);
+            var user = GetDbUserByName(authentication.Username);
             if (user != null)
             {
                 if (user.LoginTries >= opt.MaxLoginTryCount)
@@ -705,9 +707,9 @@ namespace APIServer.PwdMan
                 }
                 loginIpAddress.LastUsedUtc = DateTime.UtcNow;
                 var hasher = new PasswordHasher<string>();
-                hasher.HashPassword(authentication.Username, authentication.Password);
+                hasher.HashPassword(user.Name, authentication.Password);
                 if (hasher.VerifyHashedPassword(
-                    authentication.Username,
+                    user.Name,
                     user.PasswordHash,
                     authentication.Password) == PasswordVerificationResult.Success)
                 {
@@ -715,7 +717,7 @@ namespace APIServer.PwdMan
                     {
                         Send2FAEmail(user, opt);
                     }
-                    var token = GenerateToken(authentication.Username, opt, user.Requires2FA);
+                    var token = GenerateToken(user.Name, opt, user.Requires2FA);
                     if (token != null)
                     {
                         user.LoginTries = 0;
@@ -725,7 +727,7 @@ namespace APIServer.PwdMan
                         var ret = new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
                         if (!user.Requires2FA && user.UseLongLivedToken)
                         {
-                            ret.LongLivedToken = GenerateLongLivedToken(authentication.Username, opt);
+                            ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
                         }
                         return ret;
                     }
@@ -962,6 +964,76 @@ namespace APIServer.PwdMan
         }
 
         // --- private
+
+        private DbUser GetDbUserByName(string username)
+        {
+            username = username.ToLowerInvariant();
+            // EF Core 5.0 supports Collate function
+            // var user = dbContext.DbUsers.SingleOrDefault(u => EF.Functions.Collate(u.Name, "SQL_Latin1_General_CP1_CI_AS") == username);
+            var users = dbContext.DbUsers.ToList();
+            foreach (var user in users)
+            {
+                if (user.Name.Equals(username, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return user;
+                }
+            }
+            // try login by email address
+            if (username.Contains("@"))
+            {
+                return dbContext.DbUsers.SingleOrDefault(u => u.Email == username);
+            }
+            return null;
+        }
+
+        private bool IsValidUsername(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return false;
+            }
+            foreach (var ch in username)
+            {
+                if (!char.IsLetterOrDigit(ch))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool IsValidEmailAddress(string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return false;
+            }
+            var atidx = email.IndexOf("@");
+            if (atidx <= 0 || atidx == email.Length - 1)
+            {
+                return false;
+            }
+            var dotIdx = -1;
+            var test = email[..atidx] + email[(atidx + 1)..];
+            var idx = 0;
+            foreach (var ch in test)
+            {
+                if (ch == '.')
+                {
+                    dotIdx = idx;
+                }
+                else if (!char.IsLetterOrDigit(ch))
+                {
+                    return false;
+                }
+                idx++;
+            }
+            if (dotIdx <= atidx || dotIdx == test.Length - 1)
+            {
+                return false;
+            }
+            return true;
+        }
 
         private T GetSetting<T>(string key)
         {
