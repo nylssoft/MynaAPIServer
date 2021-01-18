@@ -36,7 +36,7 @@ var skat = (() => {
     let currentUser;
     let photos = {};
 
-    let version = "1.3.0";
+    let version = "1.3.1";
 
     // helper
 
@@ -278,13 +278,15 @@ var skat = (() => {
                 let img = controls.createImg(li, "player-img", 45, 45);
                 let photo = photos[user.name.toLowerCase()];
                 if (!photo) {
-                    let defaultPhoto = `/images/skat/profiles/Player${idx}.png`;
-                    idx++;
+                    photo = `/images/skat/profiles/Player${idx}.png`;
+                    photos[user.name.toLowerCase()] = photo;
+                    img.src = photo;
                     utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(user.name)}`, undefined,
                         (p) => {
-                            p = p || defaultPhoto;
-                            photos[user.name.toLowerCase()] = p;
-                            img.src = p;
+                            if (p) {
+                                photos[user.name.toLowerCase()] = p;
+                                img.src = p;
+                            }
                         },
                         (errMsg) => console.error(errMsg));
                 }
@@ -292,6 +294,7 @@ var skat = (() => {
                     img.src = photo;
                 }
                 controls.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
+                idx++;
             });
         }
         renderDropdownContent();
@@ -572,18 +575,20 @@ var skat = (() => {
         let img = controls.createImg(elem, "player-img", 90, 90);
         let photo = photos[player.name.toLowerCase()];
         if (!photo) {
-            let defaultPhoto;
             for (let idx = 0; idx < model.allUsers.length; idx++) {
                 if (model.allUsers[idx].name == player.name) {
-                    defaultPhoto = `/images/skat/profiles/Player${idx + 1}.png`;
+                    photo = `/images/skat/profiles/Player${idx + 1}.png`;
+                    photos[player.name.toLowerCase()] = photo;
+                    img.src = photo;
                     break;
                 }
             }
             utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(player.name)}`, undefined,
                 (p) => {
-                    p = p || defaultPhoto;
-                    photos[player.name.toLowerCase()] = p;
-                    img.src = p;
+                    if (p) {
+                        photos[player.name.toLowerCase()] = p;
+                        img.src = p;
+                    }
                 },
                 (errMsg) => console.error(errMsg));
         }
