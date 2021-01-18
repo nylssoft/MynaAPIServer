@@ -81,6 +81,13 @@ td a {
     color: white;
 }
 
+.player-img {
+    border-radius: 50%;
+    z-index: -2;
+    vertical-align: middle;
+    margin: 5pt;
+}
+
 .infoimages {
     margin-top: 20pt;
 }
@@ -615,9 +622,6 @@ td a {
     .right-section-ouvert {
         right: 0;
         top: 300px;
-    }
-    .player-img {
-        z-index: -2;
     }
     .card-img {
         z-index: 2;

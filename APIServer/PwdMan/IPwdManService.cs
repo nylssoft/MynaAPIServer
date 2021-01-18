@@ -18,6 +18,7 @@
 using APIServer.Database;
 using APIServer.PwdMan.Model;
 using System.Collections.Generic;
+using System.IO;
 
 namespace APIServer.PwdMan
 {
@@ -40,6 +41,10 @@ namespace APIServer.PwdMan
         void RegisterUser(UserRegistrationModel userRegistration);
 
         // --- user management
+
+        string GetPhoto(string username);
+
+        string UploadPhoto(string authenticationToken, string contentType, Stream contentStream);
 
         bool IsRegisteredUsername(string username);
 

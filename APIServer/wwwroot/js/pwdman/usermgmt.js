@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.0.20";
+    let version = "1.1.0";
 
     // helper
 
@@ -265,6 +265,23 @@ var usermgmt = (() => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         renderDropdown(parent);
         renderHeader(parent);
+        let photoImg = controls.create(parent, "img", "profile-photo");
+        photoImg.id = "profile-photo-id";
+        photoImg.width = 90;
+        photoImg.height = 90;
+        photoImg.title = "Profilbild hinzuf\u00FCgen (90 x 90 Pixel)";
+        if (currentUser.photo) {
+            photoImg.src = currentUser.photo;
+        }
+        else {
+            photoImg.src = "/images/pwdman/user-new-3.png";
+        }
+        photoImg.addEventListener("click", () => {
+            let inputFile = document.getElementById("file-input-id");
+            if (inputFile) {
+                inputFile.click();
+            }
+        });
         let emailP = controls.create(parent, "p");
         controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");
         controls.createSpan(emailP, undefined, currentUser.email);
@@ -298,6 +315,7 @@ var usermgmt = (() => {
         controls.createA(parent, undefined, "/skat/results", "Skatergebnisse", () => window.open("/skat?results", "_blank"));
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
+        controls.createDiv(parent, "error").id = "error-id";
         renderCopyright(parent);
         renderDropdownContent();
     };
@@ -324,7 +342,46 @@ var usermgmt = (() => {
                 controls.createButton(adminDiv, "Anfragen bearbeiten", () => renderConfirmRegistrations());
                 controls.createButton(adminDiv, "Benutzer bearbeiten", () => renderEditUsers());
             }
+            renderUploadPhoto(div);
         }
+    };
+
+    const renderUploadPhoto = (parent) => {
+        let form = controls.create(parent, "form");
+        form.id = "upload-form-id";
+        form.method = "post";
+        form.enctype = "multipart/form-data";
+        let inputFile = controls.create(form, "input");
+        inputFile.type = "file";
+        inputFile.name = "photo-file";
+        inputFile.accept = "image/jpeg,image/png";
+        inputFile.id = "file-input-id";
+        inputFile.addEventListener("change", () => {
+            let curFiles = inputFile.files;
+            if (curFiles.length == 1 &&
+                ["image/jpeg", "image/png"].includes(curFiles[0].type) &&
+                curFiles[0].size < 10 * 1024 * 1024) {
+                const formData = new FormData(document.getElementById("upload-form-id"));
+                utils.fetch_api_call("api/pwdman/photo",
+                    {
+                        method: "POST",
+                        headers: { "token": utils.get_authentication_token() },
+                        body: formData
+                    },
+                    (photo) => {
+                        let image = document.getElementById("profile-photo-id");
+                        if (image) {
+                            image.src = photo;
+                        }
+                    },
+                    (errMsg) => document.getElementById("error-id").textContent = errMsg,
+                    setWaitCursor
+                );
+            }
+            else {
+                document.getElementById("error-id").textContent = "Ung\u00FCltige Datei. Erlaubt sind JPG und PNG bis 10 MB. Das Bild wird auf 90 x 90 Pixel skaliert.";
+            }
+        });
     };
 
     const renderLogout = () => {

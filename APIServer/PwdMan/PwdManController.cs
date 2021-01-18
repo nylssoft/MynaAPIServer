@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using APIServer.PwdMan.Model;
 
@@ -28,6 +29,23 @@ namespace APIServer.PwdMan
         public PwdManController(IPwdManService pwdManService)
         {
             PwdManService = pwdManService;
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/photo")]
+        public IActionResult GetPhoto([FromQuery] string username)
+        {
+            return new JsonResult(PwdManService.GetPhoto(username));
+        }
+
+        [HttpPost]
+        [Route("api/pwdman/photo")]
+        public IActionResult UploadPhoto([FromForm(Name ="photo-file")] IFormFile formFile)
+        {
+            if (formFile == null) throw new PwdManInvalidArgumentException("Datei fehlt.");
+            if (formFile.Length > 10 * 1024 * 1024) throw new PwdManInvalidArgumentException("Datei grösser als 10 MB.");
+            using var stream = formFile.OpenReadStream();
+            return new JsonResult(PwdManService.UploadPhoto(GetToken(), formFile.ContentType, stream));
         }
 
         [HttpPost]

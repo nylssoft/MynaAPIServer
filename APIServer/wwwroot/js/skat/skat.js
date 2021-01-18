@@ -34,8 +34,9 @@ var skat = (() => {
     let imgWidth = 90;
 
     let currentUser;
+    let photos = {};
 
-    let version = "1.2.7";
+    let version = "1.3.0";
 
     // helper
 
@@ -274,15 +275,21 @@ var skat = (() => {
             let idx = 1;
             model.allUsers.forEach((user) => {
                 let li = controls.create(ul, "li");
-                if (skatPlayerImages) {
-                    let img = skatPlayerImages[user.name.toLowerCase()];
-                    if (!img) {
-                        img = `/images/skat/profiles/Player${idx}.png`;
-                        idx++;
-                    }
-                    if (img) {
-                        controls.createImg(li, undefined, 32, 45, img);
-                    }
+                let img = controls.createImg(li, "player-img", 45, 45);
+                let photo = photos[user.name.toLowerCase()];
+                if (!photo) {
+                    let defaultPhoto = `/images/skat/profiles/Player${idx}.png`;
+                    idx++;
+                    utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(user.name)}`, undefined,
+                        (p) => {
+                            p = p || defaultPhoto;
+                            photos[user.name.toLowerCase()] = p;
+                            img.src = p;
+                        },
+                        (errMsg) => console.error(errMsg));
+                }
+                else {
+                    img.src = photo;
                 }
                 controls.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
             });
@@ -562,19 +569,26 @@ var skat = (() => {
             model.skatTable.currentPlayer.name == player.name) {
             elem.className += " blinking";
         }
-        if (skatPlayerImages) {
-            let img = skatPlayerImages[player.name.toLowerCase()];
-            if (!img) {
-                for (let idx = 0; idx < model.allUsers.length; idx++) {
-                    if (model.allUsers[idx].name == player.name) {
-                        img = `/images/skat/profiles/Player${idx+1}.png`;
-                        break;
-                    }
+        let img = controls.createImg(elem, "player-img", 90, 90);
+        let photo = photos[player.name.toLowerCase()];
+        if (!photo) {
+            let defaultPhoto;
+            for (let idx = 0; idx < model.allUsers.length; idx++) {
+                if (model.allUsers[idx].name == player.name) {
+                    defaultPhoto = `/images/skat/profiles/Player${idx + 1}.png`;
+                    break;
                 }
             }
-            if (img) {
-                controls.createImg(elem, "player-img", 65, 90, img);
-            }
+            utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(player.name)}`, undefined,
+                (p) => {
+                    p = p || defaultPhoto;
+                    photos[player.name.toLowerCase()] = p;
+                    img.src = p;
+                },
+                (errMsg) => console.error(errMsg));
+        }
+        else {
+            img.src = photo;
         }
         if (!model.skatTable.gamePlayer) {
             if (model.skatTable.bidSaid && player.bidStatus == 0 && model.skatTable.currentBidValue > 0) {

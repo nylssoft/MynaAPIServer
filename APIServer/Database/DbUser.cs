@@ -53,5 +53,7 @@ namespace APIServer.Database
         public bool UseLongLivedToken { get; set; }
 
         public bool AllowResetPassword { get; set; }
+
+        public string Photo { get; set; }
     }
 }

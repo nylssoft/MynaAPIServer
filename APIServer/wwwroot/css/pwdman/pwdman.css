@@ -55,6 +55,10 @@ h1 {
     color: lightgreen;
 }
 
+form {
+    display: inline;
+}
+
 .header {
     padding: 2pt;
     color: white;
@@ -168,6 +172,17 @@ h1 {
     background-color: transparent;
     border: none;
     outline: none;
+}
+
+.profile-photo {
+    position: absolute;
+    top: 120px;
+    left: 400px;
+    border-radius: 50%;
+}
+
+#file-input-id {
+    display: none;
 }
 
 /* from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_checkbox */
@@ -386,4 +401,10 @@ h1 {
     .button {
         font-size: 11pt;
     }
+
+    .profile-photo {
+        top: 80px;
+        left: 300px;
+    }
+
 }

@@ -25,6 +25,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -385,11 +387,59 @@ namespace APIServer.PwdMan
 
         // --- user management
 
+        public string GetPhoto(string username)
+        {
+            logger.LogDebug("Get photo for username '{username}'...", username);
+            var user = GetDbUserByName(username);
+            return user?.Photo;
+        }
+
         public bool IsRegisteredUsername(string username)
         {
             logger.LogDebug("Check whether username '{username}' is registered...", username);
             var user = GetDbUserByName(username);
             return user != null;
+        }
+
+        public string UploadPhoto(string authenticationToken, string contentType, Stream contentStream)
+        {
+            var user = GetUserFromToken(authenticationToken);
+            var pwdgen = new PwdGen
+            {
+                Length = 32,
+                Symbols = "",
+                UpperCharacters = "",
+                MinDigits = 2,
+                MinUpperCharacters = 0,
+                MinLowerCharacters = 2,
+                MinSymbols = 0
+            };
+            if (!string.IsNullOrEmpty(user.Photo))
+            {
+                var fname = $"wwwroot/{user.Photo}";
+                if (File.Exists(fname))
+                {
+                    File.Delete(fname);
+                }
+            }
+            string extension = "jpg";
+            if (contentType.EndsWith("png", StringComparison.InvariantCultureIgnoreCase))
+            {
+                extension = "png";
+            }
+            user.Photo = $"/images/profiles/{user.Id}-{pwdgen.Generate()}.{extension}";
+            if (!Directory.Exists("wwwroot/images/profiles"))
+            {
+                Directory.CreateDirectory("wwwroot/images/profiles");
+            }
+            using (Image image = Image.Load(contentStream))
+            {
+                var opt = new ResizeOptions { Mode = ResizeMode.Crop, Size = new Size { Width = 90, Height = 90 } };
+                image.Mutate(x => x.Resize(opt));
+                image.Save($"wwwroot/{user.Photo}");
+            }
+            dbContext.SaveChanges();
+            return user.Photo;
         }
 
         public DbUser GetUserFromToken(string authenticationToken, bool useLongLivedToken = false)
@@ -448,7 +498,8 @@ namespace APIServer.PwdMan
                 AllowResetPassword = user.AllowResetPassword,
                 RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
                 HasPasswordManagerFile = user.PasswordFileId != null,
-                PasswordManagerSalt = user.Salt
+                PasswordManagerSalt = user.Salt,
+                Photo = user.Photo
             };
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
             userModel.LoginIpAddresses = new List<LoginIpAddressModel>();
@@ -644,6 +695,7 @@ namespace APIServer.PwdMan
                     Email = u.Email,
                     LastLoginUtc = DbMynaContext.GetUtcDateTime(u.LastLoginTryUtc),
                     RegisteredUtc = DbMynaContext.GetUtcDateTime(u.RegisteredUtc),
+                    Photo = u.Photo,
                     Roles = u.Roles.Select(r => r.Name).ToList(),
                     LoginIpAddresses = new List<LoginIpAddressModel>()
                 };
