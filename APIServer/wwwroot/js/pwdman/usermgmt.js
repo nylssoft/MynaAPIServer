@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.0";
+    let version = "1.1.1";
 
     // helper
 
@@ -269,19 +269,20 @@ var usermgmt = (() => {
         photoImg.id = "profile-photo-id";
         photoImg.width = 90;
         photoImg.height = 90;
-        photoImg.title = "Profilbild hinzuf\u00FCgen (90 x 90 Pixel)";
+        photoImg.title = "Profilbild (90 x 90 Pixel)";
+        photoImg.addEventListener("click", onSelectPhoto);
+        let addImg = controls.createImg(parent, "profile-photo-add", 32, 32, "/images/pwdman/list-add-4.png");
+        addImg.addEventListener("click", onSelectPhoto);
+        addImg.title = "Profilbild hinzuf\u00FCgen";
         if (currentUser.photo) {
             photoImg.src = currentUser.photo;
+            let removeImg = controls.createImg(parent, "profile-photo-remove", 32, 32, "/images/pwdman/list-remove-4.png");
+            removeImg.title = "Profilbild entfernen";
+            removeImg.addEventListener("click", onDeletePhoto);
         }
         else {
             photoImg.src = "/images/pwdman/user-new-3.png";
         }
-        photoImg.addEventListener("click", () => {
-            let inputFile = document.getElementById("file-input-id");
-            if (inputFile) {
-                inputFile.click();
-            }
-        });
         let emailP = controls.create(parent, "p");
         controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");
         controls.createSpan(emailP, undefined, currentUser.email);
@@ -356,32 +357,7 @@ var usermgmt = (() => {
         inputFile.name = "photo-file";
         inputFile.accept = "image/jpeg,image/png";
         inputFile.id = "file-input-id";
-        inputFile.addEventListener("change", () => {
-            let curFiles = inputFile.files;
-            if (curFiles.length == 1 &&
-                ["image/jpeg", "image/png"].includes(curFiles[0].type) &&
-                curFiles[0].size < 10 * 1024 * 1024) {
-                const formData = new FormData(document.getElementById("upload-form-id"));
-                utils.fetch_api_call("api/pwdman/photo",
-                    {
-                        method: "POST",
-                        headers: { "token": utils.get_authentication_token() },
-                        body: formData
-                    },
-                    (photo) => {
-                        let image = document.getElementById("profile-photo-id");
-                        if (image) {
-                            image.src = photo;
-                        }
-                    },
-                    (errMsg) => document.getElementById("error-id").textContent = errMsg,
-                    setWaitCursor
-                );
-            }
-            else {
-                document.getElementById("error-id").textContent = "Ung\u00FCltige Datei. Erlaubt sind JPG und PNG bis 10 MB. Das Bild wird auf 90 x 90 Pixel skaliert.";
-            }
-        });
+        inputFile.addEventListener("change", onAddPhoto);
     };
 
     const renderLogout = () => {
@@ -418,6 +394,57 @@ var usermgmt = (() => {
     };
 
     // --- callbacks
+
+    const onSelectPhoto = () => {
+        const inputFile = document.getElementById("file-input-id");
+        if (inputFile) {
+            inputFile.click();
+        }
+    };
+
+    const onDeletePhoto = () => {
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/photo",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            () => {
+                currentUser.photo = undefined;
+                renderCurrentUser();
+            },
+            (errMsg) => document.getElementById("error-id").textContent = errMsg,
+            setWaitCursor
+        );
+    };
+
+    const onAddPhoto = () => {
+        const inputFile = document.getElementById("file-input-id");
+        if (inputFile && inputFile.files.length == 1) {
+            const curFile = inputFile.files[0];
+            const mimeTypes = ["image/jpeg", "image/png"];
+            if (mimeTypes.includes(curFile.type) && curFile.size < 10 * 1024 * 1024) {
+                const formData = new FormData(document.getElementById("upload-form-id"));
+                const token = utils.get_authentication_token();
+                utils.fetch_api_call("api/pwdman/photo",
+                    {
+                        method: "POST",
+                        headers: { "token": token },
+                        body: formData
+                    },
+                    (photo) => {
+                        currentUser.photo = photo;
+                        renderCurrentUser();
+                    },
+                    (errMsg) => document.getElementById("error-id").textContent = errMsg,
+                    setWaitCursor
+                );
+            }
+            else {
+                document.getElementById("error-id").textContent = "Ung\u00FCltige Datei. Erlaubt sind JPG und PNG bis 10 MB.";
+            }
+        }
+    };
 
     const onDoConfirm = (list, results, notification, reject) => {
         if (list.length > 0) {

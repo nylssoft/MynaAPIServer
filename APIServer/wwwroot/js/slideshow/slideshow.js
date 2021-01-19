@@ -63,6 +63,11 @@ var slideshow = (() => {
         let title = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";
         let header = controls.create(parent, "h1", "header", title);
         header.id = "header-id";
+        if (currentUser && currentUser.photo) {
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
+            imgPhoto.title = "Profil";
+            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+        }
     };
 
     const renderSlideshowInfo = (parent) => {

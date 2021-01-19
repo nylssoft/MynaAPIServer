@@ -46,6 +46,8 @@ namespace APIServer.PwdMan
 
         string UploadPhoto(string authenticationToken, string contentType, Stream contentStream);
 
+        bool DeletePhoto(string authenticationToken);
+
         bool IsRegisteredUsername(string username);
 
         DbUser GetUserFromToken(string authenticationToken, bool useLongLivedToken = false);

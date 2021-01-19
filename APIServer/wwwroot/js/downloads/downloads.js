@@ -34,7 +34,7 @@ var downloads = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", "Myna Downloads 1.0.2. Copyright 2020-2021 ");
+        controls.create(div, "span", "copyright", "Myna Downloads 1.1.0. Copyright 2020-2021 ");
         let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
         a.target = "_blank";
         controls.create(div, "span", "copyright", ".");
@@ -44,6 +44,11 @@ var downloads = (() => {
         renderDropdown(parent);
         let title = currentUser ? `${currentUser.name} - Downloads` : "Downloads";
         controls.create(parent, "h1", undefined, title);
+        if (currentUser && currentUser.photo) {
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
+            imgPhoto.title = "Profil";
+            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+        }
         apps.forEach( (app) => {
             let divApp = controls.createDiv(parent, "app");
             let p = controls.create(divApp, "h2", undefined, `${app.title} - ${app.version}`);

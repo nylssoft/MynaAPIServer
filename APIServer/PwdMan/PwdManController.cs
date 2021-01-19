@@ -48,6 +48,13 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.UploadPhoto(GetToken(), formFile.ContentType, stream));
         }
 
+        [HttpDelete]
+        [Route("api/pwdman/photo")]
+        public IActionResult DeletePhoto()
+        {
+            return new JsonResult(PwdManService.DeletePhoto(GetToken()));
+        }
+
         [HttpPost]
         [Route("api/pwdman/resetpwd")]
         public IActionResult RequestResetPwd([FromBody] string email)

@@ -188,6 +188,14 @@ td a {
     z-index: -1;
 }
 
+.header-profile-photo {
+    position: absolute;
+    top: 65pt;
+    right: -16pt;
+    z-index: -1;
+    border-radius: 50%;
+}
+
 .active-background {
     background-color: #007400;
 }

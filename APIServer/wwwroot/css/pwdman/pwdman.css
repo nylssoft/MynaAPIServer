@@ -181,6 +181,26 @@ form {
     border-radius: 50%;
 }
 
+.profile-photo-add {
+    position: absolute;
+    top: 130px;
+    left: 500px;
+}
+
+.profile-photo-remove {
+    position: absolute;
+    top: 170px;
+    left: 500px;
+}
+
+.profile-photo-remove:hover {
+    background-color: darkgray;
+}
+
+.profile-photo-add:hover {
+    background-color: darkgray;
+}
+
 #file-input-id {
     display: none;
 }
@@ -319,6 +339,13 @@ form {
     background: white;
 }
 
+.header-profile-photo {
+    border-radius: 50%;
+    position: fixed;
+    top: 5pt;
+    right: 5pt;
+}
+
 /* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
 .dropbtn {
     position: fixed;
@@ -403,8 +430,18 @@ form {
     }
 
     .profile-photo {
+        top: 40px;
+        left: 230px;
+    }
+
+    .profile-photo-add {
+        top: 50px;
+        left: 325px;
+    }
+
+    .profile-photo-remove {
         top: 80px;
-        left: 300px;
+        left: 325px;
     }
 
 }

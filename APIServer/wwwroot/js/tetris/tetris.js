@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.7";
+    let version = "1.2.8";
 
     let block;
     let nextBlock;
@@ -847,6 +847,11 @@ var tetris = (() => {
     const renderHeader = (parent) => {
         let title = currentUser ? `${currentUser.name} - Tetris` : "Tetris";
         controls.create(parent, "h1", "header", title);
+        if (currentUser && currentUser.photo) {
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
+            imgPhoto.title = "Profil";
+            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+        }
     };
 
     const renderCopyright = (parent) => {

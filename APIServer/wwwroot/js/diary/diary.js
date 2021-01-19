@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.0.12";
+    let version = "1.1.0";
 
     let changeDate;
     let inSaveDiary;
@@ -126,6 +126,11 @@ var diary = (() => {
 
     const renderHeader = (parent) => {
         controls.create(parent, "h1", undefined, `${currentUser.name} - Tagebuch`);
+        if (currentUser && currentUser.photo) {
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
+            imgPhoto.title = "Profil";
+            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+        }
     };
 
     const renderCopyright = (parent) => {

@@ -78,6 +78,13 @@ p {
     color: darkblue;
 }
 
+.header-profile-photo {
+    border-radius: 50%;
+    position: fixed;
+    top: 2pt;
+    right: 2pt;
+}
+
 /* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
 .dropbtn {
     position: fixed;

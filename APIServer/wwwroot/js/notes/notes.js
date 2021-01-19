@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.0.10";
+    let version = "1.1.0";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -166,6 +166,11 @@ var notes = (() => {
 
     const renderHeader = (parent) => {
         controls.create(parent, "h1", undefined, `${currentUser.name} - Notizen`);
+        if (currentUser && currentUser.photo) {
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
+            imgPhoto.title = "Profil";
+            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+        }
     };
 
     const renderCopyright = (parent) => {

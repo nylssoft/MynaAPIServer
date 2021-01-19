@@ -442,6 +442,23 @@ namespace APIServer.PwdMan
             return user.Photo;
         }
 
+        public bool DeletePhoto(string authenticationToken)
+        {
+            logger.LogDebug("Delete photo...");
+            var user = GetUserFromToken(authenticationToken);
+            if (!string.IsNullOrEmpty(user.Photo))
+            {
+                var fname = $"wwwroot/{user.Photo}";
+                if (File.Exists(fname))
+                {
+                    File.Delete(fname);
+                }
+                user.Photo = null;
+            }
+            dbContext.SaveChanges();
+            return true;
+        }
+
         public DbUser GetUserFromToken(string authenticationToken, bool useLongLivedToken = false)
         {
             var opt = GetOptions();

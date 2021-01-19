@@ -36,7 +36,7 @@ var skat = (() => {
     let currentUser;
     let photos = {};
 
-    let version = "1.3.1";
+    let version = "1.3.2";
 
     // helper
 
@@ -264,6 +264,11 @@ var skat = (() => {
         renderDropdown(parent);
         let title = currentUser ? `${currentUser.name} - Skat` : "Skat";
         controls.create(parent, "h1", undefined, title);
+        if (currentUser && currentUser.photo) {
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
+            imgPhoto.title = "Profil";
+            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+        }
         let divInfoImages = controls.createDiv(parent, "infoimages");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
         controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
