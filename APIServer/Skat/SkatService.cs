@@ -199,10 +199,10 @@ namespace APIServer.Skat
                 if (ctx != null)
                 {
                     ret.CurrentUser = GetCurrentUser(ctx);
-                    if (skatTable != null)
-                    {
-                        ret.SkatTable = GetTableModel(ctx);
-                    }
+                }
+                if (skatTable != null)
+                {
+                    ret.SkatTable = GetTableModel(ctx);
                 }
                 return ret;
             }
@@ -876,7 +876,7 @@ namespace APIServer.Skat
         private TableModel GetTableModel(Context ctx)
         {
             var model = new TableModel();
-            var player = GetPlayerByName(ctx.Name);
+            var player = GetPlayerByName(ctx?.Name);
             if (player != null)
             {
                 var stat = skatTable.GetPlayerStatus(player);
@@ -891,12 +891,16 @@ namespace APIServer.Skat
             if (skatTable.InactivePlayer != null)
             {
                 model.InactivePlayer = GetPlayerModel(skatTable.InactivePlayer, $"{skatTable.InactivePlayer.Name}, {skatTable.InactivePlayer.Score} Punkte");
-                if (skatTable.InactivePlayer.Name == ctx.Name)
+                if (skatTable.InactivePlayer.Name == ctx?.Name)
                 {
                     var stat = skatTable.GetPlayerStatus(skatTable.InactivePlayer);
                     model.InactivePlayer.Tooltip = stat.Tooltip;
                     model.Message = stat.Header;
                 }
+            }
+            if (ctx == null)
+            {
+                model.Message = skatTable.GetPlayerStatus(null).Header;
             }
             model.GamePlayer = GetPlayerModel(skatTable.GamePlayer);
             var currentPlayer = skatTable.CurrentPlayer;

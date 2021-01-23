@@ -605,24 +605,27 @@ namespace APIServer.Skat.Core
             // Bidding
             if (GamePlayer == null)
             {
-                if (player.BidStatus == BidStatus.Accept && BidSaid)
+                if (player != null)
                 {
-                    ret.ActionLabels.Add($"{CurrentBidValue} halten");
-                    ret.ActionLabels.Add("Weg");
-                    ret.ActionTypes.Add(ActionType.HoldBid);
-                    ret.ActionTypes.Add(ActionType.PassHold);
-                }
-                else if (player.BidStatus == BidStatus.Bid && !BidSaid)
-                {
-                    ret.ActionLabels.Add($"{NextBidValue} sagen");
-                    ret.ActionLabels.Add("Weg");
-                    ret.ActionTypes.Add(ActionType.Bid);
-                    ret.ActionTypes.Add(ActionType.PassBid);
-                }
-                if (ret.ActionTypes.Count > 0 && player.Game != null)
-                {
-                    var jacks = player.Game.GetMatadorsJackStraight(player.Cards, null);
-                    ret.Tooltip = player.Game.GetBidValueTooptip(jacks);
+                    if (player.BidStatus == BidStatus.Accept && BidSaid)
+                    {
+                        ret.ActionLabels.Add($"{CurrentBidValue} halten");
+                        ret.ActionLabels.Add("Weg");
+                        ret.ActionTypes.Add(ActionType.HoldBid);
+                        ret.ActionTypes.Add(ActionType.PassHold);
+                    }
+                    else if (player.BidStatus == BidStatus.Bid && !BidSaid)
+                    {
+                        ret.ActionLabels.Add($"{NextBidValue} sagen");
+                        ret.ActionLabels.Add("Weg");
+                        ret.ActionTypes.Add(ActionType.Bid);
+                        ret.ActionTypes.Add(ActionType.PassBid);
+                    }
+                    if (ret.ActionTypes.Count > 0 && player.Game != null)
+                    {
+                        var jacks = player.Game.GetMatadorsJackStraight(player.Cards, null);
+                        ret.Tooltip = player.Game.GetBidValueTooptip(jacks);
+                    }
                 }
                 foreach (var p in Players)
                 {
@@ -692,7 +695,7 @@ namespace APIServer.Skat.Core
                     else
                     {
                         Player next0 = player;
-                        if (player.Position == PlayerPosition.Inactive)
+                        if (player == null || player.Position == PlayerPosition.Inactive)
                         {
                             next0 = Players.Single((p) => p.Position == PlayerPosition.Forehand);
                             ret.Header += $"{next0.Name} hat {GetScore(next0)} Augen. ";

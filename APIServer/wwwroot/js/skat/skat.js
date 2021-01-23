@@ -35,8 +35,9 @@ var skat = (() => {
 
     let currentUser;
     let photos = {};
+    let guestMode = false;
 
-    let version = "1.3.2";
+    let version = "1.3.3";
 
     // helper
 
@@ -242,6 +243,7 @@ var skat = (() => {
         let token = utils.get_authentication_token();
         if (ignoreToken || !token) {
             controls.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
+            controls.createButton(parent, "Zuschauen als Gast", () => window.open("/skat?guest", "_blank"));
             document.body.className = "inactive-background";
         }
         else {
@@ -283,7 +285,7 @@ var skat = (() => {
                 let img = controls.createImg(li, "player-img", 45, 45);
                 let photo = photos[user.name.toLowerCase()];
                 if (!photo) {
-                    photo = `/images/skat/profiles/Player${idx}.png`;
+                    photo = `/images/skat/profiles/default${idx}.png`;
                     photos[user.name.toLowerCase()] = photo;
                     img.src = photo;
                     utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(user.name)}`, undefined,
@@ -479,7 +481,7 @@ var skat = (() => {
             active = true;
         }
         else {
-            if (model.skatTable.canStartNewGame) {
+            if (model.skatTable.canStartNewGame && model.currentUser) {
                 if (!model.currentUser.startGameConfirmed) {
                     if (model.skatTable.player) {
                         controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
@@ -582,7 +584,7 @@ var skat = (() => {
         if (!photo) {
             for (let idx = 0; idx < model.allUsers.length; idx++) {
                 if (model.allUsers[idx].name == player.name) {
-                    photo = `/images/skat/profiles/Player${idx + 1}.png`;
+                    photo = `/images/skat/profiles/default${idx + 1}.png`;
                     photos[player.name.toLowerCase()] = photo;
                     img.src = photo;
                     break;
@@ -627,8 +629,14 @@ var skat = (() => {
             let middlePlayer;
             let rightPlayer;
             if (!model.skatTable.player) {
-                middlePlayer = getNextPlayer(model.skatTable.inactivePlayer);
-                leftPlayer = getNextPlayer(middlePlayer);
+                if (model.skatTable.inactivePlayer) {
+                    middlePlayer = getNextPlayer(model.skatTable.inactivePlayer);
+                    leftPlayer = getNextPlayer(middlePlayer);
+                }
+                else {
+                    middlePlayer = model.skatTable.players[0];
+                    leftPlayer = model.skatTable.players[1];
+                }
             }
             else {
                 leftPlayer = getNextPlayer(model.skatTable.player);
@@ -723,7 +731,7 @@ var skat = (() => {
         let token = utils.get_authentication_token();
         if (token) {
             let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/skat/games-card_game.png");
-            imgResults.addEventListener("click", () => window.open(window.location.href + "?results", "_blank"));
+            imgResults.addEventListener("click", () => window.open("/skat?results", "_blank"));
             imgResults.title = "Spielergebnisse";
         }
         divChat = controls.createDiv(parent, "layout-right");
@@ -953,15 +961,19 @@ var skat = (() => {
         divMain = controls.createDiv(divLayoutLeft);
         renderChat(document.body);
         if (!ticket) {
-            renderUserList(divMain);
-            console.log(model);
-            if (model.allUsers.length > 3 || model.isTableFull) {
-                renderTableFull(divMain);
+            if (guestMode) {
+                renderMainPage(divMain);
             }
             else {
-                renderLogin(divMain);
+                renderUserList(divMain);
+                if (model.allUsers.length > 3 || model.isTableFull) {
+                    renderTableFull(divMain);
+                }
+                else {
+                    renderLogin(divMain);
+                }
+                renderCopyright(divMain);
             }
-            renderCopyright(divMain);
         }
         else {
             renderUsername(divMain);
@@ -1056,6 +1068,10 @@ var skat = (() => {
                 return;
             }
             window.location.replace("/skat");
+            return;
+        }
+        if (params.has("guest")) {
+            guestMode = true;
         }
         timerEnabled = false;
         utils.fetch_api_call("api/skat/chat", undefined,
