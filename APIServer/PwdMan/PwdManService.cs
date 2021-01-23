@@ -472,6 +472,7 @@ namespace APIServer.PwdMan
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null)
                     {
+                        // @TODO: check ValidUntil date if present (force new token from date x)
                         if (!useLongLivedToken && user.Requires2FA)
                         {
                             var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
@@ -882,7 +883,7 @@ namespace APIServer.PwdMan
             throw new InvalidTokenException();
         }
 
-        public AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken)
+        public AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress)
         {
             var opt = GetOptions();
             var user = GetUserFromToken(longLivedToken, true);
@@ -890,6 +891,17 @@ namespace APIServer.PwdMan
             {
                 throw new InvalidTokenException();
             }
+            var loginIpAddress = dbContext.DbLoginIpAddresses
+                .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
+            if (loginIpAddress == null)
+            {
+                loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
+                dbContext.DbLoginIpAddresses.Add(loginIpAddress);
+            }
+            loginIpAddress.LastUsedUtc = DateTime.UtcNow;
+            user.LastLoginTryUtc = DateTime.UtcNow;
+            loginIpAddress.Succeeded += 1;
+            dbContext.SaveChanges();
             var ret = new AuthenticationResponseModel
             {
                 Token = GenerateToken(user.Name, opt, false),

@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.1";
+    let version = "1.1.2";
 
     // helper
 
@@ -181,6 +181,7 @@ var usermgmt = (() => {
     };
 
     const renderUsersTable = (parent, users) => {
+        const mobile = utils.is_mobile();
         waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent, "Registrierte Benutzer:", "Benutzer");
         let table = controls.create(parent, "table");
@@ -188,7 +189,13 @@ var usermgmt = (() => {
         let tr = controls.create(theader, "tr");
         controls.create(tr, "th", undefined, " ");
         controls.create(tr, "th", undefined, "Name");
+        if (!mobile) {
+            controls.create(tr, "th", undefined, " ");
+        }
         controls.create(tr, "th", undefined, "Rollen");
+        if (!mobile) {
+            controls.create(tr, "th", undefined, "Letzte Anmeldung");
+        }
         let tbody = controls.create(table, "tbody");
         let idx = 0;
         users.forEach(user => {
@@ -200,7 +207,17 @@ var usermgmt = (() => {
             if (user.accountLocked) {
                 a.textContent += " (gesperrt)";
             }
-            td = controls.create(tr, "td", undefined, user.roles.join(", "));
+            if (!mobile) {
+                td = controls.create(tr, "td", undefined, " ");
+                if (user.photo) {
+                    controls.createImg(td, "profile-photo-user", 45, 45, user.photo);
+                }
+            }
+            controls.create(tr, "td", undefined, user.roles.join(", "));
+            if (!mobile) {
+                let dt = user.lastLoginUtc ? new Date(user.lastLoginUtc).toLocaleString("de-DE") : " ";
+                controls.create(tr, "td", undefined, dt);
+            }
             idx++;
         });
         let errorDiv = controls.createDiv(parent, "error");

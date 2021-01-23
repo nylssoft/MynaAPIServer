@@ -80,7 +80,7 @@ namespace APIServer.PwdMan
 
         AuthenticationResponseModel AuthenticateTOTP(string token, string totp);
 
-        AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken);
+        AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress);
 
         void SendTOTP(string token);
 

@@ -208,7 +208,8 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/auth/lltoken")]
         public IActionResult LoginWithLongLivedToken()
         {
-            return new JsonResult(PwdManService.AuthenticateLongLivedToken(GetToken()));
+            var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+            return new JsonResult(PwdManService.AuthenticateLongLivedToken(GetToken(), ipAddress));
         }
 
         [HttpPost]
