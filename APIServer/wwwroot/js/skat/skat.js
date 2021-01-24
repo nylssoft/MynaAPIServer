@@ -37,7 +37,7 @@ var skat = (() => {
     let photos = {};
     let guestMode = false;
 
-    let version = "1.3.3";
+    let version = "1.3.4";
 
     // helper
 
@@ -962,7 +962,14 @@ var skat = (() => {
         renderChat(document.body);
         if (!ticket) {
             if (guestMode) {
-                renderMainPage(divMain);
+                document.title = "Skat - Gastansicht";
+                if (model.skatTable) {
+                    renderMainPage(divMain);
+                }
+                else {
+                    controls.create(divMain, "p", undefined, "Es wird gerade nicht gespielt.");
+                    renderCopyright(divMain);
+                }
             }
             else {
                 renderUserList(divMain);
