@@ -42,6 +42,8 @@ namespace APIServer.Database
 
         public DateTime? RegisteredUtc { get; set; }
 
+        public DateTime? LogoutUtc { get; set; }
+
         public string TOTPKey { get; set; }
 
         public long? PasswordFileId { get; set; }

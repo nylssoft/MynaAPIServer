@@ -472,7 +472,10 @@ namespace APIServer.PwdMan
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null)
                     {
-                        // @TODO: check ValidUntil date if present (force new token from date x)
+                        if (user.LogoutUtc > securityToken.IssuedAt)
+                        {
+                            throw new InvalidTokenException();
+                        }
                         if (!useLongLivedToken && user.Requires2FA)
                         {
                             var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
@@ -936,6 +939,29 @@ namespace APIServer.PwdMan
             var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
             user.PasswordHash = newhash;
             dbContext.SaveChanges();
+        }
+
+        public bool Logout(string authenticationToken)
+        {
+            logger.LogDebug("Logout user...");
+            var opt = GetOptions();
+            if (ValidateToken(authenticationToken, opt, false))
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var securityToken = tokenHandler.ReadToken(authenticationToken) as JwtSecurityToken;
+                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+                if (claim != null)
+                {
+                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+                    if (user != null)
+                    {
+                        user.LogoutUtc = DateTime.UtcNow;
+                        dbContext.SaveChanges();
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         // --- password manager

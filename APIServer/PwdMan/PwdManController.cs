@@ -220,6 +220,13 @@ namespace APIServer.PwdMan
             return new JsonResult(true);
         }
 
+        [HttpGet]
+        [Route("api/pwdman/logout")]
+        public IActionResult Logout()
+        {
+            return new JsonResult(PwdManService.Logout(GetToken()));
+        }
+
         [HttpPost]
         [Route("api/pwdman/userpwd")]
         public IActionResult ChangeUserPassword([FromBody] UserPasswordChangeModel userPasswordChange)

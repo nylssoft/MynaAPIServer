@@ -37,7 +37,7 @@ var skat = (() => {
     let photos = {};
     let guestMode = false;
 
-    let version = "1.3.4";
+    let version = "1.3.5";
 
     // helper
 
@@ -469,7 +469,7 @@ var skat = (() => {
             active = true;
         }
         else if (logoutClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
+            controls.create(parent, "span", "confirmation", "Willst Du den Tisch wirklich verlassen?");
             controls.createButton(parent, "Ja", btnLogout_click, "LogoutYes");
             controls.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
             active = true;
@@ -661,7 +661,7 @@ var skat = (() => {
         let time = new Date().toLocaleTimeString("de-DE");
         controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `);
         if (ticket) {
-            controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
+            controls.createButton(div, "Tisch verlassen", btnLogout_click, "Logout", "logout-button");
         }
     };
 

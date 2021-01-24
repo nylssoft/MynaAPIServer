@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.2";
+    let version = "1.1.3";
 
     // helper
 
@@ -344,11 +344,6 @@ var usermgmt = (() => {
         if (confirm == "deleteaccount") {
             controls.create(actionsDiv, "span", "confirmation", "Willst Du Dein Konto wirklich l\u00F6schen? ");
             controls.createButton(actionsDiv, "Ja", () => onDeleteCurrentUser());
-            controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
-        }
-        else if (confirm == "logout") {
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du Dich wirklich abmelden? ");
-            controls.createButton(actionsDiv, "Ja", () => onLogout());
             controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
         }
         else {

@@ -69,8 +69,14 @@ var utils = (() => {
     };
 
     const logout = (resolve, reject) => {
+        const token = get_authentication_token();
         window.sessionStorage.removeItem("pwdman-state");
         window.localStorage.removeItem("pwdman-lltoken");
+        if (token) {
+            fetch_api_call("api/pwdman/logout", { headers: { "token": token } },
+                (done) => console.log(`User logout: ${done}.`),
+                (errMsg) => console.error(`User logout failed: ${errMsg}`));
+        }
         logout_skat(resolve, reject);
     };
 

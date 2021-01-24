@@ -84,6 +84,8 @@ namespace APIServer.PwdMan
 
         void SendTOTP(string token);
 
+        bool Logout(string token);
+
         // --- password manager
 
         void SavePasswordFile(string token, PasswordFileModel pwdFileContent);
