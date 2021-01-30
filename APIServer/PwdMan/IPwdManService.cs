@@ -54,7 +54,7 @@ namespace APIServer.PwdMan
 
         bool HasRole(DbUser user, string roleName);
 
-        UserModel GetUser(string authenticationToken);
+        UserModel GetUser(string authenticationToken, bool getLoginIpAddresses = false);
 
         List<UserModel> GetUsers(string authenticationToken);
 

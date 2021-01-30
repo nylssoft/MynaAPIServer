@@ -505,7 +505,7 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public UserModel GetUser(string authenticationToken)
+        public UserModel GetUser(string authenticationToken, bool getLoginIpAddresses = false)
         {
             logger.LogDebug("Get user...");
             var user = GetUserFromToken(authenticationToken);
@@ -524,18 +524,21 @@ namespace APIServer.PwdMan
             };
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
             userModel.LoginIpAddresses = new List<LoginIpAddressModel>();
-            var loginIpAddresses = dbContext.DbLoginIpAddresses
-                .Where(ip => ip.DbUserId == user.Id)
-                .OrderByDescending(ip => ip.LastUsedUtc);
-            foreach (var ip in loginIpAddresses)
+            if (getLoginIpAddresses)
             {
-                userModel.LoginIpAddresses.Add(new LoginIpAddressModel
+                var loginIpAddresses = dbContext.DbLoginIpAddresses
+                    .Where(ip => ip.DbUserId == user.Id)
+                    .OrderByDescending(ip => ip.LastUsedUtc);
+                foreach (var ip in loginIpAddresses)
                 {
-                    IpAddress = ip.IpAddress,
-                    LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value,
-                    Succeeded = ip.Succeeded,
-                    Failed = ip.Failed
-                });
+                    userModel.LoginIpAddresses.Add(new LoginIpAddressModel
+                    {
+                        IpAddress = ip.IpAddress,
+                        LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value,
+                        Succeeded = ip.Succeeded,
+                        Failed = ip.Failed
+                    });
+                }
             }
             return userModel;
         }
@@ -727,19 +730,6 @@ namespace APIServer.PwdMan
                     {
                         userModel.AccountLocked = true;
                     }
-                }
-                var loginIpAddresses = dbContext.DbLoginIpAddresses
-                    .Where(ip => ip.DbUserId == u.Id)
-                    .OrderByDescending(ip => ip.LastUsedUtc);
-                foreach (var ip in loginIpAddresses)
-                {
-                    userModel.LoginIpAddresses.Add(new LoginIpAddressModel
-                    {
-                        IpAddress = ip.IpAddress,
-                        LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value,
-                        Succeeded = ip.Succeeded,
-                        Failed = ip.Failed
-                    });
                 }
                 ret.Add(userModel);
             }

@@ -37,7 +37,7 @@ var skat = (() => {
     let photos = {};
     let guestMode = false;
 
-    let version = "1.3.5";
+    let version = "1.3.6";
 
     // helper
 
@@ -847,17 +847,31 @@ var skat = (() => {
         let playerLoss = [0, 0, 0, 0];
         let otherWins = [0, 0, 0, 0];
         result.history.forEach((h) => {
-            tr = controls.create(tbody, "tr");
+            let trClassName = (cnt > 1 && ((cnt - 1) % result.playerNames.length) == 0) ? "result-bordertop" : undefined;
+            tr = controls.create(tbody, "tr", trClassName);
             controls.create(tr, "td", undefined, `${cnt}`);
             let idx = result.playerNames.findIndex((e) => e == h.gamePlayerName);
             scores[idx] += h.gameValue;
+            let opponentPlayerNames = [];
+            let opponentPlayerIndex = [];
+            h.playerCards.forEach((pc) => {
+                if (pc.playerName != h.gamePlayerName) {
+                    opponentPlayerNames.push(pc.playerName);
+                }
+            });
             for (let col = 0; col < result.playerNames.length; col++) {
                 let td = controls.create(tr, "td");
                 if (col == idx) {
                     td.textContent = `${scores[idx]}`;
                 }
                 else {
-                    td.textContent = "-";
+                    if (opponentPlayerNames.includes(result.playerNames[col])) {
+                        opponentPlayerIndex.push(col);
+                        td.textContent = "-";
+                    }
+                    else {
+                        td.textContent = " ";
+                    }
                 }
             }
             if (h.gameValue > 0) {
@@ -865,8 +879,8 @@ var skat = (() => {
             }
             else {
                 playerLoss[idx] += 1;
-                otherWins[(idx + 1) % 3] += 1;
-                otherWins[(idx + 2) % 3] += 1;
+                otherWins[opponentPlayerIndex[0]] += 1;
+                otherWins[opponentPlayerIndex[1]] += 1;
             }
             let tddetails = controls.create(tr, "td");
             controls.createA(tddetails, undefined, "#open", `${h.gameValue}`, () => renderGameHistory(parent, result, h));

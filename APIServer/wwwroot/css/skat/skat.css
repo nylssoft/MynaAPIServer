@@ -81,6 +81,10 @@ td a {
     color: white;
 }
 
+.result-bordertop {
+    border-top: 1px solid black;
+}
+
 .player-img {
     border-radius: 50%;
     z-index: -2;

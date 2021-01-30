@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.3";
+    let version = "1.1.4";
 
     // helper
 
@@ -774,7 +774,7 @@ var usermgmt = (() => {
         }
         let token = utils.get_authentication_token();
         utils.fetch_api_call(
-            "api/pwdman/user",
+            "api/pwdman/user?getLoginIPAddresses=true",
             { headers: { "token": token } },
             onResolveCurrentUser,
             (errMsg) => {
