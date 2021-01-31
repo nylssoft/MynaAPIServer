@@ -6,17 +6,17 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace APIServer.Migrations
+namespace APIServer.Migrations.DbSqlite
 {
-    [DbContext(typeof(DbMynaContext))]
-    [Migration("20201114155655_CreateChat")]
-    partial class CreateChat
+    [DbContext(typeof(DbSqliteContext))]
+    [Migration("20210131092003_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.9");
+                .HasAnnotation("ProductVersion", "5.0.2");
 
             modelBuilder.Entity("APIServer.Database.DbChat", b =>
                 {
@@ -38,6 +38,83 @@ namespace APIServer.Migrations
                     b.HasIndex("DbUserId");
 
                     b.ToTable("Chats");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbDiary", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("DbUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Entry")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbUserId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("Diaries");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbLoginIpAddress", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("DbUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Failed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastUsedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Succeeded")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbUserId", "IpAddress")
+                        .IsUnique();
+
+                    b.ToTable("LoginIpAddresses");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbNote", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("DbUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ModifiedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbUserId");
+
+                    b.ToTable("Note");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbPasswordFile", b =>
@@ -72,6 +149,9 @@ namespace APIServer.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("RequestedUtc")
                         .HasColumnType("TEXT");
 
@@ -85,7 +165,37 @@ namespace APIServer.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("IpAddress");
+
                     b.ToTable("Registrations");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbResetPassword", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RequestedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Token")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("IpAddress");
+
+                    b.ToTable("ResetPasswords");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbRole", b =>
@@ -164,6 +274,9 @@ namespace APIServer.Migrations
                     b.Property<string>("Player3")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Player4")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("StartedUtc")
                         .HasColumnType("TEXT");
 
@@ -172,10 +285,39 @@ namespace APIServer.Migrations
                     b.ToTable("SkatResults");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbTetrisHighScore", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lines")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TetrisHighScores");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbUser", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AllowResetPassword")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Email")
@@ -187,6 +329,9 @@ namespace APIServer.Migrations
                     b.Property<int>("LoginTries")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("LogoutUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
@@ -194,6 +339,9 @@ namespace APIServer.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("PasswordHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Photo")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("RegisteredUtc")
@@ -207,6 +355,9 @@ namespace APIServer.Migrations
 
                     b.Property<string>("TOTPKey")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("UseLongLivedToken")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
@@ -249,6 +400,41 @@ namespace APIServer.Migrations
                         .HasForeignKey("DbUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DbUser");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbDiary", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "DbUser")
+                        .WithMany()
+                        .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DbUser");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbLoginIpAddress", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "DbUser")
+                        .WithMany()
+                        .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DbUser");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbNote", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "DbUser")
+                        .WithMany()
+                        .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DbUser");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbRegistration", b =>
@@ -256,6 +442,8 @@ namespace APIServer.Migrations
                     b.HasOne("APIServer.Database.DbUser", "ConfirmedBy")
                         .WithMany()
                         .HasForeignKey("ConfirmedById");
+
+                    b.Navigation("ConfirmedBy");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbRole", b =>
@@ -281,6 +469,8 @@ namespace APIServer.Migrations
                     b.HasOne("APIServer.Database.DbPasswordFile", "PasswordFile")
                         .WithMany()
                         .HasForeignKey("PasswordFileId");
+
+                    b.Navigation("PasswordFile");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbUserSkatResult", b =>
@@ -296,6 +486,20 @@ namespace APIServer.Migrations
                         .HasForeignKey("DbUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("DbSkatResult");
+
+                    b.Navigation("DbUser");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbSkatResult", b =>
+                {
+                    b.Navigation("SkatGameHistories");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbUser", b =>
+                {
+                    b.Navigation("Roles");
                 });
 #pragma warning restore 612, 618
         }

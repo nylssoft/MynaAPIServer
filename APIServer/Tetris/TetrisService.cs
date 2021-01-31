@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using APIServer.Database;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,16 +25,24 @@ namespace APIServer.Tetris
 {
     public class TetrisService : ITetrisService
     {
-        private readonly DbMynaContext dbContext;
+        private readonly DbSqliteContext dbSqliteContext;
+        private readonly DbPostgresContext dbPostgresContext;
+        private readonly IConfiguration Configuration;
 
-        public TetrisService(DbMynaContext dbContext)
+        public TetrisService(
+            IConfiguration configuration,
+            DbSqliteContext dbSqliteContext,
+            DbPostgresContext dbPostgresContext)
         {
-            this.dbContext = dbContext;
+            Configuration = configuration;
+            this.dbSqliteContext = dbSqliteContext;
+            this.dbPostgresContext = dbPostgresContext;
         }
 
         public List<HighScore> GetHighScores()
         {
             var ret = new List<HighScore>();
+            var dbContext = GetDbContext();
             var highScores = dbContext.DbTetrisHighScore.OrderByDescending(sc => sc.Score);            
             foreach (var hs in highScores)
             {
@@ -69,6 +78,7 @@ namespace APIServer.Tetris
             {
                 return false;
             }
+            var dbContext = GetDbContext();
             var highScores = dbContext.DbTetrisHighScore.OrderByDescending(sc => sc.Score).ToList();
             if (highScores.Count >= 10)
             {
@@ -89,5 +99,14 @@ namespace APIServer.Tetris
             dbContext.SaveChanges();
             return true;
         }
+
+        // --- private
+
+        private DbMynaContext GetDbContext()
+        {
+            var connectionType = Configuration.GetValue<string>("ConnectionType");
+            return connectionType == "Postgres" ? dbPostgresContext : dbSqliteContext;
+        }
+
     }
 }

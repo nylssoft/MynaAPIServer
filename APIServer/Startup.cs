@@ -1,6 +1,6 @@
 /*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ using APIServer.Notes;
 using APIServer.PwdMan;
 using APIServer.Skat;
 using APIServer.Tetris;
+using System;
 
 namespace APIServer
 {
@@ -43,10 +44,12 @@ namespace APIServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var databaseFile = Configuration.GetValue<string>("DatabaseFile");
+            var sqliteConnection = Configuration.GetValue<string>("SqliteConnection");
+            var postgresConnection = Configuration.GetValue<string>("PostgresConnection");
             services.AddControllers();
             // scoped
-            services.AddDbContext<DbMynaContext>(builder => builder.UseSqlite($"Data Source={databaseFile}"));
+            services.AddDbContext<DbSqliteContext>(builder => builder.UseSqlite(sqliteConnection));
+            services.AddDbContext<DbPostgresContext>(builder => builder.UseNpgsql(postgresConnection));
             services.AddScoped<IPwdManService, PwdManService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ITetrisService, TetrisService>();

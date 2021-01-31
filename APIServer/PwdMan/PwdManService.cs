@@ -46,19 +46,23 @@ namespace APIServer.PwdMan
 
         private readonly ILogger logger;
 
-        private readonly DbMynaContext dbContext;
+        private readonly DbMynaContext dbSqliteContext;
+
+        private readonly DbPostgresContext dbPostgresContext;
 
         private readonly INotificationService notificationService;
 
         public PwdManService(
             IConfiguration configuration,
             ILogger<PwdManService> logger,
-            DbMynaContext dbContext,
+            DbSqliteContext dbSqliteContext,
+            DbPostgresContext dbPostgresContext,
             INotificationService notificationService)
         {
             Configuration = configuration;
             this.logger = logger;
-            this.dbContext = dbContext;
+            this.dbSqliteContext = dbSqliteContext;
+            this.dbPostgresContext = dbPostgresContext;
             this.notificationService = notificationService;
         }
 
@@ -69,6 +73,7 @@ namespace APIServer.PwdMan
             logger.LogDebug("Request password reset for email addresss '{email}' from IP address {ipAddress}.", email, ipAddress);
             if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             email = email.ToLowerInvariant();
+            var dbContext = GetDbContext();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
             if (user == null)
             {
@@ -144,6 +149,7 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Reset password for email addresss '{email}'.", resetPasswordModel.Email);
             var email = resetPasswordModel.Email.ToLowerInvariant();
+            var dbContext = GetDbContext();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
             var resetpwd = dbContext.DbResetPasswords.SingleOrDefault((r) => r.Email == email);
             if (user == null || resetpwd == null || !user.AllowResetPassword)
@@ -183,6 +189,7 @@ namespace APIServer.PwdMan
                 throw new PwdManInvalidArgumentException("Registrieren ist deaktiviert.");
             }
             // setup: first user can register without confirmation and token
+            var dbContext = GetDbContext();
             if (dbContext.DbUsers.Count() == 0)
             {
                 return true;
@@ -227,6 +234,7 @@ namespace APIServer.PwdMan
             {
                 throw new AccessDeniedPermissionException();
             }
+            var dbContext = GetDbContext();
             var knownEmails = new HashSet<string>(dbContext.DbUsers.Select(u => u.Email).ToList());
             var confirmations = new List<OutstandingRegistrationModel>();
             var registrations = dbContext.DbRegistrations
@@ -252,6 +260,7 @@ namespace APIServer.PwdMan
             {
                 throw new AccessDeniedPermissionException();
             }
+            var dbContext = GetDbContext();
             var emailUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
             if (emailUser != null)
             {
@@ -327,6 +336,7 @@ namespace APIServer.PwdMan
             var email = registrationProfile.Email.ToLowerInvariant();
             var opt = GetOptions();
             // first user can register without token
+            var dbContext = GetDbContext();
             var firstUser = dbContext.DbUsers.Count() == 0;
             if (!firstUser)
             {
@@ -438,6 +448,7 @@ namespace APIServer.PwdMan
                 image.Mutate(x => x.Resize(opt));
                 image.Save($"wwwroot/{user.Photo}");
             }
+            var dbContext = GetDbContext();
             dbContext.SaveChanges();
             return user.Photo;
         }
@@ -455,6 +466,7 @@ namespace APIServer.PwdMan
                 }
                 user.Photo = null;
             }
+            var dbContext = GetDbContext();
             dbContext.SaveChanges();
             return true;
         }
@@ -469,6 +481,7 @@ namespace APIServer.PwdMan
                 var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
                 if (claim != null)
                 {
+                    var dbContext = GetDbContext();
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null)
                     {
@@ -493,6 +506,7 @@ namespace APIServer.PwdMan
         {
             if (user.Roles == null)
             {
+                var dbContext = GetDbContext();
                 dbContext.Entry(user).Collection(user => user.Roles).Load();
             }
             foreach (var role in user.Roles)
@@ -522,6 +536,7 @@ namespace APIServer.PwdMan
                 PasswordManagerSalt = user.Salt,
                 Photo = user.Photo
             };
+            var dbContext = GetDbContext();
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
             userModel.LoginIpAddresses = new List<LoginIpAddressModel>();
             if (getLoginIpAddresses)
@@ -552,6 +567,7 @@ namespace APIServer.PwdMan
                 throw new AccessDeniedPermissionException();
             }
             var opt = GetOptions();
+            var dbContext = GetDbContext();
             var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == userName);
             if (user != null && user.LoginTries >= opt.MaxLoginTryCount)
             {
@@ -570,6 +586,7 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug($"Delete username '{userName}'...");
             var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
             if (user.Name != userName)
             {
                 if (!HasRole(user, "usermanager"))
@@ -612,6 +629,7 @@ namespace APIServer.PwdMan
             if (user.Requires2FA != requires2FA)
             {
                 user.Requires2FA = requires2FA;
+                var dbContext = GetDbContext();
                 dbContext.SaveChanges();
                 return true;
             }
@@ -625,6 +643,7 @@ namespace APIServer.PwdMan
             if (user.UseLongLivedToken != useLongLivedToken)
             {
                 user.UseLongLivedToken = useLongLivedToken;
+                var dbContext = GetDbContext();
                 dbContext.SaveChanges();
                 return true;
             }
@@ -638,6 +657,7 @@ namespace APIServer.PwdMan
             if (user.AllowResetPassword != allowResetPassword)
             {
                 user.AllowResetPassword = allowResetPassword;
+                var dbContext = GetDbContext();
                 dbContext.SaveChanges();
                 return true;
             }
@@ -653,6 +673,7 @@ namespace APIServer.PwdMan
                 throw new AccessDeniedPermissionException();
             }
             var changed = false;
+            var dbContext = GetDbContext();
             var user = dbContext.DbUsers
                 .Include((u) => u.Roles)
                 .SingleOrDefault((u) => u.Name == model.UserName);
@@ -693,6 +714,7 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug($"Delete login IP addresses...");
             var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
             var loginIpAddresses = dbContext.DbLoginIpAddresses
                 .Where(ip => ip.DbUserId == user.Id);
             var ret = loginIpAddresses.Count();
@@ -710,6 +732,7 @@ namespace APIServer.PwdMan
             }
             var ret = new List<UserModel>();
             var opt = GetOptions();
+            var dbContext = GetDbContext();
             var users = dbContext.DbUsers.Include(u => u.Roles).OrderBy(u => u.Name);
             foreach (var u in users)
             {
@@ -755,6 +778,7 @@ namespace APIServer.PwdMan
                     }
                     user.LoginTries = 0;
                 }
+                var dbContext = GetDbContext();
                 var loginIpAddress = dbContext.DbLoginIpAddresses
                     .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
                 if (loginIpAddress == null)
@@ -818,6 +842,7 @@ namespace APIServer.PwdMan
                 var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
                 if (claim != null && amr?.Value == "2fa")
                 {
+                    var dbContext = GetDbContext();
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null && user.Requires2FA)
                     {
@@ -842,6 +867,7 @@ namespace APIServer.PwdMan
                 var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
                 if (claim != null && amr?.Value == "2fa")
                 {
+                    var dbContext = GetDbContext();
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null && !string.IsNullOrEmpty(user.TOTPKey))
                     {
@@ -884,6 +910,7 @@ namespace APIServer.PwdMan
             {
                 throw new InvalidTokenException();
             }
+            var dbContext = GetDbContext();
             var loginIpAddress = dbContext.DbLoginIpAddresses
                 .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
             if (loginIpAddress == null)
@@ -928,6 +955,7 @@ namespace APIServer.PwdMan
             }
             var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
             user.PasswordHash = newhash;
+            var dbContext = GetDbContext();
             dbContext.SaveChanges();
         }
 
@@ -942,6 +970,7 @@ namespace APIServer.PwdMan
                 var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
                 if (claim != null)
                 {
+                    var dbContext = GetDbContext();
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null)
                     {
@@ -987,6 +1016,7 @@ namespace APIServer.PwdMan
             }
             user.PasswordFile.Content = ConvertToHexString(encoded);
             user.PasswordFile.LastWrittenUtc = DateTime.UtcNow;
+            var dbContext = GetDbContext();
             dbContext.SaveChanges();
         }
 
@@ -995,6 +1025,7 @@ namespace APIServer.PwdMan
             logger.LogDebug("Get encoded password file...");
             var user = GetUserFromToken(token);
             if (user.PasswordFileId == null) throw new PasswordFileNotFoundException();
+            var dbContext = GetDbContext();
             dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
             return user.PasswordFile.Content;
         }
@@ -1051,7 +1082,8 @@ namespace APIServer.PwdMan
 
         public DbMynaContext GetDbContext()
         {
-            return dbContext;
+            var connectionType = Configuration.GetValue<string>("ConnectionType");
+            return connectionType == "Postgres" ? dbPostgresContext : dbSqliteContext;
         }
 
         // --- private
@@ -1061,6 +1093,7 @@ namespace APIServer.PwdMan
             username = username.ToLowerInvariant();
             // EF Core 5.0 supports Collate function
             // var user = dbContext.DbUsers.SingleOrDefault(u => EF.Functions.Collate(u.Name, "SQL_Latin1_General_CP1_CI_AS") == username);
+            var dbContext = GetDbContext();
             var users = dbContext.DbUsers.ToList();
             foreach (var user in users)
             {
@@ -1128,6 +1161,7 @@ namespace APIServer.PwdMan
 
         private T GetSetting<T>(string key)
         {
+            var dbContext = GetDbContext();
             var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == key);
             if (setting != null)
             {
@@ -1138,6 +1172,7 @@ namespace APIServer.PwdMan
 
         private void SetSetting<T>(string key, T value)
         {
+            var dbContext = GetDbContext();
             var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == key);
             var json = JsonSerializer.Serialize(value);
             if (setting == null)

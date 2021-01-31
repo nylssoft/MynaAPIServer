@@ -1,6 +1,6 @@
 /*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using APIServer.Database;
+using APIServer.PwdMan;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,7 +48,8 @@ namespace APIServer
             var services = scope.ServiceProvider;
             try
             {
-                var dbContext = services.GetRequiredService<DbMynaContext>();
+                var pwdman = services.GetRequiredService<IPwdManService>();
+                var dbContext = pwdman.GetDbContext();
                 dbContext.Database.Migrate();
             }
             catch (Exception ex)
