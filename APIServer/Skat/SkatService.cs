@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -46,6 +46,8 @@ namespace APIServer.Skat
         private readonly ILogger logger;
 
         private SkatTable skatTable;
+        
+        private ReservationModel nextReservation;
 
         private long? skatResultId;
 
@@ -64,15 +66,46 @@ namespace APIServer.Skat
             lock (mutex)
             {
                 var now = DateTime.Now;
-                foreach (var ctx in userTickets.Values)
+                var nowUtc = DateTime.UtcNow;
+                var removeTickets = new List<string>();
+                int elapsed = 0;
+                if (nextReservation != null)
                 {
+                    elapsed = (int)(nextReservation.ReservedUtc - nowUtc).TotalMinutes;
+                }
+                foreach (var pair in userTickets)
+                {
+                    var ctx = pair.Value;
                     var diff = (int)(now - ctx.LastAccess).TotalMinutes;
                     if (diff > GetOptions().SessionTimeout) // reset game after inactivity
                     {
                         skatTable = null;
                         userTickets.Clear();
-                        stateChanged = DateTime.UtcNow;
+                        stateChanged = nowUtc;
+                        break;
                     }
+                    if (nextReservation != null &&
+                        elapsed <= 10 &&
+                        !ContainsCaseInsensitive(nextReservation.Players, ctx.Name))
+                    {
+                        if (elapsed < 0)
+                        {
+                            removeTickets.Add(pair.Key);
+                        }
+                        else if (diff > 0)
+                        {
+                            stateChanged = nowUtc;
+                        }
+                    }
+                }
+                if (removeTickets.Count > 0)
+                {
+                    foreach (var ticket in removeTickets)
+                    {
+                        userTickets.Remove(ticket);
+                    }
+                    skatTable = null;
+                    stateChanged = nowUtc;
                 }
                 if (stateChanged.HasValue)
                 {
@@ -84,6 +117,10 @@ namespace APIServer.Skat
 
         public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username)
         {
+            if (!VerifyReservation(pwdManService, new [] { username }))
+            {
+                throw new PwdManInvalidArgumentException("Der Tisch ist bereits reserviert.");
+            }
             var ret = new LoginModel();
             lock (mutex)
             {
@@ -130,6 +167,7 @@ namespace APIServer.Skat
                     userTickets[ticket] = ctx;
                     stateChanged = DateTime.UtcNow;
                     ret.Ticket = ticket;
+                    UpdateNextReservation(pwdManService);
                 }
             }
             return ret;
@@ -204,6 +242,7 @@ namespace APIServer.Skat
                 {
                     ret.SkatTable = GetTableModel(ctx);
                 }
+                ret.NextReservation = nextReservation;
                 return ret;
             }
         }
@@ -464,9 +503,16 @@ namespace APIServer.Skat
                         {
                             var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
                             var inactivePlayerName = userTickets.Count == 4 ? users[3].Name : null;
+                            if (!VerifyReservation(pwdManService, new [] { users[0].Name, users[1].Name, users[2].Name, inactivePlayerName }))
+                            {
+                                userTickets.Clear();
+                                stateChanged = DateTime.UtcNow;
+                                return false;
+                            }
                             skatTable = new SkatTable(users[0].Name, users[1].Name, users[2].Name, inactivePlayerName);
                             ret = true;
                             AddSkatResult(pwdManService);
+                            UpdateNextReservation(pwdManService);
                         }
                     }
                     else if (skatTable != null && skatTable.CanStartNewGame())
@@ -750,6 +796,112 @@ namespace APIServer.Skat
             }
         }
 
+        // --- reservations
+
+        public List<ReservationModel> GetReservations(IPwdManService pwdManService)
+        {
+            var ret = new List<ReservationModel>();
+            var dbContext = pwdManService.GetDbContext();
+            var now = DateTime.UtcNow;
+            var reservations = dbContext.DbSkatReservations.Include(r => r.ReservedBy).OrderBy(r => r.ReservedUtc);
+            var cleanup = new List<DbSkatReservation>();
+            foreach (var r in reservations)
+            {
+                var reserved = DbMynaContext.GetUtcDateTime(r.ReservedUtc).Value;
+                if (reserved.AddMinutes(r.Duration) < now)
+                {
+                    cleanup.Add(r);
+                }
+                else
+                {
+                    ret.Add(GetReservationModel(r));
+                }
+            }
+            if (cleanup.Count > 0)
+            {
+                dbContext.DbSkatReservations.RemoveRange(cleanup);
+                dbContext.SaveChanges();
+                lock (mutex)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool AddReservation(IPwdManService pwdManService, string authenticationToken, ReservationModel reservationModel)
+        {
+            var nowUtc = DateTime.UtcNow;
+            var lowest = new DateTime(nowUtc.Year, nowUtc.Month, nowUtc.Day, nowUtc.Hour, 0, 0, DateTimeKind.Utc);
+            var highest = nowUtc.AddMonths(2);
+            if (reservationModel.ReservedUtc < lowest || reservationModel.ReservedUtc > highest)
+            {
+                throw new PwdManInvalidArgumentException("Ungültiges Reservierungsdatum.");
+            }
+            if (reservationModel.Duration < 60 || reservationModel.Duration > 240)
+            {
+                throw new PwdManInvalidArgumentException("Ungültige Reservierungsdauer.");
+            }
+            if (reservationModel.Players == null)
+            {
+                throw new PwdManInvalidArgumentException("Spielernamen sind ungültig.");
+            }
+            var playerNames = new List<string>();
+            foreach (var p in reservationModel.Players)
+            {
+                var name = p.Trim();
+                if (string.IsNullOrEmpty(name) || name.Length > Limits.MAX_USERNAME || ContainsCaseInsensitive(playerNames, name))
+                {
+                    throw new PwdManInvalidArgumentException("Ungültiger Spielername.");
+                }
+                playerNames.Add(name);
+            }
+            if (playerNames.Count < 3 || playerNames.Count > 4)
+            {
+                throw new PwdManInvalidArgumentException("Es sind mindestens 3 Spieler erforderlich für eine Reservierung.");
+            }
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            var dbSkatReservation = new DbSkatReservation
+            {
+                ReservedById = user.Id,
+                Duration = reservationModel.Duration,
+                ReservedUtc = reservationModel.ReservedUtc,
+                Player1 = playerNames[0],
+                Player2 = playerNames[1],
+                Player3 = playerNames[2]
+            };
+            if (playerNames.Count > 3)
+            {
+                dbSkatReservation.Player4 = playerNames[3];
+            }
+            dbContext.DbSkatReservations.Add(dbSkatReservation);
+            dbContext.SaveChanges();
+            lock (mutex)
+            {
+                stateChanged = DateTime.UtcNow;
+            }
+            return true;
+        }
+
+        public bool DeleteReservation(IPwdManService pwdManService, string authenticatioToken, long id)
+        {
+            var user = pwdManService.GetUserFromToken(authenticatioToken);
+            var dbContext = pwdManService.GetDbContext();
+            var reservation = dbContext.DbSkatReservations.SingleOrDefault(r => r.ReservedById == user.Id && r.Id == id);
+            if (reservation != null)
+            {
+                dbContext.DbSkatReservations.Remove(reservation);
+                dbContext.SaveChanges();
+                lock (mutex)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+                return true;
+            }
+            return false;
+        }
+
         // --- private
 
         private SkatOptions GetOptions()
@@ -1026,6 +1178,41 @@ namespace APIServer.Skat
             return cardmodel;
         }
 
+        private static ReservationModel GetReservationModel(DbSkatReservation reservation)
+        {
+            var reservationModel = new ReservationModel
+            {
+                Id = reservation.Id,
+                ReservedUtc = DbMynaContext.GetUtcDateTime(reservation.ReservedUtc).Value,
+                Duration = reservation.Duration,
+                Players = new List<string>()
+            };
+            reservationModel.ReservedBy = reservation.ReservedBy?.Name;
+            foreach (var p in new[] { reservation.Player1, reservation.Player2, reservation.Player3, reservation.Player4 })
+            {
+                if (!string.IsNullOrEmpty(p))
+                {
+                    reservationModel.Players.Add(p);
+                }
+            }
+            return reservationModel;
+        }
+
+        private static bool ContainsCaseInsensitive(ICollection<string> col, string playerName)
+        {
+            if (col != null)
+            {
+                foreach (var elem in col)
+                {
+                    if (string.Equals(elem, playerName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         // --- store skat result and game history
 
         private void AddSkatResult(IPwdManService pwdManService)
@@ -1076,6 +1263,57 @@ namespace APIServer.Skat
                 {
                     logger.LogError(ex, "Failed to add game history.");
                 }
+            }
+        }
+
+        // --- reservations
+
+        private bool VerifyReservation(IPwdManService pwdManService, string[] usernames)
+        {
+            var dbContext = pwdManService.GetDbContext();
+            var nowUtc = DateTime.UtcNow;
+            var reservations = dbContext.DbSkatReservations.Where(r => r.ReservedUtc <= nowUtc);
+            if (reservations.Any())
+            {
+                foreach (var r in reservations)
+                {
+                    var end = r.ReservedUtc.AddMinutes(r.Duration);
+                    if (nowUtc >= r.ReservedUtc && nowUtc <= end)
+                    {
+                        var players = new[] { r.Player1, r.Player2, r.Player3, r.Player4 };
+                        foreach (var username in usernames)
+                        {
+                            if (string.IsNullOrEmpty(username)) continue;
+                            var found = false;
+                            foreach (var p in players)
+                            {
+                                if (!string.IsNullOrEmpty(p) &&
+                                    string.Equals(username, p, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    found = true;
+                                }
+                            }
+                            if (!found)
+                            {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        private void UpdateNextReservation(IPwdManService pwdManService)
+        {
+            nextReservation = null;
+            var dbContext = pwdManService.GetDbContext();
+            var regs = dbContext.DbSkatReservations
+                .Where(r => r.ReservedUtc > DateTime.UtcNow)
+                .OrderBy(r => r.ReservedUtc);
+            if (regs.Any())
+            {
+                nextReservation = GetReservationModel(regs.First());
             }
         }
     }

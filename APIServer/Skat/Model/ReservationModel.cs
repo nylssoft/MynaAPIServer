@@ -15,22 +15,21 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System;
 using System.Collections.Generic;
 
 namespace APIServer.Skat.Model
 {
-    public class SkatModel
+    public class ReservationModel
     {
-        public long State { get; set; }
+        public long Id { get; set; }
 
-        public List<UserModel> AllUsers { get; set; }
+        public DateTime ReservedUtc { get; set; }
 
-        public UserModel CurrentUser { get; set; }
+        public string ReservedBy { get; set; }
 
-        public TableModel SkatTable { get; set; }
+        public int Duration { get; set; }
 
-        public bool IsTableFull { get; set; } = false;
-
-        public ReservationModel NextReservation { get; set; }
+        public List<string> Players { get; set; }
     }
 }

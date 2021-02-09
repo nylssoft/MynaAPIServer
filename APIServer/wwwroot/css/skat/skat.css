@@ -81,6 +81,62 @@ td a {
     color: white;
 }
 
+.error {
+    margin-top: 10pt;
+    color: orange;
+}
+
+.reservation-header {
+    color: lightgreen;
+    margin: 0pt;
+}
+
+.reservation-img {
+    position: relative;
+    top: 8px;
+    margin-left: 5pt;
+}
+
+.reservation-img:hover {
+    border-radius: 50%;
+    background-color: #008CBA;
+}
+
+.reservation-input {
+    margin-left: 0pt;
+}
+
+.reservation-calendar-caption {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    color: white;
+    margin-top: 10pt;
+    margin-bottom: 10pt;
+}
+
+.reservation-label {
+    width: 100pt;
+    display: inline-block;
+}
+
+.reservation-select {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    margin-bottom: 10pt;
+    min-width: 100pt;
+}
+
+.reservation-transparent {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+.reservation-logout-alert {
+    color: orange;
+    margin-top: 10pt;
+}
+
 .result-bordertop {
     border-top: 1px solid black;
 }
@@ -124,16 +180,28 @@ td a {
 .layout-right {
     visibility: hidden;
     position: absolute;
-    background-color: lightgreen;
     margin: 5pt;
     color: black;
+    background-color: blue;
     top: 30pt;
     bottom: 20pt;
     width: 400pt;
     right: 20pt;
+    z-index: 2;
+    overflow-y: auto;
+}
+
+.layout-reservations {
+    position: absolute;
+    background-color: darkblue;
+    padding: 5pt;
+    /*border: 3px inset blue;*/
+    top: 40pt;
+    bottom: 30pt;
+    width: 500pt;
+    right: 50pt;
     z-index: 1;
     overflow-y: auto;
-    background-color: blue;
 }
 
 .chat-message {
@@ -185,11 +253,21 @@ td a {
     transform: translate(25pt,-4pt);
 }
 
+.chat-img-newmessage:hover {
+    background-color: #008CBA;
+    border-radius: 50%;
+}
+
 .results-img-open {
     position: absolute;
     top: 30pt;
     right: -20pt;
     z-index: -1;
+}
+
+.results-img-open:hover {
+    background-color: #008CBA;
+    border-radius: 50%;
 }
 
 .header-profile-photo {

@@ -162,6 +162,7 @@ var controls = (() => {
 
     const createSelect = (parent, id, classname, options) => {
         let select = create(parent, "select", classname);
+        select.id = id;
         select.name = id;
         if (options) {
             options.forEach(opt => {

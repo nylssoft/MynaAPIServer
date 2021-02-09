@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -217,6 +217,29 @@ namespace APIServer.Skat
         public IActionResult GetLoggedInUsers()
         {
             return new JsonResult(SkatService.GetLoggedInUsers(PwdManService, GetToken()));
+        }
+
+        // --- reservations
+
+        [HttpGet]
+        [Route("api/skat/reservation")]
+        public IActionResult GetReservations()
+        {
+            return new JsonResult(SkatService.GetReservations(PwdManService));
+        }
+
+        [HttpPost]
+        [Route("api/skat/reservation")]
+        public IActionResult AddReservation([FromBody] ReservationModel reservationModel)
+        {
+            return new JsonResult(SkatService.AddReservation(PwdManService, GetToken(), reservationModel));
+        }
+
+        [HttpDelete]
+        [Route("api/skat/reservation")]
+        public IActionResult DeleteReservation([FromBody] long id)
+        {
+            return new JsonResult(SkatService.DeleteReservation(PwdManService, GetToken(), id));
         }
 
         // --- private

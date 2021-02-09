@@ -27,6 +27,7 @@ var skat = (() => {
     let letsStartClicked = false;
     let specialSortOption = true;
     let showChat = false;
+    let showReservations = false;
     let lastChatText = "";
     let currentSkatResultId;
 
@@ -36,8 +37,9 @@ var skat = (() => {
     let currentUser;
     let photos = {};
     let guestMode = false;
+    let reservations;
 
-    let version = "1.3.6";
+    let version = "1.3.7";
 
     // helper
 
@@ -209,6 +211,51 @@ var skat = (() => {
         return false;
     };
 
+    const getFreeReservationTimes = (d) => {
+        let today = new Date();
+        let freeTimes = {};
+        let availableHours = new Set([9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
+        let is_today = today.getFullYear() == d.getFullYear() &&
+            today.getMonth() == d.getMonth() &&
+            today.getDate() == d.getDate();
+        if (is_today) {
+            availableHours.forEach(h => {
+                if (h < today.getHours()) {
+                    availableHours.delete(h);
+                }
+            });
+        }
+        reservations.forEach(r => {
+            const rd = new Date(r.reservedUtc);
+            if (rd.getFullYear() == d.getFullYear() &&
+                rd.getMonth() == d.getMonth() &&
+                rd.getDate() == d.getDate()) {
+                let hour = rd.getHours();
+                let duration = (r.duration / 60) - 1;
+                while (duration >= 0) {
+                    availableHours.delete(hour + duration)
+                    duration--;
+                }
+            }
+        });
+        availableHours.forEach(h => {
+            for (let d = 0; d <= 3; d++) {
+                if (availableHours.has(h + d)) {
+                    let l = freeTimes[h];
+                    if (!l) {
+                        l = [];
+                    }
+                    l.push(d + 1);
+                    freeTimes[h] = l;
+                }
+                else {
+                    break;
+                }
+            }
+        });
+        return freeTimes;
+    }
+
     // rendering
 
     const renderDropdown = (parent) => {
@@ -307,6 +354,191 @@ var skat = (() => {
         renderDropdownContent();
     };
 
+    const renderReservations = (parent) => {
+        if (!showReservations || !reservations) return;
+        let divReservations = controls.createDiv(parent, "layout-reservations");
+        let divPage = controls.createDiv(divReservations);
+        let divHeader = controls.createDiv(divPage, "reservation-header")
+        divHeader.textContent = "Tischreservierungen";
+        if (currentUser) {
+            let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/skat/list-add-4.png");
+            imgAdd.title = "Reservierung hinzuf\u00FCgen";
+            imgAdd.addEventListener("click", () => btnReserve_click(divReservations));
+        }
+        reservations.forEach(r => {
+            let dd = new Date(r.reservedUtc);
+            let daystr = dd.toLocaleDateString("de-DE", { "month": "numeric", "day": "numeric" });
+            let h = dd.getHours() + r.duration / 60;
+            let txt = `${daystr} ${dd.getHours()}-${h} ${r.players.join(", ")}`;
+            let divReservation = controls.create(divPage, "p", undefined, txt);
+            if (currentUser && currentUser.name == r.reservedBy) {
+                let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/skat/list-remove-4.png");
+                imgRemove.title = "Reservierung entfernen";
+                imgRemove.id = `imgremove-${r.id}`;
+                imgRemove.addEventListener("click", (elem) => {
+                    const reservationId = elem.target.id.substring(10);
+                    let token = utils.get_authentication_token();
+                    utils.fetch_api_call("api/skat/reservation",
+                        {
+                            method: "DELETE",
+                            headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                            body: JSON.stringify(reservationId)
+                        },
+                        () => btnShowReservations_click(),
+                        handleError);
+                });
+            }
+        });
+        controls.createButton(divPage, "OK", () => {
+            showReservations = false;
+            render();
+        });
+    };
+
+    const renderCalendar = (parent, month, year) => {
+        controls.removeAllChildren(parent);
+        let today = new Date();
+        let date = new Date(year, month);
+        let firstDay = (date.getDay() + 6) % 7;
+        let daysInMonth = 32 - new Date(year, month, 32).getDate();
+        let table = controls.create(parent, "table");
+        let caption = controls.create(table, "caption");
+        controls.createSpan(caption, undefined,
+            date.toLocaleDateString("de-DE", { year: "numeric", month: "long" }));
+        if (today.getMonth() < month) {
+            controls.createImageButton(caption, "Vorheriger Monat",
+                () => btnPreviousMonth_click(parent, year, month),
+                "/images/skat/arrow-left-2.png", 16, "reservation-transparent");
+        }
+        if (today.getMonth() == month) {
+            controls.createImageButton(caption, "N\u00E4chster Monat",
+                () => btnNextMonth_click(parent, year, month),
+                "/images/skat/arrow-right-2.png", 16, "reservation-transparent");
+        }
+        let theader = controls.create(table, "thead");
+        let tr = controls.create(theader, "tr");
+        let th = controls.create(tr, "th", undefined, "Mo");
+        th.title = "Montag";
+        th = controls.create(tr, "th", undefined, "Di");
+        th.title = "Dienstag";
+        th = controls.create(tr, "th", undefined, "Mi");
+        th.title = "Mittwoch";
+        th = controls.create(tr, "th", undefined, "Do");
+        th.title = "Donnerstag";
+        th = controls.create(tr, "th", undefined, "Fr");
+        th.title = "Freitag";
+        th = controls.create(tr, "th", undefined, "Sa");
+        th.title = "Samstag";
+        th = controls.create(tr, "th", undefined, "So");
+        th.title = "Sonntag";
+        let tbody = controls.create(table, "tbody");
+        let day = 1;
+        for (let i = 0; i < 6; i++) {
+            let tr = controls.create(tbody, "tr");
+            for (let j = 0; j < 7; j++) {
+                if (i === 0 && j < firstDay) {
+                    controls.create(tr, "td");
+                }
+                else if (day > daysInMonth) {
+                    controls.create(tr, "td", undefined, "\u00A0");
+                }
+                else {
+                    let isToday = day == today.getDate() && year == today.getFullYear() && month == today.getMonth();
+                    let td = controls.create(tr, "td");
+                    let msg = `${day}`;
+                    if (isToday) {
+                        msg += "*";
+                    }
+                    if (month == today.getMonth() && day < today.getDate()) {
+                        controls.createSpan(td, undefined, msg);
+                    }
+                    else {
+                        let d = day;
+                        controls.createA(td, undefined, "#open", msg, () => renderAddReservation(parent, d, month, year));
+                    }
+                    day++;
+                }
+            }
+        }
+        controls.createButton(parent, "Zur\u00FCck", () => render());
+    };
+
+    const renderAddReservation = (parent, day, month, year) => {
+        controls.removeAllChildren(parent);
+        let dd = new Date(Date.UTC(year, month, day));
+        let dt = dd.toLocaleDateString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        let captionDiv = controls.createDiv(parent, "reservation-calendar-caption");
+        captionDiv.textContent = `${dt}`;
+        let freeTimes = getFreeReservationTimes(dd);
+        let options = [];
+        Object.keys(freeTimes).forEach(h => {
+            options.push({ name: `${h} Uhr`, value: `${h}` });
+        });
+        let timeDiv = controls.createDiv(parent);
+        let timeLabel = controls.createLabel(timeDiv, "reservation-label", "Uhrzeit:");
+        timeLabel.htmlFor = "reservation-hour-id";
+        let selectHour = controls.createSelect(timeDiv, "reservation-hour-id", "reservation-select", options);
+        selectHour.value = undefined;
+        let durationDiv = controls.createDiv(parent);
+        let durationLabel = controls.createLabel(durationDiv, "reservation-label", "Dauer:");
+        durationLabel.htmlFor = "reservation-duration-id";
+        let selectDuration = controls.createSelect(durationDiv, "reservation-duration-id", "reservation-select", []);
+        selectHour.addEventListener("change", (elem) => {
+            controls.removeAllChildren(selectDuration);
+            let durations = freeTimes[elem.target.value];
+            if (durations) {
+                let option;
+                durations.forEach(duration => {
+                    let txt = `${duration} Stunde`;
+                    if (duration > 1) {
+                        txt += "n";
+                    }
+                    option = controls.create(selectDuration, "option", undefined, txt);
+                    option.setAttribute("value", `${duration}`);
+                });
+                if (option) {
+                    option.setAttribute("selected", "true");
+                }
+            }
+        });
+        for (let playerIdx = 1; playerIdx <= 4; playerIdx++) {
+            let playerDiv = controls.createDiv(parent);
+            let playerLabel = controls.createLabel(playerDiv, "reservation-label", `Spieler ${playerIdx}:`);
+            playerLabel.htmlFor = `reservation-player${playerIdx}-id`;
+            let playerInput = controls.createInputField(playerDiv, `Spieler ${playerIdx}`, undefined, "reservation-input", 20, 32);
+            playerInput.id = `reservation-player${playerIdx}-id`;
+            if (playerIdx == 1) {
+                playerInput.value = currentUser.name;
+                playerInput.disabled = true;
+            }
+        }
+        controls.createButton(parent, "Reservieren", () => {
+            let token = utils.get_authentication_token();
+            let r = {};
+            let hour = document.getElementById("reservation-hour-id").value;
+            let reservedUtc = new Date(year, month, day, hour);
+            r.reservedUtc = reservedUtc;
+            r.duration = document.getElementById("reservation-duration-id").value * 60;
+            r.players = [];
+            for (let idx = 1; idx <= 4; idx++) {
+                let val = document.getElementById(`reservation-player${idx}-id`).value
+                if (val && val.length > 0) {
+                    r.players.push(val);
+                }
+            }
+            utils.fetch_api_call("api/skat/reservation",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(r)
+                },
+                () => btnShowReservations_click(),
+                (errMsg) => document.getElementById("reserve-error-id").textContent = errMsg);
+        });
+        controls.createButton(parent, "Zur\u00FCck", () => renderCalendar(parent, month, year));
+        controls.createDiv(parent, "error").id = "reserve-error-id";
+    };
+
     const renderLogin = (parent) => {
         document.body.className = "active-background";
         let token = utils.get_authentication_token();
@@ -325,6 +557,9 @@ var skat = (() => {
             controls.createButton(p, "Registrieren", () => {
                 window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
             });
+            if (!showReservations) {
+                controls.createButton(parent, "Reservierungen", () => btnShowReservations_click());
+            }
         }
         else {
             let parentdiv = controls.create(parent, "p");
@@ -334,6 +569,9 @@ var skat = (() => {
                     inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
                     inputUsername.value = user.name;
                     controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
+                    if (!showReservations) {
+                        controls.createButton(parentdiv, "Reservierungen", () => btnShowReservations_click());
+                    }
                 },
                 handleError);
         }
@@ -653,6 +891,27 @@ var skat = (() => {
         }
     };
 
+    const renderLogoutAlert = (parent) => {
+        if (model && model.currentUser && model.nextReservation && model.nextReservation.players) {
+            let nowUtc = new Date();
+            let reservedUtc = new Date(model.nextReservation.reservedUtc);
+            let elapsed = reservedUtc - nowUtc;
+            if (elapsed < 11 * 60 * 1000 &&
+                !model.nextReservation.players.includes(model.currentUser.name)) {
+                let t = Math.floor(elapsed / (1000 * 60));
+                let names = model.nextReservation.players.join(", ");
+                let txt;
+                if (t <= 0) {
+                    txt = `Der Tisch ist jetzt reserviert f\u00FCr ${names}. Du wirst gleich abgemeldet.`;
+                }
+                else {
+                    txt = `Der Tisch ist in ${t} Minuten reserviert f\u00FCr ${names}. Du wirst dann automatisch abgemeldet.`;
+                }
+                controls.createDiv(parent, "reservation-logout-alert").textContent = txt;
+            }
+        }
+    };
+
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna Skat ${version}. Copyright 2020-2021 `);
@@ -663,6 +922,7 @@ var skat = (() => {
         if (ticket) {
             controls.createButton(div, "Tisch verlassen", btnLogout_click, "Logout", "logout-button");
         }
+        renderLogoutAlert(parent);
     };
 
     const renderMainPage = (parent) => {
@@ -740,7 +1000,7 @@ var skat = (() => {
             chatState = 0;
         }
         let currentChatState = 0;
-        if (chatModel && chatModel.history) {
+        if (showChat && chatModel && chatModel.history) {
             chatModel.history.forEach((tm) => {
                 let divMsg = controls.createDiv(divChat, "chat-message");
                 divMsg.textContent = `${tm.username}: ${tm.message}`;
@@ -986,12 +1246,14 @@ var skat = (() => {
                 }
             }
             else {
+                renderReservations(document.body);
                 renderUserList(divMain);
                 if (model.allUsers.length > 3 || model.isTableFull) {
                     renderTableFull(divMain);
                 }
                 else {
                     renderLogin(divMain);
+                    controls.createDiv(divMain, "error").id = "login-error-id";
                 }
                 renderCopyright(divMain);
             }
@@ -1127,6 +1389,42 @@ var skat = (() => {
 
     // callbacks
 
+    const btnShowReservations_click = () => {
+        utils.fetch_api_call("api/skat/reservation", undefined,
+            (r) => {
+                showReservations = true;
+                reservations = r;
+                render();
+            },
+            handleError);
+    };
+
+    const btnPreviousMonth_click = (calendarDiv, year, month) => {
+        month -= 1;
+        if (month < 0) {
+            year -= 1;
+            month = 11;
+        }
+        renderCalendar(calendarDiv, month, year);
+    };
+
+    const btnNextMonth_click = (calendarDiv, year, month) => {
+        month += 1;
+        if (month >= 12) {
+            month = 0;
+            year += 1;
+        }
+        renderCalendar(calendarDiv, month, year);
+    };
+
+    const btnReserve_click = (parent) => {
+        timerEnabled = false;
+        controls.removeAllChildren(parent);
+        let today = new Date();
+        let div = controls.createDiv(parent);
+        renderCalendar(div, today.getMonth(), today.getFullYear());
+    };
+
     const btnLogin_click = () => {
         const name = inputUsername.value.trim();
         if (name.length > 0) {
@@ -1155,7 +1453,10 @@ var skat = (() => {
                     }
                     render();
                 },
-                handleError);
+                (errMsg) => {
+                    document.getElementById("login-error-id").textContent = errMsg;
+                    timerEnabled = true;
+                });
         }
     };
 

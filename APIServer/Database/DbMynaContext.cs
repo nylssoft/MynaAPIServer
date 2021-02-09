@@ -46,6 +46,8 @@ namespace APIServer.Database
 
         public DbSet<DbUserSkatResult> DbUserSkatResults { get; set; }
 
+        public DbSet<DbSkatReservation> DbSkatReservations { get; set; }
+
         public DbSet<DbChat> DbChats { get; set; }
 
         public DbSet<DbTetrisHighScore> DbTetrisHighScore { get; set; }
@@ -83,6 +85,8 @@ namespace APIServer.Database
                 .IsUnique();
             builder.Entity<DbNote>()
                 .HasIndex(n => n.DbUserId);
+            builder.Entity<DbSkatReservation>()
+                .HasIndex(r => r.ReservedUtc);
         }
 
         public static DateTime? GetUtcDateTime(DateTime? dbDateTime)

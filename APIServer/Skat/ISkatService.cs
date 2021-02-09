@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -78,6 +78,14 @@ namespace APIServer.Skat
         public bool Reset(IPwdManService pwdManService, string authenticationToken);
 
         public List<string> GetLoggedInUsers(IPwdManService pwdManService, string authenticationToken);
+
+        // --- reservations
+
+        public List<ReservationModel> GetReservations(IPwdManService pwdManService);
+
+        public bool AddReservation(IPwdManService pwdManService, string authenticatioToken, ReservationModel reservationModel);
+
+        public bool DeleteReservation(IPwdManService pwdManService, string authenticatioToken, long id);
 
     }
 }

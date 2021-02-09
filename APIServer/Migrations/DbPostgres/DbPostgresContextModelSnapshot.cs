@@ -267,6 +267,43 @@ namespace APIServer.Migrations.DbPostgres
                     b.ToTable("SkatGameHistories");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbSkatReservation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .UseIdentityByDefaultColumn();
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Player1")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Player2")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Player3")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Player4")
+                        .HasColumnType("text");
+
+                    b.Property<long>("ReservedById")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("ReservedUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReservedById");
+
+                    b.HasIndex("ReservedUtc");
+
+                    b.ToTable("SkatReservations");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbSkatResult", b =>
                 {
                     b.Property<long>("Id")
@@ -477,6 +514,17 @@ namespace APIServer.Migrations.DbPostgres
                         .HasForeignKey("DbSkatResultId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbSkatReservation", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "ReservedBy")
+                        .WithMany()
+                        .HasForeignKey("ReservedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReservedBy");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbUser", b =>
