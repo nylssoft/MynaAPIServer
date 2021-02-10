@@ -195,7 +195,6 @@ td a {
     position: absolute;
     background-color: darkblue;
     padding: 5pt;
-    /*border: 3px inset blue;*/
     top: 40pt;
     bottom: 30pt;
     width: 500pt;
@@ -684,6 +683,12 @@ td a {
     }
     .layout-right {
         margin: 0;
+        bottom: 10pt;
+        width: 250pt;
+        right: 10pt;
+    }
+    .layout-reservations {
+        top: 0pt;
         bottom: 10pt;
         width: 250pt;
         right: 10pt;
