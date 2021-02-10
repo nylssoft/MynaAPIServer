@@ -276,6 +276,27 @@ namespace APIServer
             {
                 MigrateSkatUserResults(postgres, skatUser.Name, skatUser.Id);
             }
+            logger.LogInformation("Migrate SkatReservations...");
+            var reservations = sqlite.DbSkatReservations.Include(r => r.ReservedBy).OrderBy(r => r.Id);
+            foreach (var reservation in reservations)
+            {
+                DbUser pgUser = null;
+                if (reservation.ReservedBy != null)
+                {
+                    pgUser = postgres.DbUsers.Single(u => u.Name == reservation.ReservedBy.Name);
+                }
+                postgres.DbSkatReservations.Add(new DbSkatReservation
+                {
+                    Duration = reservation.Duration,
+                    Player1 = reservation.Player1,
+                    Player2 = reservation.Player2,
+                    Player3 = reservation.Player3,
+                    Player4 = reservation.Player4,
+                    ReservedBy = pgUser,
+                    ReservedUtc = reservation.ReservedUtc
+                });
+            }
+            postgres.SaveChanges();
             logger.LogInformation("Migration succeeded.");
         }
 
