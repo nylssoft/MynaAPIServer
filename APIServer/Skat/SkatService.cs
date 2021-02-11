@@ -71,13 +71,13 @@ namespace APIServer.Skat
                 int elapsed = 0;
                 if (nextReservation != null)
                 {
-                    elapsed = (int)(nextReservation.ReservedUtc - nowUtc).TotalMinutes;
+                    elapsed = (int)(nextReservation.ReservedUtc - nowUtc).TotalSeconds;
                 }
                 foreach (var pair in userTickets)
                 {
                     var ctx = pair.Value;
-                    var diff = (int)(now - ctx.LastAccess).TotalMinutes;
-                    if (diff > GetOptions().SessionTimeout) // reset game after inactivity
+                    var diff = (int)(now - ctx.LastAccess).TotalSeconds;
+                    if (diff > GetOptions().SessionTimeout * 60) // reset game after inactivity
                     {
                         skatTable = null;
                         userTickets.Clear();
@@ -85,14 +85,14 @@ namespace APIServer.Skat
                         break;
                     }
                     if (nextReservation != null &&
-                        elapsed <= 10 &&
+                        elapsed <= 600 &&
                         !ContainsCaseInsensitive(nextReservation.Players, ctx.Name))
                     {
-                        if (elapsed < 0)
+                        if (elapsed <= 0)
                         {
                             removeTickets.Add(pair.Key);
                         }
-                        else if (diff > 0)
+                        else if (diff >= 60 || diff >= 1 && elapsed <= 120)
                         {
                             stateChanged = nowUtc;
                         }

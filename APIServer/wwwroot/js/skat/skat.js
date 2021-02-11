@@ -898,14 +898,24 @@ var skat = (() => {
             let elapsed = reservedUtc - nowUtc;
             if (elapsed < 11 * 60 * 1000 &&
                 !model.nextReservation.players.includes(model.currentUser.name)) {
-                let t = Math.floor(elapsed / (1000 * 60));
+                let sec = Math.floor(elapsed / 1000);
                 let names = model.nextReservation.players.join(", ");
                 let txt;
-                if (t <= 0) {
+                if (sec <= 0) {
                     txt = `Der Tisch ist jetzt reserviert f\u00FCr ${names}. Du wirst gleich abgemeldet.`;
                 }
                 else {
-                    txt = `Der Tisch ist in ${t} Minuten reserviert f\u00FCr ${names}. Du wirst dann automatisch abgemeldet.`;
+                    let val;
+                    let unit;
+                    if (sec > 60) {
+                        val = Math.floor(sec / 60);
+                        unit = (val <= 1) ? "Minute" : "Minuten";
+                    }
+                    else {
+                        val = sec;
+                        unit = sec <= 1 ? "Sekunde" : "Sekunden";
+                    }
+                    txt = `Der Tisch ist in ${val} ${unit} reserviert f\u00FCr ${names}. Du wirst dann automatisch abgemeldet.`;
                 }
                 controls.createDiv(parent, "reservation-logout-alert").textContent = txt;
             }
