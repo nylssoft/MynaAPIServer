@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.7";
+    let version = "1.3.8";
 
     // helper
 
@@ -287,25 +287,20 @@ var skat = (() => {
     };
 
     const renderTableFull = (parent, ignoreToken) => {
-        let token = utils.get_authentication_token();
-        if (ignoreToken || !token) {
+        if (ignoreToken || !currentUser) {
             controls.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
             controls.createButton(parent, "Zuschauen als Gast", () => window.open("/skat?guest", "_blank"));
             document.body.className = "inactive-background";
         }
         else {
             let divParent = controls.createDiv(parent);
-            utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
-                (user) => {
-                    model.allUsers.forEach((skatuser) => {
-                        if (skatuser.name == user.name) {
-                            window.location.href = `skat?login=${encodeURI(user.name)}`;
-                            return;
-                        }
-                    });
-                    renderTableFull(divParent, true);
-                },
-                () => renderTableFull(divParent, true));
+            model.allUsers.forEach((skatuser) => {
+                if (skatuser.name == currentUser.name) {
+                    window.location.href = `skat?login=${encodeURI(currentUser.name)}`;
+                    return;
+                }
+            });
+            renderTableFull(divParent, true);
         }
     };
 
@@ -541,8 +536,7 @@ var skat = (() => {
 
     const renderLogin = (parent) => {
         document.body.className = "active-background";
-        let token = utils.get_authentication_token();
-        if (!token) {
+        if (!currentUser) {
             controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
             let label = controls.createLabel(parent, undefined, "Name:");
             label.htmlFor = "username-id";
@@ -563,17 +557,13 @@ var skat = (() => {
         }
         else {
             let parentdiv = controls.create(parent, "p");
-            utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
-                (user) => {
-                    controls.create(parentdiv, "p", undefined, `${user.name}! Du kannst noch mitspielen!`);
-                    inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
-                    inputUsername.value = user.name;
-                    controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
-                    if (!showReservations) {
-                        controls.createButton(parentdiv, "Reservierungen", () => btnShowReservations_click());
-                    }
-                },
-                handleError);
+            controls.create(parentdiv, "p", undefined, `${currentUser.name}! Du kannst noch mitspielen!`);
+            inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
+            inputUsername.value = currentUser.name;
+            controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
+            if (!showReservations) {
+                controls.createButton(parent, "Reservierungen", () => btnShowReservations_click());
+            }
         }
     };
 
@@ -1325,42 +1315,28 @@ var skat = (() => {
             return;
         }
         if (params.has("results")) {
-            let token = utils.get_authentication_token();
-            if (token) {
-                utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
-                    (user) => {
-                        let nextToken = utils.get_authentication_token();
-                        utils.fetch_api_call("api/skat/results", { headers: { "token": nextToken } },
-                            (results) => renderResults(results, user.roles.includes("skatadmin")),
-                            handleError);
-                    },
+            if (currentUser) {
+                let token = utils.get_authentication_token();
+                utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
+                    (results) => renderResults(results, currentUser.roles.includes("skatadmin")),
                     handleError);
                 return;
             }
         }
         if (params.has("admin")) {
-            let token = utils.get_authentication_token();
-            if (token) {
-                utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
-                    (user) => {
-                        if (user.roles.includes("skatadmin")) {
-                            let parent = document.body;
-                            parent.className = "inactive-background";
-                            controls.removeAllChildren(parent);
-                            controls.create(parent, "p", undefined, "Skat Administration");
-                            let p = controls.create(parent, "p");
-                            controls.createButton(p, "Reset", () => onReset(p, true));
-                            controls.createButton(p, "Tickets", () => onShowTickets(p));
-                            controls.createButton(p, "Spielergebnisse", () => window.location.href = "/skat?results");
-                        }
-                        else {
-                            window.location.replace("/skat");
-                        }
-                    },
-                    handleError);
-                return;
+            if (currentUser && currentUser.roles.includes("skatadmin")) {
+                let parent = document.body;
+                parent.className = "inactive-background";
+                controls.removeAllChildren(parent);
+                controls.create(parent, "p", undefined, "Skat Administration");
+                let p = controls.create(parent, "p");
+                controls.createButton(p, "Reset", () => onReset(p, true));
+                controls.createButton(p, "Tickets", () => onShowTickets(p));
+                controls.createButton(p, "Spielergebnisse", () => window.location.href = "/skat?results");
             }
-            window.location.replace("/skat");
+            else {
+                window.location.replace("/skat");
+            }
             return;
         }
         if (params.has("guest")) {
