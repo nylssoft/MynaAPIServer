@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.8";
+    let version = "1.3.9";
 
     // helper
 
@@ -214,7 +214,7 @@ var skat = (() => {
     const getFreeReservationTimes = (d) => {
         let today = new Date();
         let freeTimes = {};
-        let availableHours = new Set([9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
+        let availableHours = new Set([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]);
         let is_today = today.getFullYear() == d.getFullYear() &&
             today.getMonth() == d.getMonth() &&
             today.getDate() == d.getDate();
@@ -886,9 +886,9 @@ var skat = (() => {
             let nowUtc = new Date();
             let reservedUtc = new Date(model.nextReservation.reservedUtc);
             let elapsed = reservedUtc - nowUtc;
-            if (elapsed < 11 * 60 * 1000 &&
+            if (elapsed < 10 * 60 * 1000 &&
                 !model.nextReservation.players.includes(model.currentUser.name)) {
-                let sec = Math.floor(elapsed / 1000);
+                let sec = Math.ceil(elapsed / 1000);
                 let names = model.nextReservation.players.join(", ");
                 let txt;
                 if (sec <= 0) {
@@ -898,7 +898,7 @@ var skat = (() => {
                     let val;
                     let unit;
                     if (sec > 60) {
-                        val = Math.floor(sec / 60);
+                        val = Math.ceil(sec / 60);
                         unit = (val <= 1) ? "Minute" : "Minuten";
                     }
                     else {
