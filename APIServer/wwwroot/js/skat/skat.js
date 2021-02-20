@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.9";
+    let version = "1.3.10";
 
     // helper
 
@@ -366,7 +366,7 @@ var skat = (() => {
             let h = dd.getHours() + r.duration / 60;
             let txt = `${daystr} ${dd.getHours()}-${h} ${r.players.join(", ")}`;
             let divReservation = controls.create(divPage, "p", undefined, txt);
-            if (currentUser && currentUser.name == r.reservedBy) {
+            if (currentUser && (currentUser.name == r.reservedBy || currentUser.roles.includes("skatadmin"))) {
                 let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/skat/list-remove-4.png");
                 imgRemove.title = "Reservierung entfernen";
                 imgRemove.id = `imgremove-${r.id}`;

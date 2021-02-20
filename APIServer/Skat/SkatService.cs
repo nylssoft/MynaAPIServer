@@ -888,7 +888,15 @@ namespace APIServer.Skat
         {
             var user = pwdManService.GetUserFromToken(authenticatioToken);
             var dbContext = pwdManService.GetDbContext();
-            var reservation = dbContext.DbSkatReservations.SingleOrDefault(r => r.ReservedById == user.Id && r.Id == id);
+            DbSkatReservation reservation = null;
+            if (pwdManService.HasRole(user, "skatadmin"))
+            {
+                reservation = dbContext.DbSkatReservations.SingleOrDefault(r => r.Id == id);
+            }
+            else
+            {
+                reservation = dbContext.DbSkatReservations.SingleOrDefault(r => r.ReservedById == user.Id && r.Id == id);
+            }
             if (reservation != null)
             {
                 dbContext.DbSkatReservations.Remove(reservation);
