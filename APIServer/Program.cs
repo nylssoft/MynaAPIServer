@@ -293,7 +293,8 @@ namespace APIServer
                     Player3 = reservation.Player3,
                     Player4 = reservation.Player4,
                     ReservedBy = pgUser,
-                    ReservedUtc = reservation.ReservedUtc
+                    ReservedUtc = reservation.ReservedUtc,
+                    EndUtc = reservation.EndUtc
                 });
             }
             postgres.SaveChanges();

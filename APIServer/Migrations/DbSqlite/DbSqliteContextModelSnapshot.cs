@@ -263,6 +263,9 @@ namespace APIServer.Migrations.DbSqlite
                     b.Property<int>("Duration")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime>("EndUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Player1")
                         .HasColumnType("TEXT");
 

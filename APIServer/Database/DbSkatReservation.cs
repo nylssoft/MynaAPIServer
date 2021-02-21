@@ -34,6 +34,8 @@ namespace APIServer.Database
 
         public int Duration { get; set; }
 
+        public DateTime EndUtc { get; set; }
+
         public string Player1 { get; set; }
 
         public string Player2 { get; set; }

@@ -3,15 +3,17 @@ using System;
 using APIServer.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace APIServer.Migrations.DbPostgres
 {
     [DbContext(typeof(DbPostgresContext))]
-    partial class DbPostgresContextModelSnapshot : ModelSnapshot
+    [Migration("20210221083126_AddSkatReservationEndUtc")]
+    partial class AddSkatReservationEndUtc
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

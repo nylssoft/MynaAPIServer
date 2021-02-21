@@ -807,8 +807,8 @@ namespace APIServer.Skat
             var cleanup = new List<DbSkatReservation>();
             foreach (var r in reservations)
             {
-                var reserved = DbMynaContext.GetUtcDateTime(r.ReservedUtc).Value;
-                if (reserved.AddMinutes(r.Duration) < now)
+                var endUtc = DbMynaContext.GetUtcDateTime(r.EndUtc);
+                if (endUtc < now)
                 {
                     cleanup.Add(r);
                 }
@@ -862,11 +862,22 @@ namespace APIServer.Skat
             }
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
+            var startUtc = reservationModel.ReservedUtc;
+            var endUtc = reservationModel.ReservedUtc.AddMinutes(reservationModel.Duration);
+            var overlapping = dbContext.DbSkatReservations.Where(r =>
+                startUtc >= r.ReservedUtc && startUtc < r.EndUtc ||
+                startUtc < r.ReservedUtc && endUtc > r.ReservedUtc
+            );
+            if (overlapping.Any())
+            {
+                throw new PwdManInvalidArgumentException("Es gibt schon Reservierungen für diesen Zeitraum.");
+            }
             var dbSkatReservation = new DbSkatReservation
             {
                 ReservedById = user.Id,
                 Duration = reservationModel.Duration,
-                ReservedUtc = reservationModel.ReservedUtc,
+                ReservedUtc = startUtc,
+                EndUtc = endUtc,
                 Player1 = playerNames[0],
                 Player2 = playerNames[1],
                 Player3 = playerNames[2]
@@ -1280,31 +1291,27 @@ namespace APIServer.Skat
         {
             var dbContext = pwdManService.GetDbContext();
             var nowUtc = DateTime.UtcNow;
-            var reservations = dbContext.DbSkatReservations.Where(r => r.ReservedUtc <= nowUtc);
+            var reservations = dbContext.DbSkatReservations.Where(r => r.ReservedUtc <= nowUtc && r.EndUtc >= nowUtc);
             if (reservations.Any())
             {
                 foreach (var r in reservations)
                 {
-                    var end = r.ReservedUtc.AddMinutes(r.Duration);
-                    if (nowUtc >= r.ReservedUtc && nowUtc <= end)
+                    var players = new[] { r.Player1, r.Player2, r.Player3, r.Player4 };
+                    foreach (var username in usernames)
                     {
-                        var players = new[] { r.Player1, r.Player2, r.Player3, r.Player4 };
-                        foreach (var username in usernames)
+                        if (string.IsNullOrEmpty(username)) continue;
+                        var found = false;
+                        foreach (var p in players)
                         {
-                            if (string.IsNullOrEmpty(username)) continue;
-                            var found = false;
-                            foreach (var p in players)
+                            if (!string.IsNullOrEmpty(p) &&
+                                string.Equals(username, p, StringComparison.OrdinalIgnoreCase))
                             {
-                                if (!string.IsNullOrEmpty(p) &&
-                                    string.Equals(username, p, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    found = true;
-                                }
+                                found = true;
                             }
-                            if (!found)
-                            {
-                                return false;
-                            }
+                        }
+                        if (!found)
+                        {
+                            return false;
                         }
                     }
                 }
