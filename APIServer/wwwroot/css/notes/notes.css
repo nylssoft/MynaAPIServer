@@ -133,12 +133,12 @@ textarea {
 
 /* Hide the browser's default checkbox */
 .container-checkbox input {
-        position: absolute;
-        opacity: 0;
-        cursor: pointer;
-        height: 0;
-        width: 0;
-    }
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
 
 /* Create a custom checkbox */
 .checkmark-checkbox {
