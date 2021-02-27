@@ -8,10 +8,12 @@ var slideshow = (() => {
     let btnPlaySlideShow;
     let btnPauseSlideShow;
     let divFooter;
+    let imgShuffle;
 
     // --- state
 
     let isSlideshowPlaying = true;
+    let shuffle = true;
 
     let slideShowPictures;
     let slideShowInterval = 10;
@@ -63,6 +65,12 @@ var slideshow = (() => {
         let title = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";
         let header = controls.create(parent, "h1", "header", title);
         header.id = "header-id";
+        imgShuffle = controls.createImg(parent, "header-shuffle-img", 24, 24, "/images/slideshow/document-quick_restart.png");
+        imgShuffle.title = "Zufallswiedergabe " + (shuffle ? "aus" : "ein");
+        if (!shuffle) {
+            imgShuffle.classList.add("greyed-out");
+        }
+        imgShuffle.addEventListener("click", () => window.location.replace(`/slideshow?shuffle=${!shuffle}`));
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
             imgPhoto.title = "Profil";
@@ -82,14 +90,14 @@ var slideshow = (() => {
                 btnPauseSlideShow.style.visibility = "hidden";
                 btnPlaySlideShow.style.visibility = "visible";
             },
-            "/images/skat/media-playback-pause-3.png", 24, "slideshow-action");
+            "/images/slideshow/media-playback-pause-3.png", 24, "slideshow-action");
         btnPlaySlideShow = controls.createImageButton(div, "Bildergalerie abspielen",
             () => {
                 isSlideshowPlaying = true;
                 btnPauseSlideShow.style.visibility = "visible";
                 btnPlaySlideShow.style.visibility = "hidden";
             },
-            "/images/skat/media-playback-start-3.png", 24, "slideshow-action");
+            "/images/slideshow/media-playback-start-3.png", 24, "slideshow-action");
         btnPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
         btnPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
     };
@@ -121,11 +129,13 @@ var slideshow = (() => {
                         divFooter.style.visibility = "hidden";
                         dropdownDivElem.style.visibility = "hidden";
                         headerElem.style.visibility = "hidden";
+                        imgShuffle.style.visibility = "hidden";
                     }
                     else {
                         divFooter.style.visibility = "visible";
                         dropdownDivElem.style.visibility = "visible";
                         headerElem.style.visibility = "visible";
+                        imgShuffle.style.visibility = "visible";
                     }
                 }
             }
@@ -176,10 +186,36 @@ var slideshow = (() => {
         }
     }
 
+    const sortSlideShowPictures = () => {
+        slideShowPictures.sort((a, b) => {
+            if (a.date && a.date.length > 0 && b.date && b.date.length > 0) {
+                let da = new Date(a.date);
+                let db = new Date(b.date);
+                return db.getTime() - da.getTime();
+            }
+            if (a.date && a.date.length > 0) {
+                return -1;
+            }
+            if (b.date && b.date.length > 0) {
+                return 1;
+            }
+            return a.summary.localeCompare(b.summary);
+        });
+    };
+
     const initSlideShow = (pictures, interval) => {
         slideShowPictures = pictures;
         if (pictures && pictures.length > 0) {
-            utils.shuffle_array(slideShowPictures);
+            let params = new URLSearchParams(window.location.search);
+            if (params.has("shuffle")) {
+                shuffle = params.get("shuffle") == "true";
+            }
+            if (shuffle) {
+                utils.shuffle_array(slideShowPictures);
+            }
+            else {
+                sortSlideShowPictures();
+            }
             if (interval) {
                 slideShowInterval = interval;
                 ontimer();

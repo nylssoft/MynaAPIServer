@@ -54,6 +54,15 @@ body {
     right: 2pt;
 }
 
+.header-shuffle-img {
+    border: none;
+    outline: none;
+    position: absolute;
+    bottom: 8pt;
+    right: 30pt;
+    z-index: 2;
+}
+
 /* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
 .dropbtn {
     position: fixed;
@@ -113,6 +122,10 @@ body {
     display: block;
 }
 
+.greyed-out {
+    opacity: 0.5;
+}
+
 @media (max-width: 480px) {
 
     body {
@@ -129,6 +142,10 @@ body {
 
     .slideshow-action {
         bottom: 350pt;
+    }
+
+    .header-shuffle-img {
+        bottom: 352pt;
     }
 
     .footer-link {
