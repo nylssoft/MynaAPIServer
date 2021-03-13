@@ -1,5 +1,6 @@
 ﻿@page
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model APIServer.Pages.ImpressumModel
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -15,15 +16,12 @@
     </environment>
 </head>
 <body>
-    <p>
-        Dies ist eine private Website.
-        Sie wird ausschließlich für persönliche oder familiäre Zwecke verwendet.
-    </p>
+    @Html.Raw(Model.Markdown)
     <p>
         <button class="button" title="OK" onclick="window.location='/slideshow'">OK</button>
     </p>
     <div class="copyright">
-        <span>Myna Impressum 1.0.3. Copyright 2020-2021 </span>
+        <span>Myna Impressum 1.0.4. Copyright 2020-2021 </span>
         <a href="https://github.com/nylssoft/" target="_blank">Niels Stockfleth</a>
         <span>.</span>
     </div>

@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.8";
+    let version = "1.2.9";
 
     let block;
     let nextBlock;
@@ -904,23 +904,10 @@ var tetris = (() => {
             controls.removeAllChildren(helpDiv);
             isHelpPage = show;
             isPaused = show;
-            if (show) {
+            if (show) {                
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
-                controls.createDiv(contentDiv, "help-item").textContent = "Punkte = Wert x ( Stufe + 1 )";
-                controls.createDiv(contentDiv, "help-item").textContent = "40 f\u00FCr eine Linie";
-                controls.createDiv(contentDiv, "help-item").textContent = "100 f\u00FCr zwei Linien";
-                controls.createDiv(contentDiv, "help-item").textContent = "300 f\u00FCr drei Linien";
-                controls.createDiv(contentDiv, "help-item").textContent = "1200 f\u00FCr vier Linien";
-                controls.createDiv(contentDiv, "help-item").textContent = "\u00A0";
-                controls.createDiv(contentDiv, "help-item").textContent = "Steuerung";
-                controls.createDiv(contentDiv, "help-item").textContent = "Links: Cursor links";
-                controls.createDiv(contentDiv, "help-item").textContent = "Rechts: Cursor rechts";
-                controls.createDiv(contentDiv, "help-item").textContent = "Drehen: Cursor oben oder Taste 'a'";
-                controls.createDiv(contentDiv, "help-item").textContent = "Fallen: Cursor runter oder Leerzeichen";
-                controls.createDiv(contentDiv, "help-item").textContent = "Pause: Taste 'p'";
-                controls.createDiv(contentDiv, "help-item").textContent = "Hilfe: Taste 'h'";
-                controls.createDiv(contentDiv, "help-item").textContent = "\u00A0";
-                controls.createDiv(contentDiv, "help-item").textContent = "Fallen kann mit jeder Taste gestoppt werden.";
+                let mdDiv = controls.createDiv(contentDiv, "help-item");
+                utils.fetch_api_call("/api/pwdman/markdown/tetris-help", undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, "Weiterspielen", () => onUpdateHelp(false), undefined, "help-continue").focus();
             }
         }

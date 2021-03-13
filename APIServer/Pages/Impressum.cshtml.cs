@@ -15,28 +15,25 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
+using APIServer.PwdMan;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace APIServer.PwdMan
+namespace APIServer.Pages
 {
-    public class PwdManOptions
+    public class ImpressumModel : PageModel
     {
-        public TokenConfig TokenConfig { get; set; }
+        public string Markdown { get; set; }
 
-        public TOTPConfig TOTPConfig { get; set; }
+        private readonly IPwdManService PwdManService;
 
-        public string RegistrationEmail { get; set; }
+        public ImpressumModel(IPwdManService pwdManService)
+        {
+            PwdManService = pwdManService;
+        }
 
-        public int MaxLoginTryCount { get; set; } = 3;
-
-        public int AccountLockTime { get; set; } = 300;
-
-        public string Hostname { get; set; }
-
-        public string SlideShowPublicPhotos { get; set; }
-
-        public string SlideShowFamilyPhotos { get; set; }
-
-        public List<MarkdownConfig> Markdown { get; set; }
+        public void OnGet()
+        {
+            Markdown = PwdManService.GetMarkdown("impressum");
+        }
     }
 }

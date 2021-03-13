@@ -180,6 +180,13 @@ namespace APIServer.PwdMan
         }
 
         [HttpGet]
+        [Route("api/pwdman/markdown/{id}")]
+        public IActionResult GetMarkdown(string id)
+        {
+            return new JsonResult(PwdManService.GetMarkdown(id));
+        }
+
+        [HttpGet]
         [Route("api/pwdman/users")]
         public IActionResult GetUsers()
         {

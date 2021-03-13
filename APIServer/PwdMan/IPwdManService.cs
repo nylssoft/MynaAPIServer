@@ -98,6 +98,10 @@ namespace APIServer.PwdMan
 
         SlideShowModel GetSlideShow(string authenticationToken);
 
+        // --- markdown
+
+        string GetMarkdown(string id);
+
         // --- database access
 
         DbMynaContext GetDbContext();

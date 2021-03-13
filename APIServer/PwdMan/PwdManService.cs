@@ -1078,6 +1078,30 @@ namespace APIServer.PwdMan
             return model;
         }
 
+        // --- markdown
+
+        public string GetMarkdown(string id)
+        {
+            string fileName = null;
+            var opt = GetOptions();
+            if (opt.Markdown?.Count > 0)
+            {
+                foreach (var mdc in opt.Markdown)
+                {
+                    if (mdc.Id == id)
+                    {
+                        fileName = mdc.FileName;
+                        break;
+                    }
+                }
+            }
+            if (fileName != null && File.Exists(fileName))
+            {
+                return Markdig.Markdown.ToHtml(File.ReadAllText(fileName));
+            }
+            return "<p>Inhalt nicht vorhanden!</p>";
+        }
+
         // --- database access
 
         public DbMynaContext GetDbContext()
