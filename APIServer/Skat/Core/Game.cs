@@ -129,8 +129,7 @@ namespace APIServer.Skat.Core
             {
                 return stitches.Count == 0; // no stitches
             }
-            if (Option.HasFlag(GameOption.Ouvert) ||
-                Option.HasFlag(GameOption.Schwarz))
+            if (Option.HasFlag(GameOption.Schwarz))
             {
                 return stitches.Count == 30; // all stitches (10 x 3 cards)
             }
@@ -144,14 +143,13 @@ namespace APIServer.Skat.Core
 
         public GameValue GetGameValue(MatadorsJackStraight spitzen, List<Card> stitches, List<Card> skat, int bidValue, bool giveUp)
         {
-            var score = 0;
             bool schneider = false;
             bool schwarz = false;
             bool gamePlayerSchneider = false;
             bool gamePlayerSchwarz = false;
             if (Type != GameType.Null)
             {
-                score = Card.GetScore(stitches, skat);
+                var score = Card.GetScore(stitches, skat);
                 schneider = score >= 90;
                 schwarz = stitches.Count == 30;
                 if (!giveUp)
@@ -192,6 +190,12 @@ namespace APIServer.Skat.Core
             }
             else
             {
+                var isWinner = IsWinner(stitches, skat);
+                if (!isWinner)
+                {
+                    schneider = false;
+                    schwarz = false;
+                }
                 string calc;
                 string game;
                 int baseValue;
@@ -250,7 +254,7 @@ namespace APIServer.Skat.Core
                 }
                 gameValue.Score = factor * baseValue;
                 calc = $"{factor} x {baseValue}";
-                if (!IsWinner(stitches, skat))
+                if (!isWinner)
                 {
                     gameValue.Score *= -2;
                     gameValue.IsWinner = false;
