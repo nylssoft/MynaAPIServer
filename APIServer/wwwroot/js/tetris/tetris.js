@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.9";
+    let version = "1.2.10";
 
     let block;
     let nextBlock;
@@ -857,8 +857,7 @@ var tetris = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
         controls.create(div, "span", undefined, `Myna Tetris ${version}. Copyright 2020-2021 `);
-        let a = controls.createA(div, undefined, "https://github.com/nylssoft/", "Niels Stockfleth");
-        a.target = "_blank";
+        controls.createA(div, undefined, "/homepage", "Niels Stockfleth");
         controls.create(div, "span", undefined, ".");
     };
 

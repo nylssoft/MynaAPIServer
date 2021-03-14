@@ -33,7 +33,7 @@ namespace APIServer.Pages
 
         public void OnGet()
         {
-            Markdown = PwdManService.GetMarkdown("impressum");
+            Markdown = PwdManService.GetMarkdown(null, "impressum");
         }
     }
 }

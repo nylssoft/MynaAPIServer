@@ -183,7 +183,7 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/markdown/{id}")]
         public IActionResult GetMarkdown(string id)
         {
-            return new JsonResult(PwdManService.GetMarkdown(id));
+            return new JsonResult(PwdManService.GetMarkdown(GetToken(), id));
         }
 
         [HttpGet]

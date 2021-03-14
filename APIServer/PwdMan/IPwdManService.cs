@@ -100,7 +100,7 @@ namespace APIServer.PwdMan
 
         // --- markdown
 
-        string GetMarkdown(string id);
+        string GetMarkdown(string authenticationToken, string id);
 
         // --- database access
 

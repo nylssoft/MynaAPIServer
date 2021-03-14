@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.10";
+    let version = "1.3.11";
 
     // helper
 
@@ -915,8 +915,7 @@ var skat = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna Skat ${version}. Copyright 2020-2021 `);
-        let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
-        a.target = "_blank";
+        controls.createA(div, "copyright", "/homepage", "Niels Stockfleth");
         let time = new Date().toLocaleTimeString("de-DE");
         controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `);
         if (ticket) {

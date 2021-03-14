@@ -1,5 +1,9 @@
 [
   {
+    "outputFileName": "wwwroot/css/homepage/homepage.min.css",
+    "inputFiles": [ "wwwroot/css/homepage/homepage.css" ]
+  },
+  {
     "outputFileName": "wwwroot/css/impressum/impressum.min.css",
     "inputFiles": [ "wwwroot/css/impressum/impressum.css" ]
   },
@@ -124,6 +128,15 @@
   {
     "outputFileName": "wwwroot/js/notes/notes.min.js",
     "inputFiles": [ "wwwroot/js/notes/notes.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/homepage/homepage.min.js",
+    "inputFiles": [ "wwwroot/js/homepage/homepage.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true

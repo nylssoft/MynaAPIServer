@@ -1080,9 +1080,10 @@ namespace APIServer.PwdMan
 
         // --- markdown
 
-        public string GetMarkdown(string id)
+        public string GetMarkdown(string authenticationToken, string id)
         {
-            string fileName = null;
+            string content = null;
+            string role = null;
             var opt = GetOptions();
             if (opt.Markdown?.Count > 0)
             {
@@ -1090,16 +1091,32 @@ namespace APIServer.PwdMan
                 {
                     if (mdc.Id == id)
                     {
-                        fileName = mdc.FileName;
+                        content = mdc.Content;
+                        role = mdc.Role;
                         break;
                     }
                 }
             }
-            if (fileName != null && File.Exists(fileName))
+            if (content != null && File.Exists(content))
             {
-                return Markdig.Markdown.ToHtml(File.ReadAllText(fileName));
+                if (!string.IsNullOrEmpty(role))
+                {
+                    try
+                    {
+                        var user = GetUserFromToken(authenticationToken);
+                        if (!HasRole(user, role))
+                        {
+                            return "<p>Zugriff verweigert.</p>";
+                        }
+                    }
+                    catch
+                    {
+                        return "<p>Sitzung abgelaufen.</p>";
+                    }
+                }
+                return Markdig.Markdown.ToHtml(File.ReadAllText(content));
             }
-            return "<p>Inhalt nicht vorhanden!</p>";
+            return "<p>Inhalt nicht vorhanden.</p>";
         }
 
         // --- database access

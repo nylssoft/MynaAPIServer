@@ -35,8 +35,7 @@ var downloads = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", "Myna Downloads 1.1.0. Copyright 2020-2021 ");
-        let a = controls.createA(div, "copyright", "https://github.com/nylssoft/", "Niels Stockfleth");
-        a.target = "_blank";
+        controls.createA(div, "copyright", "/homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
 
