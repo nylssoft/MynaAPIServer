@@ -6,12 +6,11 @@ Sie wird ausschließlich für persönliche oder familiäre Zwecke verwendet.
 
 Die Website ist nicht kommerziell.
 Sie enthält weder Werbung noch werden Benutzeraktivitäten verfolgt oder analysiert.
-Es werden daher auch keine Cookies verwendet.
 Die gespeicherten Daten werden an niemanden weitergegeben.
 
 Nur Freunde und Familienmitglieder werden als registrierte Benutzer von mir zugelassen, d.h.
 ich muss entweder alle persönlich kennen oder aber bereits registrierte Benutzer können die
-Autheniztät bestätigen.
+Authenzität bestätigen.
 
 ## Datenschutz
 
@@ -53,19 +52,23 @@ Für jeden registrierten Benutzer wird ein Konto angelegt. Folgende Daten werden
 - Profilfoto
 
 Das Konto kann jederzeit gelöscht werden. Alle oben genannten Daten werden dann
-unwiderruflich gelöscht. Es werden Backups aller Daten der letzten 30 Tage erstellt, daher sind die Daten
-physikalisch erst nach 30 Tagen endgültig gelöscht.
+unwiderruflich gelöscht.
 
 Die Daten der Skatspiele (Chats, Spielverläufe und Spielergebnisse) können nicht gelöscht werden.
 Sie werden auch für nicht registrierte Spieler gespeichert.
- 
+
+### Bildergalerie
+
+Registrierte Benutzer können zusätzliche Bilder sehen, sofern
+sie als Familienmitglied im weiteren Sinne markiert wurden.
+
 ## Kontakt
 
 Niels Stockfleth, E-Mail an <nyls@aol.com>.
 
 ## Open Source
 
-Die Website wurde mit folgenden Software-Bibliotheken und -Produkten sowie Bilddaten realisiert:
+Die Website verwendet folgende Software und Bilderbibliotheken für die Realisierung:
 
 - Reverse-Proxy [NGINX](https://www.nginx.com)
 - Back-End [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five)
