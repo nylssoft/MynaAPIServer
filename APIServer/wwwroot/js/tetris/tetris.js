@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.11";
+    let version = "1.2.12";
 
     let block;
     let nextBlock;
@@ -818,7 +818,7 @@ var tetris = (() => {
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
         dropdownDiv.id = "div-dropdown-id";
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/common/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -912,7 +912,7 @@ var tetris = (() => {
     };
 
     const renderHelp = (parent) => {
-        let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/tetris/help.png");
+        let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/buttons/help.png");
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         helpDiv = controls.createDiv(parent, "invisible-div");
     };
@@ -938,13 +938,13 @@ var tetris = (() => {
         
         controls.createDiv(parent, "arrow-div");
         let arrowDivLeft = controls.createDiv(parent, "arrow-left");
-        createImage(arrowDivLeft, "/images/tetris/arrow-left-3.png", 32, "ArrowLeft");
+        createImage(arrowDivLeft, "/images/buttons/arrow-left-3.png", 32, "ArrowLeft");
         let arrowDivRight = controls.createDiv(parent, "arrow-right");
-        createImage(arrowDivRight, "/images/tetris/arrow-right-3.png", 32, "ArrowRight");
+        createImage(arrowDivRight, "/images/buttons/arrow-right-3.png", 32, "ArrowRight");
         let arrowDivUp = controls.createDiv(parent, "arrow-up");
-        createImage(arrowDivUp, "/images/tetris/arrow-up-3.png", 32, "ArrowUp");
+        createImage(arrowDivUp, "/images/buttons/arrow-up-3.png", 32, "ArrowUp");
         let arrowDivDown = controls.createDiv(parent, "arrow-down");
-        createImage(arrowDivDown, "/images/tetris/arrow-down-3.png", 32, "ArrowDown");
+        createImage(arrowDivDown, "/images/buttons/arrow-down-3.png", 32, "ArrowDown");
 
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);

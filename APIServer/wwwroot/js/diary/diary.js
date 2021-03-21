@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.1.2";
+    let version = "1.1.3";
 
     let changeDate;
     let inSaveDiary;
@@ -87,7 +87,7 @@ var diary = (() => {
 
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/common/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -152,10 +152,10 @@ var diary = (() => {
             () => onShowSummary(textDiv, new Date(Date.UTC(year, month))));
         controls.createImageButton(caption, "Vorheriger Monat",
             () => onPrevButton(parent, calendarDiv, textDiv, year, month),
-            "/images/diary/arrow-left-2.png", 16, "transparent");
+            "/images/buttons/arrow-left-2.png", 16, "transparent");
         controls.createImageButton(caption, "N\u00E4chster Monat",
             () => onNextButton(parent, calendarDiv, textDiv, year, month),
-            "/images/diary/arrow-right-2.png", 16, "transparent");
+            "/images/buttons/arrow-right-2.png", 16, "transparent");
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
         let th = controls.create(tr, "th", undefined, "Mon");
@@ -359,7 +359,7 @@ var diary = (() => {
                 statusimg.style.visibility = "hidden";
             }
             else {
-                statusimg.src = "/images/diary/document-save-3.png";
+                statusimg.src = "/images/buttons/document-save-3.png";
                 statusimg.title = "\u00C4nderung wird gespeichert...";
                 statusimg.style.visibility = "visible";
             }

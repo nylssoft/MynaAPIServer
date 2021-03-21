@@ -182,7 +182,7 @@ var controls = (() => {
     const createMenu = (parent, itemactions) => {
         if (itemactions.length === 0) return undefined;
         let menu = createDiv(parent, "menu");
-        createImg(menu, undefined, 24, 24, "/images/hamburger_menu.svg");
+        createImg(menu, undefined, 24, 24, "/images/buttons/hamburger_menu.svg");
         let divContent = createDiv(menu, "menu-content");
         itemactions.forEach(itemaction => {
             createA(divContent, undefined, "#", itemaction.name, itemaction.action);

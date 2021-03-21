@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.6";
+    let version = "1.1.7";
 
     // helper
 
@@ -37,7 +37,7 @@ var usermgmt = (() => {
 
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/common/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -286,17 +286,17 @@ var usermgmt = (() => {
         photoImg.height = 90;
         photoImg.title = "Profilbild (90 x 90 Pixel)";
         photoImg.addEventListener("click", onSelectPhoto);
-        let addImg = controls.createImg(parent, "profile-photo-add", 32, 32, "/images/pwdman/list-add-4.png");
+        let addImg = controls.createImg(parent, "profile-photo-add", 32, 32, "/images/buttons/list-add-4.png");
         addImg.addEventListener("click", onSelectPhoto);
         addImg.title = "Profilbild hinzuf\u00FCgen";
         if (currentUser.photo) {
             photoImg.src = currentUser.photo;
-            let removeImg = controls.createImg(parent, "profile-photo-remove", 32, 32, "/images/pwdman/list-remove-4.png");
+            let removeImg = controls.createImg(parent, "profile-photo-remove", 32, 32, "/images/buttons/list-remove-4.png");
             removeImg.title = "Profilbild entfernen";
             removeImg.addEventListener("click", onDeletePhoto);
         }
         else {
-            photoImg.src = "/images/pwdman/user-new-3.png";
+            photoImg.src = "/images/buttons/user-new-3.png";
         }
         let emailP = controls.create(parent, "p");
         controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");

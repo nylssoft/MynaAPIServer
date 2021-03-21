@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.1.2";
+    let version = "1.1.3";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -127,7 +127,7 @@ var notes = (() => {
 
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/common/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -378,7 +378,7 @@ var notes = (() => {
                 statusimg.style.visibility = "hidden";
             }
             else {
-                statusimg.src = "/images/notes/document-save-3.png";
+                statusimg.src = "/images/buttons/document-save-3.png";
                 statusimg.title = "\u00C4nderung wird gespeichert...";
                 statusimg.style.visibility = "visible";
             }

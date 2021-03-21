@@ -28,7 +28,7 @@ var slideshow = (() => {
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
         dropdownDiv.id = "div-dropdown-id";
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/slideshow/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -64,7 +64,7 @@ var slideshow = (() => {
         let title = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";
         let header = controls.create(parent, "h1", "header", title);
         header.id = "header-id";
-        imgShuffle = controls.createImg(parent, "header-shuffle-img", 24, 24, "/images/slideshow/document-quick_restart.png");
+        imgShuffle = controls.createImg(parent, "header-shuffle-img", 24, 24, "/images/buttons/document-quick_restart.png");
         imgShuffle.title = "Zufallswiedergabe " + (shuffle ? "aus" : "ein");
         if (!shuffle) {
             imgShuffle.classList.add("greyed-out");
@@ -89,14 +89,14 @@ var slideshow = (() => {
                 btnPauseSlideShow.style.visibility = "hidden";
                 btnPlaySlideShow.style.visibility = "visible";
             },
-            "/images/slideshow/media-playback-pause-3.png", 24, "slideshow-action");
+            "/images/buttons/media-playback-pause-3.png", 24, "slideshow-action");
         btnPlaySlideShow = controls.createImageButton(div, "Bildergalerie abspielen",
             () => {
                 isSlideshowPlaying = true;
                 btnPauseSlideShow.style.visibility = "visible";
                 btnPlaySlideShow.style.visibility = "hidden";
             },
-            "/images/slideshow/media-playback-start-3.png", 24, "slideshow-action");
+            "/images/buttons/media-playback-start-3.png", 24, "slideshow-action");
         btnPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
         btnPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
     };

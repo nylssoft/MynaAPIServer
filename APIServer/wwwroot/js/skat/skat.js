@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.12";
+    let version = "1.3.13";
 
     // helper
 
@@ -260,7 +260,7 @@ var skat = (() => {
 
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/skat/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -355,7 +355,7 @@ var skat = (() => {
         let divHeader = controls.createDiv(divPage, "reservation-header")
         divHeader.textContent = "Tischreservierungen";
         if (currentUser) {
-            let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/skat/list-add-4.png");
+            let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/buttons/list-add-4.png");
             imgAdd.title = "Reservierung hinzuf\u00FCgen";
             imgAdd.addEventListener("click", () => btnReserve_click(divReservations));
         }
@@ -366,7 +366,7 @@ var skat = (() => {
             let txt = `${daystr} ${dd.getHours()}-${h} ${r.players.join(", ")}`;
             let divReservation = controls.create(divPage, "p", undefined, txt);
             if (currentUser && (currentUser.name == r.reservedBy || currentUser.roles.includes("skatadmin"))) {
-                let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/skat/list-remove-4.png");
+                let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/buttons/list-remove-4.png");
                 imgRemove.title = "Reservierung entfernen";
                 imgRemove.id = `imgremove-${r.id}`;
                 imgRemove.addEventListener("click", (elem) => {
@@ -402,12 +402,12 @@ var skat = (() => {
         if (today.getMonth() < month) {
             controls.createImageButton(caption, "Vorheriger Monat",
                 () => btnPreviousMonth_click(parent, year, month),
-                "/images/skat/arrow-left-2.png", 16, "reservation-transparent");
+                "/images/buttons/arrow-left-2.png", 16, "reservation-transparent");
         }
         if (today.getMonth() == month) {
             controls.createImageButton(caption, "N\u00E4chster Monat",
                 () => btnNextMonth_click(parent, year, month),
-                "/images/skat/arrow-right-2.png", 16, "reservation-transparent");
+                "/images/buttons/arrow-right-2.png", 16, "reservation-transparent");
         }
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
@@ -981,14 +981,14 @@ var skat = (() => {
 
     const renderChat = (parent) => {
         let divChatButton = controls.createDiv(parent, "layout-chat-button");
-        let imgMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/skat/mail-unread-3.png");
+        let imgMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/buttons/mail-unread-3.png");
         imgMessage.addEventListener("click", (e) => {
             showChat = !showChat;
             render();
         });
         let token = utils.get_authentication_token();
         if (token) {
-            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/skat/games-card_game.png");
+            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png");
             imgResults.addEventListener("click", () => window.open("/skat?results", "_blank"));
             imgResults.title = "Spielergebnisse";
         }
@@ -1027,7 +1027,7 @@ var skat = (() => {
         else {
             imgMessage.title = "Chat einblenden";
             if (currentChatState > chatState) {
-                imgMessage.src = "/images/skat/mail-unread-new.png";
+                imgMessage.src = "/images/buttons/mail-unread-new.png";
             }
             divChat.style.visibility = "hidden";
         }

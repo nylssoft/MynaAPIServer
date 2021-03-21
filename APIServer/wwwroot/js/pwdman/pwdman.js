@@ -41,7 +41,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.16";
+    let version = "1.1.17";
 
     // helper
 
@@ -395,20 +395,20 @@ var pwdman = (() => {
             else {
                 let ok = utils.verify_password_strength(pwd.value);
                 if (ok) {
-                    pwdimg.src = "/images/pwdman/dialog-clean.png";
+                    pwdimg.src = "/images/buttons/dialog-clean.png";
                     pwdimg.title = "Kennwort ist stark genug";
                 }
                 else {
-                    pwdimg.src = "/images/pwdman/dialog-error.png";
+                    pwdimg.src = "/images/buttons/dialog-error.png";
                     pwdimg.title = "Kennwort ist nicht stark genug";
                 }
                 ok = pwd.value == confirmpwd.value;
                 if (ok) {
-                    confirmpwdimg.src = "/images/pwdman/dialog-clean.png";
+                    confirmpwdimg.src = "/images/buttons/dialog-clean.png";
                     confirmpwdimg.title = "Kennwort stimmt \u00FCberein";
                 }
                 else {
-                    confirmpwdimg.src = "/images/pwdman/dialog-error.png";
+                    confirmpwdimg.src = "/images/buttons/dialog-error.png";
                     confirmpwdimg.title = "Kennwort stimmt nicht \u00FCberein";
                 }
                 pwdimg.style.visibility = "visible";
@@ -744,23 +744,23 @@ var pwdman = (() => {
             txt = await decodePassword(txt);
         }
         let showButton = controls.createImageButton(parent, `${desc} anzeigen`, undefined,
-            "/images/pwdman/document-decrypt-3.png", 32, "transparent");
+            "/images/buttons/document-decrypt-3.png", 32, "transparent");
         controls.createImageButton(parent, `${desc} in die Zwischenablage kopieren`,
             () => {
                 navigator.clipboard.writeText(txt);
-            }, "/images/pwdman/edit-copy-6.png", 32, "transparent");
+            }, "/images/buttons/edit-copy-6.png", 32, "transparent");
         let span = controls.create(parent, "span", "pwditem");
         showButton.addEventListener("click", () => {
             let hide = span.textContent.length > 0;
             if (hide) {
                 span.textContent = "";
                 showButton.title = `${desc} anzeigen`;
-                showButton.children[0].src = "/images/pwdman/document-decrypt-3.png";
+                showButton.children[0].src = "/images/buttons/document-decrypt-3.png";
             }
             else {
                 span.textContent = txt;
                 showButton.title = `${desc} verbergen`;
-                showButton.children[0].src = "/images/pwdman/document-encrypt-3.png";
+                showButton.children[0].src = "/images/buttons/document-encrypt-3.png";
             }
         });
     };
