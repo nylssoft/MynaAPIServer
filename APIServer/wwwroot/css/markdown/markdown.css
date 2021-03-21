@@ -1,20 +1,13 @@
-* {
-    user-select: none; /* supported by Chrome and Opera */
-    -webkit-user-select: none; /* Safari */
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* Internet Explorer/Edge */
-}
-
 body {
-    margin-left: 20pt;
-    background-color: black;
+    color: white;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 18pt;
-    color: white;
-    margin: 20pt;
+    margin-left: 20pt;
+    background-color: black;
 }
 
 h1 {
+    padding: 2pt;
     color: white;
     position: absolute;
     top: 5pt;
@@ -24,58 +17,20 @@ h1 {
 }
 
 h2 {
-    color: lightgreen;
-    font-size: 24pt;
-    font-family: Arial, Helvetica, sans-serif;
-    margin-top: 5pt;
-    margin-bottom: 5pt;
+    color: lightyellow;
+}
+
+h3 {
+    color: darkgoldenrod;
 }
 
 p {
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
     margin-top: 5pt;
     margin-bottom: 5pt;
 }
 
-.app {
-}
-
-.github, .prepare {
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-    color: Blue;
-}
-
-.prepare {
-    color: Blue;
-    margin-left: 10pt;
-}
-
-.copyright {
-    font-size: 8pt;
-    font-family: Arial, Helvetica, sans-serif;
+a {
     color: lightgreen;
-}
-
-.button {
-    background-color: blue;
-    border: 2px solid #008CBA;
-    color: white;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    transition-duration: 0.4s;
-    cursor: pointer;
-    font-size: 18pt;
-    margin: 10pt;
-    padding: 5pt;
-}
-
-.button:hover {
-    background-color: #008CBA;
-    color: darkblue;
 }
 
 .header-profile-photo {
@@ -142,31 +97,4 @@ p {
 
 .show {
     display: block;
-}
-
-@media (max-width: 480px) {
-
-    body {
-        font-size: 11pt;
-        margin: 10pt;
-    }
-
-    h2 {
-        font-size: 11pt;
-    }
-
-    .button {
-        font-size: 11pt;
-    }
-
-    p {
-        font-size: 11pt;
-    }
-
-    .github, .prepare {
-        font-size: 11pt;
-        font-family: Arial, Helvetica, sans-serif;
-        color: Blue;
-    }
-
 }

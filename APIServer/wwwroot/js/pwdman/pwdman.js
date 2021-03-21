@@ -432,7 +432,7 @@ var pwdman = (() => {
         }
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna ${title} ${version}. Copyright 2020-2021 `);
-        controls.createA(div, "copyright", "/homepage", "Niels Stockfleth");
+        controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
 

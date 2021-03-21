@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.10";
+    let version = "1.2.11";
 
     let block;
     let nextBlock;
@@ -840,8 +840,7 @@ var tetris = (() => {
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         }
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/downloads", "Downloads");
-        controls.createA(parent, undefined, "/impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
     };
 
     const renderHeader = (parent) => {
@@ -857,7 +856,7 @@ var tetris = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
         controls.create(div, "span", undefined, `Myna Tetris ${version}. Copyright 2020-2021 `);
-        controls.createA(div, undefined, "/homepage", "Niels Stockfleth");
+        controls.createA(div, undefined, "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", undefined, ".");
     };
 

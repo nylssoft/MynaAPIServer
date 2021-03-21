@@ -1,17 +1,5 @@
 [
   {
-    "outputFileName": "wwwroot/css/homepage/homepage.min.css",
-    "inputFiles": [ "wwwroot/css/homepage/homepage.css" ]
-  },
-  {
-    "outputFileName": "wwwroot/css/impressum/impressum.min.css",
-    "inputFiles": [ "wwwroot/css/impressum/impressum.css" ]
-  },
-  {
-    "outputFileName": "wwwroot/css/downloads/downloads.min.css",
-    "inputFiles": [ "wwwroot/css/downloads/downloads.css" ]
-  },
-  {
     "outputFileName": "wwwroot/css/tetris/tetris.min.css",
     "inputFiles": [ "wwwroot/css/tetris/tetris.css" ]
   },
@@ -36,17 +24,12 @@
     "inputFiles": [ "wwwroot/css/notes/notes.css" ]
   },
   {
-    "outputFileName": "wwwroot/js/slideshow/slideshow.min.js",
-    "inputFiles": [ "wwwroot/js/slideshow/slideshow.js" ],
-    "minify": {
-      "enabled": true,
-      "renameLocals": true
-    },
-    "sourceMap": false
+    "outputFileName": "wwwroot/css/markdown/markdown.min.css",
+    "inputFiles": [ "wwwroot/css/markdown/markdown.css" ]
   },
   {
-    "outputFileName": "wwwroot/js/downloads/downloads.min.js",
-    "inputFiles": [ "wwwroot/js/downloads/downloads.js" ],
+    "outputFileName": "wwwroot/js/slideshow/slideshow.min.js",
+    "inputFiles": [ "wwwroot/js/slideshow/slideshow.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true
@@ -135,8 +118,8 @@
     "sourceMap": false
   },
   {
-    "outputFileName": "wwwroot/js/homepage/homepage.min.js",
-    "inputFiles": [ "wwwroot/js/homepage/homepage.js" ],
+    "outputFileName": "wwwroot/js/markdown/markdown.min.js",
+    "inputFiles": [ "wwwroot/js/markdown/markdown.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true

@@ -57,8 +57,7 @@ var slideshow = (() => {
             controls.createA(parent, undefined, "/pwdman?nexturl=/slideshow", "Anmelden");
         }
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/downloads", "Downloads");
-        controls.createA(parent, undefined, "/impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
     };
 
     const renderHeader = (parent) => {

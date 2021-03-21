@@ -1,4 +1,6 @@
 ﻿
+# Impressum
+
 ## Impressum
 
 Dies ist eine private Website.
@@ -64,7 +66,7 @@ sie als Familienmitglied im weiteren Sinne markiert wurden.
 
 ## Kontakt
 
-Niels Stockfleth, E-Mail an <nyls@aol.com>.
+[Niels Stockfleth](/markdown?page=homepage), E-Mail an <nyls@aol.com>. 
 
 ## Open Source
 

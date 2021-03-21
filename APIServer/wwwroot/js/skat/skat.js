@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.11";
+    let version = "1.3.12";
 
     // helper
 
@@ -282,8 +282,7 @@ var skat = (() => {
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         }
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/downloads", "Downloads");
-        controls.createA(parent, undefined, "/impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
     };
 
     const renderTableFull = (parent, ignoreToken) => {
@@ -915,7 +914,7 @@ var skat = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna Skat ${version}. Copyright 2020-2021 `);
-        controls.createA(div, "copyright", "/homepage", "Niels Stockfleth");
+        controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         let time = new Date().toLocaleTimeString("de-DE");
         controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `);
         if (ticket) {

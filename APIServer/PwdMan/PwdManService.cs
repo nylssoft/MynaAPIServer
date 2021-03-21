@@ -1099,24 +1099,23 @@ namespace APIServer.PwdMan
             }
             if (content != null && File.Exists(content))
             {
-                if (!string.IsNullOrEmpty(role))
+                var render = string.IsNullOrEmpty(role);
+                if (!render && !string.IsNullOrEmpty(authenticationToken))
                 {
                     try
                     {
-                        var user = GetUserFromToken(authenticationToken);
-                        if (!HasRole(user, role))
-                        {
-                            return "<p>Zugriff verweigert.</p>";
-                        }
+                        render = HasRole(GetUserFromToken(authenticationToken), role);
                     }
                     catch
                     {
-                        return "<p>Sitzung abgelaufen.</p>";
                     }
                 }
-                return Markdig.Markdown.ToHtml(File.ReadAllText(content));
+                if (render)
+                {
+                    return Markdig.Markdown.ToHtml(File.ReadAllText(content));
+                }
             }
-            return "<p>Inhalt nicht vorhanden.</p>";
+            return "<p>Zugriff verweigert.</p>";
         }
 
         // --- database access

@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.5";
+    let version = "1.1.6";
 
     // helper
 
@@ -57,8 +57,7 @@ var usermgmt = (() => {
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/logout", "Abmelden", () => onLogout());
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/downloads", "Downloads");
-        controls.createA(parent, undefined, "/impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
     };
 
     const renderHeader = (parent, intro, title) => {
@@ -78,7 +77,7 @@ var usermgmt = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020-2021 `);
-        controls.createA(div, "copyright", "/homepage", "Niels Stockfleth");
+        controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
 

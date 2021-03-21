@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.1.1";
+    let version = "1.1.2";
 
     let changeDate;
     let inSaveDiary;
@@ -87,7 +87,7 @@ var diary = (() => {
 
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/diary/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/common/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -120,8 +120,7 @@ var diary = (() => {
         controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/downloads", "Downloads");
-        controls.createA(parent, undefined, "/impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
     };
 
     const renderHeader = (parent) => {
@@ -136,7 +135,7 @@ var diary = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna Diary ${version}. Copyright 2020-2021 `);
-        controls.createA(div, "copyright", "/homepage", "Niels Stockfleth");
+        controls.createA(div, "copyright", "/mardown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
 

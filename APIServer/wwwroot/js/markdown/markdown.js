@@ -1,12 +1,13 @@
 "use strict";
 
-var downloads = (() => {
+var markdown = (() => {
 
     let currentUser;
+    let page;
 
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/downloads/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/common/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });
@@ -25,75 +26,69 @@ var downloads = (() => {
         controls.createA(parent, undefined, "/tetris", "Tetris");
         if (currentUser) {
             controls.create(parent, "hr");
+            if (currentUser.hasPasswordManagerFile) {
+                controls.createA(parent, undefined, "/pwdman", "Passwort\u00A0Manager");
+            }
             controls.createA(parent, undefined, "/usermgmt", "Profil");
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         }
+        else {
+            controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/pwdman?nexturl=/slideshow", "Anmelden");
+        }
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
     };
 
-    const renderCopyright = (parent) => {
-        let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", "Myna Downloads 1.1.0. Copyright 2020-2021 ");
-        controls.createA(div, "copyright", "/homepage", "Niels Stockfleth");
-        controls.create(div, "span", "copyright", ".");
-    };
-
-    const renderMainPage = (parent, apps) => {
+    const renderPage = () => {
+        let parent = document.body;
+        controls.removeAllChildren(parent);
         renderDropdown(parent);
-        let title = currentUser ? `${currentUser.name} - Downloads` : "Downloads";
-        controls.create(parent, "h1", undefined, title);
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
             imgPhoto.title = "Profil";
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
-        apps.forEach( (app) => {
-            let divApp = controls.createDiv(parent, "app");
-            let p = controls.create(divApp, "h2", undefined, `${app.title} - ${app.version}`);
-            controls.createButton(p, "Download", () => { window.location.href = `${app.download}`; });
-            let a = controls.createA(p, "github", `${app.github}`, "GitHub");
-            a.target = "_blank";
-            controls.create(divApp, "p", undefined, `${app.description}`);
-            if (app.prepare.length > 0) {
-                let prepare = controls.create(divApp, "p", undefined, `Installationsvorraussetzung: ${app.prepare}`);
-                if (app.preparedownload.length > 0) {
-                    let ap = controls.createA(prepare, "prepare", `${app.preparedownload}`, "Microsoft");
-                    ap.target = "_blank";
+        let div = controls.createDiv(parent);
+        let opt = undefined;
+        const token = utils.get_authentication_token();
+        if (token) {
+            opt = { headers: { "token": token } };
+        }
+        utils.fetch_api_call(`/api/pwdman/markdown/${page}`, opt,
+            (html) => {
+                div.innerHTML = html;
+                const h1 = document.querySelector("h1");
+                if (h1) {
+                    document.title = h1.textContent;
                 }
-            }
-            controls.createImg(divApp, undefined, 350, 200, app.image);
-        });
-        renderCopyright(controls.createDiv(parent));
+            });
         renderDropdownContent();
     };
 
-    const renderPage = (json) => {
-        controls.removeAllChildren(document.body);
-        let divMain = controls.createDiv(document.body);
-        renderMainPage(divMain, json.apps);
-    };
-
-    const render = (json) => {
+    const render = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        page = urlParams.get("page");
+        if (!page) {
+            page = "homepage";
+        }
         currentUser = undefined;
-        let token = utils.get_authentication_token();
+        const token = utils.get_authentication_token();
         if (!token) {
-            renderPage(json);
+            renderPage();
             return;
         }
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
-                renderPage(json);
+                renderPage();
             },
             (errmsg) => {
                 console.error(errmsg);
                 utils.logout();
-                renderPage(json);
+                renderPage();
             });
     };
-
-    // --- public API
 
     return {
         render: render
@@ -101,11 +96,7 @@ var downloads = (() => {
 })();
 
 window.onload = () => {
-    utils.auth_lltoken(() => {
-        fetch("/downloads/apps.json", { cache: "no-cache" })
-            .then(response => response.json())
-            .then(json => downloads.render(json));
-    });
+    utils.auth_lltoken(markdown.render);
 };
 
 window.onclick = (event) => {
