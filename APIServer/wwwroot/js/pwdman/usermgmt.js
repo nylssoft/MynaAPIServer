@@ -37,7 +37,7 @@ var usermgmt = (() => {
 
     const renderDropdown = (parent) => {
         let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/pwdman/hamburger.svg");
+        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/common/hamburger.svg");
         dropdownButton.addEventListener("click", () => {
             document.getElementById("dropdown-id").classList.toggle("show");
         });

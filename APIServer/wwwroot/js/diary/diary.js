@@ -135,7 +135,7 @@ var diary = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Myna Diary ${version}. Copyright 2020-2021 `);
-        controls.createA(div, "copyright", "/mardown?page=homepage", "Niels Stockfleth");
+        controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
 
