@@ -65,6 +65,9 @@ var markdown = (() => {
                         h1.textContent = `${currentUser.name} - ` + h1.textContent;
                     }
                 }
+                if (history.length > 0) {
+                    controls.createButton(div, "Zur\u00FCck", () => history.back());
+                }
             });
         renderDropdownContent();
     };

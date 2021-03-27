@@ -98,3 +98,34 @@ a {
 .show {
     display: block;
 }
+
+.button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 18pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
+}
+
+.button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 11pt;
+        margin: 10pt;
+    }
+
+    .button {
+        font-size: 11pt;
+    }
+}
