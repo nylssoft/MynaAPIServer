@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.1.3";
+    let version = "1.1.4";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -140,6 +140,17 @@ var notes = (() => {
         let encryptKeyElem = document.getElementById("div-encryptkey-id");
         if (!parent || !encryptKeyElem) return;
         controls.removeAllChildren(parent);
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/notes", "Notizen");
+        controls.createA(parent, undefined, "/skat", "Skat");
+        controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.createA(parent, undefined, "/tetris", "Tetris");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/usermgmt", "Profil");
+        controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
+        controls.create(parent, "hr");
         if (encryptKeyElem.classList.contains("show")) {
             controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
                 () => {
@@ -151,16 +162,6 @@ var notes = (() => {
             controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
                 () => showEncryptKey(true));
         }
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/skat", "Skat");
-        controls.createA(parent, undefined, "/diary", "Tagebuch");
-        controls.createA(parent, undefined, "/tetris", "Tetris");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/usermgmt", "Profil");
-        controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
     };
 
     const renderHeader = (parent) => {

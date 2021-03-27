@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.7";
+    let version = "1.1.8";
 
     // helper
 
@@ -55,6 +55,7 @@ var usermgmt = (() => {
         controls.createA(parent, undefined, "/diary", "Tagebuch");
         controls.createA(parent, undefined, "/tetris", "Tetris");
         controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/logout", "Abmelden", () => onLogout());
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");

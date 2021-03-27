@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.13";
+    let version = "1.3.14";
 
     // helper
 
@@ -274,6 +274,7 @@ var skat = (() => {
         controls.removeAllChildren(parent);
         controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
         controls.createA(parent, undefined, "/notes", "Notizen");
+        controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
         controls.createA(parent, undefined, "/tetris", "Tetris");
         if (currentUser) {

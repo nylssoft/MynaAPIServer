@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.12";
+    let version = "1.2.13";
 
     let block;
     let nextBlock;
@@ -834,6 +834,7 @@ var tetris = (() => {
         controls.createA(parent, undefined, "/notes", "Notizen");
         controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.createA(parent, undefined, "/tetris", "Tetris");
         if (currentUser) {
             controls.create(parent, "hr");
             controls.createA(parent, undefined, "/usermgmt", "Profil");

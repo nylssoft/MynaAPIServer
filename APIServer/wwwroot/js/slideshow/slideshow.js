@@ -40,6 +40,7 @@ var slideshow = (() => {
         let parent = document.getElementById("dropdown-id");
         if (!parent) return;
         controls.removeAllChildren(parent);
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
         controls.createA(parent, undefined, "/notes", "Notizen");
         controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
