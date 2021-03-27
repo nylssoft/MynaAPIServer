@@ -783,6 +783,7 @@ namespace APIServer.PwdMan
                     .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
                 if (loginIpAddress == null)
                 {
+                    CleanupLoginIpAddress(dbContext, user.Id);
                     loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
                     dbContext.DbLoginIpAddresses.Add(loginIpAddress);
                 }
@@ -915,6 +916,7 @@ namespace APIServer.PwdMan
                 .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
             if (loginIpAddress == null)
             {
+                CleanupLoginIpAddress(dbContext, user.Id);
                 loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
                 dbContext.DbLoginIpAddresses.Add(loginIpAddress);
             }
@@ -930,6 +932,21 @@ namespace APIServer.PwdMan
                 Username = user.Name
             };
             return ret;
+        }
+
+        private void CleanupLoginIpAddress(DbMynaContext dbContext, long userId)
+        {
+            var cnt = dbContext.DbLoginIpAddresses.Count(ip => ip.DbUserId == userId);
+            if (cnt > 99)
+            {
+                var cleanup = dbContext.DbLoginIpAddresses.Where(ip => ip.DbUserId == userId).OrderBy(ip => ip.LastUsedUtc).ToList();
+                var idx = 0;
+                while (cnt > 99 && idx < cleanup.Count)
+                {                    
+                    dbContext.DbLoginIpAddresses.Remove(cleanup[idx++]);
+                    cnt--;
+                }
+            }
         }
 
         public void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange)
