@@ -65,7 +65,7 @@ var markdown = (() => {
                         h1.textContent = `${currentUser.name} - ` + h1.textContent;
                     }
                 }
-                if (history.length > 0) {
+                if (history.length > 1) {
                     controls.createButton(div, "Zur\u00FCck", () => history.back());
                 }
             });
@@ -76,7 +76,7 @@ var markdown = (() => {
         const urlParams = new URLSearchParams(window.location.search);
         page = urlParams.get("page");
         if (!page) {
-            page = "homepage";
+            page = "welcome";
         }
         currentUser = undefined;
         const token = utils.get_authentication_token();
