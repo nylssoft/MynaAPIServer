@@ -2,7 +2,7 @@
 
 ## Niels Stockfleth
 
-![](/images/markdown/niels.jpg)
+![](/images/markdown/niels-320.jpg)
 
 ## Veröffentlichungen
 
