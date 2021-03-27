@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.13";
+    let version = "1.2.14";
 
     let block;
     let nextBlock;
@@ -835,10 +835,13 @@ var tetris = (() => {
         controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
         controls.createA(parent, undefined, "/tetris", "Tetris");
+        controls.create(parent, "hr");
         if (currentUser) {
-            controls.create(parent, "hr");
             controls.createA(parent, undefined, "/usermgmt", "Profil");
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        }
+        else {
+            controls.createA(parent, undefined, "/pwdman?nexturl=/tetris", "Anmelden");
         }
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");

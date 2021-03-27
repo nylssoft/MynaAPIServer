@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.14";
+    let version = "1.3.15";
 
     // helper
 
@@ -277,10 +277,13 @@ var skat = (() => {
         controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
         controls.createA(parent, undefined, "/tetris", "Tetris");
+        controls.create(parent, "hr");
         if (currentUser) {
-            controls.create(parent, "hr");
             controls.createA(parent, undefined, "/usermgmt", "Profil");
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        }
+        else {
+            controls.createA(parent, undefined, "/pwdman?nexturl=/skat", "Anmelden");
         }
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
@@ -1043,29 +1046,41 @@ var skat = (() => {
             controls.createLabel(parent, undefined, "Es liegen noch keine Spielergebnisse f\u00FCr Dich vor.");            
             return;
         }
-        let boxDiv = controls.createDiv(parent, "box");
-        let div1 = controls.createDiv(boxDiv, "box-item");
-        div1.id = "results-overview-id";
-        let div2 = controls.createDiv(boxDiv, "box-item");
-        let cnt = 1;
-        results.forEach(result => {
+        const p = controls.create(parent, "p");
+        p.id = "results-overview-id";
+        const div = controls.createDiv(parent);
+        let options = [];
+        results.forEach((result,index) => {
             let started = new Date(result.startedUtc);
-            let p = controls.create(div1, "p");
             let txt = `${started.toLocaleDateString("de-DE")}`;;
-            controls.createRadiobutton(p, `result-id-${cnt++}`, "result", `${result.id}`, txt, false,
-                (rb) => {
-                    let token = utils.get_authentication_token();
-                    utils.fetch_api_call(`api/skat/resultbyid?id=${rb.value}`, { headers: { "token": token } },
-                        (result) => renderResultTable(div2, result),
-                        handleError);                    
-                });
+            options.push({ name: `${txt}`, value: `${result.id}` });
+            if (index === 0) {
+                let token = utils.get_authentication_token();
+                utils.fetch_api_call(`api/skat/resultbyid?id=${result.id}`, { headers: { "token": token } },
+                    (result) => renderResultTable(div, result),
+                    handleError);                    
+            }
+        });
+        const label = controls.createLabel(p, undefined, "Spiele am ");
+        label.htmlFor = "result-select-id";
+        const select = controls.createSelect(p, "result-select-id", "result-select", options);
+        const span = controls.createSpan(p);
+        span.id = "result-caption-id";
+        select.addEventListener("change", (elem) => {
+            if (skatadmin) {
+                const padmin = document.querySelector("#result-admin-id");
+                controls.removeAllChildren(padmin);
+                controls.createButton(padmin, "L\u00F6schen", () => onDeleteSkatResult(true));
+            }
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/skat/resultbyid?id=${elem.target.value}`, { headers: { "token": token } },
+                (result) => renderResultTable(div, result),
+                handleError);                    
         });
         if (skatadmin) {
-            controls.createButton(div1, "L\u00F6schen", () => onDeleteSkatResult(div1, true));
-        }
-        let rb = document.getElementById("result-id-1");
-        if (rb) {
-            rb.click();
+            const padmin = controls.createDiv(p);
+            padmin.id = "result-admin-id";
+            controls.createButton(padmin, "L\u00F6schen", () => onDeleteSkatResult(true));
         }
     };
 
@@ -1085,11 +1100,17 @@ var skat = (() => {
         let started = new Date(result.startedUtc);
         let ended = new Date(result.endedUtc);
         let topt = { "hour": "numeric", "minute": "numeric" };
-        let caption = `Spiele am ${started.toLocaleDateString("de-DE")} von ` +
-            `${started.toLocaleTimeString("de-DE", topt)} bis ${ended.toLocaleTimeString("de-DE", topt)}.`;
         let cnt = 1;
         let table = controls.create(parent, "table");
-        controls.create(table, "caption", undefined, caption);
+        const resultCaption = document.querySelector("#result-caption-id");
+        if (resultCaption) {
+            resultCaption.textContent = ` von ${started.toLocaleTimeString("de-DE", topt)} bis ${ended.toLocaleTimeString("de-DE", topt)}`;
+        }
+        else {
+            const caption = `Spiele am ${started.toLocaleDateString("de-DE")} von ` +
+                `${started.toLocaleTimeString("de-DE", topt)} bis ${ended.toLocaleTimeString("de-DE", topt)}.`;
+            controls.create(table, "caption", undefined, caption);
+        }
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
         controls.create(tr, "th", undefined, " ");
@@ -1171,9 +1192,9 @@ var skat = (() => {
             document.title = "Skat - Spielverlauf";
             document.body.className = "inactive-background";
         }
-        let div1 = document.getElementById("results-overview-id");
-        if (div1) {
-            div1.className = "hide";
+        const p = document.getElementById("results-overview-id");
+        if (p) {
+            p.style.display = "none";
         }
         controls.removeAllChildren(parent);
         if (!gameHistory) {
@@ -1190,8 +1211,8 @@ var skat = (() => {
         if (result) {
             let buttonDiv = controls.createDiv(parent);
             controls.createButton(buttonDiv, "Zur\u00FCck", () => {
-                if (div1) {
-                    div1.className = "box-item";
+                if (p) {
+                    p.style.display = "block";
                 }
                 renderResultTable(parent, result);
             });
@@ -1704,12 +1725,13 @@ var skat = (() => {
         }
     };
 
-    const onDeleteSkatResult = (parent, confirm) => {
-        if (!currentSkatResultId) return;
+    const onDeleteSkatResult = (confirm) => {
+        const parent = document.querySelector("#result-admin-id");
+        if (!currentSkatResultId || !parent) return;
         if (confirm) {
             controls.removeAllChildren(parent);
             controls.create(parent, "p", "confirmation", "Willst Du wirklich diese Tabelle l\u00F6schen?");
-            controls.createButton(parent, "Ja", () => onDeleteSkatResult(parent, false));
+            controls.createButton(parent, "Ja", () => onDeleteSkatResult(false));
             controls.createButton(parent, "Nein", () => window.location.replace("/skat?results"));
             return;
         }
