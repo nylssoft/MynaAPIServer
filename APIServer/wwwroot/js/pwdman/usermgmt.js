@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.8";
+    let version = "1.1.9";
 
     // helper
 
@@ -615,7 +615,7 @@ var usermgmt = (() => {
             window.location.href = nexturl;
         }
         else {
-            window.location.href = "/slideshow";
+            window.location.href = "/markdown";
         }
     };
 

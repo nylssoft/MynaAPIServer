@@ -34,7 +34,7 @@ var markdown = (() => {
         }
         else {
             controls.create(parent, "hr");
-            controls.createA(parent, undefined, "/pwdman?nexturl=/slideshow", "Anmelden");
+            controls.createA(parent, undefined, "/pwdman?nexturl=/markdown", "Anmelden");
         }
         controls.create(parent, "hr");
         controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");

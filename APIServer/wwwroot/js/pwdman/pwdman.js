@@ -263,7 +263,7 @@ var pwdman = (() => {
         lastErrorMessage = "";
         if (nexturl && nexturl.length > 0) {
             if (nexturl == "/diary" || nexturl == "/notes") {
-                nexturl = "/slideshow";
+                nexturl = "/markdown";
             }
             window.location.replace(nexturl);
         }
