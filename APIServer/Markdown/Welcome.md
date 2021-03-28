@@ -17,11 +17,11 @@ Für weitere Informationen, z.B. zum Datenschutz oder zur verwendeten Open Sourc
 
 Es gibt bisher folgende Spiele
 - [Skat](/skat)
-- [Tetris](/Tetris)
+- [Tetris](/tetris)
 
 und folgende Dienste:
 - [Sichere Notizen](/notes)
-- [Sicheres Tagebuch](/notes)
+- [Sicheres Tagebuch](/diary)
 
 sowie eine persönliche Bildergalerie von Ausflügen, Urlauben und Reisen.
 
