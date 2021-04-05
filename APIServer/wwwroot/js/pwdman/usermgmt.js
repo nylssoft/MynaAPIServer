@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.9";
+    let version = "1.1.10";
 
     // helper
 
@@ -58,7 +58,7 @@ var usermgmt = (() => {
         controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/logout", "Abmelden", () => onLogout());
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
     };
 
     const renderHeader = (parent, intro, title) => {

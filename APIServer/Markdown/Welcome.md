@@ -8,10 +8,11 @@ body {
 ## Willkommen auf stockfleth.eu!
 
 Diese Website ist für Familie und Freunde vorgesehen.
+Für Informationen zum Datenschutz oder zur verwendeten Open Source Software, siehe [Impressum](/markdown?page=impressum).
 
-Aktuell werden noch keine Cookies verwendet, aber dies kann zu einem späteren Zeitpunkt noch kommen.
-In diesem Fall musst Du die Cookie - Richtlinie akzeptieren, die noch zu schreiben wäre.
-Für weitere Informationen, z.B. zum Datenschutz oder zur verwendeten Open Source Software, siehe [Impressum](/markdown?page=impressum).
+**Was ist neu?**
+
+- 5. April 2021: Bilder aus der Bildergalerie können vor- und zurückgespult werden.
 
 ### Funktionen
 
@@ -23,11 +24,11 @@ und folgende Dienste:
 - [Sichere Notizen](/notes)
 - [Sicheres Tagebuch](/diary)
 
-sowie eine persönliche Bildergalerie von Ausflügen, Urlauben und Reisen.
+sowie eine persönliche Bildergalerie von Ausflügen und Urlauben.
 
 - Bildergalerie [chronologisch](/slideshow?shuffle=false), [zufällig](/slideshow?shuffle=true)
 
-Für Notizen und Tagebuch musst Du Dich anmelden sowie um Familienbilder in der Galiere angezeigt
+Für Notizen und Tagebuch musst Du Dich [anmelden](/pwdman?nexturl=markdown) sowie um Familienbilder in der Galerie angezeigt
 zu bekommen oder Ergebnisse Deiner Skatspiele zu sehen.
 
 Alle Anwendungen können auch über das Menü in der linken oberen Ecke erreicht werden.
@@ -35,7 +36,7 @@ Alle Anwendungen können auch über das Menü in der linken oberen Ecke erreicht
 ### Wartung
 
 Die Website wird ständig weiterentwickelt und es kann vorkommen, das sie kurzzeitig nicht erreichbar ist.
-Dies ist meistens am Wochenende der Fall. Für Skat - Spiele empfiehlt sich eine Reservierung.
+Dies ist meistens am Wochenende der Fall.
 
 ##
 Viel Spaß!

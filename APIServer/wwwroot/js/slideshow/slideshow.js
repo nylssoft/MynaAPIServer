@@ -5,10 +5,12 @@ var slideshow = (() => {
     // --- UI elements
 
     let divSlideShowInfo;
-    let btnPlaySlideShow;
-    let btnPauseSlideShow;
     let divFooter;
+    let imgPlaySlideShow;
+    let imgPauseSlideShow;
     let imgShuffle;
+    let imgLeftArrow;
+    let imgRightArrow;
 
     // --- state
 
@@ -58,19 +60,65 @@ var slideshow = (() => {
             controls.createA(parent, undefined, "/pwdman?nexturl=/slideshow", "Anmelden");
         }
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
     };
 
     const renderHeader = (parent) => {
         let title = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";
+        title += ` ${backgroundIndex}/${slideShowPictures.length}`;
         let header = controls.create(parent, "h1", "header", title);
         header.id = "header-id";
-        imgShuffle = controls.createImg(parent, "header-shuffle-img", 24, 24, "/images/buttons/document-quick_restart.png");
+        imgPauseSlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-pause-3.png");
+        imgPauseSlideShow.title = "Bildergalerie anhalten";
+        imgPauseSlideShow.addEventListener("click", () => {
+            isSlideshowPlaying = false;
+            imgPauseSlideShow.style.visibility = "hidden";
+            imgPlaySlideShow.style.visibility = "visible";
+            imgLeftArrow.classList.add("greyed-out");
+            imgRightArrow.classList.add("greyed-out");
+        });
+        imgPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
+        imgPlaySlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-start-3.png");
+        imgPlaySlideShow.title = "Bildergalerie abspielen";
+        imgPlaySlideShow.addEventListener("click", () => {
+            isSlideshowPlaying = true;
+            imgPauseSlideShow.style.visibility = "visible";
+            imgPlaySlideShow.style.visibility = "hidden";
+            imgLeftArrow.classList.remove("greyed-out");
+            imgRightArrow.classList.remove("greyed-out");
+        });
+        imgPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
+        imgShuffle = controls.createImg(parent, "header-shuffle-img header-img", 24, 24, "/images/buttons/media-seek-forward-3.png");
         imgShuffle.title = "Zufallswiedergabe " + (shuffle ? "aus" : "ein");
         if (!shuffle) {
             imgShuffle.classList.add("greyed-out");
         }
         imgShuffle.addEventListener("click", () => window.location.replace(`/slideshow?shuffle=${!shuffle}`));
+        imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png");
+        imgLeftArrow.title = "Vorheriges Bild";
+        imgLeftArrow.addEventListener("click", () => {
+            if (isSlideshowPlaying && slideShowPictures.length > 2) {
+                if (backgroundIndex == 1) {
+                    backgroundIndex = slideShowPictures.length - 1;
+                }
+                else if (backgroundIndex == 0) {
+                    backgroundIndex = slideShowPictures.length - 2;
+                }
+                else if (backgroundIndex > 1) {
+                    backgroundIndex = backgroundIndex - 2;
+                }
+                backgroundChanged = false;
+                ontimer();
+            }
+        });
+        imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png");
+        imgRightArrow.title = "N\u00E4chstes Bild";
+        imgRightArrow.addEventListener("click", () => {
+            if (isSlideshowPlaying && slideShowPictures.length > 1) {
+                backgroundChanged = false;
+                ontimer();
+            }
+        });
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
             imgPhoto.title = "Profil";
@@ -84,22 +132,6 @@ var slideshow = (() => {
         if (backgroundText) {
             divSlideShowInfo.textContent = backgroundText;
         }
-        btnPauseSlideShow = controls.createImageButton(div, "Bildergalerie anhalten",
-            () => {
-                isSlideshowPlaying = false;
-                btnPauseSlideShow.style.visibility = "hidden";
-                btnPlaySlideShow.style.visibility = "visible";
-            },
-            "/images/buttons/media-playback-pause-3.png", 24, "slideshow-action");
-        btnPlaySlideShow = controls.createImageButton(div, "Bildergalerie abspielen",
-            () => {
-                isSlideshowPlaying = true;
-                btnPauseSlideShow.style.visibility = "visible";
-                btnPlaySlideShow.style.visibility = "hidden";
-            },
-            "/images/buttons/media-playback-start-3.png", 24, "slideshow-action");
-        btnPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
-        btnPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
     };
 
     const renderPage = () => {
@@ -125,17 +157,40 @@ var slideshow = (() => {
                 let dropdownDivElem = document.getElementById("div-dropdown-id");
                 let headerElem = document.getElementById("header-id");
                 if (event.target.tagName == "HTML") {
+                    const imgProfile = document.querySelector(".header-profile-photo");
                     if (divFooter.style.visibility != "hidden") {
                         divFooter.style.visibility = "hidden";
                         dropdownDivElem.style.visibility = "hidden";
                         headerElem.style.visibility = "hidden";
+                        if (isSlideshowPlaying) {
+                            imgPauseSlideShow.style.visibility = "hidden";
+                        }
+                        else {
+                            imgPlaySlideShow.style.visibility = "hidden";
+                        }
                         imgShuffle.style.visibility = "hidden";
+                        imgRightArrow.style.visibility = "hidden";
+                        imgLeftArrow.style.visibility = "hidden";
+                        if (imgProfile) {
+                            imgProfile.style.visibility = "hidden";
+                        }
                     }
                     else {
                         divFooter.style.visibility = "visible";
                         dropdownDivElem.style.visibility = "visible";
                         headerElem.style.visibility = "visible";
+                        if (isSlideshowPlaying) {
+                            imgPauseSlideShow.style.visibility = "visible";
+                        }
+                        else {
+                            imgPlaySlideShow.style.visibility = "visible";
+                        }
                         imgShuffle.style.visibility = "visible";
+                        imgRightArrow.style.visibility = "visible";
+                        imgLeftArrow.style.visibility = "visible";
+                        if (imgProfile) {
+                            imgProfile.style.visibility = "visible";
+                        }
                     }
                 }
             }
@@ -176,13 +231,18 @@ var slideshow = (() => {
             document.body.style.background = `#000000 url('${pic.url}')`;
             document.body.style.backgroundSize = "cover";
             document.body.style.backgroundRepeat = "no-repeat";
+            const header = document.getElementById("header-id");
+            if (header) {
+                header.textContent = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";                
+                header.textContent += ` ${backgroundIndex + 1}/${slideShowPictures.length}`;
+            }
             backgroundIndex = (backgroundIndex + 1) % slideShowPictures.length;
             backgroundChanged = currentDate;
             let txts = [pic.summary, pic.city, pic.country, utils.format_date(pic.date)];
             backgroundText = utils.concat_strings(txts, " // ");
             if (divSlideShowInfo) {
                 divSlideShowInfo.textContent = backgroundText;
-            }
+            }            
         }
     }
 

@@ -39,7 +39,7 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.15";
+    let version = "1.3.16";
 
     // helper
 
@@ -286,7 +286,7 @@ var skat = (() => {
             controls.createA(parent, undefined, "/pwdman?nexturl=/skat", "Anmelden");
         }
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
     };
 
     const renderTableFull = (parent, ignoreToken) => {

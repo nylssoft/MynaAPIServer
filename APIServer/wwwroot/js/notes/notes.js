@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.1.4";
+    let version = "1.1.5";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -149,7 +149,7 @@ var notes = (() => {
         controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/markdown?page=impressum", "Impressum");
+        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
         controls.create(parent, "hr");
         if (encryptKeyElem.classList.contains("show")) {
             controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
