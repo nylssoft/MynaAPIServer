@@ -72,11 +72,13 @@ sie als Familienmitglied im weiteren Sinne markiert wurden.
 
 Die Website verwendet folgende Software und Bilderbibliotheken für die Realisierung:
 
-- Reverse-Proxy [NGINX](https://www.nginx.com)
-- Back-End [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five)
-- Bilder [Open Icon Library](https://sourceforge.net/projects/openiconlibrary)
-- Skatkarten [XSkat](http://xskat.de/xskat-cards-de.html)
-- MarkDown-Inhalte [Markdig](https://github.com/xoofx/markdig)
-- Bildbearbeitung [ImageSharp](https://github.com/SixLabors/ImageSharp)
-- Datenmodellierung [Entity Framework Core 5](https://docs.microsoft.com/de-de/ef/core/what-is-new/ef-core-5.0/whatsnew)
-- Datenbanken [Sqlite](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Sqlite), [PostgreSQL](https://www.nuget.org/packages/Npgsql)
+- Reverse-Proxy [NGINX](https://www.nginx.com){target="_blank" .external}
+- Back-End [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five){target="_blank" .external}
+- Bilder [Open Icon Library](https://sourceforge.net/projects/openiconlibrary){target="_blank" .external}
+- Skatkarten [XSkat](http://xskat.de/xskat-cards-de.html){target="_blank" .external}
+- MarkDown-Inhalte [Markdig](https://github.com/xoofx/markdig){target="_blank" .external}
+- Bildbearbeitung [ImageSharp](https://github.com/SixLabors/ImageSharp){target="_blank" .external}
+- Datenmodellierung [Entity Framework Core 5](https://docs.microsoft.com/de-de/ef/core/what-is-new/ef-core-5.0/whatsnew){target="_blank" .external}
+- Datenbanken [Sqlite](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Sqlite){target="_blank" .external}, [PostgreSQL](https://www.nuget.org/packages/Npgsql){target="_blank" .external}
+
+$backbutton

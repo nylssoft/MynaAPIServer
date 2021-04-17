@@ -1,8 +1,5 @@
-﻿<style>
-body {
-	background-image: url(/images/slideshow/girlindred.jpg)
-}
-</style>
+﻿$background(/images/slideshow/girlindred.jpg)
+
 # Willkommen
 
 ## Willkommen auf stockfleth.eu!
@@ -32,11 +29,6 @@ Für Notizen und Tagebuch musst Du Dich [anmelden](/pwdman?nexturl=markdown) sow
 zu bekommen oder Ergebnisse Deiner Skatspiele zu sehen.
 
 Alle Anwendungen können auch über das Menü in der linken oberen Ecke erreicht werden.
-
-### Wartung
-
-Die Website wird ständig weiterentwickelt und es kann vorkommen, das sie kurzzeitig nicht erreichbar ist.
-Dies ist meistens am Wochenende der Fall.
 
 ##
 Viel Spaß!

@@ -3,7 +3,7 @@
 ## Software
 
 Die Programme laufen nur unter Windows mit den jeweiligen Installationsvorraussetzungen.
-Der Quellcode ist auf GitHub veröffentlicht: [GitHub](https://github.com/nylssoft).
+Der Quellcode ist auf GitHub veröffentlicht: [GitHub](https://github.com/nylssoft){target="_blank" .external}.
 
 ## Myna Password Manager 
 
@@ -15,7 +15,7 @@ Der Quellcode ist auf GitHub veröffentlicht: [GitHub](https://github.com/nylsso
 ## Myna Backup
 
 - Erstellt Backups von Dateien und Verzeichnissen auf verschiedenen Datenträgern: [Download](/downloads/MynaBackup.msi).
-- .NET Core 3.1 Desktop Runtime (v3.1.4) for x86: [Download](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.4-windows-x86-installer).
+- .NET Core 3.1 Desktop Runtime (v3.1.4) for x86: [Download](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.4-windows-x86-installer){target="_blank" .external}.
 
 ![Myna Backup](/images/markdown/MynaBackup-320.png)
 
@@ -36,6 +36,8 @@ Der Quellcode ist auf GitHub veröffentlicht: [GitHub](https://github.com/nylsso
 ## Myna Jukebox
 
 - Spielt Musikstücke und Alben vom lokalen Datenträger ab: [Download](/downloads/MynaJukeBox.msi).
-- Microsoft Visual C++ Redistributables x86: [Download](https://aka.ms/vs/16/release/vc_redist.x86.exe).
+- Microsoft Visual C++ Redistributables x86: [Download](https://aka.ms/vs/16/release/vc_redist.x86.exe){target="_blank" .external}.
 
 ![Myna Jukebox](/images/markdown/MynaJukeBox-320.png)
+
+$backbutton

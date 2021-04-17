@@ -33,6 +33,10 @@ a {
     color: lightgreen;
 }
 
+.external {
+    color: darkseagreen;
+}
+
 .header-profile-photo {
     border-radius: 50%;
     position: fixed;

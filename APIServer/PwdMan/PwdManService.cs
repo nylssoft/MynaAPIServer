@@ -19,6 +19,7 @@ using APIServer.Database;
 using APIServer.Email;
 using APIServer.PasswordGenerator;
 using APIServer.PwdMan.Model;
+using Markdig;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -1129,7 +1130,9 @@ namespace APIServer.PwdMan
                 }
                 if (render)
                 {
-                    return Markdig.Markdown.ToHtml(File.ReadAllText(content));
+                    var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+                    var markdown = Markdig.Markdown.ToHtml(File.ReadAllText(content), pipeline);
+                    return markdown;
                 }
             }
             return "<p>Zugriff verweigert.</p>";
@@ -1252,7 +1255,7 @@ namespace APIServer.PwdMan
             var subject = $"Myna Portal 2-Schritt-Verifizierung";
             var body =
                 $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds / 60} Minuten gültig. " +
-                "In diesem Zeit kann er genau 1 Mal verwendet werden.";
+                "In dieser Zeit kann er genau 1 Mal verwendet werden.";
             notificationService.Send(user.Email, subject, body);
         }
 
