@@ -39,7 +39,9 @@ var skat = (() => {
     let guestMode = false;
     let reservations;
 
-    let version = "1.3.16";
+    let helpDiv;
+
+    let version = "1.3.17";
 
     // helper
 
@@ -308,9 +310,12 @@ var skat = (() => {
     };
 
     const renderUserList = (parent) => {
+        helpDiv = controls.createDiv(document.body);
         renderDropdown(parent);
         let title = currentUser ? `${currentUser.name} - Skat` : "Skat";
-        controls.create(parent, "h1", undefined, title);
+        const h1 = controls.create(parent, "h1", undefined, title);
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
+        helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
             imgPhoto.title = "Profil";
@@ -1394,6 +1399,19 @@ var skat = (() => {
     };
 
     // callbacks
+
+    const onUpdateHelp = (show) => {
+        if (helpDiv) {
+            helpDiv.className = show ? "help-div" : undefined;
+            controls.removeAllChildren(helpDiv);
+            if (show) {
+                let contentDiv = controls.createDiv(helpDiv, "help-content");
+                let mdDiv = controls.createDiv(contentDiv, "help-item");
+                utils.fetch_api_call("/api/pwdman/markdown/help-skat", undefined, (html) => mdDiv.innerHTML = html);
+                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+            }
+        }
+    };
 
     const btnShowReservations_click = () => {
         utils.fetch_api_call("api/skat/reservation", undefined,

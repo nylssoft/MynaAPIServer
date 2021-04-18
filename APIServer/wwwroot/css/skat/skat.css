@@ -85,6 +85,44 @@ td a {
     color: white;
 }
 
+.external {
+    color: yellow;
+}
+
+h2 {
+    color: lightyellow;
+}
+
+h3 {
+    color: yellow;
+}
+
+.help-button {
+    margin-left: 10pt;
+}
+
+.help-button:hover {
+    background-color: lightblue;
+}
+
+.help-div {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: #004400;
+    opacity: 0.90;
+    z-index: 10;
+}
+
+.help-content {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    right: 20px;
+}
+
 .error {
     margin-top: 10pt;
     color: orange;
