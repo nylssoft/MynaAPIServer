@@ -9,7 +9,8 @@ Für Informationen zum Datenschutz oder zur verwendeten Open Source Software, si
 
 **Was ist neu?**
 
-- 5. April 2021: Bilder aus der Bildergalerie können vor- und zurückgespult werden.
+- 18. April 2021: [Konzerte](markdown?page=concerts), Hilfe für Skat, Notizen und Tagebuch, verbesserte Mobilansicht.
+-  5. April 2021: Bilder aus der Bildergalerie können vor- und zurückgespult werden.
 
 ### Funktionen
 
