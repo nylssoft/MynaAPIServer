@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.15";
+    let version = "1.2.16";
 
     let block;
     let nextBlock;
@@ -917,6 +917,7 @@ var tetris = (() => {
 
     const renderHelp = (parent) => {
         let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/buttons/help.png");
+        helpImg.title = "Hilfe";
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         helpDiv = controls.createDiv(parent, "invisible-div");
     };

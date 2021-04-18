@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.1.6";
+    let version = "1.1.7";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -169,6 +169,7 @@ var notes = (() => {
         helpDiv = controls.createDiv(document.body);
         const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - Notizen`);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
+        helpImg.title = "Hilfe";
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);

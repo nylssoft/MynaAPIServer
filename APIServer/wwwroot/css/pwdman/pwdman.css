@@ -452,4 +452,13 @@ form {
         left: 325px;
     }
 
+    .header {
+        font-size: 11pt;
+        left: 32pt;
+    }
+
+    .dropbtn {
+        width: 16px;
+        height: 16px;
+    }
 }

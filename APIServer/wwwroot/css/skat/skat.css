@@ -111,7 +111,7 @@ h3 {
     right: 0;
     top: 0;
     bottom: 0;
-    background-color: #004400;
+    background-color: #007400;
     opacity: 0.90;
     z-index: 10;
 }
@@ -712,82 +712,148 @@ h3 {
     body {
         font-size: 11pt;
     }
+
     table {
         min-width: 200pt;
         width: 200pt;
         font-size: 11pt;
     }
+
     td, th {
         padding: 15px;
         letter-spacing: 1px;
     }
+
     .layout-right {
         margin: 0;
         bottom: 10pt;
         width: 250pt;
         right: 10pt;
     }
+
     .layout-reservations {
         top: 0pt;
         bottom: 10pt;
         width: 250pt;
         right: 10pt;
     }
+
     .chat-input {
         width: 230pt;
     }
+
     .username-input {
         width: 100pt;
     }
+
     .ticket-password {
         width: 100pt;
     }
+
     .left-section {
         left: -20px;
         top: 150px;
+        font-size: 11pt;
     }
+
     .left-section-ouvert {
         left: -20px;
         top: 300px;
+        font-size: 11pt;
     }
+
     .right-section {
         right: 0;
         top: 150px;
+        font-size: 11pt;
     }
+
     .right-section-ouvert {
         right: 0;
         top: 300px;
+        font-size: 11pt;
     }
+
+    .bottom-section {
+        font-size: 11pt;
+    }
+
     .card-img {
         z-index: 2;
+        width: 60px;
+        height: 98px;
     }
+
     .container-radiobutton {
         padding-left: 15px;
         font-size: 11pt;
     }
+
     .checkmark-radiobutton {
         height: 12px;
         width: 12px;
     }
+
     .container-radiobutton .checkmark-radiobutton:after {
         top: 5px;
         left: 4px;
         width: 3px;
         height: 3px;
     }
+
     .container-checkbox {
         padding-left: 17px;
         font-size: 11pt;
     }
+
     .checkmark-checkbox {
         height: 15px;
         width: 15px;
     }
+
     .container-checkbox .checkmark-checkbox:after {
         left: 5px;
         top: 1px;
         width: 3px;
         height: 8px;
         border-width: 0 3px 3px 0;
+    }
+
+    .button {
+        font-size: 11pt;
+    }
+
+    .player-img {
+        width: 45px;
+        height: 45px;
+    }
+
+    .chat-message, .chat-link, .chat-input {
+        font-size: 11pt;
+    }
+
+    .copyright {
+        font-size: 7pt;
+    }
+
+    p, span, .confirmation, .tooltip {
+        font-size: 11pt;
+    }
+
+    h1 {
+        top: 0;
+        padding: 0;
+        font-size: 11pt;
+        left: 12pt;
+    }
+
+    .dropbtn {
+        width: 16px;
+        height: 16px;
+    }
+
+    .help-button {
+        margin-left: 10pt;
+        transform: translateY(4pt);
     }
 }

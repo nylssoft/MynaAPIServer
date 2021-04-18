@@ -298,4 +298,21 @@ h3 {
     textarea, input, .container-checkbox, .button {
         font-size: 11pt;
     }
+
+    h1 {
+        top: 0;
+        padding: 0;
+        font-size: 11pt;
+        left: 32pt;
+    }
+
+    .dropbtn {
+        width: 16px;
+        height: 16px;
+    }
+
+    .help-button {
+        margin-left: 10pt;
+        transform: translateY(4pt);
+    }
 }

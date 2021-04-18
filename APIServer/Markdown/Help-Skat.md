@@ -3,9 +3,11 @@
 
 ### Skatregeln
 
-Das Spiel verwendet die internationale Skatordnung. Es gibt damit kein Ramsch, Contra oder Re.
-Eine recht formale Beschreibung der Skatregeln findet sich hier:
-[Skatregeln](https://www.ispaworld.info/images/phocadownload/ISPA-World/ISkO-2018-3.3.pdf){target="_blank" .external}
+Das Spiel basiert auf der internationalen Skatordnung. 
+Die Skatregeln können hier nachgelesen werden: [Skatregeln](https://www.ispaworld.info/images/phocadownload/ISPA-World/ISkO-2018-3.3.pdf){target="_blank" .external}.
+
+Es gibt keine Bock- oder Ramschrunden, keinen Ramsch, wenn nienmand 18 sagt und kein Contra und Re.
+
 
 ### Turnierwertung
 

@@ -22,5 +22,5 @@ Klicke dann in das Textfeld, um Änderungen vorzunehmen.
 Das aktuelle Datum wird im Kalendar mit einem * markiert. Einträge mit Inhalt werden gelb angezeigt.
 
 Mit dem linken bzw. rechten Pfeil über dem Kalendar wird der vorherige bzw. nächste Monat angezeigt.
-Wenn du auf dem Monatsnamen über dem Kalendar klickst, werden alle Tagebucheinträge für diesen Monat in
+Wenn Du auf den Monatsnamen über dem Kalendar klickst, werden alle Tagebucheinträge für diesen Monat in
 einem Textfeld angezeigt.

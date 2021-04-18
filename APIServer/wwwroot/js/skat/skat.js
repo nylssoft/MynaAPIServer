@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.17";
+    let version = "1.3.18";
 
     // helper
 
@@ -315,6 +315,7 @@ var skat = (() => {
         let title = currentUser ? `${currentUser.name} - Skat` : "Skat";
         const h1 = controls.create(parent, "h1", undefined, title);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
+        helpImg.title = "Hilfe";
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
