@@ -311,6 +311,15 @@ h3 {
         height: 16px;
     }
 
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+    }
+
+    .dropdown-content a {
+        padding: 6px 8px;
+    }
+
     .help-button {
         margin-left: 10pt;
         transform: translateY(4pt);

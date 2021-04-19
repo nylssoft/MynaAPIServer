@@ -7,22 +7,22 @@
 Diese Website ist für Familie und Freunde vorgesehen.
 Für Informationen zum Datenschutz oder zur verwendeten Open Source Software, siehe [Impressum](/markdown?page=impressum).
 
-**Was ist neu?**
+### Was ist neu?
 
 - 18. April 2021: [Konzerte](markdown?page=concerts), Hilfe für Skat, Notizen und Tagebuch, verbesserte Mobilansicht.
 -  5. April 2021: Bilder aus der Bildergalerie können vor- und zurückgespult werden.
 
-### Funktionen
+### Was wird geboten?
 
 Es gibt bisher folgende Spiele
 - [Skat](/skat)
 - [Tetris](/tetris)
 
-und folgende Dienste:
-- [Sichere Notizen](/notes)
-- [Sicheres Tagebuch](/diary)
+und folgende Anwendungen
+- [Notizen](/notes)
+- [Tagebuch](/diary)
 
-sowie eine persönliche Bildergalerie von Ausflügen und Urlauben.
+sowie eine Bildergalerie von Ausflügen und Urlauben.
 
 - Bildergalerie [chronologisch](/slideshow?shuffle=false), [zufällig](/slideshow?shuffle=true)
 

@@ -323,10 +323,10 @@ var skat = (() => {
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         let divInfoImages = controls.createDiv(parent, "infoimages");
-        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/28.gif");
-        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/20.gif");
-        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/12.gif");
-        controls.createImg(divInfoImages, undefined, imgWidth, imgHeight, "/images/skat/04.gif");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/28.gif");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/20.gif");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/12.gif");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/04.gif");
         if (model.allUsers.length > 0) {
             controls.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
             let ul = controls.create(parent, "ul");

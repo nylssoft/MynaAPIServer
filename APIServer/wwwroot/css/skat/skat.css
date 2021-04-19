@@ -744,6 +744,7 @@ h3 {
 
     .username-input {
         width: 100pt;
+        font-size: 11pt;
     }
 
     .ticket-password {
@@ -836,7 +837,7 @@ h3 {
         font-size: 7pt;
     }
 
-    p, span, .confirmation, .tooltip {
+    p, span, label, .confirmation, .tooltip {
         font-size: 11pt;
     }
 
@@ -850,6 +851,15 @@ h3 {
     .dropbtn {
         width: 16px;
         height: 16px;
+    }
+
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+    }
+
+    .dropdown-content a {
+        padding: 6px 8px;
     }
 
     .help-button {
