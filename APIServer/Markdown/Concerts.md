@@ -28,6 +28,7 @@
 - 30.11.2019 // Puls Festival // Orchesterstudios Münchener Funkhaus
 - 13.11.2019 // Sam Fender // Backstage Werk
 - 06.11.2019 // Airwaves Festival // Reykjavík, Island
+- 12.10.2019 // Apian // X Bar
 - 08.10.2019 // Blue Haze + Medicine Boy + Paar // Import Export
 - 13.09.2019 // Young and Cold Festival // Ballonfabrik, Augsburg
 - 02.09.2019 // Froth + Master Of All Four Elements // Import Export
@@ -125,14 +126,78 @@
 
 - 20.12.2014 // Samaris // Milla
 - 22.10.2014 // Esben and the Witch // Muffatcafe
+- 18.10.2014 // Elektrik Kezy Mezy // Milla
 - 12.09.2014 // Young & Cold Festival II // Katine, Augsburg
 - 09.08.2014 // Dorian Gray og Lucy in blue laugardaginn 9.ágúst á Gauknum // Reykjavík, Island
 - 19.06.2014 // The Pains of Being Pure At Heart // Strom
+. 29.05.2014 // Primavera Sound Festival // Barcelona
 - 15.04.2014 // The Dark Horses // Kranhalle
 - 18.03.2014 // Toy // Kranhalle
 - 16.02.2014 // Click Click Decker // Kranhalle
 - 14.02.2014 // Die Nerven // Unter Deck
 - 09.02.2014 // The Soft Moon // Ampere
 - 01.02.2014 // Starmelt: I Heart Sharks, Hello Gravity // Muffathalle
+
+## Konzerte 2013
+
+- 30.11.2013 // PULS Festival // BR Funkhaus
+- 29.11.2013 // Tempers // Orangehouse
+- 08.11.2013 // Crystal Fighters // Theaterfabrik
+- 26.10.2013 // FM4 Fest // Muffatwerk
+- 27.10.2013 // CHVRCHES // Strom
+- 05.10.2013 // The Lost Rivers // Kranhalle
+- 12.07.2013 // Optimus Alive // Lissabon
+- 30.05.2013 // Clara Luzia + Uphill Racer // Atomic Cafe
+- 07.04.2013 // Tocotronic // Tonhalle
+- 07.03.2013 // TUBBE // Atomic Cafe
+- 01.03.2013 // The Moonband // Milla
+- 21.02.2013 // Esben And The Witch // Ampere
+- 19.02.2013 // Tusq + Eletrofan // Atomic Cafe
+- 09.02.2013 // O Children + Scarlet Soho // Atomic Cafe
+- 07.02.2013 // Candelilla // Milla
+
+## Konzerte 2012
+
+- 18.12.2012 // Young Chinese Dogs // Atomic Cafe
+- 11.12.2012 // The Raveonettes + Holyesque // Atomic Cafe
+- 01.12.2012 // on3-Festival // BR Funkhaus
+- 28.11.2012 // Toy // Atomic Cafe
+- 25.11.2012 // Hans Unstern // Orangehouse
+- 03.11.2012 // The Pains Of Being Pure At Heart // Kantine Augsburg
+- 30.10.2012 // Citizens // 59:1
+- 28.10.2012 // Neuhauser Musiknacht // Neuhausen
+- 22.10.2012 // Liars // Festsaal Kreuzberg
+- 20.10.2012 // Tina Dico // Alte Kongresshalle
+- 21.09.2012 // HKV♘M + The KVB + Die Jungen // Hotterstraße 10
+- 21.09.2012 // A Place to Bury Strangers // 59:1
+- 15.06.2012 // Esben & The Witch + Mark Gardener // Schlafwagengesellschaft
+- 31.05.2012 // Blood Red Shows + Wallace Vanborn // Backstage Halle
+- 22.04.2012 // candelilla + The Marble Man // Import Export
+- 02.04.2012 // Dillon // Hansa 39
+- 18.03.2012 // WhoMadeWho // Atomic Cafe
+- 06.03.2012 // M83 // Theaterfabrik
+- 29.02.2012 // Youth Lagoon // 59:1
+- 09.02.2012 // Gisbert zu Knyphausen // Ampere
+- 18.01.2012 // The KVB // Hotterstraße 10
+
+## Konzerte 2011
+
+- 17.12.2011 // Wilhelm Tell Me // 59:1
+- 09.12.2011 // We Are The Planet + The Canaanite // Cord Club
+- 27.11.2011 // on3-Festival // BR Funkhaus
+- 09.11.2011 // The Rapture // 59:1
+- 23.10.2011 // FM4 Fest // Muffatwerk
+- 16.10.2011 // JUNIP // Freiheitshalle
+- 06.10.2011 // Airship // Atomic Cafe
+- 19.09.2011 // Dear Reader // Kranhalle
+- 26.08.2011 // The Backs // 8 Below
+- 25.07.2011 // Herrenmagazin + The Backs + New And For Sale // Backstage Free&Easy
+- 14.07.2011 // The Backs // Cord Club
+- 13.07.2011 // Santigold // Backstage Werk
+- 09.06.2011 // Lucky Fish + Brave Young Years // Cord Club
+- 08.06.2011 // KAKKMADDAFAKKA + Talking Pets // 59:1
+- 25.05.2011 // Crystal Fighters // Atomic Cafe
+- 04.05.2011 // Tahiti 80 // Ampere
+- 02.05.2011 // Lenka // Ampere
 
 $backbutton
