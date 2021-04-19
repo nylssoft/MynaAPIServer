@@ -25,9 +25,9 @@
 - 22.12.2019 // Paar + Anne // Milla
 - 17.12.2019 // Gurr // Feierwerk
 - 05.12.2019 // Boy Harsher // Ampere
-- 30.11.2019 // Puls Festival // Orchesterstudios Münchener Funkhaus
+- 30.11.2019 // PULS Festival // BR Funkhaus
 - 13.11.2019 // Sam Fender // Backstage Werk
-- 06.11.2019 // Airwaves Festival // Reykjavík, Island
+- 06.11.2019 // Airwaves Festival // Reykjavík
 - 12.10.2019 // Apian // X Bar
 - 08.10.2019 // Blue Haze + Medicine Boy + Paar // Import Export
 - 13.09.2019 // Young and Cold Festival // Ballonfabrik, Augsburg
@@ -72,8 +72,8 @@
 ## Konzerte 2017
 
 - 15.12.2017 // M94.5 Jahrescharts mit Lea Porcelain // Kranhalle
-- 02.12.2017 // Puls Festival // Bayerischer Rundfunk
-- 01.11.2017 // Airwaves // Reykjavík, Island
+- 02.12.2017 // PULS Festival // BR Funkhaus
+- 01.11.2017 // Airwaves // Reykjavík
 - 27.10.2017 // Manic Street Parade // Schlachthofviertel
 - 17.10.2017 // INVSN // Strom
 - 14.10.2017 // Kaelan Mikla in der KISTE // KISTE
@@ -116,7 +116,7 @@
 ## Konzerte 2015
 
 - 11.12.2015 // M94.5 Jahreschartshow // Kranhalle
-- 04.11.2015 // Airwaves // Reykjavík, Island
+- 04.11.2015 // Airwaves // Reykjavík
 - 11.09.2015 // Young and Cold Festival III // Ballonfabrik, Augsburg
 - 01.09.2015 // Teledrome + Endlose Emotion + GrGr // Kafe Kult
 - 11.04.2015 // Sizarr // Strom
@@ -128,9 +128,9 @@
 - 22.10.2014 // Esben and the Witch // Muffatcafe
 - 18.10.2014 // Elektrik Kezy Mezy // Milla
 - 12.09.2014 // Young & Cold Festival II // Katine, Augsburg
-- 09.08.2014 // Dorian Gray og Lucy in blue laugardaginn 9.ágúst á Gauknum // Reykjavík, Island
+- 09.08.2014 // Dorian Gray og Lucy in blue // Gauknum, Reykjavík
 - 19.06.2014 // The Pains of Being Pure At Heart // Strom
-. 29.05.2014 // Primavera Sound Festival // Barcelona
+- 29.05.2014 // Primavera Sound Festival // Barcelona
 - 15.04.2014 // The Dark Horses // Kranhalle
 - 18.03.2014 // Toy // Kranhalle
 - 16.02.2014 // Click Click Decker // Kranhalle
