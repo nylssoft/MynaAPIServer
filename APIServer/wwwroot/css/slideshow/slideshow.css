@@ -147,11 +147,11 @@ body {
     }
 
     .footer {
-        height: 350pt;
+        height: 300pt;
     }
 
     .header-pause-img, .header-shuffle-img, .header-leftarrow-img, .header-rightarrow-img {
-        bottom: 352pt;
+        bottom: 302pt;
     }
 
     .footer-link {
