@@ -228,7 +228,10 @@ var slideshow = (() => {
         if ((!backgroundChanged ||
                 ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval)) {
             let pic = slideShowPictures[backgroundIndex];
-            document.body.style.background = `#000000 url('${pic.url}')`;
+            const ratio = window.innerWidth / window.innerHeight;
+            const url = ratio < 1.7 && pic.url43 ? pic.url43 : pic.url;
+            console.log(url);
+            document.body.style.background = `#000000 url('${url}')`;
             document.body.style.backgroundSize = "cover";
             document.body.style.backgroundRepeat = "no-repeat";
             const header = document.getElementById("header-id");

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,14 +19,16 @@ namespace APIServer.PwdMan.Model
 {
     public class SlideShowPictureModel
     {
-      public string Url { get; set; }
+        public string Url { get; set; }
 
-      public string Country { get; set; }
+        public string Url43 { get; set; }
 
-      public string City { get; set; }
+        public string Country { get; set; }
 
-      public string Summary { get; set; }
+        public string City { get; set; }
 
-      public string Date { get; set; }
+        public string Summary { get; set; }
+
+        public string Date { get; set; }
     };
 }
