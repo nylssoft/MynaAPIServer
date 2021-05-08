@@ -5,11 +5,11 @@
 ## Planung
 
 - 03.09.2021 // Young And Cold Festival 8 // Ballonfabrik Augsburg
-- 17.09.2021 // [Lebanon Hanover & New Haunts](https://www.muffatwerk.de/de/events/view/5228/lebanon-hanover-new-haunts){target="_blank" .external} // Ampere
 - 07.10.2021 // [Christin Henkel](https://www.milla-club.de/konzert-christin-henkel/){target="_blank" .external} // Milla
 - 23.10.2021 // [Nick & June](https://www.milla-club.de/konzert-fine-2-2/){target="_blank" .external} // Milla
 - 25.10.2021 // [Ja, Panik](https://strom-muc.de/event/ja-panik/){target="_blank" .external} // Strom
 - 31.10.2021 // [Bleib Modern](https://www.milla-club.de/konzert-bleib-modern/){target="_blank" .external} // Milla
+- 16.03.2022 // [Lebanon Hanover & New Haunts](https://www.muffatwerk.de/de/events/view/5228/lebanon-hanover-new-haunts){target="_blank" .external} // Ampere
 - 26.03.2022 // [Paul Jets](https://www.milla-club.de/paul-jets-konzert/){target="_blank" .external} // Milla
 
 ## Konzerte 2020
@@ -35,7 +35,7 @@
 - 15.06.2019 // The Underground Youth + Blue Haze // Milla
 - 04.06.2019 // Pleasure Symbols // Import Export
 - 26.04.2019 // The Dandelion + Rr33lsdgtskrrl // Import Export
-- 06.04.2019 // egoFM Fest // Muffatwerk
+- 06.04.2019 // egoFM Fest // Muffatwerk // Drangsaal, Flut, Mavi Phoenix, Eau Rouge
 - 24.02.2019 // Kaelan Mikla + Some Ember // Milla
 - 20.02.2019 // Tempers // Rote Sonne
 - 11.02.2019 // Espen and the Witch + NYOS // Ampere
@@ -63,6 +63,7 @@
 - 28.04.2018 // Die Nerven // Strom
 - 02.04.2018 // Soviet Soviet + Kill Your Boyfriend // Milla
 - 01.04.2018 // Bleib Modern + PAAR // Milla
+- 16.03.2018 // Blond // Substanz
 - 12.03.2018 // Pale Seas // Substanz
 - 21.02.2018 // Vök // Strom
 - 28.01.2018 // Drab Majesty + Kaelan Mikla // Milla
@@ -91,6 +92,7 @@
 - 28.03.2017 // Carnival Youth // Strom
 - 22.03.2017 // Karies // Unter Deck
 - 18.03.2017 // Drangsal // Ampere
+- 15.03.2017 // Warpaint // Muffathalle
 - 13.03.2017 // KLEZ.E + Box and the Twins // Milla
 - 25.02.2017 // Tropic of Cancer // Kampnagel
 - 24.02.2017 // Damaged Goods Festival #2 "Les jeux sont faits" // Hafenklang
@@ -109,6 +111,7 @@
 - 08.10.2016 // Manic Street Parade // Schlachthofviertel
 - 24.09.2016 // Pink Turns Blue // Orangehouse
 - 23.07.2016 // Atari Teenage Riot + Joux Joux // Backstage Free&Easy
+- 16.07.2016 // Puch Festival // Lueg / Jetzendorf
 - 16.06.2016 // Queerkafe Konzert: Kælan Mikla // Kafe Marat
 - 01.05.2016 // Aurora + Conner Youngblood // Freiheitshalle
 - 27.02.2016 // Die Nerven // Technikum
@@ -119,6 +122,8 @@
 - 04.11.2015 // Airwaves // Reykjavík
 - 11.09.2015 // Young and Cold Festival III // Ballonfabrik, Augsburg
 - 01.09.2015 // Teledrome + Endlose Emotion + GrGr // Kafe Kult
+- 08.06.2015 // Farin Urlaub Racing Team // Zenith
+- 16.04.2015 // Darkness Falls // Milla
 - 11.04.2015 // Sizarr // Strom
 - 27.03.2015 // The Notwist // Alte Kongresshalle
 
@@ -133,22 +138,25 @@
 - 29.05.2014 // Primavera Sound Festival // Barcelona
 - 15.04.2014 // The Dark Horses // Kranhalle
 - 18.03.2014 // Toy // Kranhalle
+- 26.01.2014 // Slim Cessna's Auto Club // Feierwerk
 - 16.02.2014 // Click Click Decker // Kranhalle
 - 14.02.2014 // Die Nerven // Unter Deck
 - 09.02.2014 // The Soft Moon // Ampere
 - 01.02.2014 // Starmelt: I Heart Sharks, Hello Gravity // Muffathalle
+- 05.01.2014 // Muffat-Winterfest // Muffathalle // Die Moulinettes, Rae Spoon, La Femme, Bonaparte, Karin Park
 
 ## Konzerte 2013
 
 - 30.11.2013 // PULS Festival // BR Funkhaus
 - 29.11.2013 // Tempers // Orangehouse
 - 08.11.2013 // Crystal Fighters // Theaterfabrik
-- 26.10.2013 // FM4 Fest // Muffatwerk
+- 03.11.2013 // Thees Uhlmann // Muffathalle
 - 27.10.2013 // CHVRCHES // Strom
+- 26.10.2013 // FM4 Fest // Muffatwerk
 - 05.10.2013 // The Lost Rivers // Kranhalle
 - 12.07.2013 // Optimus Alive // Lissabon
 - 30.05.2013 // Clara Luzia + Uphill Racer // Atomic Cafe
-- 07.04.2013 // Tocotronic // Tonhalle
+- 06.04.2013 // Tocotronic // Tonhalle
 - 07.03.2013 // TUBBE // Atomic Cafe
 - 01.03.2013 // The Moonband // Milla
 - 21.02.2013 // Esben And The Witch // Ampere
@@ -163,16 +171,22 @@
 - 01.12.2012 // on3-Festival // BR Funkhaus
 - 28.11.2012 // Toy // Atomic Cafe
 - 25.11.2012 // Hans Unstern // Orangehouse
+- 05.11.2012 // I Like Trains // Kranhalle
 - 03.11.2012 // The Pains Of Being Pure At Heart // Kantine Augsburg
 - 30.10.2012 // Citizens // 59:1
 - 28.10.2012 // Neuhauser Musiknacht // Neuhausen
 - 22.10.2012 // Liars // Festsaal Kreuzberg
-- 20.10.2012 // Tina Dico // Alte Kongresshalle
 - 21.09.2012 // HKV♘M + The KVB + Die Jungen // Hotterstraße 10
+- 19.10.2012 // Tina Dico // Alte Kongresshalle
+- 05.10.2012 // Vierkanttretlager // Atomic Cafe
 - 21.09.2012 // A Place to Bury Strangers // 59:1
+- 10.08.2012 // Dockville Festival // Hamburg-Wilhelmsburg // Vierkanttrettlager, Darkness Falls
 - 15.06.2012 // Esben & The Witch + Mark Gardener // Schlafwagengesellschaft
 - 31.05.2012 // Blood Red Shows + Wallace Vanborn // Backstage Halle
+- 28.05.2012 // Theatron Pfingstfestival // Olympiapark // Luise Pop, The Moonband
+- 26.05.2012 // Theatron Pfingstfestival // Olympiapark // Fenster, Tubbe, The Exclusive
 - 22.04.2012 // candelilla + The Marble Man // Import Export
+- 06.04.2012 // Come Back Harriet // Atomic Cafe
 - 02.04.2012 // Dillon // Hansa 39
 - 18.03.2012 // WhoMadeWho // Atomic Cafe
 - 06.03.2012 // M83 // Theaterfabrik
@@ -185,7 +199,10 @@
 - 17.12.2011 // Wilhelm Tell Me // 59:1
 - 09.12.2011 // We Are The Planet + The Canaanite // Cord Club
 - 27.11.2011 // on3-Festival // BR Funkhaus
+- 21.11.2011 // Bombay Bicycle Club // Freiheizhalle
+- 20.11.2011 // The Drums // Ampere
 - 09.11.2011 // The Rapture // 59:1
+- 01.11.2011 // The Airborne Toxic Event // Muffathalle
 - 23.10.2011 // FM4 Fest // Muffatwerk
 - 16.10.2011 // JUNIP // Freiheitshalle
 - 06.10.2011 // Airship // Atomic Cafe
@@ -196,8 +213,150 @@
 - 13.07.2011 // Santigold // Backstage Werk
 - 09.06.2011 // Lucky Fish + Brave Young Years // Cord Club
 - 08.06.2011 // KAKKMADDAFAKKA + Talking Pets // 59:1
+- 06.06.2011 // No Joy // 59:1
 - 25.05.2011 // Crystal Fighters // Atomic Cafe
 - 04.05.2011 // Tahiti 80 // Ampere
 - 02.05.2011 // Lenka // Ampere
+- 27.03.2011 // Young Rebel Set // Atomic Cafe
+- 24.03.2011 // The Naked and The Famous // 59:1
+- 01.03.2011 // The Beth Edges // Atomic Cafe
+- 20.02.2011 // Sir Simon Battle // Ampere
+- 17.02.2011 // Maps & Atlases // Orangehouse
+- 05.02.2011 // James Yuill // Atomic Cafe
+- 28.01.2011 // Jens Friebe, Luise Pop // Atomic Cafe
+
+## Konzerte 2010
+
+- 24.09.2010 // The Exploding Boy // Kranhalle
+- 22.09.2010 // Lissie // 59:1
+- 07.09.2010 // Fanfarlo // Discoteca LUX - Lisboa
+- 19.08.2010 // Kristal & Jonny Boy // Cord
+- 15.08.2010 // Theatron // Olympiapark // Wallis Bird
+- 06.08.2010 // Wild Nothing // 50:1
+- 30.07.2010 // ON3 Startrampe // BR Funkhaus // Fenster!, Missent to Denmark, L'egojazz
+- 24.07.2010 // Indie Street Festival // Hanse 39
+- 15.07.2010 // Tonwertkorrektur // Atlantis Kino
+- 30.06.2010 // Air Formation // Kranhalle
+- 22.05.2010 // Theatron Pfingstfestival // Olympiapark
+- 21.05.2010 // Beat! Beat! Beat! // Atomic Cafe
+- 18.05.2010 // A Fine Frenzy // Backstage
+- 13.05.2010 // Missent to Denmark // Atomic Cafe
+- 27.04.2010 // Pardon Ms Arden // Cord
+- 24.04.2010 // Rainer von Vielen // Hansa 39
+- 11.04.2010 // Fotos // Kranhalle
+- 10.04.2010 // Ja, Panik! & Frank Spilker // Rote Sonne
+- 06.04.2010 // Tonwertkorrektur // Atomic Cafe
+- 03.04.2010 // Big Kahuna // 59:1
+- 01.04.2010 // Lonelady // Rote Sonne
+- 10.03.2010 // Los Campesinos // Atomic Cafe
+- 07.03.2010 // Bombay Bicycle Club // 59:1
+- 06.03.2010 // Seabear // 59:1
+- 05.03.2010 // Der Englische Garten // Atomic Cafe
+- 25.02.2010 // Pardon Ms Arden // Atomic Cafe
+- 23.02.2010 // Adam Green // Freiheizhalle
+- 12.02.2010 // Fünf Jahre Rote Raupe // Robocop Kraus, Pelzig // 59:1
+- 10.02.2010 // Olli Schulz // Ampere
+- 30.01.2010 // Puch comes to town // Feierwerk // Candelilla
+- 22.01.2010 // Ja, Panik! // Atomic Cafe
+
+## Konzerte 2009
+
+- 17.12.2009 // The National Anthems // 59:1
+- 13.12.2009 // Karpatenhund // Ampere
+- 28.11.2009 // ON3 Radio Festical // BR Funkhaus // Kettcar, Speech Debelle, Spiral Beach, My Little Pony, Dave & Hal, Kleinmeister, 
+- 27.11.2009 // Tegan And Sara // Theaterfabrik
+- 16.11.2009 // Ingrid Michaelson // Ampere
+- 11.11.2009 // Virginia Jetzt! // Backstage
+- 10.11.2009 // Miss Li // Atomic Cafe
+- 09.11.2009 // White Lies // Backstage
+- 06.11.2009 // Fertig, Los! // Atomic Cafe
+- 04.11.2009 // Bosse // 59:1
+- 02.11.2009 // French Kiss Tour // ???? // Claire Denamur, Zaza Fournier, Oshen
+- 24.10.2009 // FM4 Fest // Muffathalle // Ja, Panik!, Clara Luzia, Sofa Surfers
+- 03.10.2009 // Hjaltalín // 59:1
+- 02.10.2009 // Herbstrock // 59:1
+- 29.09.2009 // Robby Long // Cord
+- 20.09.2009 // Lenka // Atomic Cafe
+- 15.09.2009 // The Low Anthem // Atomic Cafe
+- 14.09.2009 // Niels Frevert // 59:1
+- 05.09.2009 // Optimal! Bei Nacht // Registratur // Gustav, F.S.K.
+- 10.08.2009 // Tiny Vipers // Thalia, Dresden
+- 07.08.2009 // Eux Autres // Atomic Cafe
+- 25.07.2009 // Puch Open Air // Luegg / Jetzendorf // Britta, Ja, Panik!, Gustav, Jens Friebe, Nightingales
+- 24.07.2009 // Phonoboy // Atomic Cafe
+- 23.06.2009 // Ladyhawke // Backstage
+- 06.06.2009 // Soap & Skin // Hansa 39
+- 31.05.2009 // The Glam // HeadCRASH
+- 20.05.2009 // Mikroboy // 59:1
+- 09.05.2009 // The Asteroids Galaxy Tour // Atomic Cafe
+- 03.05.2009 // Hellsongs // Übel & Gefährlich
+- 01.05.2009 // Kilians // Ampere
+- 28.04.2009 // Au Revoir Simone // Atomic Cafe
+- 24.04.2009 // The Black Box Revelation // Atomic Cafe
+- 22.04.2009 // Anna Ternheim // Freiheizhalle
+- 21.04.2009 // Voltaire // Ampere
+- 19.04.2009 // Dear Reader // Ampere
+- 14.04.2009 // A Place To Bury Strangers // 59:1
+- 13.04.2009 // The Rifles // Backstage
+- 24.03.2009 // Who Made Who // Atomic Cafe
+- 18.03.2009 // Bosse // 59:1
+- 14.03.2009 // Klez.e // Orange House
+- 13.03.2009 // Rainer von Vielen // Feierwerk
+- 01.03.2009 // Sky Larkin // Ampere
+- 21.02.2009 // The Gaslight Anthem // 59:1
+- 13.02.2009 // Tahiti 80 // Atomic Cafe
+- 09.02.2009 // Bloc Party // Tonhalle
+
+## Konzerte 2008
+
+- 19.12.2008 // Miss Li // Atomic Cafe
+- 12.12.2008 // Ben Kweller // Atomic Cafe
+- 23.11.2008 // The Dodos // 59:1
+- 21.11.2008 // Glasvegas // Atomic Cafe
+- 16.11.2008 // Tomte // Tonhalle
+- 12.11.2008 // Los Campensinos // Atomic Cafe
+- 24.10.2008 // Klee // Ampere
+- 21.10.2008 // I Am Kloot // Ampere
+- 17.10.2008 // Ja, Panik! // Atomic Cafe
+- 15.10.2008 // Hellsongs // 59:1
+- 13.10.2008 // 1000 Robota // Backstage
+- 07.10.2008 // Herrenmagazin // 59:1
+- 25.09.2008 // The Futureheads // 59:1
+- 22.09.2008 // The Black Box Revelation // Atomic Cafe
+- 12.09.2008 // Five! Fast!! Hits!!! // Atomic Cafe
+- 02.09.2008 // Friska Viljor // 59:1
+- 29.06.2008 // Blec Le Roc // SZ-Zelt Tollwood
+- 30.05.2008 // Shantel // Muffathalle
+- 29.05.2008 // Eagle Seagull // 59:1
+- 22.05.2008 // Gustav & Band // Rote Sonne
+- 16.05.2008 // Atomic // Atomic Cafe
+- 29.04.2008 // Girls in Hawaii // Ampere
+- 25.04.2008 // Die Happy // Ampere
+- 15.04.2008 // Fotos // 59:1
+- 10.04.2008 // Frank Spilker Gruppe // Rote Sonne
+- 03.04.2008 // Foals // 59:1
+- 29.03.2008 // Rainer von Vielen // Feierwerk
+- 08.03.2008 // Amy MacDonald // Ampere
+- 29.03.2008 // Los Campesinos // Atomic Cafe
+- 25.03.2008 // Bernd Begemann // Lustspielhaus
+- 07.03.2008 // Tegan + Sarah // Backstage
+- 23.02.2008 // Jens Lekmann // Atomic Cafe
+- 22.02.2008 // The Cinematics // Atomic Cafe
+- 21.02.2008 // Olli Schulz // Muffathalle
+- 18.02.2008 // British Sea Power // Ampere
+
+## Konzerte 2007
+
+- 01.12.2007 // Bavarian Open // BR Funkhaus // Sir Simon Battle
+- 17.11.2007 // The Wombats // Atomic Cafe
+- 05.05.2007 // The Rakes // Atomic Cafe
+
+## Konzerte 2006
+
+- 22.10.2006 // Bernd Begemann // Atomic Cafe
+
+## Konzerte 2005
+
+- 27.11.2005 // Kettcar // Georg-Elser-Halle
 
 $backbutton
