@@ -31,6 +31,7 @@
 - 05.12.2019 // Boy Harsher // Ampere
 - 30.11.2019 // PULS Festival // BR Funkhaus
 - 13.11.2019 // Sam Fender // Backstage Werk
+- 08.11.2019 // Girl in Red // Kex Hostel
 - 06.11.2019 // Airwaves Festival // Reykjavík
 - 12.10.2019 // Apian // X Bar
 - 08.10.2019 // Blue Haze + Medicine Boy + Paar // Import Export
@@ -79,6 +80,7 @@
 
 - 15.12.2017 // M94.5 Jahrescharts mit Lea Porcelain // Kranhalle
 - 02.12.2017 // PULS Festival // BR Funkhaus
+- 02.11.2017 // Pale Honey // Gaukurinn
 - 01.11.2017 // Airwaves // Reykjavík
 - 27.10.2017 // Manic Street Parade // Schlachthofviertel
 - 17.10.2017 // INVSN // Strom
@@ -154,13 +156,13 @@
 
 - 30.11.2013 // PULS Festival // BR Funkhaus
 - 29.11.2013 // Tempers // Orangehouse
-- 08.11.2013 // Crystal Fighters // Theaterfabrik
 - 03.11.2013 // Thees Uhlmann // Muffathalle
 - 27.10.2013 // CHVRCHES // Strom
 - 26.10.2013 // FM4 Fest // Muffatwerk
 - 05.10.2013 // The Lost Rivers // Kranhalle
 - 12.07.2013 // Optimus Alive // Lissabon
 - 30.05.2013 // Clara Luzia + Uphill Racer // Atomic Cafe
+- 18.04.2013 // Icona Pop // Atomic Cafe
 - 08.05.2013 // Art Brut // Atomic Cafe
 - 06.04.2013 // Tocotronic // Tonhalle
 - 07.03.2013 // TUBBE // Atomic Cafe
@@ -184,10 +186,10 @@
 - 22.10.2012 // Liars // Festsaal Kreuzberg
 - 21.09.2012 // HKV♘M + The KVB + Die Jungen // Hotterstraße 10
 - 19.10.2012 // Tina Dico // Alte Kongresshalle
-- 05.10.2012 // Vierkanttretlager // Atomic Cafe
 - 21.09.2012 // A Place to Bury Strangers // 59:1
+- 08.09.2012 // Dum Dum Girls // Atomic Cafe
 - 10.08.2012 // Dockville Festival // Hamburg-Wilhelmsburg // Vierkanttrettlager, Darkness Falls
-- 15.06.2012 // Esben & The Witch + Mark Gardener // Schlafwagengesellschaft
+- 15.06.2012 // Esben & The Witch + Mark Gardener // 10 Jahre Lunastrom in der Schlafwagenfabrik
 - 31.05.2012 // Blood Red Shows + Wallace Vanborn // Backstage Halle
 - 28.05.2012 // Theatron Pfingstfestival // Olympiapark // Luise Pop, The Moonband
 - 26.05.2012 // Theatron Pfingstfestival // Olympiapark // Fenster, Tubbe, The Exclusive
@@ -215,25 +217,32 @@
 - 19.09.2011 // Dear Reader // Kranhalle
 - 26.08.2011 // The Backs // 8 Below
 - 25.07.2011 // Herrenmagazin + The Backs + New And For Sale // Backstage Free&Easy
+- 22.07.2011 // The Moonband // Feierwerk
 - 14.07.2011 // The Backs // Cord Club
 - 13.07.2011 // Santigold // Backstage Werk
+- 14.06.2011 // Austra // Atomic Cafe
 - 09.06.2011 // Lucky Fish + Brave Young Years // Cord Club
 - 08.06.2011 // KAKKMADDAFAKKA + Talking Pets // 59:1
 - 06.06.2011 // No Joy // 59:1
+- 27.05.2011 // Shantel // Ampere
 - 25.05.2011 // Crystal Fighters // Atomic Cafe
 - 04.05.2011 // Tahiti 80 // Ampere
 - 02.05.2011 // Lenka // Ampere
+- 21.04.2011 // The Wombats // Backstage
 - 03.04.2011 // Aline Coen Band // 59:1
 - 27.03.2011 // Young Rebel Set // Atomic Cafe
 - 24.03.2011 // The Naked and The Famous // 59:1
 - 01.03.2011 // The Beth Edges // Atomic Cafe
 - 20.02.2011 // Sir Simon Battle // Ampere
 - 17.02.2011 // Maps & Atlases // Orangehouse
+- 14.02.2011 // Pony Pony Run Run // Atomic Cafe
 - 05.02.2011 // James Yuill // Atomic Cafe
+- 04.02.2011 // Vierkanttretlager // 59:1
 - 28.01.2011 // Jens Friebe, Luise Pop // Atomic Cafe
 
 ## Konzerte 2010
 
+- 07.12.2010 // Foals // Backstage
 - 24.09.2010 // The Exploding Boy // Kranhalle
 - 22.09.2010 // Lissie // 59:1
 - 07.09.2010 // Fanfarlo // Discoteca LUX - Lisboa
@@ -334,7 +343,6 @@
 - 12.09.2008 // Five! Fast!! Hits!!! // Atomic Cafe
 - 02.09.2008 // Friska Viljor // 59:1
 - 29.06.2008 // Blec Le Roc // SZ-Zelt Tollwood
-- 30.05.2008 // Shantel // Muffathalle
 - 29.05.2008 // Eagle Seagull // 59:1
 - 22.05.2008 // Gustav & Band // Rote Sonne
 - 16.05.2008 // Atomic // Atomic Cafe
@@ -342,7 +350,6 @@
 - 25.04.2008 // Die Happy // Ampere
 - 15.04.2008 // Fotos // 59:1
 - 10.04.2008 // Frank Spilker Gruppe // Rote Sonne
-- 03.04.2008 // Foals // 59:1
 - 29.03.2008 // Rainer von Vielen // Feierwerk
 - 08.03.2008 // Amy MacDonald // Ampere
 - 29.03.2008 // Los Campensinos // Atomic Cafe
@@ -353,18 +360,11 @@
 - 21.02.2008 // Olli Schulz // Muffathalle
 - 18.02.2008 // British Sea Power // Ampere
 
-## Konzerte 2007
+## Konzerte <= 2007
 
 - 01.12.2007 // Bavarian Open // BR Funkhaus // Sir Simon Battle
-- 17.11.2007 // The Wombats // Atomic Cafe
 - 05.05.2007 // The Rakes // Atomic Cafe
-
-## Konzerte 2006
-
 - 22.10.2006 // Bernd Begemann // Atomic Cafe
-
-## Konzerte 2005
-
 - 27.11.2005 // Kettcar // Georg-Elser-Halle
 
 $backbutton
