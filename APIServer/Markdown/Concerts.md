@@ -2,6 +2,10 @@
 
 # Konzerte
 
+## Spotify Playlist
+
+<iframe src="https://open.spotify.com/embed/playlist/0zu4gRS52Qbr6n5TOJ11wR" width="300" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+
 ## Planung
 
 - 03.09.2021 // Young And Cold Festival 8 // Ballonfabrik Augsburg
@@ -35,7 +39,7 @@
 - 15.06.2019 // The Underground Youth + Blue Haze // Milla
 - 04.06.2019 // Pleasure Symbols // Import Export
 - 26.04.2019 // The Dandelion + Rr33lsdgtskrrl // Import Export
-- 06.04.2019 // egoFM Fest // Muffatwerk // Drangsaal, Flut, Mavi Phoenix, Eau Rouge
+- 06.04.2019 // egoFM Fest // Muffatwerk // Drangsal, Flut, Mavi Phoenix, Eau Rouge
 - 24.02.2019 // Kaelan Mikla + Some Ember // Milla
 - 20.02.2019 // Tempers // Rote Sonne
 - 11.02.2019 // Espen and the Witch + NYOS // Ampere
@@ -61,6 +65,7 @@
 - 15.05.2018 // TOY + Blue Haze // Milla
 - 29.04.2018 // Isolation Berlin + Swutscher // Feierwerk
 - 28.04.2018 // Die Nerven // Strom
+- 25.04.2018 // Nils Frahm // Muffathalle
 - 02.04.2018 // Soviet Soviet + Kill Your Boyfriend // Milla
 - 01.04.2018 // Bleib Modern + PAAR // Milla
 - 16.03.2018 // Blond // Substanz
@@ -156,6 +161,7 @@
 - 05.10.2013 // The Lost Rivers // Kranhalle
 - 12.07.2013 // Optimus Alive // Lissabon
 - 30.05.2013 // Clara Luzia + Uphill Racer // Atomic Cafe
+- 08.05.2013 // Art Brut // Atomic Cafe
 - 06.04.2013 // Tocotronic // Tonhalle
 - 07.03.2013 // TUBBE // Atomic Cafe
 - 01.03.2013 // The Moonband // Milla
@@ -185,10 +191,10 @@
 - 31.05.2012 // Blood Red Shows + Wallace Vanborn // Backstage Halle
 - 28.05.2012 // Theatron Pfingstfestival // Olympiapark // Luise Pop, The Moonband
 - 26.05.2012 // Theatron Pfingstfestival // Olympiapark // Fenster, Tubbe, The Exclusive
-- 22.04.2012 // candelilla + The Marble Man // Import Export
+- 22.04.2012 // Candelilla + The Marble Man // Import Export
 - 06.04.2012 // Come Back Harriet // Atomic Cafe
 - 02.04.2012 // Dillon // Hansa 39
-- 18.03.2012 // WhoMadeWho // Atomic Cafe
+- 18.03.2012 // Who Made Who // Atomic Cafe
 - 06.03.2012 // M83 // Theaterfabrik
 - 29.02.2012 // Youth Lagoon // 59:1
 - 09.02.2012 // Gisbert zu Knyphausen // Ampere
@@ -217,6 +223,7 @@
 - 25.05.2011 // Crystal Fighters // Atomic Cafe
 - 04.05.2011 // Tahiti 80 // Ampere
 - 02.05.2011 // Lenka // Ampere
+- 03.04.2011 // Aline Coen Band // 59:1
 - 27.03.2011 // Young Rebel Set // Atomic Cafe
 - 24.03.2011 // The Naked and The Famous // 59:1
 - 01.03.2011 // The Beth Edges // Atomic Cafe
@@ -287,6 +294,7 @@
 - 23.06.2009 // Ladyhawke // Backstage
 - 06.06.2009 // Soap & Skin // Hansa 39
 - 31.05.2009 // The Glam // HeadCRASH
+- 15.05.2009 // Alin Coen Band // Babalu
 - 20.05.2009 // Mikroboy // 59:1
 - 09.05.2009 // The Asteroids Galaxy Tour // Atomic Cafe
 - 03.05.2009 // Hellsongs // Übel & Gefährlich
@@ -337,7 +345,7 @@
 - 03.04.2008 // Foals // 59:1
 - 29.03.2008 // Rainer von Vielen // Feierwerk
 - 08.03.2008 // Amy MacDonald // Ampere
-- 29.03.2008 // Los Campesinos // Atomic Cafe
+- 29.03.2008 // Los Campensinos // Atomic Cafe
 - 25.03.2008 // Bernd Begemann // Lustspielhaus
 - 07.03.2008 // Tegan + Sarah // Backstage
 - 23.02.2008 // Jens Lekmann // Atomic Cafe
