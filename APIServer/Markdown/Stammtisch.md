@@ -1,6 +1,6 @@
 ﻿# Stammtisch
 
-## Restaurants 2020 - 2012
+## Restaurants 2020 - 2011
 
 - [Westend Factory](https://www.westend-factory.com/){target="_blank" .external} - Steak & Fish - März 2020
 
