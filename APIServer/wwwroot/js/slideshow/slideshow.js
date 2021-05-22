@@ -139,24 +139,21 @@ var slideshow = (() => {
                 touchX = e.changedTouches[0].clientX;
                 touchId = e.changedTouches[0].identifier;
             }
-            e.preventDefault();
         }, {passive: false});
         document.addEventListener("touchend", (e) => {
             if (e.changedTouches.length === 1 && e.changedTouches[0].identifier === touchId) {
                 const diff = e.changedTouches[0].clientX - touchX;
                 if (diff > 100) {
-                    onPictureRight();
+                    onPictureLeft();
                 }
                 else if (diff < -100) {
-                    onPictureLeft();
+                    onPictureRight();
                 }
                 touchId = undefined;
             }
-            e.preventDefault();
         }, { passive: false });
         document.addEventListener("touchcancel", (e) => {
             touchId = undefined;
-            e.preventDefault();
         }, { passive: false });
 
         window.onclick = (event) => {
