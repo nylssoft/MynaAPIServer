@@ -96,29 +96,10 @@ var slideshow = (() => {
         imgShuffle.addEventListener("click", () => window.location.replace(`/slideshow?shuffle=${!shuffle}`));
         imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png");
         imgLeftArrow.title = "Vorheriges Bild";
-        imgLeftArrow.addEventListener("click", () => {
-            if (isSlideshowPlaying && slideShowPictures.length > 2) {
-                if (backgroundIndex == 1) {
-                    backgroundIndex = slideShowPictures.length - 1;
-                }
-                else if (backgroundIndex == 0) {
-                    backgroundIndex = slideShowPictures.length - 2;
-                }
-                else if (backgroundIndex > 1) {
-                    backgroundIndex = backgroundIndex - 2;
-                }
-                backgroundChanged = false;
-                ontimer();
-            }
-        });
+        imgLeftArrow.addEventListener("click", onPictureLeft);
         imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png");
         imgRightArrow.title = "N\u00E4chstes Bild";
-        imgRightArrow.addEventListener("click", () => {
-            if (isSlideshowPlaying && slideShowPictures.length > 1) {
-                backgroundChanged = false;
-                ontimer();
-            }
-        });
+        imgRightArrow.addEventListener("click", onPictureRight);
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
             imgPhoto.title = "Profil";
@@ -141,6 +122,14 @@ var slideshow = (() => {
         divFooter = controls.createDiv(document.body, "footer");
         renderSlideshowInfo(divFooter);
         renderDropdownContent();
+        document.addEventListener("keydown", (e) => {
+            if (e.key == "ArrowLeft") {
+                onPictureLeft();
+            }
+            else if (e.key == "ArrowRight") {
+                onPictureRight();
+            }
+        });
         window.onclick = (event) => {
             let dropdownClosed = false;
             if (!event.target.matches(".dropbtn")) {
@@ -221,6 +210,29 @@ var slideshow = (() => {
     };
 
     // --- callbacks
+
+    const onPictureLeft = () => {
+        if (isSlideshowPlaying && slideShowPictures.length > 2) {
+            if (backgroundIndex == 1) {
+                backgroundIndex = slideShowPictures.length - 1;
+            }
+            else if (backgroundIndex == 0) {
+                backgroundIndex = slideShowPictures.length - 2;
+            }
+            else if (backgroundIndex > 1) {
+                backgroundIndex = backgroundIndex - 2;
+            }
+            backgroundChanged = false;
+            ontimer();
+        }
+    };
+
+    const onPictureRight = () => {
+        if (isSlideshowPlaying && slideShowPictures.length > 1) {
+            backgroundChanged = false;
+            ontimer();
+        }
+    };
 
     const ontimer = () => {
         if (!slideShowPictures || slideShowPictures.length == 0 || !isSlideshowPlaying) return;
