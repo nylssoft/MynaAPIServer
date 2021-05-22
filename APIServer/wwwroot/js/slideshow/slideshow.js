@@ -25,6 +25,9 @@ var slideshow = (() => {
 
     let currentUser;
 
+    let touchX;
+    let touchId;
+
     // --- rendering
 
     const renderDropdown = (parent) => {
@@ -130,6 +133,32 @@ var slideshow = (() => {
                 onPictureRight();
             }
         });
+
+        document.addEventListener("touchstart", (e) => {
+            if (e.changedTouches.length === 1) {
+                touchX = e.changedTouches[0].clientX;
+                touchId = e.changedTouches[0].identifier;
+            }
+            e.preventDefault();
+        }, {passive: false});
+        document.addEventListener("touchend", (e) => {
+            if (e.changedTouches.length === 1 && e.changedTouches[0].identifier === touchId) {
+                const diff = e.changedTouches[0].clientX - touchX;
+                if (diff > 100) {
+                    onPictureRight();
+                }
+                else if (diff < -100) {
+                    onPictureLeft();
+                }
+                touchId = undefined;
+            }
+            e.preventDefault();
+        }, { passive: false });
+        document.addEventListener("touchcancel", (e) => {
+            touchId = undefined;
+            e.preventDefault();
+        }, { passive: false });
+
         window.onclick = (event) => {
             let dropdownClosed = false;
             if (!event.target.matches(".dropbtn")) {
@@ -242,7 +271,6 @@ var slideshow = (() => {
             let pic = slideShowPictures[backgroundIndex];
             const ratio = window.innerWidth / window.innerHeight;
             const url = ratio < 1.7 && pic.url43 ? pic.url43 : pic.url;
-            console.log(url);
             document.body.style.background = `#000000 url('${url}')`;
             document.body.style.backgroundSize = "cover";
             document.body.style.backgroundRepeat = "no-repeat";
