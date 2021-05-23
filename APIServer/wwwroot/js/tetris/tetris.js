@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.16";
+    let version = "1.2.17";
 
     let block;
     let nextBlock;
@@ -439,6 +439,7 @@ var tetris = (() => {
     let speed;
     let clearPoints;
     let moveDownFrameCount;
+    let lastMoveDown;
     let keyPressedCount;
     let keyPressedMax;
     let keyPressed;
@@ -582,6 +583,11 @@ var tetris = (() => {
             }
             moveDownFrameCount = 0;
         }
+        if (!lastMoveDown) {
+            lastMoveDown = true;
+            return;
+        }
+        lastMoveDown = false;
         keyPressed = undefined;
         block.stop(playground);
         block = undefined;
@@ -922,6 +928,53 @@ var tetris = (() => {
         helpDiv = controls.createDiv(parent, "invisible-div");
     };
 
+    const onCanvasTouchStart = (e) => {
+        e.preventDefault();
+        const canvas = document.querySelector(".playground");
+        const touches = e.changedTouches;
+        if (touches.length === 1 && state != StateEnums.GAMEOVER && block) {
+            const touch = touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const tx = touch.clientX - rect.x;
+            const ty = touch.clientY - rect.y;
+            const offx = pixelPerField;
+            const offy = offx;
+            const points = block.getRelativePoints(block.orientation);
+            let pminx = Number.MAX_SAFE_INTEGER,
+                pminy = Number.MAX_SAFE_INTEGER,
+                pmaxx = 0,
+                pmaxy = 0;
+            points.forEach(p => {
+                const x = offx + (block.x + p[0]) * pixelPerField;
+                const y = offy + (block.y + p[1]) * pixelPerField;
+                pminx = Math.min(x, pminx);
+                pmaxx = Math.max(x, pmaxx);
+                pminy = Math.min(y, pminy);
+                pmaxy = Math.max(y, pmaxy);
+            });
+            keyPressed = undefined;
+            if (tx >= pminx - pixelPerField && tx <= pmaxx + 2 * pixelPerField &&
+                ty >= pminy - pixelPerField && ty <= pmaxy + 2 * pixelPerField) {
+                keyPressed = "ArrowUp";
+            }
+            else if (tx < pminx) {
+                keyPressed = "ArrowLeft";
+            }
+            else if (tx > pmaxx + pixelPerField) {
+                keyPressed = "ArrowRight";
+            }
+            if (keyPressed) {
+                keyPressedMax = 100;
+                keyPressedCount = keyPressedMax;
+            }
+        }
+    };
+
+    const onCanvasTouchEnd = (e) => {
+        e.preventDefault();
+        keyPressed = undefined;
+    };
+
     const renderTetris = (parent) => {
         renderHelp(parent);
         renderHighScores(parent);
@@ -954,6 +1007,11 @@ var tetris = (() => {
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
         canvas.height = pixelPerField * (playground.height + 2);
+
+        canvas.addEventListener("touchstart", onCanvasTouchStart, { passive: false });
+        canvas.addEventListener("touchend", onCanvasTouchEnd, { passive: false });
+        canvas.addEventListener("touchcancel", onCanvasTouchEnd, { passive: false });
+        canvas.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
 
         canvasNextBlock = controls.create(info, "canvas", "nextblock");
         canvasNextBlock.width = pixelPerField * 6;
