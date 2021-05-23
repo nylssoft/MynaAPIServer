@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.17";
+    let version = "1.2.18";
 
     let block;
     let nextBlock;
@@ -887,7 +887,7 @@ var tetris = (() => {
                     e.title = `${hs.score} Punkte. Level ${hs.level}. ${hs.lines} ${lstr}. Spiel vom ${dstr}.`;
                     pos++;
                 });
-                if (highScores.length > 0 && state === StateEnums.GAMEOVER) {
+                if (highScores.length > 0 && (!utils.is_mobile() || state === StateEnums.GAMEOVER)) {
                     highScoreDiv.style.visibility = "visible";
                 }
             })

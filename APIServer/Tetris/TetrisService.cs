@@ -42,22 +42,35 @@ namespace APIServer.Tetris
         public List<HighScore> GetHighScores()
         {
             var ret = new List<HighScore>();
+            var del = new List<DbTetrisHighScore>();
             var dbContext = GetDbContext();
             var highScores = dbContext.DbTetrisHighScore.OrderByDescending(sc => sc.Score);            
             foreach (var hs in highScores)
             {
-                ret.Add(new HighScore
+                var highScore = new HighScore
                 {
                     Name = hs.Name,
                     Created = DbMynaContext.GetUtcDateTime(hs.Created).Value,
                     Level = hs.Level,
                     Lines = hs.Lines,
                     Score = hs.Score
-                });
+                };
+                var diff = DateTime.UtcNow - highScore.Created;
+                if (diff.TotalDays > 7)
+                {
+                    del.Add(hs);
+                    continue;
+                }
+                ret.Add(highScore);
                 if (ret.Count >= 10)
                 {
                     break;
                 }
+            }
+            if (del.Any())
+            {
+                dbContext.DbTetrisHighScore.RemoveRange(del);
+                dbContext.SaveChanges();
             }
             return ret;
         }
