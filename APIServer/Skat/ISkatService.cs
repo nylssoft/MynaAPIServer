@@ -25,67 +25,66 @@ namespace APIServer.Skat
     {
         // --- without authentication
 
-        public long GetState();
+        long GetState();
 
-        public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username);
+        LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username);
 
-        public ChatModel GetChatModel(IPwdManService pwdManService);
+        ChatModel GetChatModel(IPwdManService pwdManService);
 
-        public bool Chat(IPwdManService pwdManService, string authenticationToken, string message);
+        bool Chat(IPwdManService pwdManService, string authenticationToken, string message);
 
         // --- with authentication (ticket)
 
-        public bool Logout(string ticket);
+        bool Logout(string ticket);
 
-        public SkatModel GetSkatModel(string ticket);
+        SkatModel GetSkatModel(string ticket);
 
-        public GameHistoryModel GetGameHistoryModel(string ticket);
+        GameHistoryModel GetGameHistoryModel(string ticket);
 
-        public ResultModel GetResultModel(string ticket);
+        ResultModel GetResultModel(string ticket);
 
-        public ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
+        ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
 
-        public List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken);
+        List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken);
     
-        public bool PerformBidAction(IPwdManService pwdManService, string ticket, string bidAction);
+        bool PerformBidAction(IPwdManService pwdManService, string ticket, string bidAction);
 
-        public bool StartNewGame(IPwdManService pwdManService, string ticket);
+        bool StartNewGame(IPwdManService pwdManService, string ticket);
 
-        public bool GiveUp(IPwdManService pwdManService, string ticket);
+        bool GiveUp(IPwdManService pwdManService, string ticket);
 
-        public bool SetGame(string ticket, GameModel skatGameModel);
+        bool SetGame(string ticket, GameModel skatGameModel);
 
-        public bool SetGameOption(string ticket, GameOptionModel skatGameOptionModel);
+        bool SetGameOption(string ticket, GameOptionModel skatGameOptionModel);
 
-        public bool PlayCard(IPwdManService pwdManService, string ticket, int internalCardNumber);
+        bool PlayCard(IPwdManService pwdManService, string ticket, int internalCardNumber);
 
-        public bool CollectStitch(IPwdManService pwdManService, string ticket);
+        bool CollectStitch(IPwdManService pwdManService, string ticket);
 
-        public bool PickupSkat(string ticket, int internalCardNumber);
+        bool PickupSkat(string ticket, int internalCardNumber);
 
-        public bool ConfirmStartGame(string ticket);
+        bool ConfirmStartGame(string ticket);
 
-        public bool SpeedUp(string ticket);
+        bool SpeedUp(string ticket);
 
-        public bool ConfirmSpeedUp(IPwdManService pwdManService, string ticket);
+        bool ConfirmSpeedUp(IPwdManService pwdManService, string ticket);
 
-        public bool ContinuePlay(string ticket);
+        bool ContinuePlay(string ticket);
 
         // --- with skatadmin user role
 
-        public bool DeleteResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
+        bool DeleteResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
 
-        public bool Reset(IPwdManService pwdManService, string authenticationToken);
+        bool Reset(IPwdManService pwdManService, string authenticationToken);
 
-        public List<string> GetLoggedInUsers(IPwdManService pwdManService, string authenticationToken);
+        List<string> GetLoggedInUsers(IPwdManService pwdManService, string authenticationToken);
 
         // --- reservations
 
-        public List<ReservationModel> GetReservations(IPwdManService pwdManService);
+        List<ReservationModel> GetReservations(IPwdManService pwdManService);
 
-        public bool AddReservation(IPwdManService pwdManService, string authenticatioToken, ReservationModel reservationModel);
+        bool AddReservation(IPwdManService pwdManService, string authenticatioToken, ReservationModel reservationModel);
 
-        public bool DeleteReservation(IPwdManService pwdManService, string authenticatioToken, long id);
-
+        bool DeleteReservation(IPwdManService pwdManService, string authenticatioToken, long id);
     }
 }

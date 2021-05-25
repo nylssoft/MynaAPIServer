@@ -105,6 +105,5 @@ namespace APIServer.PwdMan
         // --- database access
 
         DbMynaContext GetDbContext();
-
     }
 }

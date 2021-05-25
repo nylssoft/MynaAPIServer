@@ -21,9 +21,8 @@ namespace APIServer.Tetris
 {
     public interface ITetrisService
     {
-        public List<HighScore> GetHighScores();
+        List<HighScore> GetHighScores();
 
-        public bool AddHighScore(HighScore highScore);
-
+        bool AddHighScore(HighScore highScore);
     }
 }
