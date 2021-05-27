@@ -974,15 +974,22 @@ var tetris = (() => {
 
     const onCanvasTouchEnd = (e) => {
         e.preventDefault();
+        keyPressed = undefined;
         const touches = e.changedTouches;
         if (blockTouchY > 0 && touches.length === 1 && state != StateEnums.GAMEOVER) {
             const touch = touches[0];
             const diff = touch.clientY - blockTouchY;
-            keyPressed = diff < 100 ? "ArrowUp" : "ArrowDown"
-            keyPressedMax = 100;
-            keyPressedCount = keyPressedMax;
+            if (diff < pixelPerField) {
+                keyPressed = "ArrowUp";
+            }
+            else if (diff > 3 * pixelPerField) {
+                keyPressed = "ArrowDown"
+            }
+            if (keyPressed) {
+                keyPressedMax = 100;
+                keyPressedCount = keyPressedMax;
+            }
         }
-        keyPressed = undefined;
         blockTouchY = undefined;
     };
 
