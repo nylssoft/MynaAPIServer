@@ -31,8 +31,6 @@ sowie eine Bildergalerie von Ausflügen und Urlauben.
 Für Notizen und Tagebuch musst Du Dich [anmelden](/pwdman?nexturl=markdown) sowie um Familienbilder in der Galerie angezeigt
 zu bekommen oder Ergebnisse Deiner Skatspiele zu sehen.
 
-Alle Anwendungen können auch über das Menü in der linken oberen Ecke erreicht werden.
-
 ##
 Viel Spaß!
 
