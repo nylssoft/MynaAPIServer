@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.18";
+    let version = "1.2.19";
 
     let block;
     let nextBlock;
@@ -435,6 +435,7 @@ var tetris = (() => {
     let lines;
     let level;
     let state;
+    let blockTouchY = undefined;
 
     let speed;
     let clearPoints;
@@ -953,9 +954,10 @@ var tetris = (() => {
                 pmaxy = Math.max(y, pmaxy);
             });
             keyPressed = undefined;
+            blockTouchY = undefined;
             if (tx >= pminx - pixelPerField && tx <= pmaxx + 2 * pixelPerField &&
                 ty >= pminy - pixelPerField && ty <= pmaxy + 2 * pixelPerField) {
-                keyPressed = "ArrowUp";
+                blockTouchY = touch.clientY;
             }
             else if (tx < pminx) {
                 keyPressed = "ArrowLeft";
@@ -972,7 +974,16 @@ var tetris = (() => {
 
     const onCanvasTouchEnd = (e) => {
         e.preventDefault();
+        const touches = e.changedTouches;
+        if (blockTouchY > 0 && touches.length === 1 && state != StateEnums.GAMEOVER) {
+            const touch = touches[0];
+            const diff = touch.clientY - blockTouchY;
+            keyPressed = diff < 100 ? "ArrowUp" : "ArrowDown"
+            keyPressedMax = 100;
+            keyPressedCount = keyPressedMax;
+        }
         keyPressed = undefined;
+        blockTouchY = undefined;
     };
 
     const renderTetris = (parent) => {
