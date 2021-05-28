@@ -246,30 +246,16 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/file")]
-        public IActionResult SavePasswordFile([FromBody] PasswordFileModel passwordFile)
+        public IActionResult SaveEncodedPasswordFile([FromBody] string encodedContent)
         {
-            if (passwordFile?.SecretKey?.Length > Limits.MAX_PWDMAN_KEY) throw new InputValueTooLargeException();
-            if (passwordFile?.Passwords != null)
-            {
-                foreach (var pwdItem in passwordFile.Passwords)
-                {
-                    if (pwdItem.Name?.Length > Limits.MAX_PWDMAN_NAME ||
-                        pwdItem.Login?.Length > Limits.MAX_PWDMAN_LOGIN ||
-                        pwdItem.Url?.Length > Limits.MAX_PWDMAN_URL ||
-                        pwdItem.Password?.Length > Limits.MAX_PWDMAN_PASSWORD ||
-                        pwdItem.Description?.Length > Limits.MAX_PWDMAN_DESCRIPTION)
-                    {
-                        throw new InputValueTooLargeException();
-                    }
-                }
-            }
-            PwdManService.SavePasswordFile(GetToken(), passwordFile);
+            if (encodedContent?.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            PwdManService.SaveEncodedPasswordFile(GetToken(), encodedContent);
             return new JsonResult(true);
         }
 
         [HttpGet]
         [Route("api/pwdman/file")]
-        public IActionResult GetPasswordFile()
+        public IActionResult GetEncodedPasswordFile()
         {
             return new JsonResult(PwdManService.GetEncodedPasswordFile(GetToken()));
         }

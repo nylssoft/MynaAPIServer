@@ -1003,36 +1003,15 @@ namespace APIServer.PwdMan
 
         // --- password manager
 
-        public void SavePasswordFile(string token, PasswordFileModel passwordFile)
+        public void SaveEncodedPasswordFile(string authenticationToken, string encodedContent)
         {
             logger.LogDebug("Save password file...");
-            if (!VerifyPasswordStrength(passwordFile.SecretKey))
-            {
-                throw new SecretKeyNotStrongEnoughException();
-            }
-            var user = GetUserFromToken(token);
-            var hasher = new PasswordHasher<string>();
-            hasher.HashPassword(user.Name, passwordFile.SecretKey);
-            if (hasher.VerifyHashedPassword(
-                user.Name,
-                user.PasswordHash,
-                passwordFile.SecretKey) == PasswordVerificationResult.Success)
-            {
-                throw new SecretKeySameAsPasswordException();
-            }
-            var salt = Encoding.UTF8.GetBytes(user.Salt);
-            foreach (var item in passwordFile.Passwords)
-            {
-                item.Password = ConvertToHexString(
-                    EncodeSecret(salt, passwordFile.SecretKey, Encoding.UTF8.GetBytes(item.Password)));
-            }
-            var passwords = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(passwordFile.Passwords));
-            var encoded = EncodeSecret(salt, passwordFile.SecretKey, passwords);
+            var user = GetUserFromToken(authenticationToken);
             if (user.PasswordFile == null)
             {
                 user.PasswordFile = new DbPasswordFile();
             }
-            user.PasswordFile.Content = ConvertToHexString(encoded);
+            user.PasswordFile.Content = encodedContent;
             user.PasswordFile.LastWrittenUtc = DateTime.UtcNow;
             var dbContext = GetDbContext();
             dbContext.SaveChanges();

@@ -33,12 +33,7 @@ namespace APIServer
         public const int MAX_EMAIL_ADDRESS = 80;
         public const int MAX_PASSWORD = 100;
         public const int MAX_ROLE_NAME = 32;
-        public const int MAX_PWDMAN_KEY = 100;
-        public const int MAX_PWDMAN_NAME = 100;
-        public const int MAX_PWDMAN_LOGIN = 100;
-        public const int MAX_PWDMAN_PASSWORD = 100;
-        public const int MAX_PWDMAN_URL = 100;
-        public const int MAX_PWDMAN_DESCRIPTION = 1024;
+        public const int MAX_PWDMAN_CONTENT = 1024 * 1024 * 10; // hex encoded string
     }
 
     public class InputValueTooLargeException : APIException
