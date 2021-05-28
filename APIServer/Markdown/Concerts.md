@@ -190,7 +190,7 @@
 - 08.09.2012 // Dum Dum Girls // Atomic Cafe
 - 10.08.2012 // Dockville Festival // Hamburg-Wilhelmsburg // Vierkanttrettlager, Darkness Falls
 - 15.06.2012 // Esben & The Witch + Mark Gardener // 10 Jahre Lunastrom in der Schlafwagenfabrik
-- 31.05.2012 // Blood Red Shows + Wallace Vanborn // Backstage Halle
+- 31.05.2012 // Blood Red Shoes + Wallace Vanborn // Backstage Halle
 - 28.05.2012 // Theatron Pfingstfestival // Olympiapark // Luise Pop, The Moonband
 - 26.05.2012 // Theatron Pfingstfestival // Olympiapark // Fenster, Tubbe, The Exclusive
 - 22.04.2012 // Candelilla + The Marble Man // Import Export
