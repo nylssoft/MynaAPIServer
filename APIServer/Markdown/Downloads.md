@@ -8,7 +8,7 @@ Der Quellcode ist auf GitHub veröffentlicht: [GitHub](https://github.com/nylsso
 ## Myna Password Manager 
 
 - Verwaltet Passwörter und sensitive Daten: [Download](/downloads/MynaPasswordManager.zip).
-- Installationsvorraussetzung: .NET framework v4.8
+- Installationsvorraussetzung: .NET 5
 
 ![Myna Password Manager](/images/markdown/MynaPasswordManager-320.png)
 
