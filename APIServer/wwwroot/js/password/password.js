@@ -91,6 +91,7 @@ var password = (() => {
             controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
                 () => showEncryptKey(true));
         }
+        controls.create(parent, "hr");
     };
 
     const renderHeader = (parent) => {
@@ -266,7 +267,7 @@ var password = (() => {
     const renderPasswordFile = () => {
         renderError("");
         renderPasswordItems([]);
-        if (currentUser.hasPasswordManagerFile) {
+        if (currentUser.hasPasswordManagerFile && hasEncryptKey()) {
             const token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/file", { headers: { "token": token } },
                 (pwdfile) => {
@@ -276,7 +277,7 @@ var password = (() => {
                             pwdItems.sort((a, b) => a.Name.localeCompare(b.Name));
                             renderPasswordItems(pwdItems);
                         },
-                        renderError);
+                        (errMsg) => console.log(errMsg));
                 },
                 renderError);
         }
