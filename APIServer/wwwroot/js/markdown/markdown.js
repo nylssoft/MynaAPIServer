@@ -27,7 +27,7 @@ var markdown = (() => {
         if (currentUser) {
             controls.create(parent, "hr");
             if (currentUser.hasPasswordManagerFile) {
-                controls.createA(parent, undefined, "/pwdman", "Passwort\u00A0Manager");
+                controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
             }
             controls.createA(parent, undefined, "/usermgmt", "Profil");
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");

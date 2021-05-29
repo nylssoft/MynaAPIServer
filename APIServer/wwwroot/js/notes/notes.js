@@ -147,6 +147,9 @@ var notes = (() => {
         controls.createA(parent, undefined, "/diary", "Tagebuch");
         controls.createA(parent, undefined, "/tetris", "Tetris");
         controls.create(parent, "hr");
+        if (currentUser.hasPasswordManagerFile) {
+            controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
+        }
         controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         controls.create(parent, "hr");
