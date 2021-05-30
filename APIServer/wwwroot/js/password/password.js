@@ -270,6 +270,7 @@ var password = (() => {
         renderPasswordItems([]);
         if (!currentUser.hasPasswordManagerFile) {
             renderError("Es wurde keine Passwortdatei hochgeladen.");
+            showEncryptKey(true);
         }
         else if (!hasEncryptKey()) {
             renderError("Es fehlt der Schl\u00FCssel zum Dekodieren der Passwortdatei.");
