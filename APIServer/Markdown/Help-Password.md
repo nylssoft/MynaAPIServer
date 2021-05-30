@@ -17,7 +17,7 @@ Mit dem Menü '**Schlüssel verbergen**' werden die Eingabefelder wieder eingekl
 
 ### Myna Password Manager
 
-Die Passwörter können mit dem Programm 'Myna Password Manager' in die Cloud hochgeladen werden.
-Das Programm ist unter [Downloads](/markdown?page=downloads) verfügbar und läuft unter Windows 10 mit .NET 5.
+Die Passwörter können mit dem Programm 'Myna Password Manager' hochgeladen werden.
+Das Programm ist unter [Downloads](/markdown?page=downloads) verfügbar und läuft unter Windows mit .NET 5.
 Im Menü '**Einstellungen...**' muss für '**Cloud-URL**' die URL dieser Website eingetragen werden (mit https://).
 Im Menü '**Passwörter in Cloud hochladen...**' muss der Schlüssel angegeben werden.

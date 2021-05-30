@@ -74,7 +74,9 @@ var password = (() => {
         controls.createA(parent, undefined, "/diary", "Tagebuch");
         controls.createA(parent, undefined, "/tetris", "Tetris");
         controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
+        if (currentUser.hasPasswordManagerFile) {
+            controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
+        }
         controls.createA(parent, undefined, "/usermgmt", "Profil");
         controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         controls.create(parent, "hr");
@@ -91,7 +93,6 @@ var password = (() => {
             controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
                 () => showEncryptKey(true));
         }
-        controls.create(parent, "hr");
     };
 
     const renderHeader = (parent) => {
@@ -267,7 +268,14 @@ var password = (() => {
     const renderPasswordFile = () => {
         renderError("");
         renderPasswordItems([]);
-        if (currentUser.hasPasswordManagerFile && hasEncryptKey()) {
+        if (!currentUser.hasPasswordManagerFile) {
+            renderError("Es wurde keine Passwortdatei hochgeladen.");
+        }
+        else if (!hasEncryptKey()) {
+            renderError("Es fehlt der Schl\u00FCssel zum Dekodieren der Passwortdatei.");
+            showEncryptKey(true);
+        }
+        else {
             const token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/file", { headers: { "token": token } },
                 (pwdfile) => {
@@ -277,7 +285,10 @@ var password = (() => {
                             pwdItems.sort((a, b) => a.Name.localeCompare(b.Name));
                             renderPasswordItems(pwdItems);
                         },
-                        (errMsg) => console.log(errMsg));
+                        (errMsg) => {
+                            console.log(errMsg);
+                            renderError("Der Schl\u00FCssel zum Dekodieren der Passwortdatei ist nicht richtig.");
+                        });
                 },
                 renderError);
         }
