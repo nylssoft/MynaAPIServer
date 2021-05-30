@@ -25,10 +25,10 @@ zuvor gespielten Spiele.
 Registrierte Benutzer können ein Profilfoto hochladen, welches beim Skatspiel angezeigt wird.
 Sie können den Chat beim Skat benutzen und einen Tisch für Skatspiele reservieren.
 
-### Tagebuch und Notizen
+### Tagebuch, Notizen und Passwörter
 
-Tagebuch und Notizen können nur von registrierten Benutzern verwendet werden.
-Die Tagebucheinträge und Notizen werden verschlüsselt auf dem Server gespeichert,
+Tagebuch, Notizen und Passwörter können nur von registrierten Benutzern verwendet werden.
+Die Tagebucheinträge, Notizen und Passwörter werden verschlüsselt auf dem Server gespeichert,
 wobei die Ver- und Entschlüsselung nur auf dem Client (im Browser) stattfindet.
 Der verwendete Schlüssel kann im Browser gespeichert werden.
 Da der Server den Schlüssel nicht kennt, sollte jeder Benutzer ihn *zusätzlich* an einem sicheren Ort
@@ -50,7 +50,7 @@ Für jeden registrierten Benutzer wird ein Konto angelegt. Folgende Daten werden
 - Anmelde-Optionen
 - Datum der letzten Anmeldung, Datum der Registrierung
 - Datum aller Anmeldeversuche mit IP-Adresse (kann aufgeräumt werden)
-- Tagebucheinträge und Notizen
+- Tagebucheinträge, Notizen und Passwörter
 - Profilfoto
 
 Das Konto kann jederzeit gelöscht werden. Alle oben genannten Daten werden dann
