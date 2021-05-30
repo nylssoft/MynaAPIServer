@@ -88,9 +88,11 @@ namespace APIServer.PwdMan
 
         // --- password manager
 
-        void SaveEncodedPasswordFile(string authenticationToken, string encodedContent);
+        void SavePasswordFile(string authenticationToken, string encodedContent);
 
-        string GetEncodedPasswordFile(string authenticationToken);
+        bool DeletePasswordFile(string authenticationToken);
+
+        string GetPasswordFile(string authenticationToken);
 
         bool HasPasswordFile(string authenticationToken);
 

@@ -244,20 +244,29 @@ namespace APIServer.PwdMan
             return new JsonResult(true);
         }
 
+        // --- password manager
+
         [HttpPost]
         [Route("api/pwdman/file")]
-        public IActionResult SaveEncodedPasswordFile([FromBody] string encodedContent)
+        public IActionResult SavePasswordFile([FromBody] string encodedContent)
         {
             if (encodedContent?.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
-            PwdManService.SaveEncodedPasswordFile(GetToken(), encodedContent);
+            PwdManService.SavePasswordFile(GetToken(), encodedContent);
             return new JsonResult(true);
+        }
+
+        [HttpDelete]
+        [Route("api/pwdman/file")]
+        public IActionResult DeletePasswordFile()
+        {
+            return new JsonResult(PwdManService.DeletePasswordFile(GetToken()));
         }
 
         [HttpGet]
         [Route("api/pwdman/file")]
-        public IActionResult GetEncodedPasswordFile()
+        public IActionResult GetPasswordFile()
         {
-            return new JsonResult(PwdManService.GetEncodedPasswordFile(GetToken()));
+            return new JsonResult(PwdManService.GetPasswordFile(GetToken()));
         }
 
         [HttpGet]

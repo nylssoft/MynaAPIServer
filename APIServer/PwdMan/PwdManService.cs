@@ -1003,28 +1003,47 @@ namespace APIServer.PwdMan
 
         // --- password manager
 
-        public void SaveEncodedPasswordFile(string authenticationToken, string encodedContent)
+        public void SavePasswordFile(string authenticationToken, string encodedContent)
         {
             logger.LogDebug("Save password file...");
             var user = GetUserFromToken(authenticationToken);
-            if (user.PasswordFile == null)
+            var dbContext = GetDbContext();
+            if (user.PasswordFileId == null)
             {
                 user.PasswordFile = new DbPasswordFile();
             }
+            else
+            {
+                dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
+            }
             user.PasswordFile.Content = encodedContent;
             user.PasswordFile.LastWrittenUtc = DateTime.UtcNow;
-            var dbContext = GetDbContext();
             dbContext.SaveChanges();
         }
 
-        public string GetEncodedPasswordFile(string token)
+        public string GetPasswordFile(string authenticationToken)
         {
-            logger.LogDebug("Get encoded password file...");
-            var user = GetUserFromToken(token);
+            logger.LogDebug("Get password file...");
+            var user = GetUserFromToken(authenticationToken);
             if (user.PasswordFileId == null) throw new PasswordFileNotFoundException();
             var dbContext = GetDbContext();
             dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
             return user.PasswordFile.Content;
+        }
+
+        public bool DeletePasswordFile(string authenticationToken)
+        {
+            logger.LogDebug("Delete password file...");
+            var user = GetUserFromToken(authenticationToken);
+            if (user.PasswordFileId != null)
+            {
+                var dbContext = GetDbContext();
+                dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
+                dbContext.DbPasswordFiles.Remove(user.PasswordFile);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
         }
 
         public bool HasPasswordFile(string authenticationToken)

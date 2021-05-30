@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.10";
+    let version = "1.1.11";
 
     // helper
 
@@ -348,10 +348,18 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, "Ja", () => onDeleteCurrentUser());
             controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
         }
+        else if (confirm == "deletepasswordfile") {
+            controls.create(actionsDiv, "span", "confirmation", "Willst Du Deine Passw\u00F6rter wirklich l\u00F6schen? ");
+            controls.createButton(actionsDiv, "Ja", () => onDeletePasswordFile());
+            controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
+        }
         else {
             let div = controls.createDiv(actionsDiv);
             controls.createButton(div, "Kennwort \u00E4ndern", () => onChangePassword());
             controls.createButton(div, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
+            if (currentUser.hasPasswordManagerFile) {
+                controls.createButton(div, "Passw\u00F6rter l\u00F6schen", () => renderAccountActions("deletepasswordfile"));
+            }
             if (currentUser.roles.includes("usermanager")) {
                 let adminDiv = controls.createDiv(actionsDiv);
                 controls.createButton(adminDiv, "Anfragen bearbeiten", () => renderConfirmRegistrations());
@@ -639,6 +647,22 @@ var usermgmt = (() => {
                 body: JSON.stringify(currentUser.name)
             },
             renderCurrentUserDeleted,
+            onRejectError,
+            setWaitCursor
+        );
+    };
+
+    const onDeletePasswordFile = () => {
+        let token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/file",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            () => {
+                currentUser.hasPasswordManagerFile = false;
+                renderCurrentUser();
+            },
             onRejectError,
             setWaitCursor
         );
