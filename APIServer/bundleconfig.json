@@ -28,6 +28,10 @@
     "inputFiles": [ "wwwroot/css/notes/notes.css" ]
   },
   {
+    "outputFileName": "wwwroot/css/documents/documents.min.css",
+    "inputFiles": [ "wwwroot/css/documents/documents.css" ]
+  },
+  {
     "outputFileName": "wwwroot/css/markdown/markdown.min.css",
     "inputFiles": [ "wwwroot/css/markdown/markdown.css" ]
   },
@@ -124,6 +128,15 @@
   {
     "outputFileName": "wwwroot/js/notes/notes.min.js",
     "inputFiles": [ "wwwroot/js/notes/notes.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/documents/documents.min.js",
+    "inputFiles": [ "wwwroot/js/documents/documents.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true

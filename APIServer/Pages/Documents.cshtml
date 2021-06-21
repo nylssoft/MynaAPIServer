@@ -1,0 +1,25 @@
+﻿@page
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Cache-Control" content="public,max-age=60,must-revalidate" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dokumente</title>
+    <environment include="Development">
+        <link rel="stylesheet" href="~/css/documents/documents.css" asp-append-version="true" />
+        <script src="~/js/common/utils.js" asp-append-version="true"></script>
+        <script src="~/js/common/controls.js" asp-append-version="true"></script>
+        <script src="~/js/documents/documents.js" asp-append-version="true"></script>
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/css/documents/documents.min.css" asp-append-version="true" />
+        <script src="~/js/common/utils.min.js" asp-append-version="true"></script>
+        <script src="~/js/common/controls.min.js" asp-append-version="true"></script>
+        <script src="~/js/documents/documents.min.js" asp-append-version="true"></script>
+    </environment>
+</head>
+<body>
+</body>
+</html>

@@ -1,0 +1,343 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    background-color: black;
+    color: white;
+    margin: 20pt;
+}
+
+input {
+    margin-top: 10pt;
+    margin-bottom: 10pt;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+}
+
+label {
+    margin-right: 5pt;
+}
+
+h1 {
+    padding: 2pt;
+    color: white;
+    position: absolute;
+    top: 5pt;
+    left: 40pt;
+    font-size: 18pt;
+    margin: 0pt;
+}
+
+h2 {
+    color: lightyellow;
+}
+
+h3 {
+    color: darkgoldenrod;
+}
+
+table {
+    min-width: 300pt;
+    min-height: 100pt;
+    border-collapse: collapse;
+    border: 3px solid blue;
+    background-color: blue;
+    width: 100%;
+}
+
+.column1 {
+    padding-left: 10px;
+    width: 16px;
+}
+
+.column2 {
+    padding-right: 10px;
+    width: 16px;
+}
+
+td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+tbody td {
+    text-align: left;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: dodgerblue;
+}
+
+tbody tr:nth-child(even) {
+    background-color: cornflowerblue;
+}
+
+td a {
+    color: white;
+}
+
+a {
+    color: lightgreen;
+}
+
+#file-input-id {
+    display: none;
+}
+
+.help-button {
+    margin-left: 10pt;
+}
+
+.help-button:hover {
+    background-color: lightblue;
+}
+
+.help-div {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0.9;
+    z-index: 10;
+}
+
+.help-content {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    right: 20px;
+}
+
+.encryptkey-notice {
+    color: red;
+}
+
+.currentpath {
+    margin: 5pt;
+}
+
+.filter {
+    margin: 5pt;
+}
+
+.title {
+    margin: 5pt;
+}
+
+.content {
+    margin: 5pt;
+}
+
+.action {
+    margin: 5pt;
+}
+
+.error {
+    margin: 5pt;
+    margin-top: 10pt;
+    color: red;
+}
+
+.copyright {
+    font-size: 8pt;
+    font-family: Arial, Helvetica, sans-serif;
+    color: lightgreen;
+}
+
+.button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 18pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
+}
+
+.button:hover {
+        background-color: #008CBA;
+        color: darkblue;
+}
+
+/* from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_checkbox */
+/* The container */
+.container-checkbox {
+    display: inline;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Hide the browser's default checkbox */
+.container-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark-checkbox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+}
+
+/* On mouse-over, add a grey background color */
+.container-checkbox:hover input ~ .checkmark-checkbox {
+    background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container-checkbox input:checked ~ .checkmark-checkbox {
+    background-color: #2196F3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark-checkbox:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.container-checkbox input:checked ~ .checkmark-checkbox:after {
+    display: block;
+}
+
+/* Style the checkmark/indicator */
+.container-checkbox .checkmark-checkbox:after {
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+.header-profile-photo {
+    border-radius: 50%;
+    position: fixed;
+    top: 2pt;
+    right: 2pt;
+}
+
+/* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
+.dropbtn {
+    position: fixed;
+    top: 5pt;
+    left: 5pt;
+    background-color: lightgrey;
+    color: white;
+    padding: 3px;
+    border: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #2980B9;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: fixed;
+    top: 40pt;
+    left: 5pt;
+    max-width: 300px;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    right: 5pt;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+    background-color: #ddd
+}
+
+.hide {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 11pt;
+        margin: 10pt;
+    }
+
+    input {
+        width: 200pt;
+    }
+
+    input, .container-checkbox, .button {
+        font-size: 11pt;
+    }
+
+    h1 {
+        top: 0;
+        padding: 0;
+        font-size: 11pt;
+        left: 32pt;
+    }
+
+    .dropbtn {
+        width: 16px;
+        height: 16px;
+    }
+
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+    }
+
+    .dropdown-content a {
+        padding: 6px 8px;
+    }
+
+    .help-button {
+        margin-left: 10pt;
+        transform: translateY(4pt);
+    }
+}
