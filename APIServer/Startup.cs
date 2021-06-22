@@ -28,7 +28,7 @@ using APIServer.Notes;
 using APIServer.PwdMan;
 using APIServer.Skat;
 using APIServer.Tetris;
-using System;
+using APIServer.Document;
 
 namespace APIServer
 {
@@ -55,6 +55,7 @@ namespace APIServer
             services.AddScoped<ITetrisService, TetrisService>();
             services.AddScoped<IDiaryService, DiaryService>();
             services.AddScoped<INotesService, NotesService>();
+            services.AddScoped<IDocumentService, DocumentService>();
             // singletons
             services.AddSingleton<ISkatService, SkatService>();
             // enable cshtml pages

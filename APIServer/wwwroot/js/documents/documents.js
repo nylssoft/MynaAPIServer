@@ -4,23 +4,15 @@ var documents = (() => {
 
     // state
 
-    let version = "0.0.1";
+    let version = "0.0.2";
     let cryptoKey;
     let currentUser;
     let helpDiv;
 
+    let currentId;
+    let docItems = [];
     let docItemsToMove = [];
     let currentIdBeforeMove = undefined;
-
-    // demo data for skeleton
-    let docItems = [
-        { name: "Dokumente", id: 1, parentId: undefined, type: "folder", children: 1 },
-        { name: "Krankenkasse", id: 2, parentId: 1, type: "folder", children: 3 },
-        { name: "Orthopaidie", id: 3, type: "folder", parentId: 2, children: 0 },
-        { name: "Zahnarzt-7-4-2022.pdf", id: 4, type: "document", parentId: 2, size: 1024 },
-        { name: "Krankengymnastik-1-6-2022.pdf", id: 5, type: "document", parentId: 2, size: 8192 }];
-    let currentId = 2;
-    let nextId = 6;
     let move = false;
 
     // helper
@@ -93,7 +85,7 @@ var documents = (() => {
         const items = [];
         docItems.forEach(item => {
             if (item.parentId === parentId) {
-                if (!move || item.type === "folder") {
+                if (!move || isFolder(item)) {
                     items.push(item);
                 }
             }
@@ -102,23 +94,12 @@ var documents = (() => {
     }
 
     const getRoot = () => {
-        return docItems.find(item => item.parentId === undefined);
+        return docItems.find(item => item.parentId === null);
     }
 
     const getItem = (id) => {
         return docItems.find(item => item.id === id);
     }
-
-    const getAllChildrenIds = (id) => {
-        const childIds = [];
-        getItems(id).forEach(item => {
-            childIds.push(item.id);
-            if (item.type === "folder") {
-                getAllChildrenIds(item.id).forEach(childId => childIds.push(childId));
-            }
-        });
-        return childIds;
-    };
 
     const getSelected = () => {
         const selected = [];
@@ -146,7 +127,7 @@ var documents = (() => {
     const sortItems = (items) => {
         items.sort((item1, item2) => {
             if (item1.type != item2.type) {
-                if (item1.type == "folder") return -1;
+                if (isFolder(item1)) return -1;
                 return 1;
             }
             if (item1.name > item2.name) return 1;
@@ -156,21 +137,9 @@ var documents = (() => {
         return items;
     };
 
-    const moveItems = (items, destinationId) => {
-        const destination = getItem(destinationId);
-        if (destination !== undefined) {
-            items.forEach(item => {
-                if (item.id != destinationId) {
-                    const oldparent = getItem(item.parentId);
-                    if (oldparent !== undefined) {
-                        oldparent.children -= 1;
-                    }
-                    item.parentId = destinationId;
-                    destination.children += 1;
-                }
-            });
-        }
-    };
+    const isFolder = (item) => item.type == "Folder";
+
+    const isDocument = (item) => item.type == "Document";
 
     // rendering
 
@@ -302,7 +271,7 @@ var documents = (() => {
             const span = controls.createSpan(elem, "path-item", "> ");
             if (currentId !== undefined) {
                 const a = controls.createA(elem, undefined, "#", "Start");
-                a.addEventListener("click", onClickMoveRootItem);
+                a.addEventListener("click", onClickStart);
             }
             else {
                 controls.createSpan(elem, "", "Start");
@@ -344,11 +313,11 @@ var documents = (() => {
         }
         else {
             if (cnt == 1) {
-                controls.createButton(elem, "Umbenennen", onConfirmRenameFolder);
+                controls.createButton(elem, "Umbenennen", onConfirmRename);
             }
             if (cnt > 0) {
                 controls.createButton(elem, "Verschieben", onSelectDestinationFolder);
-                controls.createButton(elem, "L\u00F6schen", onConfirmDeleteDocument);
+                controls.createButton(elem, "L\u00F6schen", onConfirmDeleteDocuments);
             }
             else {
                 controls.createButton(elem, "Ordner anlegen", onConfirmAddFolder);
@@ -381,15 +350,15 @@ var documents = (() => {
             checkBox.checked = true;
         }
         td = controls.create(tr, "td", "column2");
-        const url = item.type == "folder" ? "/images/buttons/folder.png" : "/images/buttons/applications-office-6.png";
+        const url = isFolder(item) ? "/images/buttons/folder.png" : "/images/buttons/applications-office-6.png";
         const img = controls.createImg(td, undefined, 32, 32, url);
-        img.title = item.type == "folder" ? "Ordner" : "Dokument";
+        img.title = isFolder(item) ? "Ordner" : "Dokument";
         img.id = `item-open-id-${item.id}`;
         td = controls.create(tr, "td");
         const a = controls.createA(td, undefined, "#open", item.name);
         a.id = `item-open-id-${item.id}`;
         td = controls.create(tr, "td");
-        if (item.type == "folder") {
+        if (isFolder(item)) {
             td.textContent = `${item.children}`;
         }
         else {
@@ -448,7 +417,7 @@ var documents = (() => {
         renderTitle();
         renderCopyright(parent);
         renderUploadDocument(parent);
-        onRefreshDocItems();
+        renderDocItemsTable();
     };
 
     const render = () => {
@@ -464,9 +433,9 @@ var documents = (() => {
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
-                renderPage(parent);
+                initItems();
             },
-            (errMsg) => console.log(errMsg));
+            renderError);
     };
 
     // --- callbacks
@@ -498,7 +467,7 @@ var documents = (() => {
         cryptoKey = undefined;
     };
 
-    const onClickMoveRootItem = () => {
+    const onClickStart = () => {
         const root = getRoot();
         if (root !== undefined) {
             currentId = root.parentId;
@@ -510,7 +479,7 @@ var documents = (() => {
         if (evt.target.id.startsWith("item-path-id-")) {
             const id = parseInt(evt.target.id.substr(13));
             const item = getItem(id);
-            if (item !== undefined && item.type == "folder" && id != currentId) {
+            if (item !== undefined && isFolder(item) && id != currentId) {
                 currentId = id;
                 render();
             }
@@ -526,11 +495,11 @@ var documents = (() => {
         else if (evt.target.id.startsWith("item-open-id-")) {
             const id = parseInt(evt.target.id.substr(13));
             const item = getItem(id);
-            if (item.type == "folder") {
+            if (isFolder(item)) {
                 currentId = id;
                 render();
             }
-            else if (item.type == "document") {
+            else if (isDocument(item)) {
                 onDownloadDocument(id);
             }
         }
@@ -571,31 +540,15 @@ var documents = (() => {
                                 var encryptedFile = new File([cipherText], curFile.name, { type: "application/octet-stream" });
                                 formData.append("document-file", encryptedFile);
                                 const token = utils.get_authentication_token();
-                                utils.fetch_api_call("api/pwdman/document",
+                                utils.fetch_api_call(`api/document/upload/${currentId}`,
                                     {
                                         method: "POST",
                                         headers: { "token": token },
                                         body: formData
                                     },
-                                    (cid) => {
-                                        const newItem = {
-                                            name: curFile.name,
-                                            id: nextId++,
-                                            type: "document",
-                                            parentId: currentId,
-                                            size: cipherText.byteLength
-                                        };
-                                        docItems.push(newItem);
-                                        const parent = getItem(currentId);
-                                        parent.children += 1;
-                                        render();
-                                    },
-                                    (errMsg) => console.log(errMsg)
-                                );
+                                    render, renderError);
                             })
-                            .catch(err => {
-                                console.log(err);
-                            });
+                            .catch(err => renderError(err.message));
                     });
                 };
                 fileReader.readAsArrayBuffer(curFile);
@@ -607,7 +560,7 @@ var documents = (() => {
         const item = getItem(id);
         console.log("Here we are!");
         let token = utils.get_authentication_token();
-        fetch(`api/pwdman/document/${id}`, { headers: { "token": token } })
+        fetch(`api/document/download/${id}`, { headers: { "token": token } })
             .then(resp => resp.blob())
             .then(blob => {
                 const obj_url = URL.createObjectURL(blob);
@@ -617,7 +570,7 @@ var documents = (() => {
                 a.click();
                 URL.revokeObjectURL(obj_url);
             })
-            .catch((err) => console.log(`error: ${err}`));
+            .catch((err) => renderError(err.message));
     };
 
     const onSelectDestinationFolder = () => {
@@ -632,8 +585,16 @@ var documents = (() => {
 
     const onMoveDocuments = () => {
         const selected = getSelected();
-        if (selected.length > 0 && selected[0].type == "folder" && docItemsToMove.length > 0) {
-            moveItems(docItemsToMove, selected[0].id);
+        if (selected.length == 1 && isFolder(selected[0]) && docItemsToMove.length > 0) {
+            const ids = docItemsToMove.map(item => item.id);
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/document/items/${selected[0].id}`,
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(ids)
+                },
+                render, renderError);
             move = false;
             docItemsToMove = [];
             currentId = currentIdBeforeMove;
@@ -677,32 +638,29 @@ var documents = (() => {
         const elem = document.getElementById("create-name-input-id");
         const val = elem.value.trim();
         if (val.length > 0) {
-            const newItem = {
-                name: val,
-                id: nextId++,
-                type: "folder",
-                parentId: currentId,
-                children: 0
-            };
-            docItems.push(newItem);
-            const parent = getItem(currentId);
-            parent.children += 1;
-            render();
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/document/folder/${currentId}`,
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(val)
+                },
+                render, renderError);
         }
     };
 
-    const onConfirmRenameFolder = () => {
+    const onConfirmRename = () => {
         const selected = getSelected();
         if (selected.length == 1) {
             const elem = document.getElementById("action-id");
             controls.removeAllChildren(elem);
             const label = controls.createLabel(elem, undefined, "Name:");
             label.htmlFor = "rename-name-input-id";
-            const name = controls.createInputField(elem, "Name", onRenameFolder, undefined, 32, 255);
+            const name = controls.createInputField(elem, "Name", onRename, undefined, 32, 255);
             name.id = "rename-name-input-id";
             name.value = selected[0].name;
             controls.createSpan(elem, undefined, "  ");
-            controls.createButton(elem, "Umbenennen", onRenameFolder);
+            controls.createButton(elem, "Umbenennen", onRename);
             controls.createButton(elem, "Abbrechen", render);
             if (!utils.is_mobile()) {
                 name.focus();
@@ -710,47 +668,44 @@ var documents = (() => {
         }
     };
 
-    const onRenameFolder = () => {
+    const onRename = () => {
         const selected = getSelected();
         if (selected.length == 1) {
             const elem = document.getElementById("rename-name-input-id");
             const val = elem.value.trim();
             if (val.length > 0 && selected[0].name != val) {
-                selected[0].name = val;
-                render();
+                const token = utils.get_authentication_token();
+                utils.fetch_api_call(`api/document/item/${selected[0].id}`,
+                    {
+                        method: "PUT",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                        body: JSON.stringify(val)
+                    },
+                    render, renderError);
             }
         }
     };
 
-    const onConfirmDeleteDocument = () => {
+    const onConfirmDeleteDocuments = () => {
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
         controls.createSpan(elem, undefined, "Willst Du die ausgew\u00E4hlten Elemente wirklich l\u00F6schen?  ");
-        controls.createButton(elem, "Ja", onDeleteDocument);
+        controls.createButton(elem, "Ja", onDeleteDocuments);
         controls.createButton(elem, "Nein", render);
     };
 
-    const onDeleteDocument = () => {
+    const onDeleteDocuments = () => {
         const selected = getSelected();
         if (selected.length > 0) {
-            const parent = getItem(selected[0].parentId);
-            const delids = selected.map(item => item.id);
-            selected.forEach(item => {
-                parent.children -= 1;
-                if (item.type == "folder") {
-                    getAllChildrenIds(item.id).forEach(childId => {
-                        delids.push(childId);
-                    });
-                }
-            });
-            const newItems = [];
-            docItems.forEach(item => {
-                if (!delids.includes(item.id)) {
-                    newItems.push(item);
-                }
-            });
-            docItems = newItems;
-            render();
+            const ids = selected.map(item => item.id);
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/document/items/${currentId}`,
+                {
+                    method: "DELETE",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(ids)
+                },
+                render, renderError);
         }
     };
 
@@ -770,8 +725,28 @@ var documents = (() => {
         renderDocItemsTable(filteredItems);
     };
 
-    const onRefreshDocItems = () => {
-        renderDocItemsTable();
+    const initItems = () => {
+        const token = utils.get_authentication_token();
+        let url = "api/document/items";
+        if (Number.isInteger(currentId)) {
+            url += `/${currentId}`;
+        }
+        utils.fetch_api_call(url, { headers: { "token": token } },
+            (items) => {
+                docItems = [];
+                items.forEach(item => {
+                    docItems.push(item);
+                });
+                console.log(docItems);
+                console.log(currentId);
+                if (currentId === undefined) {
+                    const root = getRoot();
+                    if (root != undefined) {
+                        currentId = root.id;
+                    }
+                }
+                renderPage(document.body);
+            }, renderError);
     };
 
     // --- public API
