@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "0.0.2";
+    let version = "0.0.3";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -85,7 +85,7 @@ var documents = (() => {
         const items = [];
         docItems.forEach(item => {
             if (item.parentId === parentId) {
-                if (!move || isFolder(item)) {
+                if (!move || isContainer(item)) {
                     items.push(item);
                 }
             }
@@ -93,8 +93,8 @@ var documents = (() => {
         return sortItems(items);
     }
 
-    const getRoot = () => {
-        return docItems.find(item => item.parentId === null);
+    const getVolume = () => {
+        return docItems.find(item => item.type == "Volume");
     }
 
     const getItem = (id) => {
@@ -127,7 +127,7 @@ var documents = (() => {
     const sortItems = (items) => {
         items.sort((item1, item2) => {
             if (item1.type != item2.type) {
-                if (isFolder(item1)) return -1;
+                if (isContainer(item1)) return -1;
                 return 1;
             }
             if (item1.name > item2.name) return 1;
@@ -137,9 +137,9 @@ var documents = (() => {
         return items;
     };
 
-    const isFolder = (item) => item.type == "Folder";
+    const isContainer = (item) => item.type === "Folder" || item.type === "Volume";
 
-    const isDocument = (item) => item.type == "Document";
+    const isDocument = (item) => item.type === "Document";
 
     // rendering
 
@@ -350,15 +350,15 @@ var documents = (() => {
             checkBox.checked = true;
         }
         td = controls.create(tr, "td", "column2");
-        const url = isFolder(item) ? "/images/buttons/folder.png" : "/images/buttons/applications-office-6.png";
+        const url = isContainer(item) ? "/images/buttons/folder.png" : "/images/buttons/applications-office-6.png";
         const img = controls.createImg(td, undefined, 32, 32, url);
-        img.title = isFolder(item) ? "Ordner" : "Dokument";
+        img.title = isContainer(item) ? "Ordner" : "Dokument";
         img.id = `item-open-id-${item.id}`;
         td = controls.create(tr, "td");
         const a = controls.createA(td, undefined, "#open", item.name);
         a.id = `item-open-id-${item.id}`;
         td = controls.create(tr, "td");
-        if (isFolder(item)) {
+        if (isContainer(item)) {
             td.textContent = `${item.children}`;
         }
         else {
@@ -468,9 +468,9 @@ var documents = (() => {
     };
 
     const onClickStart = () => {
-        const root = getRoot();
-        if (root !== undefined) {
-            currentId = root.parentId;
+        const volume = getVolume();
+        if (volume !== undefined) {
+            currentId = volume.parentId;
             render();
         }
     };
@@ -479,7 +479,7 @@ var documents = (() => {
         if (evt.target.id.startsWith("item-path-id-")) {
             const id = parseInt(evt.target.id.substr(13));
             const item = getItem(id);
-            if (item !== undefined && isFolder(item) && id != currentId) {
+            if (item !== undefined && isContainer(item) && id != currentId) {
                 currentId = id;
                 render();
             }
@@ -495,7 +495,7 @@ var documents = (() => {
         else if (evt.target.id.startsWith("item-open-id-")) {
             const id = parseInt(evt.target.id.substr(13));
             const item = getItem(id);
-            if (isFolder(item)) {
+            if (isContainer(item)) {
                 currentId = id;
                 render();
             }
@@ -585,7 +585,7 @@ var documents = (() => {
 
     const onMoveDocuments = () => {
         const selected = getSelected();
-        if (selected.length == 1 && isFolder(selected[0]) && docItemsToMove.length > 0) {
+        if (selected.length == 1 && isContainer(selected[0]) && docItemsToMove.length > 0) {
             const ids = docItemsToMove.map(item => item.id);
             let token = utils.get_authentication_token();
             utils.fetch_api_call(`api/document/items/${selected[0].id}`,
@@ -737,16 +737,28 @@ var documents = (() => {
                 items.forEach(item => {
                     docItems.push(item);
                 });
-                console.log(docItems);
-                console.log(currentId);
-                if (currentId === undefined) {
-                    const root = getRoot();
-                    if (root != undefined) {
-                        currentId = root.id;
-                    }
+                const volume = getVolume();
+                if (volume === undefined) {
+                    createVolume("Dokumente");
                 }
-                renderPage(document.body);
+                else {
+                    if (currentId === undefined) {
+                        currentId = volume.id;
+                    }
+                    renderPage(document.body);
+                }
             }, renderError);
+    };
+
+    const createVolume = (name) => {
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/document/volume",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(name)
+            },
+            render, renderError);
     };
 
     // --- public API

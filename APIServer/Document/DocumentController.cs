@@ -1,4 +1,21 @@
-﻿using APIServer.PwdMan;
+﻿/*
+    Myna API Server
+    Copyright (C) 2021 Niels Stockfleth
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+using APIServer.PwdMan;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -19,6 +36,13 @@ namespace APIServer.Document
         {
             DocumentService = documentService;
             PwdManService = pwdManService;
+        }
+
+        [HttpPost]
+        [Route("api/document/volume")]
+        public IActionResult CreateVolume([FromBody]string name)
+        {
+            return new JsonResult(DocumentService.CreateVolume(PwdManService, GetToken(), name));
         }
 
         [HttpGet]
