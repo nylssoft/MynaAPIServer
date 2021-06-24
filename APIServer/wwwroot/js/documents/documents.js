@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "0.0.3";
+    let version = "1.0.0";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -16,11 +16,6 @@ var documents = (() => {
     let move = false;
 
     // helper
-
-    const hasEncryptKey = () => {
-        const elem = document.getElementById("input-encryptkey-id");
-        return elem && elem.value.trim().length > 0;
-    }
 
     const initCryptoKey = (resolve, reject) => {
         if (!cryptoKey) {
@@ -37,14 +32,6 @@ var documents = (() => {
             }
         }
         resolve();
-    };
-
-    const encodeText = (text, resolve, reject) => {
-        initCryptoKey(() => utils.encode_message(cryptoKey, text, resolve, reject), reject);
-    };
-
-    const decodeText = (text, resolve, reject) => {
-        initCryptoKey(() => utils.decode_message(cryptoKey, text, resolve, reject), reject);
     };
 
     const showEncryptKey = (show) => {
@@ -141,6 +128,42 @@ var documents = (() => {
 
     const isDocument = (item) => item.type === "Document";
 
+    const createVolume = (name) => {
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/document/volume",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(name)
+            },
+            render, renderError);
+    };
+
+    const initItems = () => {
+        const token = utils.get_authentication_token();
+        let url = "api/document/items";
+        if (Number.isInteger(currentId)) {
+            url += `/${currentId}`;
+        }
+        utils.fetch_api_call(url, { headers: { "token": token } },
+            (items) => {
+                docItems = [];
+                items.forEach(item => {
+                    docItems.push(item);
+                });
+                const volume = getVolume();
+                if (volume === undefined) {
+                    createVolume("Dokumente");
+                }
+                else {
+                    if (currentId === undefined) {
+                        currentId = volume.id;
+                    }
+                    renderPage(document.body);
+                }
+            }, renderError);
+    };
+
     // rendering
 
     const renderDropdown = (parent) => {
@@ -159,7 +182,6 @@ var documents = (() => {
         if (!parent || !encryptKeyElem) return;
         controls.removeAllChildren(parent);
         controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/documents", "Dokumente");
         controls.createA(parent, undefined, "/notes", "Notizen");
         controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
@@ -268,7 +290,7 @@ var documents = (() => {
         const elem = document.getElementById("currentpath-id");
         controls.removeAllChildren(elem);
         if (move) {
-            const span = controls.createSpan(elem, "path-item", "> ");
+            controls.createSpan(elem, "path-item", "> ");
             if (currentId !== undefined) {
                 const a = controls.createA(elem, undefined, "#", "Start");
                 a.addEventListener("click", onClickStart);
@@ -293,9 +315,10 @@ var documents = (() => {
             }
         }
         else {
-            title = "Noch 100 MB frei f\u00FCr Dokumente.";
+            // @TODO: quota not yet implemented
+            // title = "Noch 100 MB frei f\u00FCr Dokumente.";
         }
-        controls.create(elem, "span", undefined, title);
+        controls.createSpan(elem, undefined, title);
     };
 
     const renderActions = () => {
@@ -530,14 +553,17 @@ var documents = (() => {
             if (curFile.size < 10 * 1024 * 1024) {
                 const fileReader = new FileReader();
                 fileReader.onload = (e) => {
-                    console.log(e.target.result);
                     initCryptoKey(() => {
                         const iv = window.crypto.getRandomValues(new Uint8Array(12));
                         const options = { name: "AES-GCM", iv: iv };
                         window.crypto.subtle.encrypt(options, cryptoKey, e.target.result)
-                            .then(cipherText => {
+                            .then(cipherData => {
+                                let view = new Uint8Array(cipherData);
+                                let data = new Uint8Array(cipherData.byteLength + 12);
+                                data.set(iv, 0);
+                                data.set(view, 12);
+                                const encryptedFile = new File([data.buffer], curFile.name, { type: "application/octet-stream" });
                                 let formData = new FormData();
-                                var encryptedFile = new File([cipherText], curFile.name, { type: "application/octet-stream" });
                                 formData.append("document-file", encryptedFile);
                                 const token = utils.get_authentication_token();
                                 utils.fetch_api_call(`api/document/upload/${currentId}`,
@@ -553,22 +579,51 @@ var documents = (() => {
                 };
                 fileReader.readAsArrayBuffer(curFile);
             }
+            else {
+                renderError("Datei ist zu gross! Bis 10 MB sind erlaubt.");
+            }
         }
     };
-
+    
     const onDownloadDocument = (id) => {
         const item = getItem(id);
-        console.log("Here we are!");
-        let token = utils.get_authentication_token();
+        const token = utils.get_authentication_token();
         fetch(`api/document/download/${id}`, { headers: { "token": token } })
             .then(resp => resp.blob())
             .then(blob => {
-                const obj_url = URL.createObjectURL(blob);
-                var a = document.createElement("a");
-                a.href = obj_url;
-                a.setAttribute("download", item.name);
-                a.click();
-                URL.revokeObjectURL(obj_url);
+                const iv = new Uint8Array(12);
+                const data = new Uint8Array(blob.size - 12);
+                let idx = 0;
+                const reader = blob.stream().getReader();
+                reader.read().then(
+                    function processData({ done, value }) {
+                        if (done) {
+                            initCryptoKey(() => {
+                                const options = { "name": "AES-GCM", "iv": iv };
+                                crypto.subtle.decrypt(options, cryptoKey, data)
+                                    .then(decrypted => {
+                                        const obj_url = URL.createObjectURL(new Blob([decrypted]));
+                                        let a = document.createElement("a");
+                                        a.href = obj_url;
+                                        a.setAttribute("download", item.name);
+                                        a.click();
+                                        URL.revokeObjectURL(obj_url);
+                                    })
+                                    .catch(err => renderError(err.message));
+                            });
+                            return;
+                        }
+                        value.forEach(val => {
+                            if (idx < 12) {
+                                iv[idx] = val;
+                            }
+                            else {
+                                data[idx - 12] = val;
+                            }
+                            idx++;
+                        });
+                        return reader.read().then(processData);
+                    });
             })
             .catch((err) => renderError(err.message));
     };
@@ -587,7 +642,7 @@ var documents = (() => {
         const selected = getSelected();
         if (selected.length == 1 && isContainer(selected[0]) && docItemsToMove.length > 0) {
             const ids = docItemsToMove.map(item => item.id);
-            let token = utils.get_authentication_token();
+            const token = utils.get_authentication_token();
             utils.fetch_api_call(`api/document/items/${selected[0].id}`,
                 {
                     method: "PUT",
@@ -723,42 +778,6 @@ var documents = (() => {
             });
         }
         renderDocItemsTable(filteredItems);
-    };
-
-    const initItems = () => {
-        const token = utils.get_authentication_token();
-        let url = "api/document/items";
-        if (Number.isInteger(currentId)) {
-            url += `/${currentId}`;
-        }
-        utils.fetch_api_call(url, { headers: { "token": token } },
-            (items) => {
-                docItems = [];
-                items.forEach(item => {
-                    docItems.push(item);
-                });
-                const volume = getVolume();
-                if (volume === undefined) {
-                    createVolume("Dokumente");
-                }
-                else {
-                    if (currentId === undefined) {
-                        currentId = volume.id;
-                    }
-                    renderPage(document.body);
-                }
-            }, renderError);
-    };
-
-    const createVolume = (name) => {
-        const token = utils.get_authentication_token();
-        utils.fetch_api_call("api/document/volume",
-            {
-                method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                body: JSON.stringify(name)
-            },
-            render, renderError);
     };
 
     // --- public API

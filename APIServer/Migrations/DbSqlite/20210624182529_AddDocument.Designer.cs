@@ -3,14 +3,16 @@ using System;
 using APIServer.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace APIServer.Migrations.DbSqlite
 {
     [DbContext(typeof(DbSqliteContext))]
-    partial class DbSqliteContextModelSnapshot : ModelSnapshot
+    [Migration("20210624182529_AddDocument")]
+    partial class AddDocument
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

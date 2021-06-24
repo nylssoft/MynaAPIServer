@@ -17,11 +17,8 @@
 */
 using APIServer.Document.Model;
 using APIServer.PwdMan;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace APIServer.Document
 {

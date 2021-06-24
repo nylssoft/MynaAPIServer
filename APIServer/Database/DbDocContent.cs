@@ -15,16 +15,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.IO;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace APIServer.Document
+namespace APIServer.Database
 {
-    public class DownloadResult
+    [Table("DocContents")]
+    public class DbDocContent
     {
-        public string FileName { get; set; }
+        public long Id { get; set; }
 
-        public string ContentType { get; set; }
-
-        public Stream Stream { get; set; }
+        public byte [] Data { get; set; }
     }
 }

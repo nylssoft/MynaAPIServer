@@ -56,6 +56,10 @@ namespace APIServer.Database
 
         public DbSet<DbNote> DbNotes { get; set; }
 
+        public DbSet<DbDocItem> DbDocItems { get; set; }
+
+        public DbSet<DbDocContent> DbDocContents { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<DbRegistration>()

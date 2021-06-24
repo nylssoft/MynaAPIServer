@@ -15,16 +15,35 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.IO;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace APIServer.Document
+namespace APIServer.Database
 {
-    public class DownloadResult
+    public enum DbDocItemType { Volume, Folder, Item };
+
+    [Table("DocItems")]
+    public class DbDocItem
     {
-        public string FileName { get; set; }
+        public long Id { get; set; }
 
-        public string ContentType { get; set; }
+        public long OwnerId { get; set; }
 
-        public Stream Stream { get; set; }
+        public DbUser Owner { get; set; }
+
+        public long? ParentId { get; set; }
+
+        public DbDocItem Parent { get; set; }
+
+        public string Name { get; set; }
+
+        public DbDocItemType Type { get; set; }
+
+        public long Size { get; set; }
+
+        public int Children { get; set; }
+
+        public long? ContentId { get; set; }
+
+        public DbDocContent Content { get; set; }
     }
 }

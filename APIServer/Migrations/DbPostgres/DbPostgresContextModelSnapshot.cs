@@ -66,6 +66,60 @@ namespace APIServer.Migrations.DbPostgres
                     b.ToTable("Diaries");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbDocContent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .UseIdentityByDefaultColumn();
+
+                    b.Property<byte[]>("Data")
+                        .HasColumnType("bytea");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DocContents");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbDocItem", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .UseIdentityByDefaultColumn();
+
+                    b.Property<int>("Children")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("ContentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<long>("OwnerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("ParentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("DocItems");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbLoginIpAddress", b =>
                 {
                     b.Property<long>("Id")
@@ -468,6 +522,29 @@ namespace APIServer.Migrations.DbPostgres
                         .IsRequired();
 
                     b.Navigation("DbUser");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbDocItem", b =>
+                {
+                    b.HasOne("APIServer.Database.DbDocContent", "Content")
+                        .WithMany()
+                        .HasForeignKey("ContentId");
+
+                    b.HasOne("APIServer.Database.DbUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("APIServer.Database.DbDocItem", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("Content");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbLoginIpAddress", b =>
