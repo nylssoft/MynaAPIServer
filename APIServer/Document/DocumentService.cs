@@ -39,6 +39,7 @@ namespace APIServer.Document
         public ItemModel CreateVolume(IPwdManService pwdManService, string authenticationToken, string name)
         {
             logger.LogDebug("Create volume '{name}'...", name);
+            name = name.Trim();
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
             var docItem = GetVolume(dbContext, user);
@@ -72,16 +73,23 @@ namespace APIServer.Document
             return ret;
         }
 
-        public ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, long size, Stream stream)
+        public ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, Stream stream)
         {
-            logger.LogDebug("Upload documemt with '{name}' ({size} bytes) into parent ID {parentId}...", name, size, parentId);
+            logger.LogDebug("Upload documemt with '{name}' into parent ID {parentId}...", name, parentId);
+            name = name.Trim();
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
+            var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
             var parentItem = GetItemById(dbContext, user, parentId);
             if (parentItem != null)
             {
                 var ms = new MemoryStream();
                 stream.CopyTo(ms);
+                var size = ms.Length;
+                if (sum + size > Limits.MAX_DOCUMENT_STORAGE)
+                {
+                    throw new PwdManInvalidArgumentException("Es ist nicht genügend Speicherplatz mehr verfügbar.");
+                }
                 var docItem = new DbDocItem
                 {
                     Name = name,
@@ -111,8 +119,7 @@ namespace APIServer.Document
                     item => item.OwnerId == user.Id && item.Type == DbDocItemType.Item && item.Id == id);
             if (docItem == null || docItem.Content == null)
             {
-                // @TODO: download file will be JSON error...
-                throw new PwdManInvalidArgumentException($"Missing content for document {id}.");
+                throw new PwdManInvalidArgumentException("Dokument hat keinen Inhalt.");
             }
             return new DownloadResult
             {
@@ -125,6 +132,7 @@ namespace APIServer.Document
         public ItemModel AddFolder(IPwdManService pwdManService, string authenticationToken, long parentId, string name)
         {
             logger.LogDebug("Add folder '{name}' into parent ID {parentId}...", name, parentId);
+            name = name.Trim();
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
             var parentItem = GetItemById(dbContext, user, parentId);
@@ -178,14 +186,18 @@ namespace APIServer.Document
                     dbContext.DbDocContents.Remove(new DbDocContent { Id = delItem.ContentId.Value });
                 }
             }
-            dbContext.DbDocItems.RemoveRange(removeItems);
-            dbContext.SaveChanges();
+            if (removeItems.Any())
+            {
+                dbContext.DbDocItems.RemoveRange(removeItems);
+                dbContext.SaveChanges();
+            }
             return removeItems.Count;
         }
 
         public bool RenameItem(IPwdManService pwdManService, string authenticationToken, long id, string name)
         {
             logger.LogDebug("Rename item ID {id} to '{name}'...", id, name);
+            name = name.Trim();
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
             var docItem = GetItemById(dbContext, user, id);
@@ -227,8 +239,11 @@ namespace APIServer.Document
                     }
                     moveItem.ParentId = destinationId;
                     destination.Children += 1;
-                    dbContext.SaveChanges();
                     moved++;
+                }
+                if (moveItems.Any())
+                {
+                    dbContext.SaveChanges();
                 }
             }
             return moved;

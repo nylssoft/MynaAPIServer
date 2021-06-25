@@ -34,6 +34,9 @@ namespace APIServer
         public const int MAX_PASSWORD = 100;
         public const int MAX_ROLE_NAME = 32;
         public const int MAX_PWDMAN_CONTENT = 1024 * 1024 * 10; // hex encoded string
+        public const int MAX_DOCUMENT_UPLOAD = 1024 * 1024 * 10; // upload at most 10 MB
+        public const int MAX_DOCUMENT_TITLE = 300;
+        public const int MAX_DOCUMENT_STORAGE = 1024 * 1024 * 100; // store at most 100 MB per user
     }
 
     public class InputValueTooLargeException : APIException

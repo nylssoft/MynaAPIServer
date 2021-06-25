@@ -39,7 +39,8 @@ namespace APIServer.Document
         [Route("api/document/volume")]
         public IActionResult CreateVolume([FromBody]string name)
         {
-            // @TODO: Limit on name length
+            if (string.IsNullOrEmpty(name)) throw new PwdManInvalidArgumentException("Name fehlt.");
+            if (name?.Trim().Length > Limits.MAX_DOCUMENT_TITLE) throw new InputValueTooLargeException();
             return new JsonResult(DocumentService.CreateVolume(PwdManService, GetToken(), name));
         }
 
@@ -75,7 +76,8 @@ namespace APIServer.Document
         [Route("api/document/item/{id}")]
         public IActionResult RenameItem(long id, [FromBody] string name)
         {
-            // @TODO: Limit on name length
+            if (string.IsNullOrEmpty(name)) throw new PwdManInvalidArgumentException("Name fehlt.");
+            if (name?.Trim().Length > Limits.MAX_DOCUMENT_TITLE) throw new InputValueTooLargeException();
             return new JsonResult(DocumentService.RenameItem(PwdManService, GetToken(), id, name));
         }
 
@@ -84,12 +86,12 @@ namespace APIServer.Document
         public IActionResult UploadDocument(long id, [FromForm(Name = "document-file")] IFormFile formFile)
         {
             if (formFile == null) throw new PwdManInvalidArgumentException("Datei fehlt.");
-            if (formFile.Length > 10 * 1024 * 1024) throw new PwdManInvalidArgumentException("Datei grösser als 10 MB.");
-            // @TODO: Limit on formFile.FileName length
+            if (string.IsNullOrEmpty(formFile.FileName)) throw new PwdManInvalidArgumentException("Dateiname fehlt.");
+            if (formFile.Length > Limits.MAX_DOCUMENT_UPLOAD) throw new PwdManInvalidArgumentException("Datei ist zu gross.");
+            if (formFile.Length <= 0) throw new PwdManInvalidArgumentException("Dateigrösse ungültig.");
+            if (formFile.FileName?.Trim().Length > Limits.MAX_DOCUMENT_TITLE) throw new InputValueTooLargeException();
             using var stream = formFile.OpenReadStream();
-            return new JsonResult(DocumentService.UploadDocument(
-                PwdManService, GetToken(),
-                id, formFile.FileName, formFile.Length, stream));
+            return new JsonResult(DocumentService.UploadDocument(PwdManService, GetToken(), id, formFile.FileName, stream));
         }
 
         [HttpGet]
@@ -104,7 +106,8 @@ namespace APIServer.Document
         [Route("api/document/folder/{id}")]
         public IActionResult AddFolder(long id, [FromBody] string name)
         {
-            // @TODO: Limit on name length
+            if (string.IsNullOrEmpty(name)) throw new PwdManInvalidArgumentException("Name fehlt.");
+            if (name?.Trim().Length > Limits.MAX_DOCUMENT_TITLE) throw new InputValueTooLargeException();
             return new JsonResult(DocumentService.AddFolder(PwdManService, GetToken(), id, name));
         }
 

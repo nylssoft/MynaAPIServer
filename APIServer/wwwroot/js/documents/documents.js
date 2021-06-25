@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.0";
+    let version = "1.0.1";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -48,7 +48,7 @@ var documents = (() => {
 
     const formatSize = (cnt) => {
         if (cnt >= 1024 * 1024) {
-            return `${Math.floor(cnt / 1024 * 1024)} MB`;
+            return `${Math.floor(cnt / (1024 * 1024))} MB`;
         }
         if (cnt >= 1024) {
             return `${Math.floor(cnt / 1024)} KB`;

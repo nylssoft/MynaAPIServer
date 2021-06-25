@@ -30,7 +30,7 @@ namespace APIServer.Document
 
         int DeleteItems(IPwdManService pwdManService, string authenticationToken, long parentId, List<long> delIds);
 
-        ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, long size, Stream stream);
+        ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, Stream stream);
 
         DownloadResult DownloadDocument(IPwdManService pwdManService, string authenticationToken, long id);
 
