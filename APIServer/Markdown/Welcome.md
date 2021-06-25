@@ -8,6 +8,9 @@ Diese Website ist für Familie und Freunde vorgesehen.
 Für Informationen zum Datenschutz oder zur verwendeten Open Source Software, siehe [Impressum](/markdown?page=impressum).
 
 ### Was ist neu?
+- 25. Juni 2021: Sichere Verwaltung von [Dokumenten](documents).
+                 Dokumente bis 10 MB können verschlüsselt hochgeladen werden.
+                 100 MB stehen für die Speicherung pro Benutzer zur Verfügung.
 - 30. Mai 2021: [Passwörter](password) können hochgeladen werden.
 - 23. Mai 2021: Tetris Highscore-Einträge werden nach 7 Tagen gelöscht. Blöcke können jetzt auch mit Touch-Gesten veschoben und rotiert werden. Das Ablegen eines Blockes wird verzögert, sodass er noch verschoben werden kann.
 - 21. Mai 2021: Bilder können mit den Pfeiltasten und Swipe-Gesten weitergeschaltet werden, neue Bilder in der Galerie.
@@ -22,6 +25,8 @@ Es gibt bisher folgende Spiele
 - [Tetris](/tetris)
 
 und folgende Anwendungen
+- [Dokumente](/documents)
+- [Passwörter](/password)
 - [Notizen](/notes)
 - [Tagebuch](/diary)
 
