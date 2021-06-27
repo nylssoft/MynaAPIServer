@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.1";
+    let version = "1.0.2";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -124,6 +124,48 @@ var documents = (() => {
         return items;
     };
 
+    const uploadFiles = (curFiles) => {
+        if (curFiles.length == 0) {
+            initItems();
+            return;
+        }
+        const curFile = curFiles[0];
+        curFiles.shift();
+        if (curFile.size < 10 * 1024 * 1024) {
+            const fileReader = new FileReader();
+            fileReader.onload = (e) => {
+                initCryptoKey(() => {
+                    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                    const options = { name: "AES-GCM", iv: iv };
+                    window.crypto.subtle.encrypt(options, cryptoKey, e.target.result)
+                        .then(cipherData => {
+                            const view = new Uint8Array(cipherData);
+                            const data = new Uint8Array(cipherData.byteLength + 12);
+                            data.set(iv, 0);
+                            data.set(view, 12);
+                            const encryptedFile = new File([data.buffer], curFile.name, { type: "application/octet-stream" });
+                            const formData = new FormData();
+                            formData.append("document-file", encryptedFile);
+                            const token = utils.get_authentication_token();
+                            utils.fetch_api_call(`api/document/upload/${currentId}`,
+                                {
+                                    method: "POST",
+                                    headers: { "token": token },
+                                    body: formData
+                                },
+                                () => uploadFiles(curFiles),
+                                renderError);
+                        })
+                        .catch(err => renderError(err.message));
+                });
+            };
+            fileReader.readAsArrayBuffer(curFile);
+        }
+        else {
+            renderError("Datei ist zu gross! Bis 10 MB sind erlaubt.");
+        }
+    };
+
     const isContainer = (item) => item.type === "Folder" || item.type === "Volume";
 
     const isDocument = (item) => item.type === "Document";
@@ -136,7 +178,7 @@ var documents = (() => {
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                 body: JSON.stringify(name)
             },
-            render, renderError);
+            renderState, renderError);
     };
 
     const initItems = () => {
@@ -159,7 +201,7 @@ var documents = (() => {
                     if (currentId === undefined) {
                         currentId = volume.id;
                     }
-                    renderPage(document.body);
+                    renderState();
                 }
             }, renderError);
     };
@@ -396,20 +438,37 @@ var documents = (() => {
         const table = controls.create(parent, "table");
         const tbody = controls.create(table, "tbody", "table-content");
         const items = filteredItems ? filteredItems : childItems;
+        const tr = controls.create(tbody, "tr");
+        let td = controls.create(tr, "td", "column1");
         if (items.length > 0) {
-            const tr = controls.create(tbody, "tr");
-            let td = controls.create(tr, "td", "column1");
             const checkBox = controls.createCheckbox(td, "item-select-all-id");
             checkBox.addEventListener("click", onSelectAll);
-            td = controls.create(tr, "td", "column2");
-            td = controls.create(tr, "td");
-            td = controls.create(tr, "td");
         }
+        td = controls.create(tr, "td", "column2");
+        td = controls.create(tr, "td");
+        td = controls.create(tr, "td");
         items.forEach(item => {
             const tr = controls.create(tbody, "tr");
             renderDocItem(tr, item);
         });
         table.addEventListener("click", onClickItem);
+        table.addEventListener("dragover", (evt) => {
+            evt.preventDefault();
+            evt.dataTransfer.dropEffect = "copy";
+        });
+        table.addEventListener("drop", (evt) => {
+            evt.preventDefault();
+            if (evt.dataTransfer.items) {
+                const curFiles = [];
+                for (let i = 0; i < evt.dataTransfer.items.length; i++) {
+                    const dti = evt.dataTransfer.items[i];
+                    if (dti.kind === "file") {
+                        curFiles.push(dti.getAsFile());
+                    }
+                }
+                uploadFiles(curFiles);
+            }
+        });
     };
 
     const renderUploadDocument = (parent) => {
@@ -420,12 +479,23 @@ var documents = (() => {
         const inputFile = controls.create(form, "input");
         inputFile.type = "file";
         inputFile.name = "file-input";
-        inputFile.accept = "application/octet-stream";
         inputFile.id = "file-input-id";
+        inputFile.multiple = true;
         inputFile.addEventListener("change", onAddDocument);
     };
 
-    const renderPage = (parent) => {
+    const renderState = () => {
+        renderCurrentPath();
+        renderError("");
+        renderFilter();
+        renderActions();
+        renderTitle();
+        renderDocItemsTable();
+    };
+
+    const renderPage = () => {
+        const parent = document.body;
+        controls.removeAllChildren(parent);
         renderEncryptKey(parent);
         controls.createDiv(parent, "currentpath").id = "currentpath-id";
         controls.createDiv(parent, "error").id = "error-id";
@@ -433,29 +503,22 @@ var documents = (() => {
         controls.createDiv(parent, "content").id = "content-id";
         controls.createDiv(parent, "title").id = "title-id";
         controls.createDiv(parent, "action").id = "action-id";
-        renderCurrentPath();
-        renderError("");
-        renderFilter();
-        renderActions();
-        renderTitle();
         renderCopyright(parent);
         renderUploadDocument(parent);
-        renderDocItemsTable();
     };
 
     const render = () => {
-        parent = document.body;
-        controls.removeAllChildren(parent);
         cryptoKey = undefined;
-        let token = utils.get_authentication_token();
+        const token = utils.get_authentication_token();
         if (!token) {
-            let nexturl = "/documents";
+            const nexturl = "/documents";
             window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl);
             return;
         }
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
+                renderPage();
                 initItems();
             },
             renderError);
@@ -494,7 +557,7 @@ var documents = (() => {
         const volume = getVolume();
         if (volume !== undefined) {
             currentId = volume.parentId;
-            render();
+            initItems();
         }
     };
 
@@ -504,7 +567,7 @@ var documents = (() => {
             const item = getItem(id);
             if (item !== undefined && isContainer(item) && id != currentId) {
                 currentId = id;
-                render();
+                initItems();
             }
         }
     };
@@ -520,7 +583,7 @@ var documents = (() => {
             const item = getItem(id);
             if (isContainer(item)) {
                 currentId = id;
-                render();
+                initItems();
             }
             else if (isDocument(item)) {
                 onDownloadDocument(id);
@@ -548,41 +611,11 @@ var documents = (() => {
 
     const onAddDocument = () => {
         const inputFile = document.getElementById("file-input-id");
-        if (inputFile.files.length == 1) {
-            const curFile = inputFile.files[0];
-            if (curFile.size < 10 * 1024 * 1024) {
-                const fileReader = new FileReader();
-                fileReader.onload = (e) => {
-                    initCryptoKey(() => {
-                        const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                        const options = { name: "AES-GCM", iv: iv };
-                        window.crypto.subtle.encrypt(options, cryptoKey, e.target.result)
-                            .then(cipherData => {
-                                let view = new Uint8Array(cipherData);
-                                let data = new Uint8Array(cipherData.byteLength + 12);
-                                data.set(iv, 0);
-                                data.set(view, 12);
-                                const encryptedFile = new File([data.buffer], curFile.name, { type: "application/octet-stream" });
-                                let formData = new FormData();
-                                formData.append("document-file", encryptedFile);
-                                const token = utils.get_authentication_token();
-                                utils.fetch_api_call(`api/document/upload/${currentId}`,
-                                    {
-                                        method: "POST",
-                                        headers: { "token": token },
-                                        body: formData
-                                    },
-                                    render, renderError);
-                            })
-                            .catch(err => renderError(err.message));
-                    });
-                };
-                fileReader.readAsArrayBuffer(curFile);
-            }
-            else {
-                renderError("Datei ist zu gross! Bis 10 MB sind erlaubt.");
-            }
+        const curFiles = [];
+        for (let i = 0; i < inputFile.files.length; i++) {
+            curFiles.push(inputFile.files[i]);
         }
+        uploadFiles(curFiles);
     };
     
     const onDownloadDocument = (id) => {
@@ -634,7 +667,7 @@ var documents = (() => {
             move = true;
             docItemsToMove = selected;
             currentIdBeforeMove = currentId;
-            render();
+            initItems();
         }
     };
 
@@ -643,18 +676,18 @@ var documents = (() => {
         if (selected.length == 1 && isContainer(selected[0]) && docItemsToMove.length > 0) {
             const ids = docItemsToMove.map(item => item.id);
             const token = utils.get_authentication_token();
+            move = false;
+            docItemsToMove = [];
+            currentId = currentIdBeforeMove;
+            currentIdBeforeMove = undefined;
             utils.fetch_api_call(`api/document/items/${selected[0].id}`,
                 {
                     method: "PUT",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                     body: JSON.stringify(ids)
                 },
-                render, renderError);
-            move = false;
-            docItemsToMove = [];
-            currentId = currentIdBeforeMove;
-            currentIdBeforeMove = undefined;
-            render();
+                () => initItems(),
+                renderError);
         }
     };
 
@@ -664,14 +697,14 @@ var documents = (() => {
             docItemsToMove = [];
             currentId = currentIdBeforeMove;
             currentIdBeforeMove = undefined;
-            render();
+            renderState();
         }
     };
 
     const onGotoUp = () => {
         const item = getItem(currentId);
         currentId = item.parentId;
-        render();
+        initItems();
     };
 
     const onConfirmAddFolder = () => {
@@ -683,7 +716,7 @@ var documents = (() => {
         name.id = "create-name-input-id";
         controls.createSpan(elem, undefined, "  ");
         controls.createButton(elem, "Anlegen", onAddFolder);
-        controls.createButton(elem, "Abbrechen", render);
+        controls.createButton(elem, "Abbrechen", () => renderState());
         if (!utils.is_mobile()) {
             name.focus();
         }
@@ -700,7 +733,8 @@ var documents = (() => {
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                     body: JSON.stringify(val)
                 },
-                render, renderError);
+                () => initItems(),
+                renderError);
         }
     };
 
@@ -716,7 +750,7 @@ var documents = (() => {
             name.value = selected[0].name;
             controls.createSpan(elem, undefined, "  ");
             controls.createButton(elem, "Umbenennen", onRename);
-            controls.createButton(elem, "Abbrechen", render);
+            controls.createButton(elem, "Abbrechen", () => renderState());
             if (!utils.is_mobile()) {
                 name.focus();
             }
@@ -736,7 +770,7 @@ var documents = (() => {
                         headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                         body: JSON.stringify(val)
                     },
-                    render, renderError);
+                    () => initItems(), renderError);
             }
         }
     };
@@ -746,7 +780,7 @@ var documents = (() => {
         controls.removeAllChildren(elem);
         controls.createSpan(elem, undefined, "Willst Du die ausgew\u00E4hlten Elemente wirklich l\u00F6schen?  ");
         controls.createButton(elem, "Ja", onDeleteDocuments);
-        controls.createButton(elem, "Nein", render);
+        controls.createButton(elem, "Nein", () => initItems());
     };
 
     const onDeleteDocuments = () => {
@@ -760,7 +794,7 @@ var documents = (() => {
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                     body: JSON.stringify(ids)
                 },
-                render, renderError);
+                () => initItems(), renderError);
         }
     };
 
