@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.3";
+    let version = "1.0.4";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -561,7 +561,7 @@ var documents = (() => {
         if (evt.target.id.startsWith("item-path-id-")) {
             const id = parseInt(evt.target.id.substr(13));
             const item = getItem(id);
-            if (item !== undefined && isContainer(item) && id != currentId) {
+            if (item !== undefined && isContainer(item)) {
                 currentId = id;
                 initItems();
             }
