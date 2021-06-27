@@ -118,6 +118,10 @@ a {
     margin: 5pt;
 }
 
+.currentfolder {
+    color: white;
+}
+
 .filter {
     margin: 5pt;
 }

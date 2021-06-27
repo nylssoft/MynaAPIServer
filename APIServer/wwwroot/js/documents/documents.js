@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.2";
+    let version = "1.0.3";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -318,14 +318,10 @@ var documents = (() => {
     const renderPathItem = (parent, pathItem, index) => {
         const sep = index === 0 && !move ? "> " : " > ";
         const span = controls.createSpan(parent, "path-item", sep);
-        if (pathItem.id != currentId) {
-            const a = controls.createA(span, undefined, "#", pathItem.name);
-            a.id = `item-path-id-${pathItem.id}`;
-            a.addEventListener("click", onClickPathItem);
-        }
-        else {
-            controls.createSpan(span, "", pathItem.name);
-        }
+        const className = (pathItem.id == currentId) ? "currentfolder" : undefined;
+        const a = controls.createA(span, className, "#open", pathItem.name);
+        a.id = `item-path-id-${pathItem.id}`;
+        a.addEventListener("click", onClickPathItem);
     };
 
     const renderCurrentPath = () => {
@@ -441,7 +437,7 @@ var documents = (() => {
         const tr = controls.create(tbody, "tr");
         let td = controls.create(tr, "td", "column1");
         if (items.length > 0) {
-            const checkBox = controls.createCheckbox(td, "item-select-all-id");
+            const checkBox = controls.createCheckbox(td, "item-select-all-id", "item-select-all");
             checkBox.addEventListener("click", onSelectAll);
         }
         td = controls.create(tr, "td", "column2");
