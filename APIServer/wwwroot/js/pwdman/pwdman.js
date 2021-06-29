@@ -41,7 +41,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.17";
+    let version = "1.1.18";
 
     // helper
 
@@ -262,7 +262,7 @@ var pwdman = (() => {
     const cancel = () => {
         lastErrorMessage = "";
         if (nexturl && nexturl.length > 0) {
-            if (nexturl == "/diary" || nexturl == "/notes") {
+            if (nexturl == "/diary" || nexturl == "/notes" || nexturl == "/documents" || nexturl == "/password") {
                 nexturl = "/markdown";
             }
             window.location.replace(nexturl);

@@ -4,10 +4,11 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.4";
+    let version = "1.0.5";
     let cryptoKey;
     let currentUser;
     let helpDiv;
+    let waitDiv;
 
     let currentId;
     let docItems = [];
@@ -16,6 +17,13 @@ var documents = (() => {
     let move = false;
 
     // helper
+
+    const setWaitCursor = (wait) => {
+        document.body.style.cursor = wait ? "wait" : "default";
+        if (waitDiv) {
+            waitDiv.className = wait ? "wait-div" : "invisible-div";
+        }
+    };
 
     const initCryptoKey = (resolve, reject) => {
         if (!cryptoKey) {
@@ -126,9 +134,11 @@ var documents = (() => {
 
     const uploadFiles = (curFiles) => {
         if (curFiles.length == 0) {
+            setWaitCursor(false);
             initItems();
             return;
         }
+        setWaitCursor(true);
         const curFile = curFiles[0];
         curFiles.shift();
         if (curFile.size < 10 * 1024 * 1024) {
@@ -154,15 +164,15 @@ var documents = (() => {
                                     body: formData
                                 },
                                 () => uploadFiles(curFiles),
-                                renderError);
+                                (errMsg) => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${errMsg}`));
                         })
-                        .catch(err => renderError(err.message));
+                        .catch(err => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${err.message}`));
                 });
             };
             fileReader.readAsArrayBuffer(curFile);
         }
         else {
-            renderError("Datei ist zu gross! Bis 10 MB sind erlaubt.");
+            initItems(`Datei '${curFile.name}' ist zu gross! Bis 10 MB sind erlaubt.`);
         }
     };
 
@@ -178,10 +188,10 @@ var documents = (() => {
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                 body: JSON.stringify(name)
             },
-            renderState, renderError);
+            renderState, renderError, setWaitCursor);
     };
 
-    const initItems = () => {
+    const initItems = (errMsg) => {
         const token = utils.get_authentication_token();
         let url = "api/document/items";
         if (Number.isInteger(currentId)) {
@@ -201,9 +211,9 @@ var documents = (() => {
                     if (currentId === undefined) {
                         currentId = volume.id;
                     }
-                    renderState();
+                    renderState(errMsg);
                 }
-            }, renderError);
+            }, renderError, setWaitCursor);
     };
 
     // rendering
@@ -223,20 +233,19 @@ var documents = (() => {
         const encryptKeyElem = document.getElementById("div-encryptkey-id");
         if (!parent || !encryptKeyElem) return;
         controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/notes", "Notizen");
-        controls.createA(parent, undefined, "/skat", "Skat");
-        controls.createA(parent, undefined, "/diary", "Tagebuch");
-        controls.createA(parent, undefined, "/tetris", "Tetris");
-        controls.create(parent, "hr");
-        if (currentUser.hasPasswordManagerFile) {
-            controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-        }
-        controls.createA(parent, undefined, "/usermgmt", "Profil");
-        controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
-        controls.create(parent, "hr");
         controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
         controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/documents", "Dokumente");
+        controls.createA(parent, undefined, "/notes", "Notizen");
+        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
+        controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/skat", "Skat");
+        controls.createA(parent, undefined, "/tetris", "Tetris");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/usermgmt", "Profil");
+        controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         if (encryptKeyElem.classList.contains("show")) {
             controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
                 () => {
@@ -271,6 +280,8 @@ var documents = (() => {
     };
 
     const renderError = (errMsg) => {
+        setWaitCursor(false);
+        if (!errMsg) errMsg = "";
         const elem = document.getElementById("error-id");
         if (elem) {
             elem.textContent = errMsg;
@@ -480,9 +491,9 @@ var documents = (() => {
         inputFile.addEventListener("change", onAddDocument);
     };
 
-    const renderState = () => {
+    const renderState = (errMsg) => {
         renderCurrentPath();
-        renderError("");
+        renderError(errMsg);
         renderFilter();
         renderActions();
         renderTitle();
@@ -492,6 +503,7 @@ var documents = (() => {
     const renderPage = () => {
         const parent = document.body;
         controls.removeAllChildren(parent);
+        waitDiv = controls.createDiv(parent, "invisible-div");
         renderEncryptKey(parent);
         controls.createDiv(parent, "currentpath").id = "currentpath-id";
         controls.createDiv(parent, "error").id = "error-id";
@@ -517,7 +529,7 @@ var documents = (() => {
                 renderPage();
                 initItems();
             },
-            renderError);
+            renderError, setWaitCursor);
     };
 
     // --- callbacks
@@ -615,6 +627,7 @@ var documents = (() => {
     };
     
     const onDownloadDocument = (id) => {
+        setWaitCursor(true);
         const item = getItem(id);
         const token = utils.get_authentication_token();
         fetch(`api/document/download/${id}`, { headers: { "token": token } })
@@ -637,6 +650,7 @@ var documents = (() => {
                                         a.setAttribute("download", item.name);
                                         a.click();
                                         URL.revokeObjectURL(obj_url);
+                                        setWaitCursor(false);
                                     })
                                     .catch(err => renderError(err.message));
                             });
@@ -683,7 +697,7 @@ var documents = (() => {
                     body: JSON.stringify(ids)
                 },
                 () => initItems(),
-                renderError);
+                renderError, setWaitCursor);
         }
     };
 
@@ -730,7 +744,7 @@ var documents = (() => {
                     body: JSON.stringify(val)
                 },
                 () => initItems(),
-                renderError);
+                renderError, setWaitCursor);
         }
     };
 
@@ -766,7 +780,7 @@ var documents = (() => {
                         headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                         body: JSON.stringify(val)
                     },
-                    () => initItems(), renderError);
+                    () => initItems(), renderError, setWaitCursor);
             }
         }
     };
@@ -790,7 +804,7 @@ var documents = (() => {
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                     body: JSON.stringify(ids)
                 },
-                () => initItems(), renderError);
+                () => initItems(), renderError, setWaitCursor);
         }
     };
 

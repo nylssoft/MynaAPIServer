@@ -34,8 +34,7 @@ sowie eine Bildergalerie von Ausflügen und Urlauben.
 
 - Bildergalerie [chronologisch](/slideshow?shuffle=false), [zufällig](/slideshow?shuffle=true)
 
-Für Notizen und Tagebuch musst Du Dich [anmelden](/pwdman?nexturl=markdown) sowie um Familienbilder in der Galerie angezeigt
-zu bekommen oder Ergebnisse Deiner Skatspiele zu sehen.
+Für Dokumente, Notizen, Passwörter und Tagebuch musst Du Dich [anmelden](/pwdman?nexturl=markdown).
 
 ##
 Viel Spaß!

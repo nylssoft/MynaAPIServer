@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.18";
+    let version = "1.3.19";
 
     // helper
 
@@ -274,24 +274,24 @@ var skat = (() => {
         let parent = document.getElementById("dropdown-id");
         if (!parent) return;
         controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/documents", "Dokumente");
         controls.createA(parent, undefined, "/notes", "Notizen");
-        controls.createA(parent, undefined, "/skat", "Skat");
+        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
         controls.createA(parent, undefined, "/diary", "Tagebuch");
+        controls.create(parent, "hr");
+        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+        controls.createA(parent, undefined, "/skat", "Skat");
         controls.createA(parent, undefined, "/tetris", "Tetris");
         controls.create(parent, "hr");
         if (currentUser) {
-            if (currentUser.hasPasswordManagerFile) {
-                controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-            }
             controls.createA(parent, undefined, "/usermgmt", "Profil");
             controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
         }
         else {
             controls.createA(parent, undefined, "/pwdman?nexturl=/skat", "Anmelden");
         }
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
     };
 
     const renderTableFull = (parent, ignoreToken) => {

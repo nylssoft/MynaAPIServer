@@ -44,6 +44,21 @@ table {
     width: 100%;
 }
 
+.wait-div {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0.8;
+    z-index: 10;
+}
+
+.invisible-div {
+    display: block;
+}
+
 .column1 {
     padding-left: 10px;
     width: 16px;
