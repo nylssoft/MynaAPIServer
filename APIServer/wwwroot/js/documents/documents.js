@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.5";
+    let version = "1.0.6";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -53,16 +53,6 @@ var documents = (() => {
         }
         renderDropdownContent();
     };
-
-    const formatSize = (cnt) => {
-        if (cnt >= 1024 * 1024) {
-            return `${Math.floor(cnt / (1024 * 1024))} MB`;
-        }
-        if (cnt >= 1024) {
-            return `${Math.floor(cnt / 1024)} KB`;
-        }
-        return `${cnt} B`;
-    }
 
     const getPath = (id) => {
         const items = [];
@@ -409,9 +399,6 @@ var documents = (() => {
         const filterInput = controls.createInputField(elem, "Filter", undefined, undefined, 32, 255);
         filterInput.id = "filter-input-id";
         filterInput.addEventListener("input", () => onFilterItems());
-        if (!utils.is_mobile()) {
-            filterInput.focus();
-        }
     };
 
     const renderDocItem = (tr, item, selected) => {
@@ -434,7 +421,7 @@ var documents = (() => {
             td.textContent = `${item.children}`;
         }
         else {
-            td.textContent = formatSize(item.size);
+            td.textContent = utils.format_size(item.size);
         }
     };
 
@@ -816,7 +803,7 @@ var documents = (() => {
             const items = getItems(currentId);
             filteredItems = [];
             items.forEach(item => {
-                if (item.name.toLowerCase().startsWith(v)) {
+                if (item.name.toLowerCase().includes(v)) {
                     filteredItems.push(item);
                 }
             });

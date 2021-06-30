@@ -26,6 +26,16 @@ var utils = (() => {
         return "";
     };
 
+    const format_size = (cnt) => {
+        if (cnt >= 1024 * 1024) {
+            return `${Math.floor(cnt / (1024 * 1024))} MB`;
+        }
+        if (cnt >= 1024) {
+            return `${Math.floor(cnt / 1024)} KB`;
+        }
+        return `${cnt} B`;
+    };
+
     const shuffle_array = (arr) => {
         let ridx;
         let tmp;
@@ -308,6 +318,7 @@ var utils = (() => {
     return {
         concat_strings: concat_strings,
         format_date: format_date,
+        format_size: format_size,
         shuffle_array: shuffle_array,
         count_characters: count_characters,
         get_authentication_token: get_authentication_token,

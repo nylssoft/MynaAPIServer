@@ -520,7 +520,7 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public UserModel GetUser(string authenticationToken, bool getLoginIpAddresses = false)
+        public UserModel GetUser(string authenticationToken, bool getLoginIpAddresses = false, bool getDocumentStorage = false)
         {
             logger.LogDebug("Get user...");
             var user = GetUserFromToken(authenticationToken);
@@ -555,6 +555,12 @@ namespace APIServer.PwdMan
                         Failed = ip.Failed
                     });
                 }
+            }
+            if (getDocumentStorage)
+            {
+                var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
+                userModel.DocumentStorageUsed = sum;
+                userModel.DocumentStorageQuota = 100 * 1024 * 1024; // 100 MB quota for now
             }
             return userModel;
         }

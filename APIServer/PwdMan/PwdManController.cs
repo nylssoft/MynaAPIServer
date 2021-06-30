@@ -114,9 +114,9 @@ namespace APIServer.PwdMan
 
         [HttpGet]
         [Route("api/pwdman/user")]
-        public IActionResult GetUser([FromQuery] bool? getLoginIPAddresses)
+        public IActionResult GetUser([FromQuery] bool? getLoginIPAddresses, bool? getDocumentStorage)
         {
-            return new JsonResult(PwdManService.GetUser(GetToken(), getLoginIPAddresses.HasValue ? getLoginIPAddresses.Value : false));
+            return new JsonResult(PwdManService.GetUser(GetToken(), getLoginIPAddresses.HasValue ? getLoginIPAddresses.Value : false, getDocumentStorage.HasValue ? getDocumentStorage.Value : false));
         }
 
         [HttpPost]

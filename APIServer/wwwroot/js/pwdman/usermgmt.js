@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.12";
+    let version = "1.1.13";
 
     // helper
 
@@ -326,10 +326,17 @@ var usermgmt = (() => {
         dt = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
         controls.createSpan(registeredP, undefined, "Registriert seit: ");
         controls.createSpan(registeredP, undefined, dt);
+        if (currentUser.documentStorageUsed > 0) {
+            const documentsP = controls.create(parent, "p");
+            const used = utils.format_size(currentUser.documentStorageUsed);
+            const quota = utils.format_size(currentUser.documentStorageQuota);
+            controls.createSpan(documentsP, undefined, `Speicherplatz f\u00FCr Dokumente: ${used} von ${quota} belegt.`);
+        }
         if (currentUser.loginIpAddresses.length > 0) {
-            let ipAddressesP = controls.create(parent, "p", undefined, "Anmeldungen: ");
-            controls.createButton(ipAddressesP, "Aufr\u00E4umen", () => onDeleteLoginIpAddresses());
-            let ul = controls.create(ipAddressesP, "ul");
+            const loginIpP = controls.create(parent, "p");
+            controls.createSpan(loginIpP, undefined, "Anmeldungen: ");
+            controls.createButton(loginIpP, "Aufr\u00E4umen", () => onDeleteLoginIpAddresses());
+            const ul = controls.create(loginIpP, "ul");
             currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
         }
         controls.createA(parent, undefined, "/skat/results", "Skatergebnisse", () => window.open("/skat?results", "_blank"));
@@ -800,7 +807,7 @@ var usermgmt = (() => {
         }
         let token = utils.get_authentication_token();
         utils.fetch_api_call(
-            "api/pwdman/user?getLoginIPAddresses=true",
+            "api/pwdman/user?getLoginIPAddresses=true&getDocumentStorage=true",
             { headers: { "token": token } },
             onResolveCurrentUser,
             (errMsg) => {
