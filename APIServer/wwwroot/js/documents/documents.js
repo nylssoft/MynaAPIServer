@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.6";
+    let version = "1.0.7";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -482,9 +482,9 @@ var documents = (() => {
         renderCurrentPath();
         renderError(errMsg);
         renderFilter();
-        renderActions();
-        renderTitle();
         renderDocItemsTable();
+        renderTitle();
+        renderActions();
     };
 
     const renderPage = () => {
