@@ -4,7 +4,7 @@ var password = (() => {
 
     // state
 
-    let version = "1.0.1";
+    let version = "1.0.2";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -39,60 +39,7 @@ var password = (() => {
         initCryptoKey(() => utils.decode_message(cryptoKey, text, resolve, reject), reject);
     };
 
-    const showEncryptKey = (show) => {
-        let encryptKeyElem = document.getElementById("div-encryptkey-id");
-        if (!encryptKeyElem) return;
-        if (show || !utils.has_viewed_encryption_key(currentUser)) {
-            encryptKeyElem.classList.add("show");
-        }
-        else {
-            encryptKeyElem.classList.remove("show");
-        }
-        renderDropdownContent();
-    };
-
     // rendering
-
-    const renderDropdown = (parent) => {
-        let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
-        dropdownButton.addEventListener("click", () => {
-            document.getElementById("dropdown-id").classList.toggle("show");
-        });
-        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
-        dropdownContentDiv.id = "dropdown-id";
-    };
-
-    const renderDropdownContent = () => {
-        let parent = document.getElementById("dropdown-id");
-        let encryptKeyElem = document.getElementById("div-encryptkey-id");
-        if (!parent || !encryptKeyElem) return;
-        controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/documents", "Dokumente");
-        controls.createA(parent, undefined, "/notes", "Notizen");
-        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-        controls.createA(parent, undefined, "/diary", "Tagebuch");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/skat", "Skat");
-        controls.createA(parent, undefined, "/tetris", "Tetris");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/usermgmt", "Profil");
-        controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
-        if (encryptKeyElem.classList.contains("show")) {
-            controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
-                () => {
-                    utils.set_viewed_encryption_key(currentUser, true);
-                    showEncryptKey(false);
-                });
-        }
-        else {
-            controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
-                () => showEncryptKey(true));
-        }
-    };
 
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
@@ -129,7 +76,7 @@ var password = (() => {
     };
 
     const renderEncryptKey = (parent) => {
-        renderDropdown(parent);
+        utils.create_menu(parent);
         renderHeader(parent);
         let encryptKey = utils.get_encryption_key(currentUser);
         let div = controls.createDiv(parent, "hide");
@@ -155,8 +102,8 @@ var password = (() => {
         let show = encryptKey == undefined;
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
             "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
-        showEncryptKey(show);
-        renderDropdownContent();
+        utils.show_encrypt_key(currentUser, show);
+        utils.set_menu_items(currentUser);
     };
 
     const renderPasswordItem = (parent, txt, desc, decode) => {
@@ -386,14 +333,4 @@ var password = (() => {
 
 window.onload = () => utils.auth_lltoken(password.render);
 
-window.onclick = (event) => {
-    if (!event.target.matches(".dropbtn")) {
-        let dropdowns = document.getElementsByClassName("dropdown-content");
-        for (let i = 0; i < dropdowns.length; i++) {
-            let openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains("show")) {
-                openDropdown.classList.remove("show");
-            }
-        }
-    }
-};
+window.onclick = (event) => utils.hide_menu(event);

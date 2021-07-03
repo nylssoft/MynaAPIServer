@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.13";
+    let version = "1.1.14";
 
     // helper
 
@@ -34,35 +34,6 @@ var usermgmt = (() => {
     };
 
     // rendering
-
-    const renderDropdown = (parent) => {
-        let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
-        dropdownButton.addEventListener("click", () => {
-            document.getElementById("dropdown-id").classList.toggle("show");
-        });
-        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
-        dropdownContentDiv.id = "dropdown-id";
-    };
-
-    const renderDropdownContent = () => {
-        let parent = document.getElementById("dropdown-id");
-        if (!parent) return;
-        controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/documents", "Dokumente");
-        controls.createA(parent, undefined, "/notes", "Notizen");
-        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-        controls.createA(parent, undefined, "/diary", "Tagebuch");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/skat", "Skat");
-        controls.createA(parent, undefined, "/tetris", "Tetris");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/usermgmt", "Profil");
-        controls.createA(parent, undefined, "/logout", "Abmelden", () => onLogout());
-    };
 
     const renderHeader = (parent, intro, title) => {
         if (title || intro || !currentUser) {
@@ -282,7 +253,7 @@ var usermgmt = (() => {
         let parent = document.body;
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderDropdown(parent);
+        utils.create_menu(parent);
         renderHeader(parent);
         let photoImg = controls.create(parent, "img", "profile-photo");
         photoImg.id = "profile-photo-id";
@@ -344,7 +315,7 @@ var usermgmt = (() => {
         renderAccountActions();
         controls.createDiv(parent, "error").id = "error-id";
         renderCopyright(parent);
-        renderDropdownContent();
+        utils.set_menu_items(currentUser);
     };
 
     const renderAccountActions = (confirm) => {
@@ -824,18 +795,6 @@ var usermgmt = (() => {
     };
 })();
 
-window.onload = () => {
-    utils.auth_lltoken(usermgmt.render);
-};
+window.onload = () => utils.auth_lltoken(usermgmt.render);
 
-window.onclick = (event) => {
-    if (!event.target.matches(".dropbtn")) {
-        let dropdowns = document.getElementsByClassName("dropdown-content");
-        for (let i = 0; i < dropdowns.length; i++) {
-            let openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains("show")) {
-                openDropdown.classList.remove("show");
-            }
-        }
-    }
-};
+window.onclick = (event) => utils.hide_menu(event);

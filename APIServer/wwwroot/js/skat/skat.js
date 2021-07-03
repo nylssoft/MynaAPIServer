@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.19";
+    let version = "1.3.20";
 
     // helper
 
@@ -260,40 +260,6 @@ var skat = (() => {
 
     // rendering
 
-    const renderDropdown = (parent) => {
-        let dropdownDiv = controls.create(parent, "div", "dropdown");
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
-        dropdownButton.addEventListener("click", () => {
-            document.getElementById("dropdown-id").classList.toggle("show");
-        });
-        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
-        dropdownContentDiv.id = "dropdown-id";
-    };
-
-    const renderDropdownContent = () => {
-        let parent = document.getElementById("dropdown-id");
-        if (!parent) return;
-        controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/documents", "Dokumente");
-        controls.createA(parent, undefined, "/notes", "Notizen");
-        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-        controls.createA(parent, undefined, "/diary", "Tagebuch");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/skat", "Skat");
-        controls.createA(parent, undefined, "/tetris", "Tetris");
-        controls.create(parent, "hr");
-        if (currentUser) {
-            controls.createA(parent, undefined, "/usermgmt", "Profil");
-            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
-        }
-        else {
-            controls.createA(parent, undefined, "/pwdman?nexturl=/skat", "Anmelden");
-        }
-    };
-
     const renderTableFull = (parent, ignoreToken) => {
         if (ignoreToken || !currentUser) {
             controls.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
@@ -314,7 +280,7 @@ var skat = (() => {
 
     const renderUserList = (parent) => {
         helpDiv = controls.createDiv(document.body);
-        renderDropdown(parent);
+        utils.create_menu(parent);
         let title = currentUser ? `${currentUser.name} - Skat` : "Skat";
         const h1 = controls.create(parent, "h1", undefined, title);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
@@ -358,7 +324,7 @@ var skat = (() => {
                 idx++;
             });
         }
-        renderDropdownContent();
+        utils.set_menu_items(currentUser);
     };
 
     const renderReservations = (parent) => {
@@ -1822,14 +1788,4 @@ window.onload = () => {
     utils.auth_lltoken(skat.renderInit);
 };
 
-window.onclick = (event) => {
-    if (!event.target.matches(".dropbtn")) {
-        let dropdowns = document.getElementsByClassName("dropdown-content");
-        for (let i = 0; i < dropdowns.length; i++) {
-            let openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains("show")) {
-                openDropdown.classList.remove("show");
-            }
-        }
-    }
-};
+window.onclick = (event) => utils.hide_menu(event);

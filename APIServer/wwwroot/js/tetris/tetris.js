@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.20";
+    let version = "1.2.21";
 
     let block;
     let nextBlock;
@@ -822,41 +822,6 @@ var tetris = (() => {
         });
     }
 
-    const renderDropdown = (parent) => {
-        let dropdownDiv = controls.create(parent, "div", "dropdown");
-        dropdownDiv.id = "div-dropdown-id";
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
-        dropdownButton.addEventListener("click", () => {
-            document.getElementById("dropdown-id").classList.toggle("show");
-        });
-        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
-        dropdownContentDiv.id = "dropdown-id";
-    };
-
-    const renderDropdownContent = () => {
-        let parent = document.getElementById("dropdown-id");
-        if (!parent) return;
-        controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/documents", "Dokumente");
-        controls.createA(parent, undefined, "/notes", "Notizen");
-        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-        controls.createA(parent, undefined, "/diary", "Tagebuch");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/skat", "Skat");
-        controls.createA(parent, undefined, "/tetris", "Tetris");
-        controls.create(parent, "hr");
-        if (currentUser) {
-            controls.createA(parent, undefined, "/usermgmt", "Profil");
-            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
-        }
-        else {
-            controls.createA(parent, undefined, "/pwdman?nexturl=/tetris", "Anmelden");
-        }
-    };
-
     const renderHeader = (parent) => {
         let title = currentUser ? `${currentUser.name} - Tetris` : "Tetris";
         controls.create(parent, "h1", "header", title);
@@ -1109,11 +1074,11 @@ var tetris = (() => {
         controls.removeAllChildren(document.body);
 
         let all = controls.createDiv(document.body);
-        renderDropdown(all);
+        utils.create_menu(all);
         renderHeader(all);
         renderTetris(all);
         renderCopyright(all);
-        renderDropdownContent();
+        utils.set_menu_items(currentUser);
 
         setBackgroundPicture();
     };
@@ -1232,14 +1197,4 @@ window.onload = () => {
     });
 };
 
-window.onclick = (event) => {
-    if (!event.target.matches(".dropbtn")) {
-        let dropdowns = document.getElementsByClassName("dropdown-content");
-        for (let i = 0; i < dropdowns.length; i++) {
-            let openDropdown = dropdowns[i];
-            if (openDropdown.classList.contains("show")) {
-                openDropdown.classList.remove("show");
-            }
-        }
-    }
-};
+window.onclick = (event) => utils.hide_menu(event);

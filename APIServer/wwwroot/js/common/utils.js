@@ -313,6 +313,102 @@ var utils = (() => {
         return encryptKey;
     };
 
+    // --- drop down menu
+
+    const create_menu = (parent) => {
+        if (!parent) {
+            parent = document.body;
+        }        
+        const dropdownDiv = controls.create(parent, "div", "dropdown");
+        const dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
+        const dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
+        dropdownContentDiv.id = "dropdown-id";
+        dropdownButton.addEventListener("click", () => document.getElementById("dropdown-id").classList.toggle("show"));
+    };
+
+    const set_menu_items = (currentUser) => {
+        const parent = document.getElementById("dropdown-id");
+        if (!parent) return;
+        const small_height = window.matchMedia('(max-height: 700px)').matches;        
+        const very_small_height = window.matchMedia('(max-height: 400px)').matches;        
+        controls.removeAllChildren(parent);
+        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
+        if (!small_height) {
+            controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/documents", "Dokumente");
+            controls.createA(parent, undefined, "/notes", "Notizen");
+            controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
+            controls.createA(parent, undefined, "/diary", "Tagebuch");
+            controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+            controls.createA(parent, undefined, "/skat", "Skat");
+            controls.createA(parent, undefined, "/tetris", "Tetris");
+        }
+        if (!very_small_height) {
+            controls.create(parent, "hr");
+            if (currentUser) {
+                controls.createA(parent, undefined, "/usermgmt", "Profil");
+                controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+            }
+            else {
+                controls.createA(parent, undefined, "/pwdman?nexturl=/markdown", "Anmelden");
+            }
+        }
+        const encryptKeyElem = document.getElementById("div-encryptkey-id");
+        if (encryptKeyElem) {
+            if (encryptKeyElem.classList.contains("show")) {
+                controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
+                    () => {
+                        set_viewed_encryption_key(currentUser, true);
+                        show_encrypt_key(currentUser, false);
+                    });
+            }
+            else {
+                controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
+                    () => show_encrypt_key(currentUser, true));
+            }
+        }
+    };
+
+    const show_encrypt_key = (currentUser, show) => {
+        const encryptKeyElem = document.getElementById("div-encryptkey-id");
+        if (!encryptKeyElem) return;
+        if (show || !has_viewed_encryption_key(currentUser)) {
+            encryptKeyElem.classList.add("show");
+        }
+        else {
+            encryptKeyElem.classList.remove("show");
+        }
+        set_menu_items(currentUser);
+    };
+
+    const hide_menu = (event) => {
+        if (!event.target.matches(".dropbtn")) {
+            const dropdowns = document.getElementsByClassName("dropdown-content");
+            if (dropdowns) {
+                for (let i = 0; i < dropdowns.length; i++) {
+                    let openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains("show")) {
+                        openDropdown.classList.remove("show");
+                    }
+                }
+            }
+        }
+    };
+
+    const is_menu_hidden = () => {
+        const dropdowns = document.getElementsByClassName("dropdown-content");
+        if (dropdowns) {
+            for (let i = 0; i < dropdowns.length; i++) {
+                let openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains("show")) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    };
+
     // --- public API
 
     return {
@@ -337,6 +433,11 @@ var utils = (() => {
         set_encryption_key: set_encryption_key,
         has_viewed_encryption_key: has_viewed_encryption_key,
         set_viewed_encryption_key: set_viewed_encryption_key,
-        generate_encryption_key: generate_encryption_key
+        generate_encryption_key: generate_encryption_key,
+        create_menu: create_menu,
+        set_menu_items: set_menu_items,
+        show_encrypt_key: show_encrypt_key,
+        hide_menu: hide_menu,
+        is_menu_hidden: is_menu_hidden
     };
 })();

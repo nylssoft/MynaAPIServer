@@ -7,13 +7,10 @@ var pwdman = (() => {
     let userPasswordPwd;
     let userNameInput;
     let codeInput;
-    let filterInput;
-    let secretKeyPwd;
     let oldPasswordPwd;
     let newPasswordPwd;
     let confirmPasswordPwd;
     let errorDiv;
-    let pwdItemsDiv;
     let emailDiv;
     let emailInput;
     let facCheckbox;
@@ -29,8 +26,6 @@ var pwdman = (() => {
     let resetPwdCode;
     let authToken;
     let requiresPass2;
-    let salt
-    let cryptoKey;
     let actionChangePwd;
     let actionResetPwd;
     let actionResetPwd2;
@@ -41,17 +36,9 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.18";
+    let version = "1.1.19";
 
     // helper
-
-    const getHostFromUrl = (urlstr) => {
-        urlstr = urlstr.toLowerCase();
-        if (!urlstr.startsWith("http:") && !urlstr.startsWith("https:")) {
-            urlstr = `https://${urlstr}`;
-        }
-        return new URL(urlstr).host;
-    };
 
     const getState = () => {
         let ret;
@@ -70,23 +57,6 @@ var pwdman = (() => {
             window.sessionStorage.removeItem("pwdman-state");
             window.localStorage.removeItem("pwdman-lltoken");
         }
-    };
-
-    const reset = (errmsg) => {
-        setState();
-        authToken = undefined;
-        cryptoKey = undefined;
-        userName = undefined;
-        actionChangePwd = false;
-        actionResetPwd = false;
-        actionResetPwd2 = false;
-        actionRequestRegistration = false;
-        actionRegister = false;
-        lastErrorMessage = "";
-        if (errmsg) {
-            lastErrorMessage = errmsg;
-        }
-        renderPage();
     };
 
     const setWaitCursor = (wait) => {
@@ -278,53 +248,6 @@ var pwdman = (() => {
             resetPwdCode = undefined;
             renderPage();
         }
-    };
-
-    const setCryptoKey = () => {
-        let encoded = new TextEncoder().encode(secretKeyPwd.value);
-        crypto.subtle.importKey("raw", encoded, "PBKDF2", false, ["deriveKey"])
-            .then(key => {
-                let algo = {
-                    name: "PBKDF2",
-                    hash: "SHA-256",
-                    salt: new TextEncoder().encode(salt),
-                    iterations: 1000
-                };
-                crypto.subtle.deriveKey(algo, key, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])
-                    .then(c => {
-                        cryptoKey = c;
-                        renderPage();
-                    })
-                    .catch(err => console.error(err));
-            })
-            .catch(err => console.error(err));
-    };
-
-    const filterItems = (pwdItems) => {
-        let v = filterInput.value.toLowerCase();
-        if (v.length > 0) {
-            let filteredItems = [];
-            pwdItems.forEach(pwdItem => {
-                if (pwdItem.Name.toLowerCase().startsWith(v)) {
-                    filteredItems.push(pwdItem);
-                }
-            });
-            renderPasswordTable(pwdItemsDiv, pwdItems, filteredItems);
-        }
-        else {
-            renderPasswordTable(pwdItemsDiv, pwdItems);
-        }
-    };
-
-    const decodePassword = async (encodedPwd) => {
-        let iv = utils.hex2arr(encodedPwd.substr(0, 12 * 2));
-        let data = utils.hex2arr(encodedPwd.substr(12 * 2));
-        let options = { name: "AES-GCM", iv: new Uint8Array(iv) };
-        let cipherbuffer = new ArrayBuffer(data.length);
-        let cipherarr = new Uint8Array(cipherbuffer);
-        cipherarr.set(data);
-        let decrypted = await crypto.subtle.decrypt(options, cryptoKey, cipherbuffer);
-        return new TextDecoder().decode(decrypted);
     };
 
     const requestResetPassword = () => {
@@ -720,124 +643,6 @@ var pwdman = (() => {
         renderCopyright(parent, "Portal");
     };
 
-    const renderSecretKey = (parent) => {
-        waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Passw\u00F6rter dekodieren");
-        controls.create(parent, "p", undefined, "Gib den Schl\u00FCssel zum Dekodieren der Passwortdatei ein.");
-        let keyPwdDiv = controls.createDiv(parent);
-        let keyPwdLabel = controls.createLabel(keyPwdDiv, undefined, "Schl\u00FCssel:");
-        keyPwdLabel.htmlFor = "keypwd-id";
-        secretKeyPwd = controls.createPasswordField(keyPwdDiv, "Schl\u00FCssel", () => setCryptoKey(), undefined, 32, 100);
-        secretKeyPwd.id = "keypwd-id";
-        if (!utils.is_mobile()) {
-            secretKeyPwd.focus();
-        }
-        let buttonDecodeDiv = controls.createDiv(parent);
-        controls.createButton(buttonDecodeDiv, "Dekodieren", () => setCryptoKey(), undefined, "button");
-        renderError(parent);
-        renderCopyright(parent);
-    };
-
-    const renderPasswordItem = async (parent, txt, desc, decode) => {
-        if (txt.length == 0) return;
-        if (decode) {
-            txt = await decodePassword(txt);
-        }
-        let showButton = controls.createImageButton(parent, `${desc} anzeigen`, undefined,
-            "/images/buttons/document-decrypt-3.png", 32, "transparent");
-        controls.createImageButton(parent, `${desc} in die Zwischenablage kopieren`,
-            () => {
-                navigator.clipboard.writeText(txt);
-            }, "/images/buttons/edit-copy-6.png", 32, "transparent");
-        let span = controls.create(parent, "span", "pwditem");
-        showButton.addEventListener("click", () => {
-            let hide = span.textContent.length > 0;
-            if (hide) {
-                span.textContent = "";
-                showButton.title = `${desc} anzeigen`;
-                showButton.children[0].src = "/images/buttons/document-decrypt-3.png";
-            }
-            else {
-                span.textContent = txt;
-                showButton.title = `${desc} verbergen`;
-                showButton.children[0].src = "/images/buttons/document-encrypt-3.png";
-            }
-        });
-    };
-
-    const renderPasswordItemDetails = (parent, pwdItems, pwdItem) => {
-        controls.removeAllChildren(parent);
-        controls.create(parent, "h1", undefined, "Passwort");
-        let detailsNameDiv = controls.createDiv(parent);
-        controls.createLabel(detailsNameDiv, "details-label", "Name:");
-        if (pwdItem.Url.length > 0) {
-            let host = getHostFromUrl(pwdItem.Url);
-            controls.createImg(detailsNameDiv, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`);
-            let url = pwdItem.Url;
-            if (url.indexOf(":") == -1) {
-                url = `https://${url}`;
-            }
-            controls.createA(detailsNameDiv, undefined, url, pwdItem.Name,
-                () => window.open(url, "_blank", "noopener=yes,noreferrer=yes"));
-        }
-        else {
-            controls.create(detailsNameDiv, "span", undefined, pwdItem.Name);
-        }
-        if (pwdItem.Login.length) {
-            let detailsLoginDiv = controls.createDiv(parent);
-            controls.createLabel(detailsLoginDiv, "details-label", "Login:");
-            renderPasswordItem(detailsLoginDiv, pwdItem.Login, "Login");
-        }
-        let detailsPasswordDiv = controls.createDiv(parent);
-        controls.createLabel(detailsPasswordDiv, "details-label", "Passwort:");
-        renderPasswordItem(detailsPasswordDiv, pwdItem.Password, "Passwort", true);
-        if (pwdItem.Description.length > 0) {
-            let detailsDescriptionDiv = controls.createDiv(parent);
-            controls.createLabel(detailsDescriptionDiv, "details-label", "Beschreibung:");
-            renderPasswordItem(detailsDescriptionDiv, pwdItem.Description, "Beschreibung");
-        }
-        let buttonBackDiv = controls.createDiv(parent);
-        controls.createButton(buttonBackDiv, "Zur\u00FCck zur Liste", () => {
-            controls.removeAllChildren(parent);
-            renderPasswordItems(parent, pwdItems);
-        }, undefined, "button");
-        renderCopyright(parent);
-    };
-
-    const renderPasswordTable = (parent, pwdItems, filteredPwdItems) => {
-        controls.removeAllChildren(parent);
-        let table = controls.create(parent, "table");
-        let tbody = controls.create(table, "tbody");
-        let items = filteredPwdItems ? filteredPwdItems : pwdItems;
-        items.forEach(pwdItem => {
-            let tr = controls.create(tbody, "tr");
-            let tdname = controls.create(tr, "td");
-            if (pwdItem.Url.length > 0) {
-                let host = getHostFromUrl(pwdItem.Url);
-                controls.createImg(tdname, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`);
-            }
-            controls.createA(tdname, undefined, "#open", pwdItem.Name,
-                () => renderPasswordItemDetails(document.body, pwdItems, pwdItem));
-        });
-    };
-
-    const renderPasswordItems = (parent, pwdItems) => {
-        controls.create(parent, "h1", undefined, "Passw\u00F6rter");
-        controls.create(parent, "p", undefined, "Gib ein Suchbegriff ein, um die Liste zu verkleinern.");
-        let filterDiv = controls.createDiv(parent);
-        let searchLabel = controls.createLabel(filterDiv, undefined, "Suche:");
-        searchLabel.htmlFor = "filter-id";
-        filterInput = controls.createInputField(filterDiv, "Suche", undefined, undefined, 20, 32);
-        filterInput.id = "filter-id";
-        filterInput.addEventListener("input", () => filterItems(pwdItems));
-        if (!utils.is_mobile()) {
-            filterInput.focus();
-        }
-        pwdItemsDiv = controls.createDiv(parent);
-        renderPasswordTable(pwdItemsDiv, pwdItems);
-        renderCopyright(parent);
-    };
-
     const renderPage = () => {
         controls.removeAllChildren(document.body);
         let state = getState();
@@ -881,45 +686,8 @@ var pwdman = (() => {
         else if (nexturl && nexturl.length > 0) {
             window.location.replace(nexturl);
         }
-        else if (cryptoKey === undefined) {
-            let token = utils.get_authentication_token();
-            utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
-                (user) => {
-                    salt = user.passwordManagerSalt;
-                    renderSecretKey(document.body, salt);
-                },
-                (errmsg) => reset(errmsg));
-        }
         else {
-            let token = utils.get_authentication_token();
-            lastErrorMessage = "";
-            utils.fetch_api_call("api/pwdman/file", { headers: { "token": token } },
-                (datastr) => {
-                    let iv = utils.hex2arr(datastr.substr(0, 12 * 2));
-                    let data = utils.hex2arr(datastr.substr(12 * 2));
-                    let options = { name: "AES-GCM", iv: new Uint8Array(iv) };
-                    let cipherbuffer = new ArrayBuffer(data.length);
-                    let cipherarr = new Uint8Array(cipherbuffer);
-                    cipherarr.set(data);
-                    crypto.subtle.decrypt(options, cryptoKey, cipherbuffer)
-                        .then(decrypted => {
-                            let str = new TextDecoder().decode(decrypted);
-                            let pwdItems = JSON.parse(str);
-                            pwdItems.sort((a, b) => a.Name.localeCompare(b.Name));
-                            renderPasswordItems(document.body, pwdItems);
-                        })
-                        .catch(() => {
-                            lastErrorMessage = "Die Passwortdatei kann nicht entschl\u00FCsselt werden.";
-                            cryptoKey = undefined;
-                            renderPage();
-                        });
-                },
-                (errMsg) => {
-                    lastErrorMessage = errMsg;
-                    cryptoKey = undefined;
-                    renderPage();
-                }
-            );
+            window.location.replace("/markdown");
         }
     };
 
@@ -967,6 +735,4 @@ var pwdman = (() => {
     };
 })();
 
-window.onload = () => {
-    utils.auth_lltoken(pwdman.render);
-};
+window.onload = () => utils.auth_lltoken(pwdman.render);

@@ -30,41 +30,6 @@ var slideshow = (() => {
 
     // --- rendering
 
-    const renderDropdown = (parent) => {
-        let dropdownDiv = controls.create(parent, "div", "dropdown");
-        dropdownDiv.id = "div-dropdown-id";
-        let dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
-        dropdownButton.addEventListener("click", () => {
-            document.getElementById("dropdown-id").classList.toggle("show");
-        });
-        let dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
-        dropdownContentDiv.id = "dropdown-id";
-    };
-
-    const renderDropdownContent = () => {
-        let parent = document.getElementById("dropdown-id");
-        if (!parent) return;
-        controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown?page=welcome", "Willkommen");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/documents", "Dokumente");
-        controls.createA(parent, undefined, "/notes", "Notizen");
-        controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-        controls.createA(parent, undefined, "/diary", "Tagebuch");
-        controls.create(parent, "hr");
-        controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
-        controls.createA(parent, undefined, "/skat", "Skat");
-        controls.createA(parent, undefined, "/tetris", "Tetris");
-        controls.create(parent, "hr");
-        if (currentUser) {
-            controls.createA(parent, undefined, "/usermgmt", "Profil");
-            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
-        }
-        else {
-            controls.createA(parent, undefined, "/pwdman?nexturl=/slideshow", "Anmelden");
-        }
-    };
-
     const renderHeader = (parent) => {
         let title = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";
         title += ` ${backgroundIndex}/${slideShowPictures.length}`;
@@ -119,11 +84,11 @@ var slideshow = (() => {
 
     const renderPage = () => {
         controls.removeAllChildren(document.body);
-        renderDropdown(document.body);
+        utils.create_menu(document.body);
         renderHeader(document.body);
         divFooter = controls.createDiv(document.body, "footer");
         renderSlideshowInfo(divFooter);
-        renderDropdownContent();
+        utils.set_menu_items(currentUser);
         document.addEventListener("keydown", (e) => {
             if (e.key == "ArrowLeft") {
                 onPictureLeft();
@@ -156,18 +121,8 @@ var slideshow = (() => {
         }, { passive: false });
 
         window.onclick = (event) => {
-            let dropdownClosed = false;
-            if (!event.target.matches(".dropbtn")) {
-                let dropdowns = document.getElementsByClassName("dropdown-content");
-                for (let i = 0; i < dropdowns.length; i++) {
-                    let openDropdown = dropdowns[i];
-                    if (openDropdown.classList.contains("show")) {
-                        openDropdown.classList.remove("show");
-                        dropdownClosed = true;
-                    }
-                }
-            }
-            if (!dropdownClosed) {
+            utils.hide_menu(event);
+            if (utils.is_menu_hidden()) {
                 let dropdownDivElem = document.getElementById("div-dropdown-id");
                 let headerElem = document.getElementById("header-id");
                 if (event.target.tagName == "HTML") {
