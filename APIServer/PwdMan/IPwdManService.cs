@@ -54,9 +54,11 @@ namespace APIServer.PwdMan
 
         bool HasRole(DbUser user, string roleName);
 
-        UserModel GetUser(string authenticationToken, bool getLoginIpAddresses = false, bool getDocumentStorage = false);
+        UserModel GetUser(string authenticationToken, bool details = false);
 
         List<UserModel> GetUsers(string authenticationToken);
+
+        long GetUsedStorage(string authenticationToken, long userId);
 
         bool UnlockUser(string authenticationToken, string userName);
 
@@ -71,6 +73,8 @@ namespace APIServer.PwdMan
         bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword);
 
         bool UpdateUserRole(string authenticationToken, UserUpdateRoleModel userUpdateRoleModel);
+
+        bool UpdateUserStorageQuota(string authenticationToken, long userId, long quota);
 
         void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange);
 

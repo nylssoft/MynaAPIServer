@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,7 +36,6 @@ namespace APIServer
         public const int MAX_PWDMAN_CONTENT = 1024 * 1024 * 10; // hex encoded string
         public const int MAX_DOCUMENT_UPLOAD = 1024 * 1024 * 10; // upload at most 10 MB
         public const int MAX_DOCUMENT_TITLE = 300;
-        public const int MAX_DOCUMENT_STORAGE = 1024 * 1024 * 100; // store at most 100 MB per user
     }
 
     public class InputValueTooLargeException : APIException

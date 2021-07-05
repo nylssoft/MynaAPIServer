@@ -373,7 +373,8 @@ namespace APIServer.PwdMan
                 Requires2FA = registrationProfile.Requires2FA,
                 UseLongLivedToken = registrationProfile.UseLongLivedToken,
                 AllowResetPassword = registrationProfile.AllowResetPassword,
-                RegisteredUtc = DateTime.UtcNow
+                RegisteredUtc = DateTime.UtcNow,
+                StorageQuota = 100 * 1024 * 1024 // 100 MB default storage
             };
             // first user has the usermanager role
             if (firstUser)
@@ -520,7 +521,7 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public UserModel GetUser(string authenticationToken, bool getLoginIpAddresses = false, bool getDocumentStorage = false)
+        public UserModel GetUser(string authenticationToken, bool details = false)
         {
             logger.LogDebug("Get user...");
             var user = GetUserFromToken(authenticationToken);
@@ -535,12 +536,13 @@ namespace APIServer.PwdMan
                 RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
                 HasPasswordManagerFile = user.PasswordFileId != null,
                 PasswordManagerSalt = user.Salt,
-                Photo = user.Photo
+                Photo = user.Photo,
+                StorageQuota = user.StorageQuota                
             };
             var dbContext = GetDbContext();
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
             userModel.LoginIpAddresses = new List<LoginIpAddressModel>();
-            if (getLoginIpAddresses)
+            if (details)
             {
                 var loginIpAddresses = dbContext.DbLoginIpAddresses
                     .Where(ip => ip.DbUserId == user.Id)
@@ -555,12 +557,8 @@ namespace APIServer.PwdMan
                         Failed = ip.Failed
                     });
                 }
-            }
-            if (getDocumentStorage)
-            {
                 var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
-                userModel.DocumentStorageUsed = sum;
-                userModel.DocumentStorageQuota = 100 * 1024 * 1024; // 100 MB quota for now
+                userModel.UsedStorage = sum;
             }
             return userModel;
         }
@@ -717,6 +715,30 @@ namespace APIServer.PwdMan
             return changed;
         }
 
+        public bool UpdateUserStorageQuota(string authenticationToken, long userId, long quota)
+        {
+            logger.LogDebug($"Update storage quota for user ID {userId} to {quota}...", userId, quota);
+            if (quota < 2 * 1024 * 1024 || quota > 1000 * 1024 * 1024)
+            {
+                throw new PwdManInvalidArgumentException("Ungültige Quota. Die Quota muss zwischen 2 MB und 1000 MB liegen.");
+            }
+            var adminuser = GetUserFromToken(authenticationToken);
+            if (!HasRole(adminuser, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var changed = false;
+            var dbContext = GetDbContext();
+            var user = dbContext.DbUsers.SingleOrDefault((u) => u.Id == userId);
+            if (user != null && user.StorageQuota != quota)
+            {
+                user.StorageQuota = quota;
+                dbContext.SaveChanges();
+                changed = true;
+            }
+            return changed;
+        }
+
         public int DeleteLoginIpAddresses(string authenticationToken)
         {
             logger.LogDebug($"Delete login IP addresses...");
@@ -728,6 +750,18 @@ namespace APIServer.PwdMan
             dbContext.DbLoginIpAddresses.RemoveRange(loginIpAddresses);
             dbContext.SaveChanges();
             return ret;
+        }
+
+        public long GetUsedStorage(string authenticationToken, long userId)
+        {
+            var adminuser = GetUserFromToken(authenticationToken);
+            if (!HasRole(adminuser, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var dbContext = GetDbContext();
+            var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == userId).Sum(item => item.Size);
+            return sum;
         }
 
         public List<UserModel> GetUsers(string authenticationToken)
@@ -745,11 +779,13 @@ namespace APIServer.PwdMan
             {
                 var userModel = new UserModel
                 {
+                    Id = u.Id,
                     Name = u.Name,
                     Email = u.Email,
                     LastLoginUtc = DbMynaContext.GetUtcDateTime(u.LastLoginTryUtc),
                     RegisteredUtc = DbMynaContext.GetUtcDateTime(u.RegisteredUtc),
                     Photo = u.Photo,
+                    StorageQuota = u.StorageQuota,
                     Roles = u.Roles.Select(r => r.Name).ToList(),
                     LoginIpAddresses = new List<LoginIpAddressModel>()
                 };

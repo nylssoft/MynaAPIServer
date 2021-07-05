@@ -114,9 +114,16 @@ namespace APIServer.PwdMan
 
         [HttpGet]
         [Route("api/pwdman/user")]
-        public IActionResult GetUser([FromQuery] bool? getLoginIPAddresses, bool? getDocumentStorage)
+        public IActionResult GetUser([FromQuery] bool? details)
         {
-            return new JsonResult(PwdManService.GetUser(GetToken(), getLoginIPAddresses.HasValue ? getLoginIPAddresses.Value : false, getDocumentStorage.HasValue ? getDocumentStorage.Value : false));
+            return new JsonResult(PwdManService.GetUser(GetToken(), details.GetValueOrDefault()));
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/user/{id}/storage")]
+        public IActionResult GetUsedStorage(long id)
+        {
+            return new JsonResult(PwdManService.GetUsedStorage(GetToken(), id));
         }
 
         [HttpPost]
@@ -170,6 +177,13 @@ namespace APIServer.PwdMan
             if (userUpdateRoleModel?.UserName?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (userUpdateRoleModel?.RoleName?.Length > Limits.MAX_ROLE_NAME) throw new InputValueTooLargeException();
             return new JsonResult(PwdManService.UpdateUserRole(GetToken(), userUpdateRoleModel));
+        }
+
+        [HttpPut]
+        [Route("api/pwdman/user/{id}/storage")]
+        public IActionResult UpdateStorageQuota(long id, [FromBody] long quota)
+        {
+            return new JsonResult(PwdManService.UpdateUserStorageQuota(GetToken(), id, quota));
         }
 
         [HttpGet]

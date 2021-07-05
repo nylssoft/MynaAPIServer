@@ -86,7 +86,7 @@ namespace APIServer.Document
                 var ms = new MemoryStream();
                 stream.CopyTo(ms);
                 var size = ms.Length;
-                if (sum + size > Limits.MAX_DOCUMENT_STORAGE)
+                if (sum + size > user.StorageQuota)
                 {
                     throw new PwdManInvalidArgumentException("Es ist nicht genügend Speicherplatz mehr verfügbar.");
                 }

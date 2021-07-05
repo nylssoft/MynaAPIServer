@@ -22,6 +22,8 @@ namespace APIServer.PwdMan.Model
 {
     public class UserModel
     {
+        public long Id { get; set; }
+
         public string Name { get; set; }
 
         public string Email { get; set; }
@@ -48,8 +50,8 @@ namespace APIServer.PwdMan.Model
 
         public string Photo { get; set; }
 
-        public long DocumentStorageUsed { get; set; }
+        public long StorageQuota { get; set; }
 
-        public long DocumentStorageQuota { get; set; }
+        public long UsedStorage { get; set; }
     }
 }

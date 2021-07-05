@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.14";
+    let version = "1.1.15";
 
     // helper
 
@@ -116,6 +116,18 @@ var usermgmt = (() => {
     };
 
     const renderUserDetails = (parent, users, user) => {
+        if (user.usedStorageRead === undefined) {
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/pwdman/user/${user.id}/storage`, { headers: { "token": token } },
+                (used) => {
+                    user.usedStorageRead = true;
+                    user.usedStorage = used;
+                    renderUserDetails(parent, users, user);
+                },
+                onRejectError,
+                setWaitCursor);
+            return;
+        }
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Benutzer");
@@ -128,6 +140,14 @@ var usermgmt = (() => {
             controls.create(parent, "p", undefined, `Letzte Anmeldung am ${new Date(user.lastLoginUtc).toLocaleString("de-DE")}`);
         }
         controls.create(parent, "p", undefined, `Registriert seit ${new Date(user.registeredUtc).toLocaleString("de-DE")}`);
+        const documentsP = controls.create(parent, "p", undefined, `Speicherplatz f\u00FCr Dokumente: ${utils.format_size(user.usedStorage)} von `);
+        const quotaInput = controls.createInputField(documentsP, "", undefined, undefined, 4, 4);
+        quotaInput.id = "quota-input-id";
+        quotaInput.value = `${Math.floor(user.storageQuota / (1024 * 1024))}`;
+        quotaInput.addEventListener("change", () => onUpdateStorageQuota(parent, users, user));
+        controls.createSpan(documentsP, undefined, " MB belegt.");
+        const errorQuota = controls.createDiv(parent, "error");
+        errorQuota.id = "error-quota-id";
         let rolesP = controls.create(parent, "p", undefined, "Rollen:");
         let checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
         controls.createCheckbox(checkboxDiv, "roles-skatadmin-id", undefined, "skatadmin",
@@ -297,12 +317,8 @@ var usermgmt = (() => {
         dt = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
         controls.createSpan(registeredP, undefined, "Registriert seit: ");
         controls.createSpan(registeredP, undefined, dt);
-        if (currentUser.documentStorageUsed > 0) {
-            const documentsP = controls.create(parent, "p");
-            const used = utils.format_size(currentUser.documentStorageUsed);
-            const quota = utils.format_size(currentUser.documentStorageQuota);
-            controls.createSpan(documentsP, undefined, `Speicherplatz f\u00FCr Dokumente: ${used} von ${quota} belegt.`);
-        }
+        const documentsP = controls.create(parent, "p");
+        controls.createSpan(documentsP, undefined, `Speicherplatz f\u00FCr Dokumente: ${utils.format_size(currentUser.usedStorage)} von ${utils.format_size(currentUser.storageQuota)} belegt.`);
         if (currentUser.loginIpAddresses.length > 0) {
             const loginIpP = controls.create(parent, "p");
             controls.createSpan(loginIpP, undefined, "Anmeldungen: ");
@@ -755,6 +771,39 @@ var usermgmt = (() => {
         }
     };
 
+    const onUpdateStorageQuota = (parent, users, user) => {
+        const u = Math.floor(user.usedStorage / (1024 * 1024));
+        const quota = document.getElementById("quota-input-id");
+        const v = quota.value.trim();
+        if (v.length > 0) {
+            const error = document.getElementById("error-quota-id");
+            let val = parseInt(v);
+            if (!isNaN(val) && val > Math.max(u, 1) && val <= 1000) {
+                val *= 1024 * 1024;
+                error.textContent = "";
+                let token = utils.get_authentication_token();
+                utils.fetch_api_call(`api/pwdman/user/${user.id}/storage`,
+                    {
+                        method: "PUT",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                        body: val
+                    },
+                    (changed) => {
+                        if (changed) {
+                            user.storageQuota = val;
+                            renderUserDetails(parent, users, user);
+                        }
+                    },
+                    (errMsg) => error.textContent = errMsg,
+                    setWaitCursor
+                );
+            }
+            else {
+                error.textContent = `Die Quota muss zwischen ${Math.max(u + 1, 2)} MB und 1000 MB liegen.`;
+            }
+        }
+    };
+
     const onResolveCurrentUser = (user) => {
         currentUser = user;
         renderCurrentUser();
@@ -778,7 +827,7 @@ var usermgmt = (() => {
         }
         let token = utils.get_authentication_token();
         utils.fetch_api_call(
-            "api/pwdman/user?getLoginIPAddresses=true&getDocumentStorage=true",
+            "api/pwdman/user?details=true",
             { headers: { "token": token } },
             onResolveCurrentUser,
             (errMsg) => {

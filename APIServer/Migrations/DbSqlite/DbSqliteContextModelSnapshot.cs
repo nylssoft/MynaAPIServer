@@ -442,6 +442,9 @@ namespace APIServer.Migrations.DbSqlite
                     b.Property<string>("Salt")
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("StorageQuota")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("TOTPKey")
                         .HasColumnType("TEXT");
 
