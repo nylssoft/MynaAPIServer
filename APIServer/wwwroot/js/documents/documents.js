@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.8";
+    let version = "1.0.9";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -166,7 +166,11 @@ var documents = (() => {
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                 body: JSON.stringify(name)
             },
-            renderState, renderError, setWaitCursor);
+            (volume) => {
+                currentId = volume.id;
+                renderState();
+            },
+            renderError, setWaitCursor);
     };
 
     const initItems = (errMsg) => {
