@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.9";
+    let version = "1.0.10";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -167,6 +167,7 @@ var documents = (() => {
                 body: JSON.stringify(name)
             },
             (volume) => {
+                docItems.push(volume);
                 currentId = volume.id;
                 renderState();
             },
