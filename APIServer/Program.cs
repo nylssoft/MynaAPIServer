@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using APIServer.Database;
+using APIServer.Document;
 using APIServer.PwdMan;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -106,7 +107,8 @@ namespace APIServer
                     Roles = null,
                     UseLongLivedToken = user.UseLongLivedToken,
                     AllowResetPassword = user.AllowResetPassword,
-                    Photo = user.Photo
+                    Photo = user.Photo,
+                    StorageQuota = user.StorageQuota
                 };
                 if (user.Roles != null)
                 {
@@ -298,6 +300,57 @@ namespace APIServer
                 });
             }
             postgres.SaveChanges();
+            logger.LogInformation("Migrate DocItems...");
+            var pgAllUsers = postgres.DbUsers.ToList();
+            foreach (var pgUser in pgAllUsers)
+            {
+                var sqliteUser = sqlite.DbUsers.SingleOrDefault(u => u.Name == pgUser.Name);
+                if (sqliteUser == null) continue;
+                var docItems = new Queue<DbDocItem>();
+                var volume = DocumentService.GetVolume(sqlite, sqliteUser);
+                if (volume != null)
+                {
+                    docItems.Enqueue(volume);
+                }
+                var idMap = new Dictionary<long, long>();
+                var ids = new List<long>();
+                while (docItems.Any())
+                {
+                    var docItem = docItems.Dequeue();
+                    ids.Add(docItem.Id);
+                    foreach (var child in DocumentService.GetChildren(sqlite, sqliteUser, docItem))
+                    {
+                        docItems.Enqueue(child);
+                    }
+                }
+                foreach (var id in ids)
+                {
+                    var docItem = sqlite.DbDocItems
+                        .Include(item => item.Content)
+                        .Single(item => item.Id == id && item.OwnerId == sqliteUser.Id);
+                    long? parentId = null;
+                    if (docItem.ParentId.HasValue)
+                    {
+                        parentId = idMap[docItem.ParentId.Value];
+                    }
+                    var pgDocItem = new DbDocItem
+                    {
+                        Name = docItem.Name,
+                        Type = docItem.Type,
+                        OwnerId = pgUser.Id,
+                        Size = docItem.Size,
+                        Children = docItem.Children,
+                        ParentId = parentId
+                    };
+                    if (docItem.Content != null)
+                    {
+                        pgDocItem.Content = new DbDocContent { Data = docItem.Content.Data };
+                    }
+                    postgres.DbDocItems.Add(pgDocItem);
+                    postgres.SaveChanges();
+                    idMap[docItem.Id] = pgDocItem.Id;
+                }
+            }
             logger.LogInformation("Migration succeeded.");
         }
 

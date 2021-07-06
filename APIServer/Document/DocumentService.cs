@@ -253,7 +253,7 @@ namespace APIServer.Document
 
         private static bool IsContainer(DbDocItem item) => item.Type == DbDocItemType.Folder || item.Type == DbDocItemType.Folder;
 
-        private static DbDocItem GetVolume(DbMynaContext dbContext, DbUser user)
+        public static DbDocItem GetVolume(DbMynaContext dbContext, DbUser user)
         {
             return GetItemById(dbContext, user, null);
         }
@@ -274,7 +274,7 @@ namespace APIServer.Document
             return item;
         }
 
-        private static List<DbDocItem> GetChildren(DbMynaContext dbContext, DbUser user, DbDocItem item)
+        public static List<DbDocItem> GetChildren(DbMynaContext dbContext, DbUser user, DbDocItem item)
         {
             return dbContext.DbDocItems.Where(child => child.OwnerId == user.Id && child.ParentId == item.Id).ToList<DbDocItem>();
         }
