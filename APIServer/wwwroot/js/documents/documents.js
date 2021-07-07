@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.10";
+    let version = "1.0.11";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -312,28 +312,54 @@ var documents = (() => {
         const cnt = getSelected().length;
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
+        const toolbar = document.getElementById("toolbar-id");
+        controls.removeAllChildren(toolbar);           
         if (move) {
             if (cnt == 1) {
                 controls.createButton(elem, "Verschieben", onMoveDocuments);
+                const btnPaste = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-paste-3.png");
+                btnPaste.title = "Verschieben";
+                btnPaste.addEventListener("click", onMoveDocuments);
             }
             controls.createButton(elem, "Abbrechen", onCancelMoveDocuments);
             if (currentId > 0) {
                 controls.createButton(elem, "Zur\u00FCck", onGotoUp);
+                const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png");
+                btnUp.title = "Zur\u00FCck";
+                btnUp.addEventListener("click", onGotoUp);
             }
         }
         else {
             if (cnt == 1) {
                 controls.createButton(elem, "Umbenennen", onConfirmRename);
+                const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png");
+                btnRename.title = "Umbenennen";
+                btnRename.addEventListener("click", onConfirmRename);
             }
             if (cnt > 0) {
                 controls.createButton(elem, "Verschieben", onSelectDestinationFolder);
+                const btnCut = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-cut-5.png");
+                btnCut.title = "Verschieben";
+                btnCut.addEventListener("click", onSelectDestinationFolder);
                 controls.createButton(elem, "L\u00F6schen", onConfirmDeleteDocuments);
+                const btnDelete = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-delete-6.png");
+                btnDelete.title = "L\u00F6schen";
+                btnDelete.addEventListener("click", onConfirmDeleteDocuments);
             }
             else {
                 controls.createButton(elem, "Ordner anlegen", onConfirmAddFolder);
+                const btnAddFolder = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/folder-new-2.png");
+                btnAddFolder.title = "Ordner anlegen";
+                btnAddFolder.addEventListener("click", onConfirmAddFolder);
                 controls.createButton(elem, "Dokument hochladen", onSelectFile);
+                const btnUploadDocument = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/list-add-4.png");
+                btnUploadDocument.title = "Dokument hochladen";
+                btnUploadDocument.addEventListener("click", onSelectFile);
                 if (currentId > 1) {
                     controls.createButton(elem, "Zur\u00FCck", onGotoUp);
+                    const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png");
+                    btnUp.title = "Zur\u00FCck";
+                    btnUp.addEventListener("click", onGotoUp);
                 }
             }
         }
@@ -347,6 +373,8 @@ var documents = (() => {
         const filterInput = controls.createInputField(elem, "Filter", undefined, undefined, 32, 255);
         filterInput.id = "filter-input-id";
         filterInput.addEventListener("input", () => onFilterItems());
+        const toolbar = controls.createDiv(elem, "toolbar");
+        toolbar.id = "toolbar-id";
     };
 
     const renderDocItem = (tr, item, selected) => {
@@ -653,6 +681,8 @@ var documents = (() => {
     };
 
     const onConfirmAddFolder = () => {
+        const toolbar = document.getElementById("toolbar-id");
+        controls.removeAllChildren(toolbar);
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
         const label = controls.createLabel(elem, undefined, "Name:");
@@ -662,6 +692,7 @@ var documents = (() => {
         controls.createSpan(elem, undefined, "  ");
         controls.createButton(elem, "Anlegen", onAddFolder);
         controls.createButton(elem, "Abbrechen", () => renderState());
+        elem.scrollIntoView();
         if (!utils.is_mobile()) {
             name.focus();
         }
@@ -686,6 +717,8 @@ var documents = (() => {
     const onConfirmRename = () => {
         const selected = getSelected();
         if (selected.length == 1) {
+            const toolbar = document.getElementById("toolbar-id");
+            controls.removeAllChildren(toolbar);
             const elem = document.getElementById("action-id");
             controls.removeAllChildren(elem);
             const label = controls.createLabel(elem, undefined, "Name:");
@@ -696,6 +729,7 @@ var documents = (() => {
             controls.createSpan(elem, undefined, "  ");
             controls.createButton(elem, "Umbenennen", onRename);
             controls.createButton(elem, "Abbrechen", () => renderState());
+            elem.scrollIntoView();
             if (!utils.is_mobile()) {
                 name.focus();
             }
@@ -721,11 +755,14 @@ var documents = (() => {
     };
 
     const onConfirmDeleteDocuments = () => {
+        const toolbar = document.getElementById("toolbar-id");
+        controls.removeAllChildren(toolbar);
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
         controls.createSpan(elem, undefined, "Willst Du die ausgew\u00E4hlten Elemente wirklich l\u00F6schen?  ");
         controls.createButton(elem, "Ja", onDeleteDocuments);
         controls.createButton(elem, "Nein", () => initItems());
+        elem.scrollIntoView();
     };
 
     const onDeleteDocuments = () => {

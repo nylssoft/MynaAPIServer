@@ -165,6 +165,20 @@ a {
     color: lightgreen;
 }
 
+.toolbar {
+    display: inline;
+}
+
+.toolbar-button {
+    margin-left: 10pt;
+    margin-bottom: -4pt;
+}
+
+.toolbar-button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
 .button {
     background-color: blue;
     border: 2px solid #008CBA;
@@ -358,5 +372,23 @@ a {
     .help-button {
         margin-left: 10pt;
         transform: translateY(4pt);
+    }
+
+    .toolbar {
+        display: block;
+    }
+
+    .toolbar-button {
+        margin-right: 10pt;
+        margin-left: 0;
+        margin-bottom: 0;
+    }
+
+    .filter {
+        width: 100%;
+    }
+
+    table {
+        min-width: 200pt;
     }
 }
