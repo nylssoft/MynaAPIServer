@@ -29,13 +29,26 @@ using System.Linq;
 
 namespace APIServer
 {
+    public enum MigrationMode { None, Sqlite2Postgres, Postgres2Sqlite };
+
     public class Program
     {
         public static void Main(string[] args)
         {
             var host = CreateHostBuilder(args).Build();
-            var migrateSqlite2Postgres = args.Length > 0 && string.Equals(args[0], "--sqlite2postgres", StringComparison.InvariantCultureIgnoreCase);
-            MigrateDatabase(host, migrateSqlite2Postgres);
+            var migrationMode = MigrationMode.None;
+            if (args.Length > 0)
+            {
+                if (string.Equals(args[0], "--sqlite2postgres", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    migrationMode = MigrationMode.Sqlite2Postgres;
+                }
+                else if (string.Equals(args[0], "--postgres2sqlite", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    migrationMode = MigrationMode.Postgres2Sqlite;
+                }
+            }
+            MigrateDatabase(host, migrationMode);
             host.Run();
         }
 
@@ -46,7 +59,7 @@ namespace APIServer
                     webBuilder.UseStartup<Startup>();
                 });
 
-        private static void MigrateDatabase(IHost host, bool migrateSqlite2Postgres)
+        private static void MigrateDatabase(IHost host, MigrationMode migrationMode)
         {
             using var scope = host.Services.CreateScope();
             var services = scope.ServiceProvider;
@@ -56,15 +69,21 @@ namespace APIServer
                 var pwdman = services.GetRequiredService<IPwdManService>();
                 var dbContext = pwdman.GetDbContext();
                 dbContext.Database.Migrate();
-                if (migrateSqlite2Postgres)
+                if (migrationMode != MigrationMode.None)
                 {
-                    if (dbContext is DbPostgresContext)
+                    var postgres = services.GetRequiredService<DbPostgresContext>();
+                    var sqlite = services.GetRequiredService<DbSqliteContext>();
+                    if (migrationMode == MigrationMode.Sqlite2Postgres && dbContext is DbPostgresContext)
                     {
-                        MigrateSqlite2Postgres(host, logger);
+                        MigrateDbContexts(logger, sqlite, postgres);
+                    }
+                    else if (migrationMode == MigrationMode.Postgres2Sqlite && dbContext is DbSqliteContext)
+                    {
+                        MigrateDbContexts(logger, postgres, sqlite);
                     }
                     else
                     {
-                        logger.LogWarning("Migration is only allowed if Postgres is used as database connection.");
+                        logger.LogWarning("Migration is not allowed.");
                     }
                 }
             }
@@ -74,20 +93,15 @@ namespace APIServer
             }
         }
 
-        private static void MigrateSqlite2Postgres(IHost host, ILogger logger)
+        private static void MigrateDbContexts(ILogger logger, DbMynaContext srcContext, DbMynaContext destContext)
         {
-            logger.LogInformation("Migrate SQLite database to Postgres database.");
-            using var scope = host.Services.CreateScope();
-            var services = scope.ServiceProvider;
-            var postgres = services.GetRequiredService<DbPostgresContext>();
-            if (postgres.DbUsers.Any())
+            if (destContext.DbUsers.Any())
             {
-                logger.LogWarning("Postgres database already contains users. Migration aborted.");
+                logger.LogWarning("Destination database already contains users. Migration aborted.");
                 return;
             }
-            var sqlite = services.GetRequiredService<DbSqliteContext>();
             logger.LogInformation("Migrate Users...");
-            var users = sqlite.DbUsers.Include(u => u.Roles).Include(u => u.PasswordFile).OrderBy(u => u.Id);
+            var users = srcContext.DbUsers.Include(u => u.Roles).Include(u => u.PasswordFile).OrderBy(u => u.Id);
             foreach (var user in users)
             {
                 var pgUser = new DbUser
@@ -126,41 +140,41 @@ namespace APIServer
                         LastWrittenUtc = user.PasswordFile.LastWrittenUtc
                     };
                 }
-                postgres.DbUsers.Add(pgUser);
+                destContext.DbUsers.Add(pgUser);
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate Chats...");
-            var chats = sqlite.DbChats.Include(c => c.DbUser).OrderBy(c => c.Id);
+            var chats = srcContext.DbChats.Include(c => c.DbUser).OrderBy(c => c.Id);
             foreach (var chat in chats)
             {
-                var pgUser = postgres.DbUsers.Single(u => u.Name == chat.DbUser.Name);
-                postgres.DbChats.Add(new DbChat
+                var pgUser = destContext.DbUsers.Single(u => u.Name == chat.DbUser.Name);
+                destContext.DbChats.Add(new DbChat
                 {
                     DbUser = pgUser,
                     Message = chat.Message,
                     CreatedUtc = chat.CreatedUtc
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate Diaries...");
-            var diaries = sqlite.DbDiaries.Include(d => d.DbUser).OrderBy(d => d.Id);
+            var diaries = srcContext.DbDiaries.Include(d => d.DbUser).OrderBy(d => d.Id);
             foreach (var diary in diaries)
             {
-                var pgUser = postgres.DbUsers.Single(u => u.Name == diary.DbUser.Name);
-                postgres.DbDiaries.Add(new DbDiary
+                var pgUser = destContext.DbUsers.Single(u => u.Name == diary.DbUser.Name);
+                destContext.DbDiaries.Add(new DbDiary
                 {
                     DbUser = pgUser,
                     Entry = diary.Entry,
-                    Date = diary.Date                    
+                    Date = diary.Date
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate Notes...");
-            var notes = sqlite.DbNotes.Include(n => n.DbUser).OrderBy(n => n.Id);
+            var notes = srcContext.DbNotes.Include(n => n.DbUser).OrderBy(n => n.Id);
             foreach (var note in notes)
             {
-                var pgUser = postgres.DbUsers.Single(u => u.Name == note.DbUser.Name);
-                postgres.DbNotes.Add(new DbNote
+                var pgUser = destContext.DbUsers.Single(u => u.Name == note.DbUser.Name);
+                destContext.DbNotes.Add(new DbNote
                 {
                     DbUser = pgUser,
                     Content = note.Content,
@@ -168,47 +182,47 @@ namespace APIServer
                     ModifiedUtc = note.ModifiedUtc
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate LoginIpAddresses...");
-            var loginIpAddresses = sqlite.DbLoginIpAddresses.Include(ip => ip.DbUser).OrderBy(ip => ip.Id);
+            var loginIpAddresses = srcContext.DbLoginIpAddresses.Include(ip => ip.DbUser).OrderBy(ip => ip.Id);
             foreach (var loginIpAddress in loginIpAddresses)
             {
-                var pgUser = postgres.DbUsers.Single(u => u.Name == loginIpAddress.DbUser.Name);
-                postgres.DbLoginIpAddresses.Add(new DbLoginIpAddress
+                var pgUser = destContext.DbUsers.Single(u => u.Name == loginIpAddress.DbUser.Name);
+                destContext.DbLoginIpAddresses.Add(new DbLoginIpAddress
                 {
                     DbUser = pgUser,
                     IpAddress = loginIpAddress.IpAddress,
                     LastUsedUtc = loginIpAddress.LastUsedUtc,
                     Succeeded = loginIpAddress.Succeeded,
-                    Failed = loginIpAddress.Failed                    
+                    Failed = loginIpAddress.Failed
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate Registrations...");
-            var registrations = sqlite.DbRegistrations.Include(r => r.ConfirmedBy).OrderBy(r => r.Id);
+            var registrations = srcContext.DbRegistrations.Include(r => r.ConfirmedBy).OrderBy(r => r.Id);
             foreach (var registration in registrations)
             {
                 DbUser pgUser = null;
                 if (registration.ConfirmedBy != null)
                 {
-                    pgUser = postgres.DbUsers.Single(u => u.Name == registration.ConfirmedBy.Name);
+                    pgUser = destContext.DbUsers.Single(u => u.Name == registration.ConfirmedBy.Name);
                 }
-                postgres.DbRegistrations.Add(new DbRegistration
+                destContext.DbRegistrations.Add(new DbRegistration
                 {
                     ConfirmedBy = pgUser,
                     ConfirmedUtc = registration.ConfirmedUtc,
                     Email = registration.Email,
                     IpAddress = registration.IpAddress,
                     RequestedUtc = registration.RequestedUtc,
-                    Token = registration.Token                    
+                    Token = registration.Token
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate ResetPasswords...");
-            var resetPasswords = sqlite.DbResetPasswords.OrderBy(r => r.Id);
+            var resetPasswords = srcContext.DbResetPasswords.OrderBy(r => r.Id);
             foreach (var resetPassword in resetPasswords)
             {
-                postgres.DbResetPasswords.Add(new DbResetPassword
+                destContext.DbResetPasswords.Add(new DbResetPassword
                 {
                     Email = resetPassword.Email,
                     IpAddress = resetPassword.IpAddress,
@@ -216,21 +230,21 @@ namespace APIServer
                     Token = resetPassword.Token
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate Settings...");
-            var settings = sqlite.DbSettings.OrderBy(s => s.Id);
+            var settings = srcContext.DbSettings.OrderBy(s => s.Id);
             foreach (var setting in settings)
             {
-                postgres.DbSettings.Add(new DbSetting
+                destContext.DbSettings.Add(new DbSetting
                 {
                     Key = setting.Key,
                     Value = setting.Value
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate SkatResults...");
             var idmap = new Dictionary<long, long>();
-            var skatResults = sqlite.DbSkatResults.OrderBy(r => r.Id);
+            var skatResults = srcContext.DbSkatResults.OrderBy(r => r.Id);
             foreach (var skatResult in skatResults)
             {
                 var pgSkatResult = new DbSkatResult
@@ -242,12 +256,12 @@ namespace APIServer
                     Player3 = skatResult.Player3,
                     Player4 = skatResult.Player4
                 };
-                postgres.DbSkatResults.Add(pgSkatResult);
-                postgres.SaveChanges();
+                destContext.DbSkatResults.Add(pgSkatResult);
+                destContext.SaveChanges();
                 idmap[skatResult.Id] = pgSkatResult.Id;
             }
             logger.LogInformation("Migrate SkatGameHistories...");
-            var skatGameHistories = sqlite.DbSkatGameHistories.OrderBy(h => h.Id);
+            var skatGameHistories = srcContext.DbSkatGameHistories.OrderBy(h => h.Id);
             foreach (var skatGameHistory in skatGameHistories)
             {
                 var pgSkatGameHistoy = new DbSkatGameHistory
@@ -255,14 +269,14 @@ namespace APIServer
                     DbSkatResultId = idmap[skatGameHistory.DbSkatResultId],
                     History = skatGameHistory.History
                 };
-                postgres.DbSkatGameHistories.Add(pgSkatGameHistoy);
-                postgres.SaveChanges();
+                destContext.DbSkatGameHistories.Add(pgSkatGameHistoy);
+                destContext.SaveChanges();
             }
             logger.LogInformation("Migrate TetrisHighScores...");
-            var tetrisHighScores = sqlite.DbTetrisHighScore.OrderBy(h => h.Id);
+            var tetrisHighScores = srcContext.DbTetrisHighScore.OrderBy(h => h.Id);
             foreach (var tetrisHighScore in tetrisHighScores)
             {
-                postgres.DbTetrisHighScore.Add(new DbTetrisHighScore
+                destContext.DbTetrisHighScore.Add(new DbTetrisHighScore
                 {
                     Created = tetrisHighScore.Created,
                     Level = tetrisHighScore.Level,
@@ -271,23 +285,23 @@ namespace APIServer
                     Score = tetrisHighScore.Score
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate UserSkatResults...");
-            var skatUsers = postgres.DbUsers.ToList();
+            var skatUsers = destContext.DbUsers.ToList();
             foreach (var skatUser in skatUsers)
             {
-                MigrateSkatUserResults(postgres, skatUser.Name, skatUser.Id);
+                MigrateSkatUserResults(destContext, skatUser.Name, skatUser.Id);
             }
             logger.LogInformation("Migrate SkatReservations...");
-            var reservations = sqlite.DbSkatReservations.Include(r => r.ReservedBy).OrderBy(r => r.Id);
+            var reservations = srcContext.DbSkatReservations.Include(r => r.ReservedBy).OrderBy(r => r.Id);
             foreach (var reservation in reservations)
             {
                 DbUser pgUser = null;
                 if (reservation.ReservedBy != null)
                 {
-                    pgUser = postgres.DbUsers.Single(u => u.Name == reservation.ReservedBy.Name);
+                    pgUser = destContext.DbUsers.Single(u => u.Name == reservation.ReservedBy.Name);
                 }
-                postgres.DbSkatReservations.Add(new DbSkatReservation
+                destContext.DbSkatReservations.Add(new DbSkatReservation
                 {
                     Duration = reservation.Duration,
                     Player1 = reservation.Player1,
@@ -299,15 +313,15 @@ namespace APIServer
                     EndUtc = reservation.EndUtc
                 });
             }
-            postgres.SaveChanges();
+            destContext.SaveChanges();
             logger.LogInformation("Migrate DocItems...");
-            var pgAllUsers = postgres.DbUsers.ToList();
+            var pgAllUsers = destContext.DbUsers.ToList();
             foreach (var pgUser in pgAllUsers)
             {
-                var sqliteUser = sqlite.DbUsers.SingleOrDefault(u => u.Name == pgUser.Name);
+                var sqliteUser = srcContext.DbUsers.SingleOrDefault(u => u.Name == pgUser.Name);
                 if (sqliteUser == null) continue;
                 var docItems = new Queue<DbDocItem>();
-                var volume = DocumentService.GetVolume(sqlite, sqliteUser);
+                var volume = DocumentService.GetVolume(srcContext, sqliteUser);
                 if (volume != null)
                 {
                     docItems.Enqueue(volume);
@@ -318,14 +332,14 @@ namespace APIServer
                 {
                     var docItem = docItems.Dequeue();
                     ids.Add(docItem.Id);
-                    foreach (var child in DocumentService.GetChildren(sqlite, sqliteUser, docItem))
+                    foreach (var child in DocumentService.GetChildren(srcContext, sqliteUser, docItem))
                     {
                         docItems.Enqueue(child);
                     }
                 }
                 foreach (var id in ids)
                 {
-                    var docItem = sqlite.DbDocItems
+                    var docItem = srcContext.DbDocItems
                         .Include(item => item.Content)
                         .Single(item => item.Id == id && item.OwnerId == sqliteUser.Id);
                     long? parentId = null;
@@ -346,26 +360,26 @@ namespace APIServer
                     {
                         pgDocItem.Content = new DbDocContent { Data = docItem.Content.Data };
                     }
-                    postgres.DbDocItems.Add(pgDocItem);
-                    postgres.SaveChanges();
+                    destContext.DbDocItems.Add(pgDocItem);
+                    destContext.SaveChanges();
                     idMap[docItem.Id] = pgDocItem.Id;
                 }
             }
             logger.LogInformation("Migration succeeded.");
         }
 
-        private static void MigrateSkatUserResults(DbPostgresContext postgres, string userName, long userId)
+        private static void MigrateSkatUserResults(DbMynaContext destContext, string userName, long userId)
         {
-            var userSkatResults = postgres.DbSkatResults
+            var userSkatResults = destContext.DbSkatResults
                 .Where(r => r.Player1 == userName || r.Player2 == userName || r.Player3 == userName || r.Player4 == userName)
                 .Select(r => r.Id);
             if (userSkatResults.Any())
             {
                 foreach (var skatResultId in userSkatResults)
                 {
-                    postgres.DbUserSkatResults.Add(new DbUserSkatResult { DbUserId = userId, DbSkatResultId = skatResultId });
+                    destContext.DbUserSkatResults.Add(new DbUserSkatResult { DbUserId = userId, DbSkatResultId = skatResultId });
                 }
-                postgres.SaveChanges();
+                destContext.SaveChanges();
             }
         }
     }
