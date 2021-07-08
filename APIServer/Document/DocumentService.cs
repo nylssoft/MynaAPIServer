@@ -167,7 +167,7 @@ namespace APIServer.Document
                     item =>
                         item.OwnerId == user.Id &&
                         item.ParentId == parentId &&
-                        delIds.Contains(item.Id));
+                        delIds.Contains(item.Id)).ToList();
                 foreach (var delItem in delItems)
                 {
                     removeItems.Add(delItem);
@@ -229,7 +229,7 @@ namespace APIServer.Document
                         moveIds.Contains(item.Id) &&
                         item.Id != destinationId &&
                         item.ParentId != destinationId &&
-                        !destPathIds.Contains(item.Id));
+                        !destPathIds.Contains(item.Id)).ToList();
                 foreach (var moveItem in moveItems)
                 {
                     var oldParent = GetItemById(dbContext, user, moveItem.ParentId);
