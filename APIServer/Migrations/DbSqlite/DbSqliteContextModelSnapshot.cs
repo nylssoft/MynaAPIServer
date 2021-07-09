@@ -81,6 +81,9 @@ namespace APIServer.Migrations.DbSqlite
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AccessRole")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Children")
                         .HasColumnType("INTEGER");
 

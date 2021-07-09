@@ -87,7 +87,7 @@ var markdown = (() => {
         const urlParams = new URLSearchParams(window.location.search);
         page = urlParams.get("page");
         if (!page) {
-            page = "welcome";
+            page = "startpage";
         }
         currentUser = undefined;
         const token = utils.get_authentication_token();

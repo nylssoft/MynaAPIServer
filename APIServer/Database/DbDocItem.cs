@@ -45,5 +45,7 @@ namespace APIServer.Database
         public long? ContentId { get; set; }
 
         public DbDocContent Content { get; set; }
+
+        public string AccessRole { get; set; }
     }
 }

@@ -38,5 +38,7 @@ namespace APIServer.PwdMan
         public string SlideShowFamilyPhotos { get; set; }
 
         public List<MarkdownConfig> Markdown { get; set; }
+
+        public string StartPage { get; set; }
     }
 }

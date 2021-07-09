@@ -30,7 +30,7 @@ namespace APIServer.Document
 
         int DeleteItems(IPwdManService pwdManService, string authenticationToken, long parentId, List<long> delIds);
 
-        ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, Stream stream);
+        ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, Stream stream, bool overwrite);
 
         DownloadResult DownloadDocument(IPwdManService pwdManService, string authenticationToken, long id);
 
@@ -39,5 +39,8 @@ namespace APIServer.Document
         bool RenameItem(IPwdManService pwdManService, string authenticationToken, long id, string name);
 
         int MoveItems(IPwdManService pwdManService, string authenticationToken, long destinationId, List<long> moveIds);
+
+        bool SetFolderAccessRole(IPwdManService pwdManService, string authenticationToken, long id, string accessRole);
+
     }
 }

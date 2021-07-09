@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.0.12";
+    let version = "1.1.1";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -110,7 +110,94 @@ var documents = (() => {
         return items;
     };
 
-    const uploadFiles = (curFiles) => {
+    const upload = (fileData, curFile, curFiles, overwrite) => {
+        const parent = getItem(currentId);
+        if (parent.type === "Folder") {
+            if (parent.accessRole && parent.accessRole.length > 0) {
+                uploadShared(fileData, curFile, curFiles, overwrite);
+            }
+            else {
+                uploadEncrypted(fileData, curFile, curFiles, overwrite);
+            }
+        }
+    };
+
+    const uploadShared = (fileData, curFile, curFiles, overwrite) => {
+        const dataFile = new File([fileData], curFile.name, { type: "application/octet-stream" });
+        const formData = new FormData();
+        formData.append("document-file", dataFile);
+        formData.append("overwrite", overwrite);
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call(`api/document/upload/${currentId}`,
+            {
+                method: "POST",
+                headers: { "token": token },
+                body: formData
+            },
+            () => uploadFiles(curFiles, overwrite),
+            (errMsg) => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${errMsg}`));
+    };
+
+    const uploadEncrypted = (fileData, curFile, curFiles, overwrite) => {
+        initCryptoKey(() => {
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const options = { name: "AES-GCM", iv: iv };
+            window.crypto.subtle.encrypt(options, cryptoKey, fileData)
+                .then(cipherData => {
+                    const view = new Uint8Array(cipherData);
+                    const data = new Uint8Array(cipherData.byteLength + 12);
+                    data.set(iv, 0);
+                    data.set(view, 12);
+                    const encryptedFile = new File([data.buffer], curFile.name, { type: "application/octet-stream" });
+                    const formData = new FormData();
+                    formData.append("document-file", encryptedFile);
+                    formData.append("overwrite", overwrite);
+                    const token = utils.get_authentication_token();
+                    utils.fetch_api_call(`api/document/upload/${currentId}`,
+                        {
+                            method: "POST",
+                            headers: { "token": token },
+                            body: formData
+                        },
+                        () => uploadFiles(curFiles, overwrite),
+                        (errMsg) => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${errMsg}`));
+                })
+                .catch(err => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${err.message}`));
+        });
+    };
+
+    const onConfirmOverwrite = (curFiles) => {
+        const itemNames = getItems(currentId).map(item => item.name);
+        const existing = [];
+        curFiles.forEach(curFile => {
+            if (itemNames.includes(curFile.name)) {
+                existing.push(curFile.name);
+            }
+        });
+        if (existing.length > 0) {
+            const toolbar = document.getElementById("toolbar-id");
+            controls.removeAllChildren(toolbar);
+            const elem = document.getElementById("action-id");
+            controls.removeAllChildren(elem);
+            let msg;
+            if (existing.length == 1) {
+                msg = `Willst Du das vorhandene Dokument '${existing[0]}' \u00FCberscheiben?  `;
+            }
+            else {
+                msg = `Willst Du die vorhandenen Dokumente '${existing.join(", ")}' \u00FCberscheiben?  `;
+            }
+            controls.createSpan(elem, undefined, msg);
+            controls.createButton(elem, "Ja", () => uploadFiles(curFiles, true));
+            controls.createButton(elem, "Nein", () => uploadFiles(curFiles, false));
+            controls.createButton(elem, "Abbrechen", () => initItems());
+            elem.scrollIntoView();
+        }
+        else {
+            uploadFiles(curFiles, false);
+        }
+    };
+
+    const uploadFiles = (curFiles, overwrite) => {
         if (curFiles.length == 0) {
             setWaitCursor(false);
             initItems();
@@ -121,32 +208,7 @@ var documents = (() => {
         curFiles.shift();
         if (curFile.size < 10 * 1024 * 1024) {
             const fileReader = new FileReader();
-            fileReader.onload = (e) => {
-                initCryptoKey(() => {
-                    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                    const options = { name: "AES-GCM", iv: iv };
-                    window.crypto.subtle.encrypt(options, cryptoKey, e.target.result)
-                        .then(cipherData => {
-                            const view = new Uint8Array(cipherData);
-                            const data = new Uint8Array(cipherData.byteLength + 12);
-                            data.set(iv, 0);
-                            data.set(view, 12);
-                            const encryptedFile = new File([data.buffer], curFile.name, { type: "application/octet-stream" });
-                            const formData = new FormData();
-                            formData.append("document-file", encryptedFile);
-                            const token = utils.get_authentication_token();
-                            utils.fetch_api_call(`api/document/upload/${currentId}`,
-                                {
-                                    method: "POST",
-                                    headers: { "token": token },
-                                    body: formData
-                                },
-                                () => uploadFiles(curFiles),
-                                (errMsg) => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${errMsg}`));
-                        })
-                        .catch(err => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${err.message}`));
-                });
-            };
+            fileReader.onload = (e) => upload(e.target.result, curFile, curFiles, overwrite);
             fileReader.readAsArrayBuffer(curFile);
         }
         else {
@@ -309,7 +371,8 @@ var documents = (() => {
     };
 
     const renderActions = () => {
-        const cnt = getSelected().length;
+        const selected = getSelected();
+        const cnt = selected.length;
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
         const toolbar = document.getElementById("toolbar-id");
@@ -334,7 +397,10 @@ var documents = (() => {
                 controls.createButton(elem, "Umbenennen", onConfirmRename);
                 const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png");
                 btnRename.title = "Umbenennen";
-                btnRename.addEventListener("click", onConfirmRename);
+                btnRename.addEventListener("click", onConfirmRename);                
+                if (currentUser.roles.includes("usermanager") && selected[0].type === "Folder") {
+                    controls.createButton(elem, "Ver\u00F6ffentlichen", onConfirmPublish);
+                }
             }
             if (cnt > 0) {
                 controls.createButton(elem, "Verschieben", onSelectDestinationFolder);
@@ -387,10 +453,16 @@ var documents = (() => {
         td = controls.create(tr, "td", "column2");
         const url = isContainer(item) ? "/images/buttons/folder.png" : "/images/buttons/applications-office-6.png";
         const img = controls.createImg(td, undefined, 32, 32, url);
+        if (item.accessRole && item.accessRole.length > 0) {
+            const isEverbody = item.accessRole == "everbody";
+            const imgAccess = controls.createImg(td, undefined, 32, 32, isEverbody ? "/images/buttons/homepage.png" : "/images/buttons/family.png");
+            imgAccess.title = isEverbody ? "Jeder" : "Familie";
+            td.className = "column2-access";
+        }
         img.title = isContainer(item) ? "Ordner" : "Dokument";
         img.id = `item-open-id-${item.id}`;
         td = controls.create(tr, "td");
-        const a = controls.createA(td, undefined, "#open", item.name);
+        const a = controls.createA(td, undefined, `#open(${item.id})`, item.name);
         a.id = `item-open-id-${item.id}`;
         td = controls.create(tr, "td");
         if (isContainer(item)) {
@@ -436,7 +508,7 @@ var documents = (() => {
                         curFiles.push(dti.getAsFile());
                     }
                 }
-                uploadFiles(curFiles);
+                onConfirmOverwrite(curFiles);
             }
         });
     };
@@ -586,51 +658,73 @@ var documents = (() => {
         for (let i = 0; i < inputFile.files.length; i++) {
             curFiles.push(inputFile.files[i]);
         }
-        uploadFiles(curFiles);
+        onConfirmOverwrite(curFiles);
     };
-    
+
+    const download = (item, blob) => {
+        if (item.accessRole && item.accessRole.length > 0) {
+            downloadShared(item.name, blob);
+        }
+        else {
+            downloadEncrypted(item.name, blob);
+        }
+    };
+
+    const downloadShared = (fileName, blob) => {
+        const obj_url = URL.createObjectURL(blob);
+        let a = document.createElement("a");
+        a.href = obj_url;
+        a.setAttribute("download", fileName);
+        a.click();
+        URL.revokeObjectURL(obj_url);
+        setWaitCursor(false);
+    };
+
+    const downloadEncrypted = (fileName, blob) => {
+        const iv = new Uint8Array(12);
+        const data = new Uint8Array(blob.size - 12);
+        let idx = 0;
+        const reader = blob.stream().getReader();
+        reader.read().then(
+            function processData({ done, value }) {
+                if (done) {
+                    initCryptoKey(() => {
+                        const options = { "name": "AES-GCM", "iv": iv };
+                        crypto.subtle.decrypt(options, cryptoKey, data)
+                            .then(decrypted => {
+                                const obj_url = URL.createObjectURL(new Blob([decrypted]));
+                                let a = document.createElement("a");
+                                a.href = obj_url;
+                                a.setAttribute("download", fileName);
+                                a.click();
+                                URL.revokeObjectURL(obj_url);
+                                setWaitCursor(false);
+                            })
+                            .catch(err => renderError(err.message));
+                    });
+                    return;
+                }
+                value.forEach(val => {
+                    if (idx < 12) {
+                        iv[idx] = val;
+                    }
+                    else {
+                        data[idx - 12] = val;
+                    }
+                    idx++;
+                });
+                return reader.read().then(processData);
+            }
+        );
+    };
+
     const onDownloadDocument = (id) => {
         setWaitCursor(true);
         const item = getItem(id);
         const token = utils.get_authentication_token();
         fetch(`api/document/download/${id}`, { headers: { "token": token } })
             .then(resp => resp.blob())
-            .then(blob => {
-                const iv = new Uint8Array(12);
-                const data = new Uint8Array(blob.size - 12);
-                let idx = 0;
-                const reader = blob.stream().getReader();
-                reader.read().then(
-                    function processData({ done, value }) {
-                        if (done) {
-                            initCryptoKey(() => {
-                                const options = { "name": "AES-GCM", "iv": iv };
-                                crypto.subtle.decrypt(options, cryptoKey, data)
-                                    .then(decrypted => {
-                                        const obj_url = URL.createObjectURL(new Blob([decrypted]));
-                                        let a = document.createElement("a");
-                                        a.href = obj_url;
-                                        a.setAttribute("download", item.name);
-                                        a.click();
-                                        URL.revokeObjectURL(obj_url);
-                                        setWaitCursor(false);
-                                    })
-                                    .catch(err => renderError(err.message));
-                            });
-                            return;
-                        }
-                        value.forEach(val => {
-                            if (idx < 12) {
-                                iv[idx] = val;
-                            }
-                            else {
-                                data[idx - 12] = val;
-                            }
-                            idx++;
-                        });
-                        return reader.read().then(processData);
-                    });
-            })
+            .then(blob => download(item, blob))
             .catch((err) => renderError(err.message));
     };
 
@@ -734,6 +828,38 @@ var documents = (() => {
             if (!utils.is_mobile()) {
                 name.focus();
             }
+        }
+    };
+
+    const onConfirmPublish = () => {
+        const selected = getSelected();
+        if (selected.length == 1) {
+            const toolbar = document.getElementById("toolbar-id");
+            controls.removeAllChildren(toolbar);
+            const elem = document.getElementById("action-id");
+            controls.removeAllChildren(elem);
+            controls.createSpan(elem, undefined, "Dokumente im Ordner ver\u00F6ffentlichen f\u00FCr: ");
+            let priv = !selected[0].accessRole || selected[0].accessRole.length === 0;
+            let fam = selected[0].accessRole === "family";
+            let pub = selected[0].accessRole === "everbody";
+            controls.createRadiobutton(elem, "role-private-id", "access-role", "", "Besitzer", priv, onPublish);
+            controls.createRadiobutton(elem, "role-family-id", "access-role", "family", "Familie", fam, onPublish);
+            controls.createRadiobutton(elem, "role-public-id", "access-role", "everbody", "Jeder", pub, onPublish);
+            elem.scrollIntoView();
+        }
+    };
+
+    const onPublish = (elem) => {
+        const selected = getSelected();
+        if (selected.length == 1 && selected[0].accessRole != elem.value) {
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/document/folder/${selected[0].id}/accessrole`,
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(elem.value)
+                },
+                () => initItems(), renderError, setWaitCursor);
         }
     };
 

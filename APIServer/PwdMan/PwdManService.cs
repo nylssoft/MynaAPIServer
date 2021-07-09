@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using APIServer.Database;
+using APIServer.Document.Model;
 using APIServer.Email;
 using APIServer.PasswordGenerator;
 using APIServer.PwdMan.Model;
@@ -1140,15 +1141,27 @@ namespace APIServer.PwdMan
 
         public string GetMarkdown(string authenticationToken, string id)
         {
+            var opt = GetOptions();
+            if (id == "startpage")
+            {
+                id = opt.StartPage;
+            }
+            if (int.TryParse(id, out int documentId))
+            {
+                return GetMarkdownByDocumentId(authenticationToken, documentId);
+            }
             string content = null;
             string role = null;
-            var opt = GetOptions();
             if (opt.Markdown?.Count > 0)
             {
                 foreach (var mdc in opt.Markdown)
                 {
                     if (mdc.Id == id)
                     {
+                        if (int.TryParse(mdc.Content, out int docId))
+                        {
+                            return GetMarkdownByDocumentId(authenticationToken, docId);
+                        }
                         content = mdc.Content;
                         role = mdc.Role;
                         break;
@@ -1173,6 +1186,40 @@ namespace APIServer.PwdMan
                     var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
                     var markdown = Markdig.Markdown.ToHtml(File.ReadAllText(content), pipeline);
                     return markdown;
+                }
+            }
+            return "<p>Zugriff verweigert.</p>";
+        }
+
+        private string GetMarkdownByDocumentId(string authenticationToken, int docItemId)
+        {
+            var dbContext = GetDbContext();
+            var docItem = dbContext.DbDocItems.SingleOrDefault(item => item.Type == DbDocItemType.Item && item.Id == docItemId);
+            if (docItem != null && docItem.ContentId.HasValue)
+            {
+                var render = AccessRole.IsEverbody(docItem.AccessRole);
+                if (!render &&
+                    !string.IsNullOrEmpty(authenticationToken) &&
+                    !AccessRole.IsOwner(docItem.AccessRole))
+                {
+                    try
+                    {
+                        render = HasRole(GetUserFromToken(authenticationToken), docItem.AccessRole);
+                    }
+                    catch
+                    {
+                    }
+                }
+                if (render)
+                {
+                    var docContent = dbContext.DbDocContents.SingleOrDefault(c => c.Id == docItem.ContentId.Value);
+                    if (docContent != null)
+                    {
+                        var content = Encoding.UTF8.GetString(docContent.Data);
+                        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+                        var markdown = Markdown.ToHtml(content, pipeline);
+                        return markdown;
+                    }
                 }
             }
             return "<p>Zugriff verweigert.</p>";

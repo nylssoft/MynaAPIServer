@@ -73,9 +73,9 @@ namespace APIServer.Document
             return ret;
         }
 
-        public ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, Stream stream)
+        public ItemModel UploadDocument(IPwdManService pwdManService, string authenticationToken, long parentId, string name, Stream stream, bool overwrite)
         {
-            logger.LogDebug("Upload documemt with '{name}' into parent ID {parentId}...", name, parentId);
+            logger.LogDebug("Upload document with '{name}' into parent ID {parentId}...", name, parentId);
             name = name.Trim();
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
@@ -83,6 +83,21 @@ namespace APIServer.Document
             var parentItem = GetItemById(dbContext, user, parentId);
             if (parentItem != null)
             {
+                DbDocItem docItem = null;
+                if (overwrite)
+                {
+                    docItem = dbContext.DbDocItems.
+                        Include(item => item.Content).
+                        SingleOrDefault(item =>
+                            item.Type == DbDocItemType.Item &&
+                            item.ParentId == parentId &&
+                            item.OwnerId == user.Id &&
+                            item.Name == name);
+                    if (docItem != null)
+                    {
+                        sum -= docItem.Size;
+                    }
+                }
                 var ms = new MemoryStream();
                 stream.CopyTo(ms);
                 var size = ms.Length;
@@ -90,17 +105,27 @@ namespace APIServer.Document
                 {
                     throw new PwdManInvalidArgumentException("Es ist nicht genügend Speicherplatz mehr verfügbar.");
                 }
-                var docItem = new DbDocItem
+                if (docItem != null)
                 {
-                    Name = name,
-                    Type = DbDocItemType.Item,
-                    OwnerId = user.Id,
-                    ParentId = parentId,
-                    Size = size,
-                    Content = new DbDocContent { Data = ms.ToArray() }
-                };
-                dbContext.DbDocItems.Add(docItem);
-                parentItem.Children += 1;
+                    docItem.Size = size;
+                    docItem.Content.Data = ms.ToArray();
+                    docItem.AccessRole = parentItem.AccessRole;
+                }
+                else
+                {
+                    docItem = new DbDocItem
+                    {
+                        Name = name,
+                        Type = DbDocItemType.Item,
+                        OwnerId = user.Id,
+                        ParentId = parentId,
+                        Size = size,
+                        Content = new DbDocContent { Data = ms.ToArray() },
+                        AccessRole = parentItem.AccessRole
+                    };
+                    dbContext.DbDocItems.Add(docItem);
+                    parentItem.Children += 1;
+                }
                 dbContext.SaveChanges();
                 return ConvertToItemModel(docItem);
             }
@@ -110,20 +135,32 @@ namespace APIServer.Document
         public DownloadResult DownloadDocument(IPwdManService pwdManService, string authenticationToken, long id)
         {
             logger.LogDebug("Download content for item ID {id}...", id);
-            var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            // get item by ID but include content
             var docItem = dbContext.DbDocItems
-                 .Include(item => item.Content)
-                 .SingleOrDefault(
-                    item => item.OwnerId == user.Id && item.Type == DbDocItemType.Item && item.Id == id);
-            if (docItem == null || docItem.Content == null)
+                 .SingleOrDefault(item => item.Type == DbDocItemType.Item && item.Id == id);
+            if (docItem == null || !docItem.ContentId.HasValue)
             {
-                throw new PwdManInvalidArgumentException("Dokument hat keinen Inhalt.");
+                throw new AccessDeniedPermissionException();
             }
+            if (!AccessRole.IsEverbody(docItem.AccessRole))
+            {
+                var user = pwdManService.GetUserFromToken(authenticationToken);
+                if (AccessRole.IsOwner(docItem.AccessRole))
+                {
+                    if (user.Id != docItem.OwnerId)
+                    {
+                        throw new AccessDeniedPermissionException();
+                    }
+                }
+                else if (!pwdManService.HasRole(user, docItem.AccessRole))
+                {
+                    throw new AccessDeniedPermissionException();
+                }
+            }
+            var docContent = dbContext.DbDocContents.Single(c => c.Id == docItem.ContentId);
             return new DownloadResult
             {
-                Stream = new MemoryStream(docItem.Content.Data),
+                Stream = new MemoryStream(docContent.Data),
                 FileName = docItem.Name,
                 ContentType = "application/octet-stream"
             };
@@ -204,6 +241,25 @@ namespace APIServer.Document
             if (docItem != null && docItem.Name != name)
             {
                 docItem.Name = name;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public bool SetFolderAccessRole(IPwdManService pwdManService, string authenticationToken, long id, string accessRole)
+        {
+            logger.LogDebug("Update item access for ID {id} to '{access}'...", id, accessRole);
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            if (!pwdManService.HasRole(user, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var dbContext = pwdManService.GetDbContext();
+            var docItem = GetItemById(dbContext, user, id);
+            if (docItem != null && docItem.Type == DbDocItemType.Folder && docItem.AccessRole != accessRole)
+            {
+                docItem.AccessRole = accessRole;
                 dbContext.SaveChanges();
                 return true;
             }
@@ -292,6 +348,7 @@ namespace APIServer.Document
             }
             return ret;
         }
+
         private static List<DbDocItem> GetAllChildren(DbMynaContext dbContext, DbUser user, DbDocItem docItem)
         {
             var ret = new List<DbDocItem>();
@@ -308,7 +365,7 @@ namespace APIServer.Document
 
         private static List<ItemModel> ConvertToItemModel(List<DbDocItem> docItems)
         {
-            return docItems.Select(item => ConvertToItemModel(item)).ToList<ItemModel>();
+            return docItems.Select(item => ConvertToItemModel(item)).ToList();
         }
 
         private static ItemModel ConvertToItemModel(DbDocItem docItem)
@@ -320,7 +377,8 @@ namespace APIServer.Document
                 Type = ConvertToType(docItem.Type),
                 ParentId = docItem.ParentId,
                 Children = docItem.Children,
-                Size = docItem.Size
+                Size = docItem.Size,
+                AccessRole = docItem.AccessRole
             };
         }
 

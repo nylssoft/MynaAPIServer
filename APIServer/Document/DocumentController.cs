@@ -81,9 +81,17 @@ namespace APIServer.Document
             return new JsonResult(DocumentService.RenameItem(PwdManService, GetToken(), id, name));
         }
 
+        [HttpPut]
+        [Route("api/document/folder/{id}/accessrole")]
+        public IActionResult SetFolderAccessRole(long id, [FromBody] string accessRole)
+        {
+            if (accessRole?.Length > Limits.MAX_ROLE_NAME) throw new InputValueTooLargeException();
+            return new JsonResult(DocumentService.SetFolderAccessRole(PwdManService, GetToken(), id, accessRole));
+        }
+
         [HttpPost]
         [Route("api/document/upload/{id}")]
-        public IActionResult UploadDocument(long id, [FromForm(Name = "document-file")] IFormFile formFile)
+        public IActionResult UploadDocument(long id, [FromForm(Name = "document-file")] IFormFile formFile, [FromForm(Name = "overwrite")] bool overwrite)
         {
             if (formFile == null) throw new PwdManInvalidArgumentException("Datei fehlt.");
             if (string.IsNullOrEmpty(formFile.FileName)) throw new PwdManInvalidArgumentException("Dateiname fehlt.");
@@ -91,7 +99,7 @@ namespace APIServer.Document
             if (formFile.Length <= 0) throw new PwdManInvalidArgumentException("Dateigrösse ungültig.");
             if (formFile.FileName?.Trim().Length > Limits.MAX_DOCUMENT_TITLE) throw new InputValueTooLargeException();
             using var stream = formFile.OpenReadStream();
-            return new JsonResult(DocumentService.UploadDocument(PwdManService, GetToken(), id, formFile.FileName, stream));
+            return new JsonResult(DocumentService.UploadDocument(PwdManService, GetToken(), id, formFile.FileName, stream, overwrite));
         }
 
         [HttpGet]

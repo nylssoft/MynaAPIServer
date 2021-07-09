@@ -17,20 +17,18 @@
 */
 namespace APIServer.Document.Model
 {
-    public class ItemModel
+    public class AccessRole
     {
-        public long Id { get; set; }
+        public static string EVERYBODY = "everbody";
 
-        public long? ParentId { get; set; }
+        public static bool IsEverbody(string accessRole)
+        {
+            return accessRole == EVERYBODY;
+        }
 
-        public string Name { get; set; }
-
-        public long Size { get; set; }
-
-        public string Type { get; set; }
-
-        public int Children { get; set; }
-
-        public string AccessRole { get; set; }
+        public static bool IsOwner(string accessRole)
+        {
+            return string.IsNullOrEmpty(accessRole);
+        }
     }
 }
