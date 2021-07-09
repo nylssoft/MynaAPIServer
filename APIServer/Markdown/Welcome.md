@@ -1,4 +1,4 @@
-﻿$background(/images/slideshow/girlindred.jpg)
+$background(/images/slideshow/girlindred.jpg)
 
 # Willkommen
 

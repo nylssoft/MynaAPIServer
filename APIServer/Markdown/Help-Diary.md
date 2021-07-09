@@ -1,4 +1,4 @@
-﻿
+
 ## Hilfe für Tagebuch
 
 ### Sicherheit

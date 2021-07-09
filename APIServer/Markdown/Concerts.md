@@ -1,4 +1,4 @@
-﻿$background(/images/markdown/rotesonne.jpg)
+$background(/images/markdown/rotesonne.jpg)
 
 # Konzerte
 

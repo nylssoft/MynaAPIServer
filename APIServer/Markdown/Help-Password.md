@@ -1,4 +1,4 @@
-﻿
+
 ## Hilfe für Passwörter
 
 ### Sicherheit

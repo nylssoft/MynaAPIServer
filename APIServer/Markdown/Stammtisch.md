@@ -1,4 +1,4 @@
-﻿# Stammtisch
+# Stammtisch
 
 ## Restaurants 2020 - 2011
 
