@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.1";
+    let version = "1.1.2";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -112,7 +112,7 @@ var documents = (() => {
 
     const upload = (fileData, curFile, curFiles, overwrite) => {
         const parent = getItem(currentId);
-        if (parent.type === "Folder") {
+        if (isContainer(parent)) {
             if (parent.accessRole && parent.accessRole.length > 0) {
                 uploadShared(fileData, curFile, curFiles, overwrite);
             }
@@ -398,7 +398,7 @@ var documents = (() => {
                 const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png");
                 btnRename.title = "Umbenennen";
                 btnRename.addEventListener("click", onConfirmRename);                
-                if (currentUser.roles.includes("usermanager") && selected[0].type === "Folder") {
+                if (currentUser.roles.includes("usermanager") && isContainer(selected[0])) {
                     controls.createButton(elem, "Ver\u00F6ffentlichen", onConfirmPublish);
                 }
             }
