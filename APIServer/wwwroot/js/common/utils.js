@@ -333,7 +333,7 @@ var utils = (() => {
         const small_height = window.matchMedia(maxheight).matches;
         const very_small_height = window.matchMedia('(max-height: 400px)').matches;        
         controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown?page=welcome", "Start");
+        controls.createA(parent, undefined, "/markdown", "Start");
         if (!small_height) {
             controls.create(parent, "hr");
             controls.createA(parent, undefined, "/documents", "Dokumente");
