@@ -331,7 +331,6 @@ var utils = (() => {
         if (!parent) return;
         let maxheight = is_mobile() ? '(max-height: 500px)' : '(max-height: 700px)';
         const small_height = window.matchMedia(maxheight).matches;
-        const very_small_height = window.matchMedia('(max-height: 400px)').matches;        
         controls.removeAllChildren(parent);
         controls.createA(parent, undefined, "/markdown", "Start");
         if (!small_height) {
@@ -345,15 +344,13 @@ var utils = (() => {
             controls.createA(parent, undefined, "/skat", "Skat");
             controls.createA(parent, undefined, "/tetris", "Tetris");
         }
-        if (!very_small_height) {
-            controls.create(parent, "hr");
-            if (currentUser) {
-                controls.createA(parent, undefined, "/usermgmt", "Profil");
-                controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
-            }
-            else {
-                controls.createA(parent, undefined, "/pwdman?nexturl=/markdown", "Anmelden");
-            }
+        controls.create(parent, "hr");
+        if (currentUser) {
+            controls.createA(parent, undefined, "/usermgmt", "Profil");
+            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+        }
+        else {
+            controls.createA(parent, undefined, "/pwdman?nexturl=/markdown", "Anmelden");
         }
         const encryptKeyElem = document.getElementById("div-encryptkey-id");
         if (encryptKeyElem) {
