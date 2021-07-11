@@ -623,6 +623,19 @@ namespace APIServer.PwdMan
             var regs = dbContext.DbRegistrations
                 .Where(r => r.ConfirmedById == user.Id || r.Email == user.Email);
             dbContext.DbRegistrations.RemoveRange(regs);
+            var delResetPasswords = dbContext.DbResetPasswords.Where(r => r.Email == user.Email);
+            dbContext.DbResetPasswords.RemoveRange(delResetPasswords);
+            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id);
+            var delDocContents = new List<DbDocContent>();
+            foreach (var item in delDocItems)
+            {
+                if (item.ContentId.HasValue)
+                {
+                    delDocContents.Add(new DbDocContent { Id = item.ContentId.Value });
+                }
+            }
+            dbContext.DbDocItems.RemoveRange(delDocItems);
+            dbContext.DbDocContents.RemoveRange(delDocContents);
             dbContext.DbUsers.Remove(user);
             dbContext.SaveChanges();
             return true;
