@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.2";
+    let version = "1.1.3";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -596,9 +596,10 @@ var documents = (() => {
         cryptoKey = undefined;
     };
 
-    const onClickStart = () => {
+    const onClickStart = (evt) => {
         const volume = getVolume();
         if (volume !== undefined) {
+            evt.preventDefault();
             currentId = volume.parentId;
             initItems();
         }
@@ -609,6 +610,7 @@ var documents = (() => {
             const id = parseInt(evt.target.id.substr(13));
             const item = getItem(id);
             if (item !== undefined && isContainer(item)) {
+                evt.preventDefault();
                 currentId = id;
                 initItems();
             }
@@ -625,10 +627,12 @@ var documents = (() => {
             const id = parseInt(evt.target.id.substr(13));
             const item = getItem(id);
             if (isContainer(item)) {
+                evt.preventDefault();
                 currentId = id;
                 initItems();
             }
             else if (isDocument(item)) {
+                evt.preventDefault();
                 onDownloadDocument(id);
             }
         }
