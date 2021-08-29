@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChessTest
 {
@@ -24,6 +21,7 @@ namespace ChessTest
 
         public Chessboard(Chessboard b)
         {
+            // deep copy of board figures
             for (int r = 0; r <= 7; r++)
             {
                 for (int c = 0; c <= 7; c++)
@@ -34,6 +32,10 @@ namespace ChessTest
                         board[r, c] = new Figure(f);
                     }
                 }
+            }
+            if (b.enpassentFigure != null)
+            {
+                enpassentFigure = new Figure(b.enpassentFigure);
             }
         }
 
@@ -260,9 +262,9 @@ namespace ChessTest
             return false;
         }
 
-        public bool CanMove(Figure f, int row, int col, bool allowChessMoves = false)
+        public bool CanMove(Figure f, int row, int col)
         {
-            foreach (var pt in GetMoves(f, filterChessMoves: !allowChessMoves))
+            foreach (var pt in GetMoves(f, filterCheck: true))
             {
                 if (row == pt.Item1 && col == pt.Item2)
                 {
@@ -272,37 +274,39 @@ namespace ChessTest
             return false;
         }
 
-        public bool IsStateMate(FigureColor color)
+        public bool IsStaleMate(FigureColor color)
         {
+            // find any figures that can move
             foreach(var figure in GetAll(color))
             {
-                if (GetMoves(figure, filterChessMoves: true).Count > 0)
+                if (GetMoves(figure, filterCheck: true).Count > 0)
                 {
                     return false;
                 }
             }
+            // no moves possible, stale mate
             return true;
         }
 
         public bool IsCheckMate(FigureColor color)
         {
-            // if king is in chess
+            // if king is in check
             if (IsCheck(color))
             {
                 // if king cannot move anymore
-                var kingMoves = GetMoves(GetKing(color), filterChessMoves: true);
+                var kingMoves = GetMoves(GetKing(color), filterCheck: true);
                 if (kingMoves.Count == 0)
                 {
-                    // simulate if any other move will break the chess
+                    // simulate if any other move will break the check
                     foreach (var figure in GetAll(color))
                     {
-                        var moves = GetMoves(figure, filterChessMoves: true);
+                        var moves = GetMoves(figure, filterCheck: true);
                         if (moves.Count > 0)
                         {
                             return false;
                         }
                     }
-                    // no move break the chess, checkmate
+                    // no move breaks the check, checkmate
                     return true;
                 }
             }
@@ -330,7 +334,7 @@ namespace ChessTest
             return false;
         }
 
-        public List<(int, int)> GetMoves(Figure f, bool strikeOnly = false, bool filterChessMoves = false)
+        public List<(int, int)> GetMoves(Figure f, bool strikeOnly = false, bool filterCheck = false)
         {
             List<(int, int)> moves = f.Type switch
             {
@@ -344,11 +348,11 @@ namespace ChessTest
             };
             if (strikeOnly)
             {
-                return FilterStrikeOnlyMoves(f, moves);
+                return GetStrikeOnlyMoves(f, moves);
             }
-            if (filterChessMoves)
+            if (filterCheck)
             {
-                return FilterChessMoves(f, moves);
+                return FilterCheckMoves(f, moves);
             }
             return moves;
         }
@@ -463,6 +467,7 @@ namespace ChessTest
         private List<(int, int)> GetBishopMoves(Figure f)
         {
             var ret = new List<(int, int)>();
+            // up right
             var r = f.Row + 1;
             var c = f.Col + 1;
             while (r <= 7 && c <= 7)
@@ -474,6 +479,7 @@ namespace ChessTest
                 r++;
                 c++;
             }
+            // down left
             r = f.Row - 1;
             c = f.Col - 1;
             while (r >= 0 && c >= 0)
@@ -485,6 +491,7 @@ namespace ChessTest
                 r--;
                 c--;
             }
+            // up left
             r = f.Row + 1;
             c = f.Col - 1;
             while (r <= 7 && c >= 0)
@@ -496,6 +503,7 @@ namespace ChessTest
                 r++;
                 c--;
             }
+            // down right
             r = f.Row - 1;
             c = f.Col + 1;
             while (r >= 0 && c <= 7)
@@ -527,6 +535,7 @@ namespace ChessTest
         private List<(int, int)> GetRookMoves(Figure f)
         {
             var ret = new List<(int, int)>();
+            // left
             for (var c = f.Col - 1; c >= 0; c--)
             {
                 if (AddMove(f, f.Row, c, ret) != MoveResult.Free)
@@ -534,6 +543,7 @@ namespace ChessTest
                     break;
                 }
             }
+            // right
             for (var c = f.Col + 1; c <= 7; c++)
             {
                 if (AddMove(f, f.Row, c, ret) != MoveResult.Free)
@@ -541,6 +551,7 @@ namespace ChessTest
                     break;
                 }
             }
+            // up
             for (var r = f.Row + 1; r <= 7; r++)
             {
                 if (AddMove(f, r, f.Col, ret) != MoveResult.Free)
@@ -583,48 +594,55 @@ namespace ChessTest
                     ret.Add(new(f.Row + 2 * dir, f.Col));
                 }
             }
-            AddEnpassant(f, dir, ret);
-            // @TODO: bauer zu Wahl-Figur ausser Dame
-            return ret;
-        }
-
-        private void AddEnpassant(Figure f, int dir, List<(int, int)> moves)
-        {
             if (enpassentFigure != null &&
                 enpassentFigure.Color != f.Color &&
                 enpassentFigure.Row == f.Row)
             {
                 if (enpassentFigure.Col == f.Col - 1)
                 {
-                    moves.Add((f.Row + dir, f.Col - 1));
+                    ret.Add((f.Row + dir, f.Col - 1));
                 }
                 else if (enpassentFigure.Col == f.Col + 1)
                 {
-                    moves.Add((f.Row + dir, f.Col + 1));
+                    ret.Add((f.Row + dir, f.Col + 1));
                 }
             }
+            return ret;
         }
 
-        private List<(int, int)> FilterStrikeOnlyMoves(Figure figure, List<(int, int)> moves)
+        private List<(int, int)> GetStrikeOnlyMoves(Figure figure, List<(int, int)> moves)
         {
-            // return only moves that strike an opponent figure
-            var filteredMoves = new List<(int, int)>();
+            // returns only moves that strikes an opponent figure
+            var strikeMoves = new List<(int, int)>();
             foreach (var pt in moves)
             {
+                if (figure.Type == FigureType.Pawn &&
+                    enpassentFigure != null &&
+                    figure.Color != enpassentFigure.Color)
+                {
+                    // enpassent strike
+                    var dir = figure.Color == FigureColor.White ? 1 : -1;
+                    if (pt.Item1 == enpassentFigure.Row + dir &&
+                        pt.Item2 == enpassentFigure.Col)
+                    {
+                        strikeMoves.Add(pt);
+                    }
+                }
                 if (ContainsOpponent(figure, pt.Item1, pt.Item2))
                 {
-                    filteredMoves.Add(pt);
+                    strikeMoves.Add(pt);
                 }
             }
-            return filteredMoves;
+            return strikeMoves;
         }
 
-        private List<(int, int)> FilterChessMoves(Figure figure, List<(int, int)> moves)
+        private List<(int, int)> FilterCheckMoves(Figure figure, List<(int, int)> moves)
         {
-            // filters all moves that would result in chess
+            // filters all moves that would result in check
             var filteredMoves = new List<(int, int)>();
             foreach (var pt in moves)
             {
+                // simulate move and verify if the move will not result in check
                 var nextBoard = new Chessboard(this);
                 var nextFigure = nextBoard.Get(figure.Row, figure.Col);
                 nextBoard.Place(nextFigure, pt.Item1, pt.Item2);
