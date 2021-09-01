@@ -161,7 +161,7 @@ namespace APIServer.Chess
                 {
                     State = GetState(),
                     AllUsers = GetAllUsers(),
-                    IsBoardFull = chessboard != null
+                    IsBoardFull = userTickets.Count == 2
                 };
                 var ctx = GetContext(ticket);
                 if (ctx != null)

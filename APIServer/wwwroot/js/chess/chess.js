@@ -122,14 +122,17 @@ var chess = (() => {
         ctx.fillText(w, 8 * pixelPerField + 20, 8 * pixelPerField - 18);
     };
 
-    const drawEmptyBoard = (ctx) => {
+    const drawEmptyBoard = (ctx, px) => {
         const color1 = "#b88b4a";
         const color2 = "#e3c16f";
-        ctx.clearRect(0, 0, 8 * pixelPerField, 8 * pixelPerField);
+        if (!px) {
+            px = pixelPerField;
+        }
+        ctx.clearRect(0, 0, 8 * px, 8 * px);
         for (let r = 0; r < 8; r++) {
             ctx.fillStyle = "#7FFF00";
             let color;
-            if (!model.currentUser || model.currentUser.name === model.board.whitePlayer) {
+            if (!model.currentUser || !model.board || model.currentUser.name === model.board.whitePlayer) {
                 color = r % 2 == 0 ? color1 : color2;
             }
             else {
@@ -138,10 +141,57 @@ var chess = (() => {
             for (let c = 0; c < 8; c++) {
                 ctx.fillStyle = color;
                 ctx.beginPath();
-                ctx.fillRect(c * pixelPerField, pixelPerField * 7 - r * pixelPerField, pixelPerField, pixelPerField);
+                ctx.fillRect(c * px, px * 7 - r * px, px, px);
                 color = color == color1 ? color2 : color1;
             }
         }
+    };
+
+    const drawSampleFigures = (ctx, px) => {
+        if (!px) {
+            px = pixelPerField;
+        }
+        const ymax = px * 7;
+        let figures = [
+            { type: "P", color: "W", row: 1, column: 0 },
+            { type: "P", color: "W", row: 1, column: 1 },
+            { type: "P", color: "W", row: 1, column: 2 },
+            { type: "P", color: "W", row: 1, column: 3 },
+            { type: "P", color: "W", row: 1, column: 4 },
+            { type: "P", color: "W", row: 1, column: 5 },
+            { type: "P", color: "W", row: 1, column: 6 },
+            { type: "P", color: "W", row: 1, column: 7 },
+            { type: "R", color: "W", row: 0, column: 0 },
+            { type: "N", color: "W", row: 0, column: 1 },
+            { type: "B", color: "W", row: 0, column: 2 },
+            { type: "Q", color: "W", row: 0, column: 3 },
+            { type: "K", color: "W", row: 0, column: 4 },
+            { type: "B", color: "W", row: 0, column: 5 },
+            { type: "N", color: "W", row: 0, column: 6 },
+            { type: "R", color: "W", row: 0, column: 7 },
+            { type: "P", color: "B", row: 6, column: 0 },
+            { type: "P", color: "B", row: 6, column: 1 },
+            { type: "P", color: "B", row: 6, column: 2 },
+            { type: "P", color: "B", row: 6, column: 3 },
+            { type: "P", color: "B", row: 6, column: 4 },
+            { type: "P", color: "B", row: 6, column: 5 },
+            { type: "P", color: "B", row: 6, column: 6 },
+            { type: "P", color: "B", row: 6, column: 7 },
+            { type: "R", color: "B", row: 7, column: 0 },
+            { type: "N", color: "B", row: 7, column: 1 },
+            { type: "B", color: "B", row: 7, column: 2 },
+            { type: "Q", color: "B", row: 7, column: 3 },
+            { type: "K", color: "B", row: 7, column: 4 },
+            { type: "B", color: "B", row: 7, column: 5 },
+            { type: "N", color: "B", row: 7, column: 6 },
+            { type: "R", color: "B", row: 7, column: 7 },
+        ];
+        figures.forEach(f => {
+            const image = figureImageMap.get(`${f.type}${f.color}`);
+            if (image) {
+                ctx.drawImage(image, f.column * px, ymax - f.row * px, px, px);
+            }
+        });
     };
 
     const drawFigures = (ctx) => {
@@ -258,6 +308,14 @@ var chess = (() => {
             imgPhoto.title = "Profil";
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
+        // draw sample chessboard
+        canvas = controls.create(parent, "canvas", "playground");
+        canvas.width = 32 * 8;
+        canvas.height = 32 * 8;
+        let ctx = canvas.getContext("2d");
+        drawEmptyBoard(ctx, 32);
+        drawSampleFigures(ctx, 32);
+        // render content area        
         const divContent = controls.createDiv(parent, "content");
         if (model.allUsers.length > 0) {
             controls.create(divContent, "p", undefined, "Es sind folgende Spieler angemeldet:");
@@ -385,7 +443,7 @@ var chess = (() => {
         renderActions(divActions);
         renderFooter(divFooter);
         updateMessage();
-        loadFigureImages(() => { dirty = true; });
+        dirty = true;
     };
 
     const renderUsername = (parent) => {
@@ -541,8 +599,9 @@ var chess = (() => {
                                     })
                             },
                             () => {
-                                render();
                                 document.body.style.cursor = "default";
+                                selectedFigure = undefined;
+                                update();
                             },
                             (errMsg) => {
                                 handleError(errMsg);
@@ -681,7 +740,7 @@ var chess = (() => {
     };
 
     const onresize = () => {
-        if (model && model.board) {
+        if (model && model.board && canvas && (model.currentUser || guestMode)) {
             const w = Math.max(400, Math.min(window.innerHeight, window.innerWidth - 100));
             pixelPerField = w / 10;
             canvas.width = pixelPerField * 8 + 100;
@@ -718,14 +777,15 @@ var chess = (() => {
     return {
         renderInit: renderInit,
         ontimer: ontimer,
-        onresize: onresize
+        onresize: onresize,
+        loadFigureImages: loadFigureImages
     };
 })();
 
 window.onload = () => {
     window.setInterval(chess.ontimer, 1000);
     window.addEventListener("resize", chess.onresize);
-    utils.auth_lltoken(chess.renderInit);
+    utils.auth_lltoken(() => chess.loadFigureImages(chess.renderInit));
 };
 
 window.onclick = (event) => utils.hide_menu(event);
