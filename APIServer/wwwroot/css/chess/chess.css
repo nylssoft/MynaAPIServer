@@ -1,0 +1,920 @@
+* {
+    user-select: none; /* supported by Chrome and Opera */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+input {
+    font-size: 18pt;
+    margin: 5pt;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+p {
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
+canvas {
+    margin-top: 48px;
+}
+
+.quitbutton {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.content {
+    margin-top: 50pt;
+}
+
+#timer-black, #timer-white {
+    margin-left: 100pt;
+}
+
+.black {
+    color: black;
+}
+
+.white {
+    color: white;
+}
+
+label, ul {
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-right: 5pt;
+}
+
+body {
+    margin-left: 20pt;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+}
+
+h1 {
+    color: white;
+    position: absolute;
+    top: 5pt;
+    left: 20pt;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0pt;
+}
+
+caption {
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
+table {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    color: white;
+    min-width: 400pt;
+    border-collapse: collapse;
+    border: 3px solid blue;
+    background-color: blue;
+}
+
+td, th {
+    padding: 20px;
+    letter-spacing: 1px;
+}
+
+thead th {
+    text-align: left;
+}
+
+tbody td {
+    text-align: left;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: dodgerblue;
+}
+
+tbody tr:nth-child(even) {
+    background-color: cornflowerblue;
+}
+
+td a {
+    color: white;
+}
+
+.external {
+    color: yellow;
+}
+
+h2 {
+    color: lightyellow;
+}
+
+h3 {
+    color: yellow;
+}
+
+.help-button {
+    margin-left: 10pt;
+}
+
+.help-button:hover {
+    background-color: lightblue;
+}
+
+.help-div {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: #007400;
+    opacity: 0.90;
+    z-index: 10;
+}
+
+.help-content {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    right: 20px;
+}
+
+.error {
+    margin-top: 10pt;
+    color: orange;
+}
+
+.reservation-header {
+    color: lightgreen;
+    margin: 0pt;
+}
+
+.reservation-img {
+    position: relative;
+    top: 8px;
+    margin-left: 5pt;
+}
+
+.reservation-img:hover {
+    border-radius: 50%;
+    background-color: #008CBA;
+}
+
+.reservation-input {
+    margin-left: 0pt;
+}
+
+.reservation-calendar-caption {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    color: white;
+    margin-top: 10pt;
+    margin-bottom: 10pt;
+}
+
+.reservation-label {
+    width: 100pt;
+    display: inline-block;
+}
+
+.reservation-select {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    margin-bottom: 10pt;
+    min-width: 100pt;
+}
+
+.reservation-transparent {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+.reservation-logout-alert {
+    color: orange;
+    margin-top: 10pt;
+}
+
+.result-bordertop {
+    border-top: 1px solid black;
+}
+
+.result-select {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    margin-bottom: 10pt;
+    min-width: 100pt;
+}
+
+.player-img {
+    border-radius: 50%;
+    z-index: -2;
+    vertical-align: middle;
+    margin: 5pt;
+}
+
+.infoimages {
+    margin-top: 20pt;
+}
+
+.layout-chat-button {
+    position: absolute;
+    top: 2pt;
+    right: 20pt;
+    z-index: 1;
+    margin-right: 5pt;
+}
+
+.layout-left {
+    position: absolute;
+    top: 0pt;
+    bottom: 20pt;
+    left: 20pt;
+    right: 20pt;
+}
+
+.layout-right {
+    visibility: hidden;
+    position: absolute;
+    margin: 5pt;
+    color: black;
+    background-color: blue;
+    top: 30pt;
+    bottom: 20pt;
+    width: 400pt;
+    right: 20pt;
+    z-index: 2;
+    overflow-y: auto;
+}
+
+.layout-reservations {
+    position: absolute;
+    background-color: darkblue;
+    padding: 5pt;
+    top: 40pt;
+    bottom: 30pt;
+    width: 500pt;
+    right: 50pt;
+    z-index: 1;
+    overflow-y: auto;
+}
+
+.chat-message {
+    margin: 5pt;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.chat-link {
+    margin: 5pt;
+    color: yellow;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.chat-input {
+    margin-left: 5pt;
+    background-color: blue;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.chat-button {
+    background-color: blue;
+    color: white;
+    margin-top: 0pt;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    border: 2px solid #008CBA;
+    font-size: 8pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.chat-button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
+.chat-img-newmessage {
+    position: absolute;
+    top: 5pt;
+    right: 5pt;
+    z-index: -1;
+    transform: translate(25pt,-4pt);
+}
+
+.chat-img-newmessage:hover {
+    background-color: #008CBA;
+    border-radius: 50%;
+}
+
+.results-img-open {
+    position: absolute;
+    top: 30pt;
+    right: -20pt;
+    z-index: -1;
+}
+
+.results-img-open:hover {
+    background-color: #008CBA;
+    border-radius: 50%;
+}
+
+.header-profile-photo {
+    border-radius: 50%;
+    position: fixed;
+    top: 2pt;
+    right: 2pt;
+}
+
+.active-background {
+    background-color: #007400;
+}
+
+.inactive-background {
+    background-color: #004400;
+}
+
+.confirmation {
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+    margin-right: 5pt;
+}
+
+.gametype {
+    display: inline;
+    margin-right: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
+.gameoption {
+    display: inline-block;
+    margin-right: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
+.copyright {
+    font-size: 8pt;
+    font-family: Arial, Helvetica, sans-serif;
+    color: lightgreen;
+}
+
+.special {
+    position: absolute;
+    bottom: 10pt;
+    left: 0pt;
+}
+
+.special-link {
+    font-size: 11pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 20pt;
+    color: lightgreen;
+}
+
+.summary-otherplayer {
+    display: inline;
+    color: white;
+    font-family: 'Comic Sans MS';
+    margin-right: 15pt;
+}
+
+.summary-currentplayer {
+    display: inline;
+    color: yellow;
+    font-family: 'Comic Sans MS';
+    margin-right: 15pt;
+}
+
+.header-section {
+}
+
+.specialsort-section {
+    text-align: left;
+    margin-bottom: 5pt;
+}
+
+.tooltip {
+    color: white;
+    font-size: 13pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.actions-section {
+    min-height: 60px;
+}
+
+.left-section {
+    position: absolute;
+    top: 100px;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.left-section-ouvert {
+    position: absolute;
+    top: 250px;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.right-section {
+    position: absolute;
+    top: 100px;
+    right: 30px;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.right-section-ouvert {
+    position: absolute;
+    top: 250px;
+    right: 30px;
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.bottom-section {
+    color: white;
+    margin-left: 40%;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    margin-top: 5pt;
+}
+
+.stitch-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cards-section {
+}
+
+.logout-button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 8pt;
+    margin-left: 15pt;
+}
+
+.logout-button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
+.blinkingWhite {
+    animation: blinkingTextWhite 1.2s infinite;
+}
+
+.blinkingBlack {
+    animation: blinkingTextBlack 1.2s infinite;
+}
+
+@keyframes blinkingTextWhite {
+    0% {
+        color: white;
+    }
+
+    49% {
+        color: white;
+    }
+
+    60% {
+        color: transparent;
+    }
+
+    99% {
+        color: transparent;
+    }
+
+    100% {
+        color: white;
+    }
+}
+
+@keyframes blinkingTextBlack {
+    0% {
+        color: darkgray;
+    }
+
+    49% {
+        color: darkgray;
+    }
+
+    60% {
+        color: transparent;
+    }
+
+    99% {
+        color: transparent;
+    }
+
+    100% {
+        color: darkgray;
+    }
+}
+
+/* from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_checkbox */
+/* The container */
+.container-checkbox {
+    display: inline;
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 13pt;
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Hide the browser's default checkbox */
+.container-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark-checkbox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+}
+
+/* On mouse-over, add a grey background color */
+.container-checkbox:hover input ~ .checkmark-checkbox {
+    background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container-checkbox input:checked ~ .checkmark-checkbox {
+    background-color: #2196F3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark-checkbox:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.container-checkbox input:checked ~ .checkmark-checkbox:after {
+    display: block;
+}
+
+/* Style the checkmark/indicator */
+.container-checkbox .checkmark-checkbox:after {
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+/* The container */
+.container-radiobutton {
+    display: inline;
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 13pt;
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Hide the browser's default radio button */
+.container-radiobutton input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Create a custom radio button */
+.checkmark-radiobutton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+    border-radius: 50%;
+}
+
+/* On mouse-over, add a grey background color */
+.container-radiobutton:hover input ~ .checkmark-radiobutton {
+    background-color: #ccc;
+}
+
+/* When the radio button is checked, add a blue background */
+.container-radiobutton input:checked ~ .checkmark-radiobutton {
+    background-color: #2196F3;
+}
+
+/* Create the indicator (the dot/circle - hidden when not checked) */
+.checkmark-radiobutton:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the indicator (dot/circle) when checked */
+.container-radiobutton input:checked ~ .checkmark-radiobutton:after {
+    display: block;
+}
+
+/* Style the indicator (dot/circle) */
+.container-radiobutton .checkmark-radiobutton:after {
+    top: 7px;
+    left: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: white;
+}
+
+.button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 18pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
+}
+
+.button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
+/* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
+.dropbtn {
+    position: fixed;
+    top: 5pt;
+    left: 5pt;
+    background-color: lightgrey;
+    color: white;
+    padding: 3px;
+    border: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+    background-color: #2980B9;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: fixed;
+    top: 40pt;
+    left: 5pt;
+    max-width: 300px;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    right: 5pt;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {
+    background-color: #ddd
+}
+
+.hide {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 11pt;
+        margin-left: 5pt;
+    }
+
+    table {
+        min-width: 200pt;
+        width: 200pt;
+        font-size: 11pt;
+    }
+
+    td, th {
+        padding: 15px;
+        letter-spacing: 1px;
+    }
+
+    .layout-right {
+        margin: 0;
+        bottom: 10pt;
+        width: 250pt;
+        right: 10pt;
+    }
+
+    .layout-reservations {
+        top: 0pt;
+        bottom: 10pt;
+        width: 250pt;
+        right: 10pt;
+    }
+
+    .chat-input {
+        width: 230pt;
+    }
+
+    .username-input {
+        width: 100pt;
+        font-size: 11pt;
+    }
+
+    .ticket-password {
+        width: 100pt;
+    }
+
+    .left-section {
+        left: -20px;
+        top: 150px;
+        font-size: 11pt;
+    }
+
+    .left-section-ouvert {
+        left: -20px;
+        top: 300px;
+        font-size: 11pt;
+    }
+
+    .right-section {
+        right: 0;
+        top: 150px;
+        font-size: 11pt;
+    }
+
+    .right-section-ouvert {
+        right: 0;
+        top: 300px;
+        font-size: 11pt;
+    }
+
+    .bottom-section {
+        font-size: 11pt;
+    }
+
+    .card-img {
+        z-index: 2;
+        width: 60px;
+        height: 98px;
+    }
+
+    .container-radiobutton {
+        padding-left: 15px;
+        font-size: 11pt;
+    }
+
+    .checkmark-radiobutton {
+        height: 12px;
+        width: 12px;
+    }
+
+    .container-radiobutton .checkmark-radiobutton:after {
+        top: 5px;
+        left: 4px;
+        width: 3px;
+        height: 3px;
+    }
+
+    .container-checkbox {
+        padding-left: 17px;
+        font-size: 11pt;
+    }
+
+    .checkmark-checkbox {
+        height: 15px;
+        width: 15px;
+    }
+
+    .container-checkbox .checkmark-checkbox:after {
+        left: 5px;
+        top: 1px;
+        width: 3px;
+        height: 8px;
+        border-width: 0 3px 3px 0;
+    }
+
+    .button {
+        font-size: 11pt;
+    }
+
+    .player-img {
+        width: 45px;
+        height: 45px;
+    }
+
+    .chat-message, .chat-link, .chat-input {
+        font-size: 11pt;
+    }
+
+    .copyright {
+        font-size: 7pt;
+    }
+
+    p, span, label, .confirmation, .tooltip, .result-select {
+        font-size: 11pt;
+    }
+
+    h1 {
+        top: 0;
+        padding: 0;
+        font-size: 11pt;
+        left: 12pt;
+    }
+
+    .dropbtn {
+        width: 16px;
+        height: 16px;
+    }
+
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+    }
+
+    .dropdown-content a {
+        padding: 6px 8px;
+    }
+
+    .help-button {
+        margin-left: 10pt;
+        transform: translateY(4pt);
+    }
+}

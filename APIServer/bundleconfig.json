@@ -4,6 +4,10 @@
     "inputFiles": [ "wwwroot/css/tetris/tetris.css" ]
   },
   {
+    "outputFileName": "wwwroot/css/chess/chess.min.css",
+    "inputFiles": [ "wwwroot/css/chess/chess.css" ]
+  },
+  {
     "outputFileName": "wwwroot/css/skat/skat.min.css",
     "inputFiles": [ "wwwroot/css/skat/skat.css" ]
   },
@@ -47,6 +51,15 @@
   {
     "outputFileName": "wwwroot/js/tetris/tetris.min.js",
     "inputFiles": [ "wwwroot/js/tetris/tetris.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/chess/chess.min.js",
+    "inputFiles": [ "wwwroot/js/chess/chess.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true

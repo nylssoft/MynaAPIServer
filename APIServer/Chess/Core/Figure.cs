@@ -1,10 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿/*
+    Myna API Server
+    Copyright (C) 2021 Niels Stockfleth
 
-namespace ChessTest
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+using System;
+
+namespace APIServer.Chess.Core
 {
     public enum FigureType { King, Queen, Rook, Knight, Bishop, Pawn };
 
@@ -17,7 +30,7 @@ namespace ChessTest
             Type = t;
             Color = c;
             Row = row;
-            Col = col;
+            Column = col;
             MoveCount = 0;
             AllowCastlingKingSide = t == FigureType.King;
             AllowCastlingQueenSide = AllowCastlingKingSide;
@@ -28,7 +41,7 @@ namespace ChessTest
             Type = f.Type;
             Color = f.Color;
             Row = f.Row;
-            Col = f.Col;
+            Column = f.Column;
             MoveCount = f.MoveCount;
             AllowCastlingKingSide = f.AllowCastlingKingSide;
             AllowCastlingQueenSide = f.AllowCastlingQueenSide;
@@ -40,7 +53,7 @@ namespace ChessTest
 
         public int Row { get; set; } = -1;
 
-        public int Col { get; set; } = -1;
+        public int Column { get; set; } = -1;
 
         public int MoveCount { get; set; } = 0;
 

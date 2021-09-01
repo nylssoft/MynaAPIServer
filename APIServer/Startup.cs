@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using APIServer.Chess;
 using APIServer.Database;
 using APIServer.Diary;
 using APIServer.Email;
@@ -58,6 +59,7 @@ namespace APIServer
             services.AddScoped<IDocumentService, DocumentService>();
             // singletons
             services.AddSingleton<ISkatService, SkatService>();
+            services.AddSingleton<IChessService, ChessService>();
             // enable cshtml pages
             services.AddRazorPages();
             // all urls lower case
