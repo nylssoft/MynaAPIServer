@@ -22,13 +22,16 @@ var chess = (() => {
 
     let helpDiv;
 
-    let logoutClicked = false;
+    let endGameClicked = false;
 
     let figureImageMap = new Map();
     let pixelPerField;
 
     let lastPos;
     let selectedFigure;
+    let previewMoves = false;
+
+    let version = "0.9.1";
 
     // helper
 
@@ -36,6 +39,7 @@ var chess = (() => {
         console.error(err);
         window.sessionStorage.removeItem("chessstate");
         timerEnabled = true;
+        endGameClicked = false;
     }
 
     const clearTicket = () => {
@@ -62,6 +66,7 @@ var chess = (() => {
     }
 
     const getFigure = (row, col) => {
+        if (!model.board || !model.board.figures) return undefined;
         for (let idx = 0; idx < model.board.figures.length; idx++) {
             const f = model.board.figures[idx];
             if (f.row === row && f.column === col) {
@@ -195,6 +200,7 @@ var chess = (() => {
     };
 
     const drawFigures = (ctx) => {
+        if (!model.board || !model.board.figures) return;
         const ymax = pixelPerField * 7;
         model.board.figures.forEach(f => {
             const image = figureImageMap.get(`${f.type}${f.color}`);
@@ -220,20 +226,21 @@ var chess = (() => {
             row = 7 - figure.row;
         }
         ctx.strokeRect(figure.column * pixelPerField + 6, ymax - row * pixelPerField + 6, pixelPerField - 12, pixelPerField - 12);
-        // preview of possible moves, may be a help option
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#000000';
-        figure.moves.forEach(move => {
-            let row = move.row;
-            if (model.currentUser.name === model.board.blackPlayer) {
-                row = 7 - move.row;
-            }
-            ctx.strokeRect(
-                16 + move.column * pixelPerField,
-                16 + ymax - row * pixelPerField,
-                pixelPerField - 32,
-                pixelPerField - 32);
-        });
+        if (previewMoves) {
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#000000';
+            figure.moves.forEach(move => {
+                let row = move.row;
+                if (model.currentUser.name === model.board.blackPlayer) {
+                    row = 7 - move.row;
+                }
+                ctx.strokeRect(
+                    16 + move.column * pixelPerField,
+                    16 + ymax - row * pixelPerField,
+                    pixelPerField - 32,
+                    pixelPerField - 32);
+            });
+        }
     };
 
     const loadFigureImages = (finished) => {
@@ -273,6 +280,28 @@ var chess = (() => {
             }
         }
         window.requestAnimationFrame(draw);
+    };
+
+    const getStateMessage = () => {
+        let msg = "";
+        if (model.board.gameOver) {
+            if (model.board.checkMate) {
+                msg = `Schach Matt! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+            }
+            else if (model.board.staleMate) {
+                msg = "Patt! Das Spiel ist zu Ende.";
+            }
+            else if (model.board.timeOut) {
+                msg = `Die Zeit ist abgelaufen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+            }
+            else if (model.board.kingStrike) {
+                msg = `Der K\u00F6nig wurde geschlagen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+            }
+        }
+        else if (model.board.check) {
+            msg = "Schach!";
+        }
+        return msg;
     };
 
     // rendering
@@ -377,15 +406,48 @@ var chess = (() => {
     };
 
     const renderStartGame = (parent) => {
-        controls.create(parent, "p", undefined, "Alle sind angemeldet! Starte das Spiel!");
-        controls.createButton(parent, "Spiel starten", btnStartGame_click);
-        document.body.className = "active-background";
-    };
-
-    const renderFooter = (parent) => {
-        if (ticket && !model.board) {
-            const div = controls.createDiv(parent);
-            controls.createButton(div, "Abmelden", btnLogout_click, "Logout");
+        const divColor = controls.createDiv(parent);
+        const colorOptions = [{ name: "Weiss", value: "W" }, { name: "Schwarz", value: "B" }];
+        const labelColor = controls.createLabel(divColor, undefined, "Farbe: ");
+        labelColor.htmlFor = "mycolor";
+        const selectColor = controls.createSelect(divColor, "mycolor", "options", colorOptions);
+        if (model.board && model.board.blackPlayer == model.currentUser.name) {
+            selectColor.value = "B";
+        }
+        else {
+            selectColor.value = "W";
+        }
+        const divGame = controls.createDiv(parent);
+        const gameOptions = [
+            { name: "Blitzschach 5 Minuten", value: "fastchess" },
+            { name: "Schach 15 Minuten", value: "chess15" },
+            { name: "Schach 30 Minuten", value: "chess30" },
+            { name: "Schach 60 Minuten", value: "chess60" }
+        ];
+        const labelGame = controls.createLabel(divGame, undefined, "Spiel: ");
+        labelGame.htmlFor = "gameoption";
+        const selectGame = controls.createSelect(divGame, "gameoption", "options", gameOptions);
+        if (model.board) {
+            selectGame.value = model.board.gameOption;
+        }
+        const divActions = controls.createDiv(parent);
+        if (model && model.board && !model.board.gameStarted) {
+            selectColor.disabled = true;
+            selectGame.disabled = true;
+            if (!model.currentUser.startGameConfirmed) {
+                controls.create(divActions, "p", "confirmation", "Bist Du mit den Einstellungen einverstanden?");
+                controls.createButton(divActions, "Ja", () => btnConfirmStartGame_click(true));
+                controls.createButton(divActions, "Nein", () => btnConfirmStartGame_click(false));
+                document.body.className = "active-background";
+            }
+            else {
+                controls.create(divActions, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
+                document.body.className = "inactive-background";
+            }
+        }
+        else {
+            controls.createButton(divActions, "Spiel starten", btnStartGame_click);
+            document.body.className = "active-background";
         }
     };
 
@@ -393,42 +455,31 @@ var chess = (() => {
         const messageElem = controls.create(parent, "p", undefined, "");
         messageElem.id = "message";
         let active = false;
-        if (logoutClicked) {
+        if (endGameClicked) {
             controls.create(parent, "span", "confirmation", "Willst Du das Spiel wirklich beenden?");
-            controls.createButton(parent, "Ja", btnLogout_click, "LogoutYes");
-            controls.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
+            controls.createButton(parent, "Ja", btnEndGame_click, "EndGameYes");
+            controls.createButton(parent, "Nein", btnEndGame_click, "EndGameNo");
             active = true;
         }
         else if (model.currentUser) {
             const img = controls.createImg(parent, "quitbutton", 32, 32, "/images/buttons/edit-delete-6.png");
             img.title = "Spiel beenden";
-            img.addEventListener("click", btnLogout_click);
+            img.addEventListener("click", btnEndGame_click);
         }
         if (active) {
             document.body.className = "active-background";
         }
     };
 
-    const getStateMessage = () => {
-        let msg = "";
-        if (model.board.gameOver) {
-            if (model.board.checkMate) {
-                msg = `Schach Matt! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
-            }
-            else if (model.board.staleMate) {
-                msg = "Patt! Das Spiel ist zu Ende.";
-            }
-            else if (model.board.timeOut) {
-                msg = `Die Zeit ist abgelaufen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
-            }
-            else if (model.board.kingStrike) {
-                msg = `Der Koenig wurde geschlagen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
-            }
+    const renderCopyright = (parent) => {
+        const div = controls.createDiv(parent);
+        controls.create(div, "span", "copyright", `Myna Schach ${version}. Copyright 2021 `);
+        controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
+        const time = new Date().toLocaleTimeString("de-DE");
+        controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `);
+        if (ticket && (!model.board || !model.board.gameStarted)) {
+            controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
-        else if (model.board.check) {
-            msg = "Schach!";
-        }
-        return msg;
     };
 
     const renderMainPage = (parent) => {
@@ -439,9 +490,7 @@ var chess = (() => {
         canvas.addEventListener("mousemove", onCanvasMouseMove);
         const divActions = controls.createDiv(parent, "actions-section");
         divActions.id = "actions"
-        const divFooter = controls.createDiv(parent);
         renderActions(divActions);
-        renderFooter(divFooter);
         updateMessage();
         dirty = true;
     };
@@ -453,7 +502,7 @@ var chess = (() => {
             return;
         }
         document.title = `Schach - ${model.currentUser.name}`;
-        if (model.board) {
+        if (model.board && model.board.gameStarted) {
             renderMainPage(parent);
         }
         else {
@@ -464,7 +513,7 @@ var chess = (() => {
             else {
                 renderStartGame(parent);
             }
-            renderFooter(parent);
+            renderCopyright(parent);
         }
     };
 
@@ -486,7 +535,7 @@ var chess = (() => {
                 }
                 else {
                     controls.create(divMain, "p", undefined, "Es wird gerade nicht gespielt.");
-                    renderFooter(divMain);
+                    renderCopyright(divMain);
                 }
             }
             else {
@@ -498,7 +547,7 @@ var chess = (() => {
                     renderLogin(divMain);
                     controls.createDiv(divMain, "error").id = "login-error-id";
                 }
-                renderFooter(divMain);
+                renderCopyright(divMain);
             }
         }
         else {
@@ -540,6 +589,9 @@ var chess = (() => {
         ticket = getTicket();
         if (params.has("guest")) {
             guestMode = true;
+        }
+        if (params.has("preview")) {
+            previewMoves = true;
         }
         timerEnabled = false;
         selectedFigure = undefined;
@@ -693,33 +745,66 @@ var chess = (() => {
     };
 
     const btnStartGame_click = () => {
+        const myColor = document.getElementById("mycolor").value;
+        const gameOption = document.getElementById("gameoption").value;
+        if (myColor && gameOption) {
+            timerEnabled = false;
+            utils.fetch_api_call("api/chess/newgame",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                    body: JSON.stringify({
+                        MyColor: myColor,
+                        GameOption: gameOption
+                    })
+                },
+                () => render(),
+                handleError);
+        }
+    };
+
+    const btnConfirmStartGame_click = (ok) => {
         timerEnabled = false;
-        utils.fetch_api_call("api/chess/newgame", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("api/chess/confirmstartgame",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                body: JSON.stringify(ok)
+            },
             () => render(),
             handleError);
     };
 
-    const btnLogout_click = (elem) => {
-        if (elem.value == "LogoutYes" || !model.board) {
+    const btnEndGame_click = (elem) => {
+        if (elem.value == "EndGameYes") {
             timerEnabled = false;
-            utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
+            utils.fetch_api_call("api/chess/endgame", { method: "POST", headers: { "ticket": ticket } },
                 () => {
-                    logoutClicked = false;
-                    ticket = undefined;
-                    window.sessionStorage.removeItem("chessticket");
-                    window.localStorage.removeItem("chessticket");
+                    endGameClicked = false;
                     render();
                 },
                 handleError);
         }
-        else if (elem.value == "LogoutNo") {
-            logoutClicked = false;
+        else if (elem.value == "EndGameNo") {
+            endGameClicked = false;
             render();
         }
         else {
-            logoutClicked = true;
+            endGameClicked = true;
             render();
         }
+    };
+
+    const btnLogout_click = () => {
+        timerEnabled = false;
+        utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
+            () => {
+                ticket = undefined;
+                window.sessionStorage.removeItem("chessticket");
+                window.localStorage.removeItem("chessticket");
+                render();
+            },
+            handleError);
     };
 
     const updateMessage = () => {
@@ -740,7 +825,7 @@ var chess = (() => {
     };
 
     const onresize = () => {
-        if (model && model.board && canvas && (model.currentUser || guestMode)) {
+        if (model && model.board && model.board.gameStarted) {
             const w = Math.max(400, Math.min(window.innerHeight, window.innerWidth - 100));
             pixelPerField = w / 10;
             canvas.width = pixelPerField * 8 + 100;
@@ -757,14 +842,14 @@ var chess = (() => {
                 const statechanged = window.sessionStorage.getItem("chessstate");
                 if (!statechanged || d > statechanged) {
                     window.sessionStorage.setItem("chessstate", d);
-                    if (model && model.board) {
+                    if (model && model.board && model.board.gameStarted) {
                         update();
                     }
                     else {
                         render();
                     }
                 }
-                else if (model && model.board) {
+                else if (model && model.board && model.board.gameStarted) {
                     model.state = sm;
                     dirtyClock = true;
                 }

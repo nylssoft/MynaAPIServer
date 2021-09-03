@@ -20,6 +20,8 @@ using System.Collections.Generic;
 
 namespace APIServer.Chess.Core
 {
+    public enum GameOption { FastChess, Chess15, Chess30, Chess60 };
+
     public class Chessboard
     {
         // --- enums
@@ -72,6 +74,10 @@ namespace APIServer.Chess.Core
             }
         }
 
+        public bool GameStarted { get; set; }
+
+        public GameOption GameOption { get; set; }
+
         // --- members
 
         private readonly Figure[,] board = new Figure[8, 8];
@@ -80,7 +86,7 @@ namespace APIServer.Chess.Core
 
         // --- constructors
 
-        public Chessboard(string whitePlayer, string blackPlayer)
+        public Chessboard(string whitePlayer, string blackPlayer, GameOption gameOption)
         {
             Init(FigureColor.White);
             Init(FigureColor.Black);
@@ -95,8 +101,18 @@ namespace APIServer.Chess.Core
             KingStrike = false;
             Winner = null;
             ClockStartedUtc = DateTime.UtcNow;
-            WhiteClock = 5 * 60;
-            BlackClock = 5 * 60;
+            GameStarted = false;
+            GameOption = gameOption;
+            int clock = gameOption switch
+            {
+                GameOption.FastChess => 5 * 60,
+                GameOption.Chess15 => 15 * 60,
+                GameOption.Chess30 => 30 * 60,
+                GameOption.Chess60 => 60 * 60,
+                _ => throw new ArgumentException("Invalid game option")
+            };
+            WhiteClock = clock;
+            BlackClock = clock;
         }
 
         private Chessboard(Chessboard b)
@@ -113,6 +129,8 @@ namespace APIServer.Chess.Core
             ClockStartedUtc = b.ClockStartedUtc;
             WhiteClock = b.WhiteClock;
             BlackClock = b.BlackClock;
+            GameStarted = b.GameStarted;
+            GameOption = b.GameOption;
             // deep copy of board figures
             for (int r = 0; r <= 7; r++)
             {
@@ -179,9 +197,9 @@ namespace APIServer.Chess.Core
         public List<(int,int)> GetAllMoves(Figure figure, bool check)
         {
             var ret = new List<(int, int)>();
-            if (!GameOver)
+            if (!GameOver && GameStarted)
             {
-                foreach (var move in GetMoves(figure, filterCheck: true))
+                foreach (var move in GetMoves(figure, filterCheck: GameOption != GameOption.FastChess))
                 {
                     if (check &&
                         figure.Type == FigureType.King &&
@@ -199,7 +217,7 @@ namespace APIServer.Chess.Core
 
         public bool Place(Figure f, int row, int col, FigureType pawnReplacement = FigureType.Queen)
         {
-            if (GameOver ||
+            if (GameOver || !GameStarted ||
                 !IsValidPosition(row, col) ||
                 f == null ||
                 f.Color != CurrentColor ||
@@ -304,7 +322,7 @@ namespace APIServer.Chess.Core
 
         public void UpdateClocks()
         {
-            if (!GameOver)
+            if (!GameOver && GameStarted)
             {
                 var diff = Convert.ToInt32((DateTime.UtcNow - ClockStartedUtc).TotalSeconds);
                 if (CurrentColor == FigureColor.White)
@@ -326,7 +344,7 @@ namespace APIServer.Chess.Core
 
         public void UpdateState()
         {
-            if (!GameOver)
+            if (!GameOver && GameStarted)
             {
                 UpdateCheckMate(CurrentColor);
                 if (!CheckMate)

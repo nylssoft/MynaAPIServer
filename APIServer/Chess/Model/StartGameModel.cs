@@ -15,40 +15,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
-
 namespace APIServer.Chess.Model
 {
-    public class BoardModel
+    public class StartGameModel
     {
-        public List<FigureModel> Figures { get; set; }
-
-        public string WhitePlayer { get; set; }
-
-        public string BlackPlayer { get; set; }
-
-        public bool GameStarted { get; set; }
+        public string MyColor { get; set; }
 
         public string GameOption { get; set; }
-
-        public string CurrentColor { get; set; }
-
-        public bool Check { get; set; }
-
-        public bool CheckMate { get; set; }
-
-        public bool StaleMate { get; set; }
-
-        public bool TimeOut { get; set; }
-
-        public bool KingStrike { get; set; }
-
-        public bool GameOver { get; set; }
-
-        public string Winner { get; set; }
-
-        public FigureModel LastMovedFigure { get; set; }
-
-        public MoveModel LastMovedDestination { get; set; }
     }
 }

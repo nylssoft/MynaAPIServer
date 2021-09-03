@@ -146,6 +146,10 @@ namespace APIServer.Chess
                 {
                     chessboard = null;
                     userTickets.Remove(ticket);
+                    foreach (var c in userTickets.Values)
+                    {
+                        c.StartGameConfirmed = false;
+                    }
                     stateChanged = DateTime.UtcNow;
                     return true;
                 }
@@ -171,9 +175,14 @@ namespace APIServer.Chess
                 if (chessboard != null)
                 {
                     ret.Board = new BoardModel();
+                    // board options and status
                     ret.Board.WhitePlayer = chessboard.WhitePlayer;
                     ret.Board.BlackPlayer = chessboard.BlackPlayer;
+                    ret.Board.GameOver = chessboard.GameOver;
+                    ret.Board.GameStarted = chessboard.GameStarted;
+                    ret.Board.GameOption = ConvertGameOption(chessboard.GameOption);
                     ret.Board.CurrentColor = ConvertFigureColor(chessboard.CurrentColor);
+                    // last moved figure
                     ret.Board.LastMovedFigure = null;
                     ret.Board.LastMovedDestination = null;
                     if (chessboard.LastMovedFigure != null)
@@ -185,16 +194,20 @@ namespace APIServer.Chess
                             Column = chessboard.LastMovedDestination.Item2
                         };
                     }
+                    // reasons for game over and the winner
                     ret.Board.TimeOut = chessboard.TimeOut;
                     ret.Board.KingStrike = chessboard.KingStrike;
                     ret.Board.CheckMate = chessboard.CheckMate;
                     ret.Board.StaleMate = chessboard.StaleMate;
-                    ret.Board.Check = chessboard.Check;
-                    ret.Board.GameOver = chessboard.GameOver;
+                    if (chessboard.GameOption != GameOption.FastChess)
+                    {
+                        ret.Board.Check = chessboard.Check;
+                    }
                     if (chessboard.Winner.HasValue)
                     {
                         ret.Board.Winner = chessboard.Winner.Value == FigureColor.White ? ret.Board.WhitePlayer : ret.Board.BlackPlayer;
                     }
+                    // figures and all moves for the current player
                     ret.Board.Figures = new List<FigureModel>();
                     foreach (var figure in chessboard.GetAllFigures())
                     {
@@ -253,23 +266,33 @@ namespace APIServer.Chess
             return ret;
         }
 
-        public bool StartNewGame(string ticket)
+        public bool StartNewGame(string ticket, StartGameModel startGameModel)
         {
             var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
-                if (ctx != null)
+                if (ctx != null && chessboard == null && userTickets.Count == 2)
                 {
-                    if (chessboard == null)
+                    var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
+                    string whitePlayer = users[0].Name;
+                    string blackPlayer = users[1].Name;
+                    if (startGameModel.MyColor == "W" && ctx.Name != whitePlayer ||
+                        startGameModel.MyColor == "B" && ctx.Name != blackPlayer)
                     {
-                        if (userTickets.Count == 2)
-                        {
-                            var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
-                            chessboard = new Chessboard(users[0].Name, users[1].Name);
-                            ret = true;
-                        }
+                        (whitePlayer, blackPlayer) = (blackPlayer, whitePlayer);
                     }
+                    GameOption gameOption = startGameModel.GameOption switch
+                    {
+                        "fastchess" => GameOption.FastChess,
+                        "chess15" => GameOption.Chess15,
+                        "chess30" => GameOption.Chess30,
+                        "chess60" => GameOption.Chess60,
+                        _ => GameOption.FastChess
+                    };
+                    chessboard = new Chessboard(whitePlayer, blackPlayer, gameOption);
+                    ctx.StartGameConfirmed = true;
+                    ret = true;
                 }
                 if (ret)
                 {
@@ -279,11 +302,64 @@ namespace APIServer.Chess
             return ret;
         }
 
+        public bool ConfirmStartGame(string ticket, bool ok)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && chessboard != null && !chessboard.GameStarted)
+                {
+                    if (!ok)
+                    {
+                        foreach (var c in userTickets.Values)
+                        {
+                            c.StartGameConfirmed = false;
+                        }
+                        chessboard = null;
+                    }
+                    else
+                    {
+                        ctx.StartGameConfirmed = true;
+                        if (userTickets.Values.All((c) => c.StartGameConfirmed == true))
+                        {
+                            chessboard.GameStarted = true;
+                        }
+                    }
+                    ret = true;
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool EndGame(string ticket)
+        {
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && chessboard != null && chessboard.GameStarted)
+                {
+                    chessboard = null;
+                    foreach (var c in userTickets.Values)
+                    {
+                        c.StartGameConfirmed = false;
+                    }
+                    stateChanged = DateTime.UtcNow;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // --- private
 
         private static UserModel GetCurrentUser(Context ctx)
         {
-            return new UserModel { Name = ctx.Name };
+            return new UserModel { Name = ctx.Name, StartGameConfirmed = ctx.StartGameConfirmed };
         }
 
         private ChessOptions GetOptions()
@@ -311,6 +387,20 @@ namespace APIServer.Chess
                 ret.Add(new UserModel { Name = user.Name });
             }
             return ret;
+        }
+
+        private static string ConvertGameOption(GameOption g)
+        {
+            var o = g switch
+            {
+                GameOption.FastChess => "fastchess",
+                GameOption.Chess15 => "chess15",
+                GameOption.Chess30 => "chess30",
+                GameOption.Chess60 => "chess60",
+                _ => throw new ArgumentException("Invalid game option")
+
+            };
+            return o;
         }
 
         private static string ConvertFigureColor(FigureColor fc)

@@ -20,5 +20,7 @@ namespace APIServer.Chess.Model
     public class UserModel
     {
         public string Name { get; set; } = "";
+
+        public bool StartGameConfirmed { get; set; } = false;
     }
 }

@@ -34,7 +34,11 @@ namespace APIServer.Chess
 
         ChessModel GetChessModel(string ticket);
 
-        bool StartNewGame(string ticket);
+        bool StartNewGame(string ticket, StartGameModel startGameModel);
+
+        bool EndGame(string ticket);
+
+        bool ConfirmStartGame(string ticket, bool ok);
 
         bool Place(string ticket, PlaceModel placeModel);
     }
