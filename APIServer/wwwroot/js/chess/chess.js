@@ -37,7 +37,7 @@ var chess = (() => {
     let simulateCounter = 0;
     let simulateDelay = 5;
 
-    let version = "0.9.2";
+    let version = "0.9.3";
 
     // helper
 
@@ -99,9 +99,10 @@ var chess = (() => {
         return undefined;
     };
 
-    const formatClock = (totalSeconds) => {
+    const formatClock = (totalMilliseconds) => {
         let m = "";
         let s = "";
+        const totalSeconds = Math.floor(totalMilliseconds / 1000);
         const min = Math.floor(totalSeconds / 60);
         const sec = totalSeconds - min * 60;
         if (min < 10) {
@@ -306,7 +307,7 @@ var chess = (() => {
                 if (selectedFigure) {
                     drawSelectionRect(ctx, selectedFigure);
                 }
-                if (isPlaying() && isActivePlayer() && frameCounterlastMoved > 0) {
+                if (isPlaying() && (isActivePlayer() || guestMode) && frameCounterlastMoved > 0) {
                     if (model.board.lastMovedFigure) {
                         drawRect(ctx, model.board.lastMovedFigure.row, model.board.lastMovedFigure.column, "yellow");
                     }
@@ -365,21 +366,23 @@ var chess = (() => {
                 else if (model.board.kingStrike) {
                     msg = `Der K\u00F6nig wurde geschlagen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
                 }
-                if (model.board.nextGameRequested) {
-                    if (model.currentUser.startGameConfirmed) {
-                        controls.create(pConfirmNextGame, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
-                        document.body.className = "inactive-background";
+                if (ticket) {
+                    if (model.board.nextGameRequested) {
+                        if (model.currentUser.startGameConfirmed) {
+                            controls.create(pConfirmNextGame, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
+                            document.body.className = "inactive-background";
+                        }
+                        else {
+                            controls.create(pConfirmNextGame, "span", "confirmation", "N\u00E4chstes Spiel?");
+                            controls.createButton(pConfirmNextGame, "Ja", () => btnConfirmNextGame_click(true));
+                            controls.createButton(pConfirmNextGame, "Nein", () => btnConfirmNextGame_click(false));
+                            document.body.className = "active-background";
+                        }
                     }
                     else {
-                        controls.create(pConfirmNextGame, "span", "confirmation", "N\u00E4chstes Spiel?");
-                        controls.createButton(pConfirmNextGame, "Ja", () => btnConfirmNextGame_click(true));
-                        controls.createButton(pConfirmNextGame, "Nein", () => btnConfirmNextGame_click(false));
+                        controls.createButton(pConfirmNextGame, "N\u00E4chstes Spiel", btnNextGame_click, "newgame").id = "newgame";
                         document.body.className = "active-background";
                     }
-                }
-                else {
-                    controls.createButton(pConfirmNextGame, "N\u00E4chstes Spiel", btnNextGame_click, "newgame").id = "newgame";
-                    document.body.className = "active-background";
                 }
             }
             else {
@@ -452,7 +455,7 @@ var chess = (() => {
             (m) => {
                 model = m;
                 if (isPlaying()) {
-                    if (isActivePlayer()) {
+                    if (isActivePlayer() || guestMode) {
                         frameCounterlastMoved = 60; // 1 second
                     }
                     updateMessage();
@@ -681,7 +684,7 @@ var chess = (() => {
         if (ticket && (!model.board || !model.board.gameStarted)) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
-        if (isGameStarted()) {
+        if (ticket && isGameStarted()) {
             controls.createButton(div, "Abmelden", btnEndGame_click, "EndGame", "logout-button");
         }
     };
@@ -1004,12 +1007,6 @@ var chess = (() => {
 
     const ontimer = () => {
         if (!timerEnabled) return;
-        if (simulate && isPlaying() && isActivePlayer() && simulateCounter > 0) {
-            simulateCounter--;
-            if (simulateCounter == 0) {
-                simulateMove();
-            }
-        }
         utils.fetch_api_call("api/chess/state", undefined,
             (sm) => {
                 const d = sm.state;
@@ -1026,6 +1023,12 @@ var chess = (() => {
                 else if (model && model.board && model.board.gameStarted) {
                     model.state = sm;
                     dirtyClock = true;
+                    if (simulate && isPlaying() && isActivePlayer() && simulateCounter > 0) {
+                        simulateCounter--;
+                        if (simulateCounter == 0) {
+                            simulateMove();
+                        }
+                    }
                 }
             },
             (errMsg) => console.error(errMsg));

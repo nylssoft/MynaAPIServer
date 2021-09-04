@@ -62,9 +62,9 @@ namespace APIServer.Chess.Core
 
         public DateTime ClockStartedUtc { get; set; }
 
-        public int WhiteClock { get; set; }
+        public long WhiteClock { get; set; }
 
-        public int BlackClock { get; set; }
+        public long BlackClock { get; set; }
 
         public bool GameOver
         {
@@ -122,10 +122,10 @@ namespace APIServer.Chess.Core
             GameOption = gameOption;
             int clock = gameOption switch
             {
-                GameOption.FastChess => 5 * 60,
-                GameOption.Chess15 => 15 * 60,
-                GameOption.Chess30 => 30 * 60,
-                GameOption.Chess60 => 60 * 60,
+                GameOption.FastChess => 5 * 60 * 1000,
+                GameOption.Chess15 => 15 * 60 * 1000,
+                GameOption.Chess30 => 30 * 60 * 1000,
+                GameOption.Chess60 => 60 * 60 * 1000,
                 _ => throw new ArgumentException("Invalid game option")
             };
             WhiteClock = clock;
@@ -341,7 +341,7 @@ namespace APIServer.Chess.Core
         {
             if (!GameOver && GameStarted)
             {
-                var diff = Convert.ToInt32((DateTime.UtcNow - ClockStartedUtc).TotalSeconds);
+                var diff = Convert.ToInt32((DateTime.UtcNow - ClockStartedUtc).TotalMilliseconds);
                 if (CurrentColor == FigureColor.White)
                 {
                     WhiteClock = Math.Max(0, WhiteClock - diff);

@@ -21,8 +21,8 @@ namespace APIServer.Chess.Model
     {
         public long State { get; set; } = 0;
 
-        public int WhiteClock { get; set; }
+        public long WhiteClock { get; set; }
 
-        public int BlackClock { get; set; }
+        public long BlackClock { get; set; }
     }
 }
