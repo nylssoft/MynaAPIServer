@@ -68,6 +68,20 @@ namespace APIServer.Chess
         }
 
         [HttpPost]
+        [Route("api/chess/nextgame")]
+        public IActionResult StartNextGame()
+        {
+            return new JsonResult(ChessService.StartNextGame(GetTicket()));
+        }
+
+        [HttpPost]
+        [Route("api/chess/confirmnextgame")]
+        public IActionResult ConfirmNextGame([FromBody] bool ok)
+        {
+            return new JsonResult(ChessService.ConfirmNextGame(GetTicket(), ok));
+        }
+
+        [HttpPost]
         [Route("api/chess/newgame")]
         public IActionResult StartNewGame([FromBody] StartGameModel startGameModel)
         {

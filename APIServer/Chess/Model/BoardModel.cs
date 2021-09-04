@@ -31,6 +31,8 @@ namespace APIServer.Chess.Model
 
         public string GameOption { get; set; }
 
+        public bool NextGameRequested { get; set; }
+
         public string CurrentColor { get; set; }
 
         public bool Check { get; set; }

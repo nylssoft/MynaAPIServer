@@ -181,6 +181,7 @@ namespace APIServer.Chess
                     ret.Board.GameOver = chessboard.GameOver;
                     ret.Board.GameStarted = chessboard.GameStarted;
                     ret.Board.GameOption = ConvertGameOption(chessboard.GameOption);
+                    ret.Board.NextGameRequested = chessboard.NextGameRequested;
                     ret.Board.CurrentColor = ConvertFigureColor(chessboard.CurrentColor);
                     // last moved figure
                     ret.Board.LastMovedFigure = null;
@@ -257,6 +258,73 @@ namespace APIServer.Chess
                             }
                         }
                     }
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool StartNextGame(string ticket)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null &&
+                    chessboard != null &&
+                    chessboard.GameStarted &&
+                    chessboard.GameOver &&
+                    !chessboard.NextGameRequested)
+                {
+                    foreach (var c in userTickets.Values)
+                    {
+                        c.StartGameConfirmed = false;
+                    }
+                    chessboard.NextGameRequested = true;
+                    ctx.StartGameConfirmed = true;
+                    ret = true;
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool ConfirmNextGame(string ticket, bool ok)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null &&
+                    chessboard != null &&
+                    chessboard.GameStarted &&
+                    chessboard.GameOver &&
+                    chessboard.NextGameRequested)
+                {
+                    if (!ok)
+                    {
+                        foreach (var c in userTickets.Values)
+                        {
+                            c.StartGameConfirmed = false;
+                        }
+                        chessboard.NextGameRequested = false;
+                    }
+                    else
+                    {
+                        ctx.StartGameConfirmed = true;
+                        if (userTickets.Values.All((c) => c.StartGameConfirmed == true))
+                        {
+                            chessboard = new Chessboard(chessboard.BlackPlayer, chessboard.WhitePlayer, chessboard.GameOption);
+                            chessboard.GameStarted = true;
+                        }
+                    }
+                    ret = true;
                 }
                 if (ret)
                 {

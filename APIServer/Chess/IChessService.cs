@@ -40,6 +40,10 @@ namespace APIServer.Chess
 
         bool ConfirmStartGame(string ticket, bool ok);
 
+        bool StartNextGame(string ticket);
+
+        bool ConfirmNextGame(string ticket, bool ok);
+
         bool Place(string ticket, PlaceModel placeModel);
     }
 }

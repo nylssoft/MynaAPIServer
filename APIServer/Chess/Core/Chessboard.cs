@@ -74,7 +74,23 @@ namespace APIServer.Chess.Core
             }
         }
 
-        public bool GameStarted { get; set; }
+        public bool GameStarted
+        {
+            get
+            {
+                return gameStarted;
+            }
+            set
+            {
+                gameStarted = value;
+                if (gameStarted)
+                {
+                    ClockStartedUtc = DateTime.UtcNow;
+                }
+            }
+        }
+
+        public bool NextGameRequested { get; set; }
 
         public GameOption GameOption { get; set; }
 
@@ -83,6 +99,8 @@ namespace APIServer.Chess.Core
         private readonly Figure[,] board = new Figure[8, 8];
 
         private Figure enpassentFigure;
+
+        private bool gameStarted;
 
         // --- constructors
 
@@ -100,7 +118,6 @@ namespace APIServer.Chess.Core
             TimeOut = false;
             KingStrike = false;
             Winner = null;
-            ClockStartedUtc = DateTime.UtcNow;
             GameStarted = false;
             GameOption = gameOption;
             int clock = gameOption switch

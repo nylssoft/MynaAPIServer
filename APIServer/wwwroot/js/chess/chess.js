@@ -31,7 +31,13 @@ var chess = (() => {
     let selectedFigure;
     let previewMoves = false;
 
-    let version = "0.9.1";
+    let frameCounterlastMoved = 0;
+
+    let simulate = false;
+    let simulateCounter = 0;
+    let simulateDelay = 5;
+
+    let version = "0.9.2";
 
     // helper
 
@@ -110,13 +116,14 @@ var chess = (() => {
     };
 
     const drawClocks = (ctx) => {
+        if (!model || !model.state || !model.board) return;
         let w = formatClock(model.state.whiteClock);
         let b = formatClock(model.state.blackClock);
         let pw = model.board.whitePlayer;
         let pb = model.board.blackPlayer;
         ctx.font = "18px Arial";
         ctx.fillStyle = "#7FFF00";
-        if (model.currentUser && model.currentUser.name == model.board.blackPlayer) {
+        if (isBlackPlayer()) {
             [w, b] = [b, w];
             [pw, pb] = [pb, pw];
         }
@@ -127,12 +134,10 @@ var chess = (() => {
         ctx.fillText(w, 8 * pixelPerField + 20, 8 * pixelPerField - 18);
     };
 
-    const drawEmptyBoard = (ctx, px) => {
+    const drawEmptyBoard = (ctx) => {
         const color1 = "#b88b4a";
         const color2 = "#e3c16f";
-        if (!px) {
-            px = pixelPerField;
-        }
+        const px = pixelPerField;
         ctx.clearRect(0, 0, 8 * px, 8 * px);
         for (let r = 0; r < 8; r++) {
             ctx.fillStyle = "#7FFF00";
@@ -152,9 +157,20 @@ var chess = (() => {
         }
     };
 
-    const drawSampleFigures = (ctx, px) => {
-        if (!px) {
-            px = pixelPerField;
+    const drawSampleBoard = (ctx) => {
+        const color1 = "#b88b4a";
+        const color2 = "#e3c16f";
+        const px = 32;
+        ctx.clearRect(0, 0, 8 * px, 8 * px);
+        for (let r = 0; r < 8; r++) {
+            ctx.fillStyle = "#7FFF00";
+            let color = r % 2 == 0 ? color1 : color2;
+            for (let c = 0; c < 8; c++) {
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.fillRect(c * px, px * 7 - r * px, px, px);
+                color = color == color1 ? color2 : color1;
+            }
         }
         const ymax = px * 7;
         let figures = [
@@ -243,6 +259,21 @@ var chess = (() => {
         }
     };
 
+    const drawRect = (ctx, row, col, color) => {
+        const ymax = pixelPerField * 7;
+        ctx.lineWidth = 3;
+        if (color) {
+            ctx.strokeStyle = color;
+        }
+        else {
+            ctx.strokeStyle = '#38f';
+        }
+        if (model.currentUser && model.currentUser.name === model.board.blackPlayer) {
+            row = 7 - row;
+        }
+        ctx.strokeRect(col * pixelPerField + 6, ymax - row * pixelPerField + 6, pixelPerField - 12, pixelPerField - 12);
+    };
+
     const loadFigureImages = (finished) => {
         const names = ["BW", "BB", "KW", "KB", "NW", "NB", "PW", "PB", "QW", "QB", "RW", "RB"];
         let loaded = 0;
@@ -260,19 +291,31 @@ var chess = (() => {
     };
 
     const draw = () => {
-        if (dirty || dirtyClock) {
+        if (frameCounterlastMoved > 0) {
+            frameCounterlastMoved--;
+            if (frameCounterlastMoved == 0) {
+                dirty = true;
+            }
+        }
+        if (canvas && (dirty || dirtyClock)) {
             let ctx = canvas.getContext("2d");
             if (dirty) {
                 drawEmptyBoard(ctx);
                 drawFigures(ctx);
                 drawClocks(ctx);
-                if (!selectedFigure && lastPos) {
-                    const figure = getFigure(lastPos.row, lastPos.col);
-                    if (figure && figure.moves.length > 0) {
-                        drawSelectionRect(ctx, figure);
+                if (selectedFigure) {
+                    drawSelectionRect(ctx, selectedFigure);
+                }
+                if (isPlaying() && isActivePlayer() && frameCounterlastMoved > 0) {
+                    if (model.board.lastMovedFigure) {
+                        drawRect(ctx, model.board.lastMovedFigure.row, model.board.lastMovedFigure.column, "yellow");
+                    }
+                    if (model.board.lastMovedDestination) {
+                        drawRect(ctx, model.board.lastMovedDestination.row, model.board.lastMovedDestination.column, "yellow");
                     }
                 }
                 dirty = false;
+                dirtyClock = false;
             }
             if (dirtyClock) {
                 drawClocks(ctx);
@@ -282,26 +325,192 @@ var chess = (() => {
         window.requestAnimationFrame(draw);
     };
 
+    const isGameStarted = () => {
+        return model && model.board && model.board.gameStarted;
+    };
+
+    const isPlaying = () => {
+        return isGameStarted() && !model.board.gameOver;
+    };
+
+    const isActivePlayer = () => {
+        return model && model.currentUser && model.board && model.currentUser.name === getActivePlayer();
+    };
+
+    const isBlackPlayer = () => {
+        return model && model.currentUser && model.board && model.currentUser.name === model.board.blackPlayer;
+    }
+
+    const getActivePlayer = () => {
+        if (model.board.currentColor === "B") {
+            return model.board.blackPlayer;
+        }
+        return model.board.whitePlayer;
+    };
+
     const getStateMessage = () => {
         let msg = "";
-        if (model.board.gameOver) {
-            if (model.board.checkMate) {
-                msg = `Schach Matt! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+        const pConfirmNextGame = document.getElementById("confirmnextgame");
+        if (isGameStarted()) {
+            if (model.board.gameOver) {
+                if (model.board.checkMate) {
+                    msg = `Schach Matt! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                }
+                else if (model.board.staleMate) {
+                    msg = "Patt! Das Spiel ist zu Ende.";
+                }
+                else if (model.board.timeOut) {
+                    msg = `Die Zeit ist abgelaufen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                }
+                else if (model.board.kingStrike) {
+                    msg = `Der K\u00F6nig wurde geschlagen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                }
+                if (model.board.nextGameRequested) {
+                    if (model.currentUser.startGameConfirmed) {
+                        controls.create(pConfirmNextGame, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
+                        document.body.className = "inactive-background";
+                    }
+                    else {
+                        controls.create(pConfirmNextGame, "span", "confirmation", "N\u00E4chstes Spiel?");
+                        controls.createButton(pConfirmNextGame, "Ja", () => btnConfirmNextGame_click(true));
+                        controls.createButton(pConfirmNextGame, "Nein", () => btnConfirmNextGame_click(false));
+                        document.body.className = "active-background";
+                    }
+                }
+                else {
+                    controls.createButton(pConfirmNextGame, "N\u00E4chstes Spiel", btnNextGame_click, "newgame").id = "newgame";
+                    document.body.className = "active-background";
+                }
             }
-            else if (model.board.staleMate) {
-                msg = "Patt! Das Spiel ist zu Ende.";
+            else {
+                controls.removeAllChildren(pConfirmNextGame);
+                if (model.board.check) {
+                    msg = "Schach! ";
+                }
+                if (isActivePlayer()) {
+                    msg += "Du bist am Zug!";
+                    document.body.className = "active-background";
+                }
+                else {
+                    document.body.className = "inactive-background";
+                }
             }
-            else if (model.board.timeOut) {
-                msg = `Die Zeit ist abgelaufen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
-            }
-            else if (model.board.kingStrike) {
-                msg = `Der K\u00F6nig wurde geschlagen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
-            }
-        }
-        else if (model.board.check) {
-            msg = "Schach!";
         }
         return msg;
+    };
+
+    const simulateMove = () => {
+        let moves = [];
+        model.board.figures.forEach(f => {
+            f.moves.forEach(m => moves.push({figure: f, move: m}));
+        });
+        if (moves.length > 0) {
+            const m = moves[Math.floor(Math.random() * moves.length)];
+            placeFigure(m.figure.row, m.figure.column, m.move.row, m.move.column);
+        }
+    };
+
+    const placeFigure = (fromRow, fromColumn, toRow, toColumn) => {
+        document.body.style.cursor = "wait";
+        utils.fetch_api_call("api/chess/place",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                body: JSON.stringify(
+                    {
+                        FromRow: fromRow,
+                        FromColumn: fromColumn,
+                        ToRow: toRow,
+                        ToColumn: toColumn
+                    })
+            },
+            () => {
+                document.body.style.cursor = "default";
+                selectedFigure = undefined;
+                if (simulate) {
+                    simulateCounter = simulateDelay;
+                }
+                update();
+            },
+            (errMsg) => {
+                handleError(errMsg);
+                document.body.style.cursor = "default";
+                selectedFigure = undefined;
+                dirty = true;
+            });
+    };
+
+    const updateMessage = () => {
+        const messageElem = document.getElementById("message");
+        if (messageElem) {
+            messageElem.textContent = getStateMessage();
+        }
+    };
+
+    const update = () => {
+        utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
+            (m) => {
+                model = m;
+                if (isPlaying()) {
+                    if (isActivePlayer()) {
+                        frameCounterlastMoved = 60; // 1 second
+                    }
+                    updateMessage();
+                    dirty = true;
+                }
+                else {
+                    renderModel(model);
+                }
+            },
+            handleError);
+    };
+
+    const handlePositionChange = (pos) => {
+        if (selectedFigure) {
+            if (isActivePlayer()) {
+                for (let idx = 0; idx < selectedFigure.moves.length; idx++) {
+                    const move = selectedFigure.moves[idx];
+                    if (pos.row === move.row && pos.col === move.column) {
+                        placeFigure(selectedFigure.row, selectedFigure.column, move.row, move.column);
+                        break;
+                    }
+                }
+            }
+            selectedFigure = undefined;
+            dirty = true;
+        }
+        else {
+            const figure = getFigure(pos.row, pos.col);
+            if (figure && figure.moves.length > 0) {
+                selectedFigure = figure;
+                dirty = true;
+                return;
+            }
+        }
+    };
+
+    const login = (name) => {
+        const token = utils.get_authentication_token();
+        if (!name || name.length == 0 || !token) {
+            window.location.replace("/chess");
+            return;
+        }
+        utils.fetch_api_call("api/chess/login",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(name)
+            },
+            (loginModel) => {
+                if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
+                    setTicket(loginModel.ticket);
+                }
+                window.location.replace("/chess");
+            },
+            (errMsg) => {
+                handleError(errMsg);
+                window.location.replace("/chess");
+            });
     };
 
     // rendering
@@ -338,12 +547,11 @@ var chess = (() => {
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         // draw sample chessboard
-        canvas = controls.create(parent, "canvas", "playground");
-        canvas.width = 32 * 8;
-        canvas.height = 32 * 8;
-        let ctx = canvas.getContext("2d");
-        drawEmptyBoard(ctx, 32);
-        drawSampleFigures(ctx, 32);
+        let sampleBoard = controls.create(parent, "canvas", "playground");
+        sampleBoard.width = 32 * 8;
+        sampleBoard.height = 32 * 8;
+        let ctx = sampleBoard.getContext("2d");
+        drawSampleBoard(ctx, 32);
         // render content area        
         const divContent = controls.createDiv(parent, "content");
         if (model.allUsers.length > 0) {
@@ -411,7 +619,7 @@ var chess = (() => {
         const labelColor = controls.createLabel(divColor, undefined, "Farbe: ");
         labelColor.htmlFor = "mycolor";
         const selectColor = controls.createSelect(divColor, "mycolor", "options", colorOptions);
-        if (model.board && model.board.blackPlayer == model.currentUser.name) {
+        if (isBlackPlayer()) {
             selectColor.value = "B";
         }
         else {
@@ -435,7 +643,7 @@ var chess = (() => {
             selectColor.disabled = true;
             selectGame.disabled = true;
             if (!model.currentUser.startGameConfirmed) {
-                controls.create(divActions, "p", "confirmation", "Bist Du mit den Einstellungen einverstanden?");
+                controls.create(divActions, "span", "confirmation", "Spiel starten?");
                 controls.createButton(divActions, "Ja", () => btnConfirmStartGame_click(true));
                 controls.createButton(divActions, "Nein", () => btnConfirmStartGame_click(false));
                 document.body.className = "active-background";
@@ -452,23 +660,16 @@ var chess = (() => {
     };
 
     const renderActions = (parent) => {
-        const messageElem = controls.create(parent, "p", undefined, "");
-        messageElem.id = "message";
-        let active = false;
+        controls.create(parent, "p", undefined, "").id = "message";
+        controls.create(parent, "p", undefined, "").id = "confirmnextgame"
         if (endGameClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du das Spiel wirklich beenden?");
+            controls.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
             controls.createButton(parent, "Ja", btnEndGame_click, "EndGameYes");
             controls.createButton(parent, "Nein", btnEndGame_click, "EndGameNo");
-            active = true;
-        }
-        else if (model.currentUser) {
-            const img = controls.createImg(parent, "quitbutton", 32, 32, "/images/buttons/edit-delete-6.png");
-            img.title = "Spiel beenden";
-            img.addEventListener("click", btnEndGame_click);
-        }
-        if (active) {
             document.body.className = "active-background";
+            return true;
         }
+        return false;
     };
 
     const renderCopyright = (parent) => {
@@ -480,18 +681,24 @@ var chess = (() => {
         if (ticket && (!model.board || !model.board.gameStarted)) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
+        if (isGameStarted()) {
+            controls.createButton(div, "Abmelden", btnEndGame_click, "EndGame", "logout-button");
+        }
     };
 
     const renderMainPage = (parent) => {
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * 8 + 100;
         canvas.height = pixelPerField * 8 + 10;
-        canvas.addEventListener("click", onCanvasClick);
+        canvas.addEventListener("mouseup", onCanvasMouseUp);
+        canvas.addEventListener("mousedown", onCanvasMouseDown);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
         const divActions = controls.createDiv(parent, "actions-section");
         divActions.id = "actions"
-        renderActions(divActions);
-        updateMessage();
+        if (!renderActions(divActions)) {
+            updateMessage();
+        }
+        renderCopyright(parent);
         dirty = true;
     };
 
@@ -556,30 +763,6 @@ var chess = (() => {
         timerEnabled = true;
     };
 
-    const login = (name) => {
-        const token = utils.get_authentication_token();
-        if (!name || name.length == 0 || !token) {
-            window.location.replace("/chess");
-            return;
-        }
-        utils.fetch_api_call("api/chess/login",
-            {
-                method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                body: JSON.stringify(name)
-            },
-            (loginModel) => {
-                if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
-                    setTicket(loginModel.ticket);
-                }
-                window.location.replace("/chess");
-            },
-            (errMsg) => {
-                handleError(errMsg);
-                window.location.replace("/chess");
-            });
-    };
-
     const render = () => {
         const params = new URLSearchParams(window.location.search);
         if (params.has("login")) {
@@ -593,11 +776,22 @@ var chess = (() => {
         if (params.has("preview")) {
             previewMoves = true;
         }
-        timerEnabled = false;
+        if (params.has("simulate")) {
+            simulate = true;
+            const delay = parseInt(params.get("simulate"));
+            if (!isNaN(delay)) {
+                simulateDelay = delay;
+            }
+            else {
+                simulateDelay = 5;
+            }
+            simulateCounter = simulateDelay;
+        }
         selectedFigure = undefined;
         lastPos = undefined;
-        const w = Math.max(400, Math.min(window.innerHeight, window.innerWidth - 100));
+        const w = Math.max(400, Math.min(window.innerHeight - 100, window.innerWidth - 100));
         pixelPerField = w / 10;
+        timerEnabled = false;
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => renderModel(m),
             handleError);
@@ -606,6 +800,8 @@ var chess = (() => {
     const renderInit = () => {
         currentUser = undefined;
         dirty = false;
+        dirtyClock = false;
+        frameCounterlastMoved = 60;
         const token = utils.get_authentication_token();
         if (!token) {
             render();
@@ -628,60 +824,31 @@ var chess = (() => {
 
     // callbacks
 
-    const onCanvasClick = (evt) => {
-        const pos = getPositionFromEvent(evt);
-        let redraw = true;
-        if (pos) {
-            if (selectedFigure) {
-                for (let idx = 0; idx < selectedFigure.moves.length; idx++) {
-                    const move = selectedFigure.moves[idx];
-                    if (pos.row === move.row && pos.col === move.column) {
-                        redraw = false;
-                        document.body.style.cursor = "wait";
-                        utils.fetch_api_call("api/chess/place",
-                            {
-                                method: "POST",
-                                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
-                                body: JSON.stringify(
-                                    {
-                                        FromRow: selectedFigure.row,
-                                        FromColumn: selectedFigure.column,
-                                        ToRow: move.row,
-                                        ToColumn: move.column
-                                    })
-                            },
-                            () => {
-                                document.body.style.cursor = "default";
-                                selectedFigure = undefined;
-                                update();
-                            },
-                            (errMsg) => {
-                                handleError(errMsg);
-                                document.body.style.cursor = "default";
-                                selectedFigure = undefined;
-                                dirty = true;
-                            });
-                        break;
-                    }
+    const onCanvasMouseUp = (evt) => {
+        if (isPlaying()) {
+            const pos = getPositionFromEvent(evt);
+            if (pos) {
+                if (selectedFigure && (pos.row != selectedFigure.row || pos.col != selectedFigure.column)) {
+                    handlePositionChange(pos);
                 }
-            }
-            else {
-                const figure = getFigure(pos.row, pos.col);
-                if (figure && figure.moves.length > 0) {
-                    selectedFigure = figure;
-                    redraw = false;
+                else {
+                    dirty = true;
                 }
             }
         }
-        if (redraw && selectedFigure) {
-            selectedFigure = undefined;
-            dirty = true;
+    };
+
+    const onCanvasMouseDown = (evt) => {
+        if (isPlaying()) {
+            const pos = getPositionFromEvent(evt);
+            if (pos) {
+                handlePositionChange(pos);
+            }
         }
-        lastPos = undefined;
     };
 
     const onCanvasMouseMove = (evt) => {
-        if (!selectedFigure) {
+        if (isPlaying()) {
             const pos = getPositionFromEvent(evt);
             if (pos) {
                 if (!lastPos || lastPos.col != pos.col || lastPos.row != pos.row) {
@@ -690,7 +857,6 @@ var chess = (() => {
                 }
             }
             else if (lastPos) {
-                lastPos = undefined;
                 dirty = true;
             }
         }
@@ -744,6 +910,25 @@ var chess = (() => {
         }
     };
 
+    const btnNextGame_click = () => {
+        timerEnabled = false;
+        utils.fetch_api_call("api/chess/nextgame", { method: "POST", headers: { "ticket": ticket } },
+            () => render(),
+            handleError);
+    };
+
+    const btnConfirmNextGame_click = (ok) => {
+        timerEnabled = false;
+        utils.fetch_api_call("api/chess/confirmnextgame",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                body: JSON.stringify(ok)
+            },
+            () => render(),
+            handleError);
+    };
+
     const btnStartGame_click = () => {
         const myColor = document.getElementById("mycolor").value;
         const gameOption = document.getElementById("gameoption").value;
@@ -778,7 +963,7 @@ var chess = (() => {
     const btnEndGame_click = (elem) => {
         if (elem.value == "EndGameYes") {
             timerEnabled = false;
-            utils.fetch_api_call("api/chess/endgame", { method: "POST", headers: { "ticket": ticket } },
+            utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
                 () => {
                     endGameClicked = false;
                     render();
@@ -807,26 +992,9 @@ var chess = (() => {
             handleError);
     };
 
-    const updateMessage = () => {
-        const messageElem = document.getElementById("message");
-        if (messageElem) {
-            messageElem.textContent = getStateMessage();
-        }
-    };
-
-    const update = () => {
-        utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
-            (m) => {
-                model = m;
-                updateMessage();
-                dirty = true;
-            },
-            handleError);
-    };
-
     const onresize = () => {
-        if (model && model.board && model.board.gameStarted) {
-            const w = Math.max(400, Math.min(window.innerHeight, window.innerWidth - 100));
+        if (canvas && model && model.board && model.board.gameStarted) {
+            const w = Math.max(400, Math.min(window.innerHeight - 100, window.innerWidth - 100));
             pixelPerField = w / 10;
             canvas.width = pixelPerField * 8 + 100;
             canvas.height = pixelPerField * 8;
@@ -836,6 +1004,12 @@ var chess = (() => {
 
     const ontimer = () => {
         if (!timerEnabled) return;
+        if (simulate && isPlaying() && isActivePlayer() && simulateCounter > 0) {
+            simulateCounter--;
+            if (simulateCounter == 0) {
+                simulateMove();
+            }
+        }
         utils.fetch_api_call("api/chess/state", undefined,
             (sm) => {
                 const d = sm.state;
