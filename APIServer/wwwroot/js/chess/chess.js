@@ -37,7 +37,7 @@ var chess = (() => {
     let simulateCounter = 0;
     let simulateDelay = 5;
 
-    let version = "0.9.3";
+    let version = "0.9.4";
 
     // helper
 
@@ -122,17 +122,34 @@ var chess = (() => {
         let b = formatClock(model.state.blackClock);
         let pw = model.board.whitePlayer;
         let pb = model.board.blackPlayer;
-        ctx.font = "18px Arial";
+        let xoff;
+        let yoff;
+        let y;
+        let rectWidth;
+        if (utils.is_mobile()) {
+            ctx.font = "11px Arial";
+            xoff = 5;
+            yoff = 20;
+            y = 10;
+            rectWidth = 50;
+        }
+        else {
+            ctx.font = "18px Arial";
+            xoff = 10;
+            yoff = 30;
+            y = 18;
+            rectWidth = 100;
+        }
         ctx.fillStyle = "#7FFF00";
         if (isBlackPlayer()) {
             [w, b] = [b, w];
             [pw, pb] = [pb, pw];
         }
-        ctx.clearRect(8 * pixelPerField + 20, 0, 8 * pixelPerField + 100, 8 * pixelPerField);
-        ctx.fillText(pb, 8 * pixelPerField + 20, 18);
-        ctx.fillText(b, 8 * pixelPerField + 20, 48);
-        ctx.fillText(pw, 8 * pixelPerField + 20, 8 * pixelPerField - 48);
-        ctx.fillText(w, 8 * pixelPerField + 20, 8 * pixelPerField - 18);
+        ctx.clearRect(8 * pixelPerField + xoff, 0, 8 * pixelPerField + rectWidth, 8 * pixelPerField);
+        ctx.fillText(pb, 8 * pixelPerField + xoff, y);
+        ctx.fillText(b, 8 * pixelPerField + xoff, y + yoff);
+        ctx.fillText(pw, 8 * pixelPerField + xoff, 8 * pixelPerField - y - yoff);
+        ctx.fillText(w, 8 * pixelPerField + xoff, 8 * pixelPerField - y);
     };
 
     const drawEmptyBoard = (ctx) => {
@@ -516,6 +533,12 @@ var chess = (() => {
             });
     };
 
+    const setPixelPerWidth = () => {
+        const xmin = utils.is_mobile() ? 330 : 400;
+        const w = Math.max(xmin, Math.min(window.innerHeight - 100, window.innerWidth - 100));
+        pixelPerField = w / 10;
+    };
+
     // rendering
 
     const renderBoardFull = (parent, ignoreToken) => {
@@ -690,8 +713,9 @@ var chess = (() => {
     };
 
     const renderMainPage = (parent) => {
+        let xoff = utils.is_mobile() ? 50 : 100;
         canvas = controls.create(parent, "canvas", "playground");
-        canvas.width = pixelPerField * 8 + 100;
+        canvas.width = pixelPerField * 8 + xoff;
         canvas.height = pixelPerField * 8 + 10;
         canvas.addEventListener("mouseup", onCanvasMouseUp);
         canvas.addEventListener("mousedown", onCanvasMouseDown);
@@ -792,8 +816,7 @@ var chess = (() => {
         }
         selectedFigure = undefined;
         lastPos = undefined;
-        const w = Math.max(400, Math.min(window.innerHeight - 100, window.innerWidth - 100));
-        pixelPerField = w / 10;
+        setPixelPerWidth();
         timerEnabled = false;
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => renderModel(m),
@@ -995,17 +1018,16 @@ var chess = (() => {
             handleError);
     };
 
-    const onresize = () => {
+    const onResize = () => {
         if (canvas && model && model.board && model.board.gameStarted) {
-            const w = Math.max(400, Math.min(window.innerHeight - 100, window.innerWidth - 100));
-            pixelPerField = w / 10;
+            setPixelPerWidth();
             canvas.width = pixelPerField * 8 + 100;
             canvas.height = pixelPerField * 8;
             dirty = true;
         }
     };
 
-    const ontimer = () => {
+    const onTimer = () => {
         if (!timerEnabled) return;
         utils.fetch_api_call("api/chess/state", undefined,
             (sm) => {
@@ -1038,15 +1060,15 @@ var chess = (() => {
 
     return {
         renderInit: renderInit,
-        ontimer: ontimer,
-        onresize: onresize,
+        onTimer: onTimer,
+        onResize: onResize,
         loadFigureImages: loadFigureImages
     };
 })();
 
 window.onload = () => {
-    window.setInterval(chess.ontimer, 1000);
-    window.addEventListener("resize", chess.onresize);
+    window.setInterval(chess.onTimer, 1000);
+    window.addEventListener("resize", chess.onResize);
     utils.auth_lltoken(() => chess.loadFigureImages(chess.renderInit));
 };
 

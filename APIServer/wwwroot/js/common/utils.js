@@ -342,6 +342,7 @@ var utils = (() => {
             controls.createA(parent, undefined, "/diary", "Tagebuch");
             controls.create(parent, "hr");
             controls.createA(parent, undefined, "/slideshow", "Bildergalerie");
+            controls.createA(parent, undefined, "/chess", "Schach");
             controls.createA(parent, undefined, "/skat", "Skat");
             controls.createA(parent, undefined, "/tetris", "Tetris");
         }
