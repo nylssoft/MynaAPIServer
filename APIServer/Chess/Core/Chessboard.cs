@@ -48,6 +48,8 @@ namespace APIServer.Chess.Core
 
         public (int,int) LastMovedDestination { get; set; }
 
+        public Figure LastStrokeFigure { get; set; }
+
         public bool Check { get; set; }
 
         public bool CheckMate { get; set; }
@@ -130,6 +132,7 @@ namespace APIServer.Chess.Core
             };
             WhiteClock = clock;
             BlackClock = clock;
+            NextGameRequested = false;
         }
 
         private Chessboard(Chessboard b)
@@ -148,6 +151,7 @@ namespace APIServer.Chess.Core
             BlackClock = b.BlackClock;
             GameStarted = b.GameStarted;
             GameOption = b.GameOption;
+            NextGameRequested = b.NextGameRequested;
             // deep copy of board figures
             for (int r = 0; r <= 7; r++)
             {
@@ -167,6 +171,10 @@ namespace APIServer.Chess.Core
             if (b.LastMovedFigure != null)
             {
                 LastMovedFigure = new Figure(b.LastMovedFigure);
+            }
+            if (b.LastStrokeFigure != null)
+            {
+                LastStrokeFigure = new Figure(b.LastStrokeFigure);
             }
             LastMovedDestination = b.LastMovedDestination;
         }
@@ -242,6 +250,7 @@ namespace APIServer.Chess.Core
             {
                 return false; // invalid, no change
             }
+            LastStrokeFigure = null;
             // disallow castling
             if (f.Type == FigureType.Rook && f.MoveCount == 0)
             {
@@ -293,6 +302,7 @@ namespace APIServer.Chess.Core
                     row == enpassentFigure.Row + dir &&
                     col == enpassentFigure.Column)
                 {
+                    LastStrokeFigure = new Figure(enpassentFigure);
                     board[enpassentFigure.Row, enpassentFigure.Column] = null;
                     enpassentFigure.Column = -1;
                     enpassentFigure.Row = -1;
@@ -318,6 +328,7 @@ namespace APIServer.Chess.Core
             var strike = Get(row, col);
             if (strike != null)
             {
+                LastStrokeFigure = new Figure(strike);
                 strike.Row = -1;
                 strike.Column = -1;
                 if (strike.Type == FigureType.King)

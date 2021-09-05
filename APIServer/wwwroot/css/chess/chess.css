@@ -18,6 +18,16 @@ span {
     color: white;
 }
 
+.button-lastmove-hidden {
+    display: none;
+}
+
+.button-lastmove-shown {
+    background-color: transparent;
+    color: transparent;
+    border: 0;
+}
+
 .username {
     margin-right: 10pt;
     margin-left: 10pt;

@@ -52,5 +52,7 @@ namespace APIServer.Chess.Model
         public FigureModel LastMovedFigure { get; set; }
 
         public MoveModel LastMovedDestination { get; set; }
+
+        public FigureModel LastStrokeFigure { get; set; }
     }
 }

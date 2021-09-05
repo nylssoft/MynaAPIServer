@@ -183,17 +183,12 @@ namespace APIServer.Chess
                     ret.Board.GameOption = ConvertGameOption(chessboard.GameOption);
                     ret.Board.NextGameRequested = chessboard.NextGameRequested;
                     ret.Board.CurrentColor = ConvertFigureColor(chessboard.CurrentColor);
-                    // last moved figure
-                    ret.Board.LastMovedFigure = null;
-                    ret.Board.LastMovedDestination = null;
-                    if (chessboard.LastMovedFigure != null)
+                    // last stroke and last moved figure
+                    ret.Board.LastStrokeFigure = ConvertFigure(chessboard.LastStrokeFigure);
+                    ret.Board.LastMovedFigure = ConvertFigure(chessboard.LastMovedFigure);
+                    if (ret.Board.LastMovedFigure != null)
                     {
-                        ret.Board.LastMovedFigure = ConvertFigure(chessboard.LastMovedFigure);
-                        ret.Board.LastMovedDestination = new MoveModel
-                        {
-                            Row = chessboard.LastMovedDestination.Item1,
-                            Column = chessboard.LastMovedDestination.Item2
-                        };
+                        ret.Board.LastMovedDestination = ConvertLastMoved(chessboard.LastMovedDestination);
                     }
                     // reasons for game over and the winner
                     ret.Board.TimeOut = chessboard.TimeOut;
@@ -493,15 +488,24 @@ namespace APIServer.Chess
 
         private static FigureModel ConvertFigure(Figure figure)
         {
-            var fm = new FigureModel
+            FigureModel ret = null;
+            if (figure != null)
             {
-                Color = ConvertFigureColor(figure.Color),
-                Type = ConvertFigureType(figure.Type),
-                Row = figure.Row,
-                Column = figure.Column,
-                Moves = new List<MoveModel>()
-            };
-            return fm;
+                ret = new FigureModel
+                {
+                    Color = ConvertFigureColor(figure.Color),
+                    Type = ConvertFigureType(figure.Type),
+                    Row = figure.Row,
+                    Column = figure.Column,
+                    Moves = new List<MoveModel>()
+                };
+            }
+            return ret;
+        }
+
+        private static MoveModel ConvertLastMoved((int,int) move)
+        {
+           return new MoveModel { Row = move.Item1, Column = move.Item2 };
         }
     }
 }

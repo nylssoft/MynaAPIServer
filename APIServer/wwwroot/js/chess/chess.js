@@ -37,7 +37,16 @@ var chess = (() => {
     let simulateCounter = 0;
     let simulateDelay = 5;
 
-    let version = "0.9.4";
+    const colorLight = "#b88b4a";
+    const colorDark = "#e3c16f";
+    const colorClocks = "#7FFF00";
+    const colorSelection = "#3388ff";
+    const colorPreview = "black";
+    const colorLastMoved = colorSelection;
+
+    const delayLastMoved = 30; // 30 frames = 0.5 seconds
+
+    let version = "0.9.5";
 
     // helper
 
@@ -140,7 +149,7 @@ var chess = (() => {
             y = 18;
             rectWidth = 100;
         }
-        ctx.fillStyle = "#7FFF00";
+        ctx.fillStyle = colorClocks;
         if (isBlackPlayer()) {
             [w, b] = [b, w];
             [pw, pb] = [pb, pw];
@@ -152,42 +161,38 @@ var chess = (() => {
         ctx.fillText(w, 8 * pixelPerField + xoff, 8 * pixelPerField - y);
     };
 
-    const drawEmptyBoard = (ctx) => {
-        const color1 = "#b88b4a";
-        const color2 = "#e3c16f";
-        const px = pixelPerField;
-        ctx.clearRect(0, 0, 8 * px, 8 * px);
+    const drawBoard = (ctx) => {
         for (let r = 0; r < 8; r++) {
-            ctx.fillStyle = "#7FFF00";
-            let color;
-            if (!model.currentUser || !model.board || model.currentUser.name === model.board.whitePlayer) {
-                color = r % 2 == 0 ? color1 : color2;
-            }
-            else {
-                color = r % 2 == 0 ? color2 : color1;
-            }
             for (let c = 0; c < 8; c++) {
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.fillRect(c * px, px * 7 - r * px, px, px);
-                color = color == color1 ? color2 : color1;
+                drawEmptyField(ctx, r, c);
             }
         }
+        drawFigures(ctx);
+    };
+
+    const drawEmptyField = (ctx, row, column) => {
+        if (isBlackPlayer()) {
+            row = 7 - row;
+        }
+        let color = row % 2 == 0 ? colorLight : colorDark;
+        if (column % 2 == 1) {
+            color = color == colorLight ? colorDark : colorLight;
+        }
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.fillRect(column * pixelPerField, pixelPerField * 7 - row * pixelPerField, pixelPerField, pixelPerField);
     };
 
     const drawSampleBoard = (ctx) => {
-        const color1 = "#b88b4a";
-        const color2 = "#e3c16f";
         const px = 32;
         ctx.clearRect(0, 0, 8 * px, 8 * px);
         for (let r = 0; r < 8; r++) {
-            ctx.fillStyle = "#7FFF00";
-            let color = r % 2 == 0 ? color1 : color2;
+            let color = r % 2 == 0 ? colorLight : colorDark;
             for (let c = 0; c < 8; c++) {
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.fillRect(c * px, px * 7 - r * px, px, px);
-                color = color == color1 ? color2 : color1;
+                color = color == colorLight ? colorDark : colorLight;
             }
         }
         const ymax = px * 7;
@@ -233,63 +238,34 @@ var chess = (() => {
         });
     };
 
+    const drawFigure = (ctx, f) => {
+        const image = figureImageMap.get(`${f.type}${f.color}`);
+        if (!image) return; // not yet loaded
+        const row = isBlackPlayer() ? 7 - f.row : f.row;
+        ctx.drawImage(image, f.column * pixelPerField, pixelPerField * 7 - row * pixelPerField, pixelPerField, pixelPerField);
+    };
+
     const drawFigures = (ctx) => {
         if (!model.board || !model.board.figures) return;
-        const ymax = pixelPerField * 7;
-        model.board.figures.forEach(f => {
-            const image = figureImageMap.get(`${f.type}${f.color}`);
-            if (image) {
-                if (!model.currentUser || model.currentUser.name === model.board.whitePlayer) {
-                    ctx.drawImage(image, f.column * pixelPerField, ymax - f.row * pixelPerField, pixelPerField, pixelPerField);
-                }
-                else {
-                    const rowInverse = 7 - f.row;
-                    ctx.drawImage(image, f.column * pixelPerField ,
-                        ymax - rowInverse * pixelPerField, pixelPerField, pixelPerField);
-                }
-            }
-        });
+        model.board.figures.forEach(f => drawFigure(ctx, f));
     };
 
     const drawSelectionRect = (ctx, figure) => {
-        const ymax = pixelPerField * 7;
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#38f';
-        let row = figure.row;
-        if (model.currentUser && model.currentUser.name === model.board.blackPlayer) {
-            row = 7 - figure.row;
-        }
-        ctx.strokeRect(figure.column * pixelPerField + 6, ymax - row * pixelPerField + 6, pixelPerField - 12, pixelPerField - 12);
+        drawRect(ctx, figure.row, figure.column, colorSelection);
         if (previewMoves) {
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = '#000000';
             figure.moves.forEach(move => {
-                let row = move.row;
-                if (model.currentUser.name === model.board.blackPlayer) {
-                    row = 7 - move.row;
-                }
-                ctx.strokeRect(
-                    16 + move.column * pixelPerField,
-                    16 + ymax - row * pixelPerField,
-                    pixelPerField - 32,
-                    pixelPerField - 32);
+                drawRect(ctx, move.row, move.column, colorPreview);
             });
         }
     };
 
     const drawRect = (ctx, row, col, color) => {
-        const ymax = pixelPerField * 7;
         ctx.lineWidth = 3;
-        if (color) {
-            ctx.strokeStyle = color;
-        }
-        else {
-            ctx.strokeStyle = '#38f';
-        }
-        if (model.currentUser && model.currentUser.name === model.board.blackPlayer) {
+        ctx.strokeStyle = color;
+        if (isBlackPlayer()) {
             row = 7 - row;
         }
-        ctx.strokeRect(col * pixelPerField + 6, ymax - row * pixelPerField + 6, pixelPerField - 12, pixelPerField - 12);
+        ctx.strokeRect(col * pixelPerField + 6, pixelPerField * 7 - row * pixelPerField + 6, pixelPerField - 12, pixelPerField - 12);
     };
 
     const loadFigureImages = (finished) => {
@@ -318,18 +294,22 @@ var chess = (() => {
         if (canvas && (dirty || dirtyClock)) {
             let ctx = canvas.getContext("2d");
             if (dirty) {
-                drawEmptyBoard(ctx);
-                drawFigures(ctx);
+                drawBoard(ctx);
                 drawClocks(ctx);
                 if (selectedFigure) {
                     drawSelectionRect(ctx, selectedFigure);
                 }
                 if (isPlaying() && (isActivePlayer() || guestMode) && frameCounterlastMoved > 0) {
                     if (model.board.lastMovedFigure) {
-                        drawRect(ctx, model.board.lastMovedFigure.row, model.board.lastMovedFigure.column, "yellow");
+                        drawFigure(ctx, model.board.lastMovedFigure);
+                        drawRect(ctx, model.board.lastMovedFigure.row, model.board.lastMovedFigure.column, colorLastMoved);
                     }
                     if (model.board.lastMovedDestination) {
-                        drawRect(ctx, model.board.lastMovedDestination.row, model.board.lastMovedDestination.column, "yellow");
+                        drawEmptyField(ctx, model.board.lastMovedDestination.row, model.board.lastMovedDestination.column);
+                        if (model.board.lastStrokeFigure) {
+                            drawFigure(ctx, model.board.lastStrokeFigure);
+                        }
+                        drawRect(ctx, model.board.lastMovedDestination.row, model.board.lastMovedDestination.column, colorLastMoved);
                     }
                 }
                 dirty = false;
@@ -467,14 +447,32 @@ var chess = (() => {
         }
     };
 
+    const updateLastUpdateTime = () => {
+        const span = document.getElementById("lastupdatetime");
+        if (span) {
+            const time = new Date().toLocaleTimeString("de-DE");
+            span.textContent = `. Letzte Aktualisierung: ${time}. `;
+        }
+    };
+
+    const updateLastMovedButton = () => {
+        const lastmoved = document.getElementById("lastmovedbutton");
+        if (lastmoved) {
+            lastmoved.className = isPlaying() && isActivePlayer() && model.board.lastMovedFigure
+                ? "button-lastmove-shown" : "button-lastmove-hidden";
+        }
+    };
+
     const update = () => {
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
                 model = m;
                 if (isPlaying()) {
                     if (isActivePlayer() || guestMode) {
-                        frameCounterlastMoved = 60; // 1 second
+                        frameCounterlastMoved = delayLastMoved;
                     }
+                    updateLastMovedButton();
+                    updateLastUpdateTime();
                     updateMessage();
                     dirty = true;
                 }
@@ -686,6 +684,17 @@ var chess = (() => {
     };
 
     const renderActions = (parent) => {
+        controls.createImageButton(
+            parent,
+            "Letzter Zug",
+            () => {
+                frameCounterlastMoved = delayLastMoved;
+                dirty = true;
+            },
+            "/images/buttons/document-properties.png",
+            32
+        ).id = "lastmovedbutton";
+        updateLastMovedButton();
         controls.create(parent, "p", undefined, "").id = "message";
         controls.create(parent, "p", undefined, "").id = "confirmnextgame"
         if (endGameClicked) {
@@ -703,7 +712,7 @@ var chess = (() => {
         controls.create(div, "span", "copyright", `Myna Schach ${version}. Copyright 2021 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         const time = new Date().toLocaleTimeString("de-DE");
-        controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `);
+        controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `).id = "lastupdatetime";
         if (ticket && (!model.board || !model.board.gameStarted)) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
@@ -827,7 +836,7 @@ var chess = (() => {
         currentUser = undefined;
         dirty = false;
         dirtyClock = false;
-        frameCounterlastMoved = 60;
+        frameCounterlastMoved = delayLastMoved;
         const token = utils.get_authentication_token();
         if (!token) {
             render();
