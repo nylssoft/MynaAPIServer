@@ -22,6 +22,22 @@ namespace APIServer.Chess.Core
 {
     public enum GameOption { FastChess, Chess15, Chess30, Chess60 };
 
+    public class Move
+    {
+        public Move(Figure figure, int row, int column)
+        {
+            Figure = new Figure(figure);
+            Row = row;
+            Column = column;
+        }
+
+        public Figure Figure { get; }
+
+        public int Row { get; }
+
+        public int Column { get; }
+    }
+
     public class Chessboard
     {
         // --- enums
@@ -44,11 +60,9 @@ namespace APIServer.Chess.Core
             }
         }
 
-        public Figure LastMovedFigure { get; set; }
+        public List<Move> LastMoves { get; set; }
 
-        public (int,int) LastMovedDestination { get; set; }
-
-        public Figure LastStrokeFigure { get; set; }
+        public Figure LastStroke { get; set; }
 
         public bool Check { get; set; }
 
@@ -72,7 +86,7 @@ namespace APIServer.Chess.Core
         {
             get
             {
-                return CheckMate || StaleMate || TimeOut || KingStrike;
+                return CheckMate || StaleMate || TimeOut || KingStrike || GiveUp;
             }
         }
 
@@ -92,6 +106,22 @@ namespace APIServer.Chess.Core
             }
         }
 
+        public bool GiveUp
+        {
+            get
+            {
+                return giveUp;
+            }
+            set
+            {
+                giveUp = value;
+                if (giveUp)
+                {
+                    Winner = GetOpponentColor(CurrentColor);
+                }
+            }
+        }
+
         public bool NextGameRequested { get; set; }
 
         public GameOption GameOption { get; set; }
@@ -103,6 +133,8 @@ namespace APIServer.Chess.Core
         private Figure enpassentFigure;
 
         private bool gameStarted;
+
+        private bool giveUp;
 
         // --- constructors
 
@@ -119,6 +151,7 @@ namespace APIServer.Chess.Core
             StaleMate = false;
             TimeOut = false;
             KingStrike = false;
+            GiveUp = false;
             Winner = null;
             GameStarted = false;
             GameOption = gameOption;
@@ -133,6 +166,8 @@ namespace APIServer.Chess.Core
             WhiteClock = clock;
             BlackClock = clock;
             NextGameRequested = false;
+            LastMoves = new List<Move>();
+            LastStroke = null;
         }
 
         private Chessboard(Chessboard b)
@@ -145,6 +180,7 @@ namespace APIServer.Chess.Core
             StaleMate = b.StaleMate;
             TimeOut = b.TimeOut;
             KingStrike = b.KingStrike;
+            GiveUp = b.GiveUp;
             Winner = b.Winner;
             ClockStartedUtc = b.ClockStartedUtc;
             WhiteClock = b.WhiteClock;
@@ -152,6 +188,8 @@ namespace APIServer.Chess.Core
             GameStarted = b.GameStarted;
             GameOption = b.GameOption;
             NextGameRequested = b.NextGameRequested;
+            LastMoves = new List<Move>();
+            LastStroke = null;
             // deep copy of board figures
             for (int r = 0; r <= 7; r++)
             {
@@ -168,15 +206,6 @@ namespace APIServer.Chess.Core
             {
                 enpassentFigure = new Figure(b.enpassentFigure);
             }
-            if (b.LastMovedFigure != null)
-            {
-                LastMovedFigure = new Figure(b.LastMovedFigure);
-            }
-            if (b.LastStrokeFigure != null)
-            {
-                LastStrokeFigure = new Figure(b.LastStrokeFigure);
-            }
-            LastMovedDestination = b.LastMovedDestination;
         }
 
         // --- static methods
@@ -240,17 +269,18 @@ namespace APIServer.Chess.Core
             return ret;
         }
 
-        public bool Place(Figure f, int row, int col, FigureType pawnReplacement = FigureType.Queen)
+        public bool Place(Figure f, int row, int column, FigureType pawnReplacement = FigureType.Queen)
         {
             if (GameOver || !GameStarted ||
-                !IsValidPosition(row, col) ||
+                !IsValidPosition(row, column) ||
                 f == null ||
                 f.Color != CurrentColor ||
                 !IsValidPosition(f.Row, f.Column))
             {
                 return false; // invalid, no change
             }
-            LastStrokeFigure = null;
+            LastMoves.Clear();
+            LastStroke = null;
             // disallow castling
             if (f.Type == FigureType.Rook && f.MoveCount == 0)
             {
@@ -268,7 +298,7 @@ namespace APIServer.Chess.Core
                 }
             }
             // castling
-            if (f.Type == FigureType.King && Math.Abs(f.Column - col) == 2)
+            if (f.Type == FigureType.King && Math.Abs(f.Column - column) == 2)
             {
                 // king size
                 if (col > f.Column)
@@ -276,6 +306,7 @@ namespace APIServer.Chess.Core
                     var rook = Get(f.Row, 7);
                     if (rook != null)
                     {
+                        LastMoves.Add(new Move(rook, f.Row, f.Column + 1));
                         board[f.Row, 7] = null;
                         board[f.Row, f.Column + 1] = rook;
                         rook.Column = f.Column + 1;
@@ -287,6 +318,7 @@ namespace APIServer.Chess.Core
                     var rook = Get(f.Row, 0);
                     if (rook != null)
                     {
+                        LastMoves.Add(new Move(rook, f.Row, f.Column - 1));
                         board[f.Row, 0] = null;
                         board[f.Row, f.Column - 1] = rook;
                         rook.Column = f.Column - 1;
@@ -300,9 +332,9 @@ namespace APIServer.Chess.Core
                 if (enpassentFigure != null &&
                     f.Color != enpassentFigure.Color &&
                     row == enpassentFigure.Row + dir &&
-                    col == enpassentFigure.Column)
+                    column == enpassentFigure.Column)
                 {
-                    LastStrokeFigure = new Figure(enpassentFigure);
+                    LastStroke = new Figure(enpassentFigure);
                     board[enpassentFigure.Row, enpassentFigure.Column] = null;
                     enpassentFigure.Column = -1;
                     enpassentFigure.Row = -1;
@@ -325,10 +357,10 @@ namespace APIServer.Chess.Core
             {
                 enpassentFigure = null;
             }
-            var strike = Get(row, col);
+            var strike = Get(row, column);
             if (strike != null)
             {
-                LastStrokeFigure = new Figure(strike);
+                LastStroke = new Figure(strike);
                 strike.Row = -1;
                 strike.Column = -1;
                 if (strike.Type == FigureType.King)
@@ -337,10 +369,9 @@ namespace APIServer.Chess.Core
                     Winner = f.Color;
                 }
             }
-            LastMovedFigure = new Figure(f);
-            LastMovedDestination = (row, col);
+            LastMoves.Add(new Move(f, row, column));
             f.Row = row;
-            f.Column = col;
+            f.Column = column;
             board[f.Row, f.Column] = f;
             f.MoveCount += 1;
             UpdateClocks();

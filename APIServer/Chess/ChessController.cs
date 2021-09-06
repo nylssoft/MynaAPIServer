@@ -103,6 +103,13 @@ namespace APIServer.Chess
         }
 
         [HttpPost]
+        [Route("api/chess/giveup")]
+        public IActionResult GiveUp()
+        {
+            return new JsonResult(ChessService.GiveUp(GetTicket()));
+        }
+
+        [HttpPost]
         [Route("api/chess/place")]
         public IActionResult Place([FromBody] PlaceModel value)
         {

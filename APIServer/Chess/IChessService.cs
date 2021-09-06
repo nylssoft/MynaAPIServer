@@ -38,6 +38,8 @@ namespace APIServer.Chess
 
         bool EndGame(string ticket);
 
+        bool GiveUp(string ticket);
+
         bool ConfirmStartGame(string ticket, bool ok);
 
         bool StartNextGame(string ticket);

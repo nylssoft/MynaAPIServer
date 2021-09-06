@@ -23,6 +23,7 @@ var chess = (() => {
     let helpDiv;
 
     let endGameClicked = false;
+    let giveUpClicked = false;
 
     let figureImageMap = new Map();
     let pixelPerField;
@@ -42,11 +43,11 @@ var chess = (() => {
     const colorClocks = "#7FFF00";
     const colorSelection = "#3388ff";
     const colorPreview = "black";
-    const colorLastMoved = colorSelection;
+    const colorMoves = [colorSelection, "yellow"];
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "0.9.5";
+    let version = "0.9.6";
 
     // helper
 
@@ -55,6 +56,7 @@ var chess = (() => {
         window.sessionStorage.removeItem("chessstate");
         timerEnabled = true;
         endGameClicked = false;
+        giveUpClicked = false;
     }
 
     const clearTicket = () => {
@@ -300,17 +302,21 @@ var chess = (() => {
                     drawSelectionRect(ctx, selectedFigure);
                 }
                 if (isPlaying() && (isActivePlayer() || guestMode) && frameCounterlastMoved > 0) {
-                    if (model.board.lastMovedFigure) {
-                        drawFigure(ctx, model.board.lastMovedFigure);
-                        drawRect(ctx, model.board.lastMovedFigure.row, model.board.lastMovedFigure.column, colorLastMoved);
-                    }
-                    if (model.board.lastMovedDestination) {
-                        drawEmptyField(ctx, model.board.lastMovedDestination.row, model.board.lastMovedDestination.column);
-                        if (model.board.lastStrokeFigure) {
-                            drawFigure(ctx, model.board.lastStrokeFigure);
+                    let idx = 0;
+                    let color;
+                    model.board.lastMoves.forEach(lm => {
+                        color = colorMoves[idx];
+                        drawFigure(ctx, lm.figure);
+                        drawRect(ctx, lm.figure.row, lm.figure.column, color);
+                        drawEmptyField(ctx, lm.row, lm.column);
+                        if (model.board.lastStroke &&
+                            model.board.lastStroke.row == lm.row &&
+                            model.board.lastStroke.column == lm.column) {
+                            drawFigure(ctx, model.board.lastStroke);
                         }
-                        drawRect(ctx, model.board.lastMovedDestination.row, model.board.lastMovedDestination.column, colorLastMoved);
-                    }
+                        drawRect(ctx, lm.row, lm.column, color);
+                        idx = (idx + 1) % colorMoves.length;
+                    });
                 }
                 dirty = false;
                 dirtyClock = false;
@@ -362,6 +368,9 @@ var chess = (() => {
                 }
                 else if (model.board.kingStrike) {
                     msg = `Der K\u00F6nig wurde geschlagen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                }
+                else if (model.board.giveUp) {
+                    msg = `Das Spiel wurde aufgegeben. Gewinner ist ${model.board.winner}.`;
                 }
                 if (ticket) {
                     if (model.board.nextGameRequested) {
@@ -458,8 +467,14 @@ var chess = (() => {
     const updateLastMovedButton = () => {
         const lastmoved = document.getElementById("lastmovedbutton");
         if (lastmoved) {
-            lastmoved.className = isPlaying() && isActivePlayer() && model.board.lastMovedFigure
-                ? "button-lastmove-shown" : "button-lastmove-hidden";
+            lastmoved.classList.toggle("hide", !isPlaying() || !isActivePlayer() || model.board.lastMoves.length === 0);
+        }
+    };
+
+    const updateGiveUpButton = () => {
+        const giveup = document.getElementById("giveupbutton");
+        if (giveup) {
+            giveup.classList.toggle("hide", !isPlaying() || !isActivePlayer());
         }
     };
 
@@ -472,6 +487,7 @@ var chess = (() => {
                         frameCounterlastMoved = delayLastMoved;
                     }
                     updateLastMovedButton();
+                    updateGiveUpButton();
                     updateLastUpdateTime();
                     updateMessage();
                     dirty = true;
@@ -684,17 +700,6 @@ var chess = (() => {
     };
 
     const renderActions = (parent) => {
-        controls.createImageButton(
-            parent,
-            "Letzter Zug",
-            () => {
-                frameCounterlastMoved = delayLastMoved;
-                dirty = true;
-            },
-            "/images/buttons/document-properties.png",
-            32
-        ).id = "lastmovedbutton";
-        updateLastMovedButton();
         controls.create(parent, "p", undefined, "").id = "message";
         controls.create(parent, "p", undefined, "").id = "confirmnextgame"
         if (endGameClicked) {
@@ -704,6 +709,17 @@ var chess = (() => {
             document.body.className = "active-background";
             return true;
         }
+        if (giveUpClicked) {
+            controls.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
+            controls.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
+            controls.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
+            document.body.className = "active-background";
+            return true;
+        }
+        controls.createButton(parent, "Letzter Zug", btnLastMove_click, "lastmovedbutton").id = "lastmovedbutton";
+        updateLastMovedButton();
+        controls.createButton(parent, "Aufgeben", btnGiveUp_click, "giveupbutton").id = "giveupbutton";
+        updateGiveUpButton();
         return false;
     };
 
@@ -993,6 +1009,31 @@ var chess = (() => {
             },
             () => render(),
             handleError);
+    };
+
+    const btnLastMove_click = () => {
+        frameCounterlastMoved = delayLastMoved;
+        dirty = true;
+    };
+
+    const btnGiveUp_click = (elem) => {
+        if (elem.value == "GiveUpYes") {
+            timerEnabled = false;
+            utils.fetch_api_call("api/chess/giveup", { method: "POST", headers: { "ticket": ticket } },
+                () => {
+                    giveUpClicked = false;
+                    render();
+                },
+                handleError);
+        }
+        else if (elem.value == "GiveUpNo") {
+            giveUpClicked = false;
+            render();
+        }
+        else {
+            giveUpClicked = true;
+            render();
+        }
     };
 
     const btnEndGame_click = (elem) => {

@@ -184,15 +184,16 @@ namespace APIServer.Chess
                     ret.Board.NextGameRequested = chessboard.NextGameRequested;
                     ret.Board.CurrentColor = ConvertFigureColor(chessboard.CurrentColor);
                     // last stroke and last moved figure
-                    ret.Board.LastStrokeFigure = ConvertFigure(chessboard.LastStrokeFigure);
-                    ret.Board.LastMovedFigure = ConvertFigure(chessboard.LastMovedFigure);
-                    if (ret.Board.LastMovedFigure != null)
+                    ret.Board.LastStroke = ConvertFigure(chessboard.LastStroke);
+                    ret.Board.LastMoves = new List<MoveModel>();
+                    foreach (var move in chessboard.LastMoves)
                     {
-                        ret.Board.LastMovedDestination = ConvertLastMoved(chessboard.LastMovedDestination);
+                        ret.Board.LastMoves.Add(ConvertLastMoved(move));
                     }
                     // reasons for game over and the winner
                     ret.Board.TimeOut = chessboard.TimeOut;
                     ret.Board.KingStrike = chessboard.KingStrike;
+                    ret.Board.GiveUp = chessboard.GiveUp;
                     ret.Board.CheckMate = chessboard.CheckMate;
                     ret.Board.StaleMate = chessboard.StaleMate;
                     if (chessboard.GameOption != GameOption.FastChess)
@@ -418,6 +419,25 @@ namespace APIServer.Chess
             return false;
         }
 
+        public bool GiveUp(string ticket)
+        {
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null &&
+                    chessboard != null &&
+                    chessboard.GameStarted &&
+                    !chessboard.GameOver &&
+                    chessboard.CurrentPlayer == ctx.Name)
+                {
+                    chessboard.GiveUp = true;
+                    stateChanged = DateTime.UtcNow;
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // --- private
 
         private static UserModel GetCurrentUser(Context ctx)
@@ -503,9 +523,13 @@ namespace APIServer.Chess
             return ret;
         }
 
-        private static MoveModel ConvertLastMoved((int,int) move)
+        private static MoveModel ConvertLastMoved(Move move)
         {
-           return new MoveModel { Row = move.Item1, Column = move.Item2 };
+           return new MoveModel {
+               Figure = ConvertFigure(move.Figure),
+               Row = move.Row,
+               Column = move.Column
+           };
         }
     }
 }

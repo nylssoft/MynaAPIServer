@@ -45,14 +45,14 @@ namespace APIServer.Chess.Model
 
         public bool KingStrike { get; set; }
 
+        public bool GiveUp { get; set; }
+
         public bool GameOver { get; set; }
 
         public string Winner { get; set; }
 
-        public FigureModel LastMovedFigure { get; set; }
+        public List<MoveModel> LastMoves { get; set; }
 
-        public MoveModel LastMovedDestination { get; set; }
-
-        public FigureModel LastStrokeFigure { get; set; }
+        public FigureModel LastStroke { get; set; }
     }
 }
