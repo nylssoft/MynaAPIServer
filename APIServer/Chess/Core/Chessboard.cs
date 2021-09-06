@@ -301,7 +301,7 @@ namespace APIServer.Chess.Core
             if (f.Type == FigureType.King && Math.Abs(f.Column - column) == 2)
             {
                 // king size
-                if (col > f.Column)
+                if (column > f.Column)
                 {
                     var rook = Get(f.Row, 7);
                     if (rook != null)
