@@ -22,5 +22,7 @@ namespace APIServer.Chess.Model
         public string MyColor { get; set; }
 
         public string GameOption { get; set; }
+
+        public int Level { get; set; }
     }
 }

@@ -36,6 +36,8 @@ namespace APIServer.Chess
 
         bool StartNewGame(string ticket, StartGameModel startGameModel);
 
+        bool PlayAgainstComputer(string ticket);
+
         bool EndGame(string ticket);
 
         bool GiveUp(string ticket);

@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "0.9.6";
+    let version = "0.9.7";
 
     // helper
 
@@ -649,7 +649,13 @@ var chess = (() => {
     };
 
     const renderWaitForUsers = (parent) => {
-        controls.create(parent, "p", "activity", "Du musst warten, bis sich ein weiterer Spieler anmeldet.");
+        if (model.canPlayAgainstComputer) {
+            controls.create(parent, "p", "activity", "Du kannst gegen den Computer spielen oder warten, bis sich ein weiterer Spieler anmeldet.");
+            controls.createButton(parent, "Computerspiel starten", btnPlayComputer_click);
+        }
+        else {
+            controls.create(parent, "p", "activity", "Du musst warten, bis sich ein weiterer Spieler anmeldet.");
+        }
         document.body.className = "inactive-background";
     };
 
@@ -678,6 +684,20 @@ var chess = (() => {
         if (model.board) {
             selectGame.value = model.board.gameOption;
         }
+        else if (model.isComputerGame) {
+            selectGame.value = "chess60";
+        }
+        if (model.isComputerGame) {
+            const divLevel = controls.createDiv(parent);
+            const levelOptions = [];
+            for (let lvl = 1; lvl <= 32; lvl++) {
+                levelOptions.push({ name: `Stufe ${lvl}`, value: `${lvl}` });
+            };
+            const labelLevel = controls.createLabel(divLevel, undefined, "Spielst\u00E4rke: ");
+            labelLevel.htmlFor = "level";
+            const selectLevel = controls.createSelect(divLevel, "level", "options", levelOptions);
+            selectLevel.value = "1";
+        }
         const divActions = controls.createDiv(parent);
         if (model && model.board && !model.board.gameStarted) {
             selectColor.disabled = true;
@@ -694,7 +714,8 @@ var chess = (() => {
             }
         }
         else {
-            controls.createButton(divActions, "Spiel starten", btnStartGame_click);
+            const txt = model.isComputerGame ? "Computerspiel" : "Spiel"
+            controls.createButton(divActions, `${txt} starten`, btnStartGame_click);
             document.body.className = "active-background";
         }
     };
@@ -766,7 +787,7 @@ var chess = (() => {
         }
         else {
             renderUserList(parent);
-            if (model.allUsers.length < 2) {
+            if (!model.isComputerGame && model.allUsers.length < 2) {
                 renderWaitForUsers(parent);
             }
             else {
@@ -961,6 +982,12 @@ var chess = (() => {
         }
     };
 
+    const btnPlayComputer_click = () => {
+        utils.fetch_api_call("api/chess/computergame", { method: "POST", headers: { "ticket": ticket } },
+            () => render(),
+            handleError);
+    };
+
     const btnNextGame_click = () => {
         timerEnabled = false;
         utils.fetch_api_call("api/chess/nextgame", { method: "POST", headers: { "ticket": ticket } },
@@ -984,15 +1011,26 @@ var chess = (() => {
         const myColor = document.getElementById("mycolor").value;
         const gameOption = document.getElementById("gameoption").value;
         if (myColor && gameOption) {
+            const settings = {
+                MyColor: myColor,
+                GameOption: gameOption,
+                Level: 1
+            };
+            if (model.isComputerGame) {
+                const level = document.getElementById("level").value;
+                if (level) {
+                    const lvl = parseInt(level);
+                    if (Number.isInteger(lvl)) {
+                        settings.Level = lvl;
+                    }
+                }
+            };
             timerEnabled = false;
             utils.fetch_api_call("api/chess/newgame",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
-                    body: JSON.stringify({
-                        MyColor: myColor,
-                        GameOption: gameOption
-                    })
+                    body: JSON.stringify(settings)
                 },
                 () => render(),
                 handleError);

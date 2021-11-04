@@ -20,5 +20,7 @@ namespace APIServer.Chess
     public class ChessOptions
     {
         public int SessionTimeout { get; set; } = 30;
+
+        public string ChessEngine { get; set; }
     }
 }

@@ -30,5 +30,9 @@ namespace APIServer.Chess.Model
         public BoardModel Board { get; set; }
 
         public bool IsBoardFull { get; set; } = false;
+
+        public bool IsComputerGame { get; set; } = false;
+
+        public bool CanPlayAgainstComputer { get; set; } = false;
     }
 }

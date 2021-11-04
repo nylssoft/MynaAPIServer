@@ -19,9 +19,12 @@ using APIServer.Chess.Core;
 using APIServer.Chess.Model;
 using APIServer.PwdMan;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace APIServer.Chess
 {
@@ -37,9 +40,14 @@ namespace APIServer.Chess
 
         private Chessboard chessboard;
 
-        public ChessService(IConfiguration configuration)
+        private ChessEngine chessengine;
+
+        private readonly ILogger logger;
+
+        public ChessService(IConfiguration configuration, ILogger<ChessService> logger)
         {
             Configuration = configuration;
+            this.logger = logger;
         }
 
         // --- without authentication
@@ -58,6 +66,10 @@ namespace APIServer.Chess
                     if (diff > GetOptions().SessionTimeout * 60) // reset game after inactivity
                     {
                         chessboard = null;
+                        if (IsComputerGame())
+                        {
+                            StopChessEngine();
+                        }
                         userTickets.Clear();
                         stateChanged = nowUtc;
                         break;
@@ -108,7 +120,7 @@ namespace APIServer.Chess
                     return ret;
                 }
                 if (!userTickets.Values.Any((v) => string.Equals(v.Name, username, StringComparison.OrdinalIgnoreCase))
-                    && chessboard == null && userTickets.Count < 2
+                    && chessboard == null && (userTickets.Count < 2 && !IsComputerGame() || userTickets.Count == 1)
                     && username.Trim().Length > 0)
                 {
                     // only lower chars and digits except 0 and o
@@ -145,6 +157,10 @@ namespace APIServer.Chess
                 if (ctx != null)
                 {
                     chessboard = null;
+                    if (IsComputerGame())
+                    {
+                        StopChessEngine();
+                    }
                     userTickets.Remove(ticket);
                     foreach (var c in userTickets.Values)
                     {
@@ -165,7 +181,9 @@ namespace APIServer.Chess
                 {
                     State = GetState(),
                     AllUsers = GetAllUsers(),
-                    IsBoardFull = userTickets.Count == 2
+                    IsBoardFull = userTickets.Count == 2 || IsComputerGame() && userTickets.Count == 1,
+                    IsComputerGame = IsComputerGame(),
+                    CanPlayAgainstComputer = CanPlayAgainstComputer()
                 };
                 var ctx = GetContext(ticket);
                 if (ctx != null)
@@ -244,6 +262,10 @@ namespace APIServer.Chess
                         {
                             if (move.Item1 == placeModel.ToRow && move.Item2 == placeModel.ToColumn)
                             {
+                                if (IsComputerGame())
+                                {
+                                    SendChessEngineUserMove(figure, placeModel);
+                                }
                                 // ok to move
                                 ret = chessboard.Place(figure, placeModel.ToRow, placeModel.ToColumn);
                                 if (ret)
@@ -275,11 +297,20 @@ namespace APIServer.Chess
                     chessboard.GameOver &&
                     !chessboard.NextGameRequested)
                 {
-                    foreach (var c in userTickets.Values)
+                    if (IsComputerGame())
                     {
-                        c.StartGameConfirmed = false;
+                        chessboard = new Chessboard(chessboard.BlackPlayer, chessboard.WhitePlayer, chessboard.GameOption);
+                        chessboard.GameStarted = true;
+                        PlayChessEngineNewGame(ctx, chessboard);
                     }
-                    chessboard.NextGameRequested = true;
+                    else
+                    {
+                        foreach (var c in userTickets.Values)
+                        {
+                            c.StartGameConfirmed = false;
+                        }
+                        chessboard.NextGameRequested = true;
+                    }
                     ctx.StartGameConfirmed = true;
                     ret = true;
                 }
@@ -336,11 +367,11 @@ namespace APIServer.Chess
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
-                if (ctx != null && chessboard == null && userTickets.Count == 2)
+                if (ctx != null && chessboard == null && (IsComputerGame() || userTickets.Count == 2))
                 {
                     var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
                     string whitePlayer = users[0].Name;
-                    string blackPlayer = users[1].Name;
+                    string blackPlayer = !IsComputerGame() ? users[1].Name : "Computer";
                     if (startGameModel.MyColor == "W" && ctx.Name != whitePlayer ||
                         startGameModel.MyColor == "B" && ctx.Name != blackPlayer)
                     {
@@ -356,6 +387,31 @@ namespace APIServer.Chess
                     };
                     chessboard = new Chessboard(whitePlayer, blackPlayer, gameOption);
                     ctx.StartGameConfirmed = true;
+                    if (IsComputerGame())
+                    {
+                        chessengine.Level = startGameModel.Level;
+                        chessboard.GameStarted = true;
+                        PlayChessEngineNewGame(ctx, chessboard);
+                    }
+                    ret = true;
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
+        public bool PlayAgainstComputer(string ticket)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && chessboard == null && userTickets.Count == 1)
+                {
+                    StartChessEngine();
                     ret = true;
                 }
                 if (ret)
@@ -411,6 +467,10 @@ namespace APIServer.Chess
                     foreach (var c in userTickets.Values)
                     {
                         c.StartGameConfirmed = false;
+                    }
+                    if (IsComputerGame())
+                    {
+                        StopChessEngine();
                     }
                     stateChanged = DateTime.UtcNow;
                     return true;
@@ -530,6 +590,64 @@ namespace APIServer.Chess
                Row = move.Row,
                Column = move.Column
            };
+        }
+
+        // --- chess engine support
+
+        private bool IsComputerGame()
+        {
+            return chessengine != null;
+        }
+
+        private bool CanPlayAgainstComputer()
+        {
+            var opt = GetOptions();
+            return !string.IsNullOrEmpty(opt.ChessEngine) && File.Exists(opt.ChessEngine);
+        }
+
+        private void StopChessEngine()
+        {
+            if (chessengine != null)
+            {
+                chessengine.Quit();
+                chessengine = null;
+            }
+        }
+
+        private void StartChessEngine()
+        {
+            StopChessEngine();
+            var opt = GetOptions();
+            chessengine = new ChessEngine(opt.ChessEngine, OnChessEngineMoveCompleted, logger);
+        }
+
+        private void OnChessEngineMoveCompleted(int fromRow, int fromColumn, int toRow, int toColumn)
+        {
+            lock (mutex)
+            {
+                var figure = chessboard.Get(fromRow, fromColumn);
+                if (figure != null)
+                {
+                    chessboard.Place(figure, toRow, toColumn);
+                    chessboard.UpdateState();
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+        }
+
+        private void SendChessEngineUserMove(Figure figure, PlaceModel placeModel)
+        {
+            var fromRow = figure.Row;
+            var fromColumn = figure.Column;
+            var toRow = placeModel.ToRow;
+            var toColumn = placeModel.ToColumn;
+            Task.Delay(5000).ContinueWith(
+                _ => chessengine.MoveUserFigure(fromRow, fromColumn, toRow, toColumn));
+        }
+
+        private void PlayChessEngineNewGame(Context ctx, Chessboard chessboard)
+        {
+            chessengine.StartNewGame(ctx.Name == chessboard.BlackPlayer);
         }
     }
 }

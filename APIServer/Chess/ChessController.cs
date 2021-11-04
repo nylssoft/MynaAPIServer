@@ -89,6 +89,13 @@ namespace APIServer.Chess
         }
 
         [HttpPost]
+        [Route("api/chess/computergame")]
+        public IActionResult PlayAgainstComputer()
+        {
+            return new JsonResult(ChessService.PlayAgainstComputer(GetTicket()));
+        }
+
+        [HttpPost]
         [Route("api/chess/confirmstartgame")]
         public IActionResult ConfirmStartGame([FromBody] bool ok)
         {
