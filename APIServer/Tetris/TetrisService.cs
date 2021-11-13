@@ -41,6 +41,7 @@ namespace APIServer.Tetris
 
         public List<HighScore> GetHighScores()
         {
+            var opt = GetOptions();
             var ret = new List<HighScore>();
             var del = new List<DbTetrisHighScore>();
             var dbContext = GetDbContext();
@@ -56,7 +57,7 @@ namespace APIServer.Tetris
                     Score = hs.Score
                 };
                 var diff = DateTime.UtcNow - highScore.Created;
-                if (diff.TotalDays > 7)
+                if (diff.TotalDays > opt.KeepHighscores)
                 {
                     del.Add(hs);
                     continue;
@@ -114,6 +115,12 @@ namespace APIServer.Tetris
         }
 
         // --- private
+
+        private TetrisOptions GetOptions()
+        {
+            var opt = Configuration.GetSection("Tetris").Get<TetrisOptions>();
+            return opt ?? new TetrisOptions();
+        }
 
         private DbMynaContext GetDbContext()
         {
