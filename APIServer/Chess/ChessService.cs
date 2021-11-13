@@ -404,6 +404,10 @@ namespace APIServer.Chess
                         "chess60" => GameOption.Chess60,
                         _ => GameOption.FastChess
                     };
+                    if (IsComputerGame() && gameOption == GameOption.FastChess)
+                    {
+                        gameOption = GameOption.Chess15;
+                    }
                     chessboard = new Chessboard(whitePlayer, blackPlayer, gameOption);
                     ctx.StartGameConfirmed = true;
                     if (IsComputerGame())

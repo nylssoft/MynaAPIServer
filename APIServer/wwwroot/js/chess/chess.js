@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "0.9.8";
+    let version = "1.0.0";
 
     // helper
 
@@ -660,9 +660,10 @@ var chess = (() => {
     };
 
     const renderStartGame = (parent) => {
+        const labelClassname = model.isComputerGame ? "optionslabel1" : "optionslabel2";
         const divColor = controls.createDiv(parent);
         const colorOptions = [{ name: "Weiss", value: "W" }, { name: "Schwarz", value: "B" }];
-        const labelColor = controls.createLabel(divColor, "optionslabel", "Farbe: ");
+        const labelColor = controls.createLabel(divColor, labelClassname, "Farbe: ");
         labelColor.htmlFor = "mycolor";
         const selectColor = controls.createSelect(divColor, "mycolor", "options", colorOptions);
         if (isBlackPlayer()) {
@@ -673,12 +674,14 @@ var chess = (() => {
         }
         const divGame = controls.createDiv(parent);
         const gameOptions = [
-            { name: "Blitzschach 5 Minuten", value: "fastchess" },
             { name: "Schach 15 Minuten", value: "chess15" },
             { name: "Schach 30 Minuten", value: "chess30" },
             { name: "Schach 60 Minuten", value: "chess60" }
         ];
-        const labelGame = controls.createLabel(divGame, "optionslabel", "Spiel: ");
+        if (!model.isComputerGame) {
+            gameOptions.unshift({ name: "Blitzschach 5 Minuten", value: "fastchess" });
+        }
+        const labelGame = controls.createLabel(divGame, labelClassname, "Spiel: ");
         labelGame.htmlFor = "gameoption";
         const selectGame = controls.createSelect(divGame, "gameoption", "options", gameOptions);
         if (model.board) {
@@ -693,7 +696,7 @@ var chess = (() => {
             for (let lvl = 1; lvl < 10; lvl++) {
                 levelOptions.push({ name: `Stufe ${lvl}`, value: `${lvl}` });
             };
-            const labelLevel = controls.createLabel(divLevel, "optionslabel", "Spielst\u00E4rke: ");
+            const labelLevel = controls.createLabel(divLevel, labelClassname, "Spielst\u00E4rke: ");
             labelLevel.htmlFor = "level";
             const selectLevel = controls.createSelect(divLevel, "level", "options", levelOptions);
             selectLevel.value = "1";
@@ -702,7 +705,7 @@ var chess = (() => {
             model.chessEngineNames.forEach((engineName) => {
                 engineOptions.push({ name: engineName, value: engineName });
             });
-            const labelEngine = controls.createLabel(divEngine, "optionslabel", "Schach-Engine: ");
+            const labelEngine = controls.createLabel(divEngine, labelClassname, "Schach-Engine: ");
             labelEngine.htmlFor = "engine";
             const selectEngine = controls.createSelect(divEngine, "engine", "options", engineOptions);
             selectEngine.value = model.chessEngineNames[0];

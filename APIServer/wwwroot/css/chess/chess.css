@@ -231,9 +231,14 @@ h3 {
     min-width: 100pt;
 }
 
-.optionslabel {
+.optionslabel1 {
     display: inline-block;
     width: 130pt;
+}
+
+.optionslabel2 {
+    display: inline-block;
+    width: 60pt;
 }
 
 .player-img {
@@ -937,5 +942,17 @@ h3 {
     .help-button {
         margin-left: 10pt;
         transform: translateY(4pt);
+    }
+
+    .options {
+        font-size: 11pt;
+    }
+
+    .optionslabel1 {
+        width: 80pt;
+    }
+
+    .optionslabel2 {
+        width: 40pt;
     }
 }
