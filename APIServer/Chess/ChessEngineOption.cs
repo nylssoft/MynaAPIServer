@@ -15,16 +15,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
-
 namespace APIServer.Chess
 {
-    public class ChessOptions
+    public class ChessEngineOption
     {
-        public int SessionTimeout { get; set; } = 30;
+        public string Name { get; set; }
 
-        public int GameOverTimeout { get; set; } = 5;
+        public string File { get; set; }
 
-        public List<ChessEngineOption> ChessEngines { get; set; } = new List<ChessEngineOption>();
+        public bool UseUCI { get; set; }
+
     }
 }

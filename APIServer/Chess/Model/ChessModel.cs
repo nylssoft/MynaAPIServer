@@ -34,5 +34,7 @@ namespace APIServer.Chess.Model
         public bool IsComputerGame { get; set; } = false;
 
         public bool CanPlayAgainstComputer { get; set; } = false;
+
+        public List<string> ChessEngineNames { get; set; } = new List<string>();
     }
 }

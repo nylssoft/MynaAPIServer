@@ -17,8 +17,10 @@
 */
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 
 namespace APIServer.Chess
 {
@@ -32,12 +34,21 @@ namespace APIServer.Chess
 
         private ILogger logger;
 
+        private readonly bool useUCI;
+
+        private object mutex = new object();
+
+        private List<string> moves;
+
+        private bool uciokReveived = false;
+
         public int Level { get; set; } = 1;
 
         public delegate void MoveCompletedCallBack(int fromRow, int fromColumn, int toRow, int toColumn);
 
-        public ChessEngine(string fileName, MoveCompletedCallBack callback, ILogger logger)
+        public ChessEngine(string fileName, bool useUCI, MoveCompletedCallBack callback, ILogger logger)
         {
+            this.useUCI = useUCI;
             moveCompleted = callback;
             this.logger = logger;
             InitEngine(fileName);
@@ -45,18 +56,52 @@ namespace APIServer.Chess
 
         public void StartNewGame(bool playWhite)
         {
-            Send("new");
-            Send($"sd {Level}");
-            if (playWhite)
+            if (useUCI)
             {
-                Send("playother");
-                Send("go");
+                lock (mutex)
+                {
+                    moves = new List<string>();
+                }
+                Send("position startpos");
+                if (playWhite)
+                {
+                    Send($"go depth {Level}");
+                }
+            }
+            else
+            {
+                Send("new");
+                if (playWhite)
+                {
+                    Send("playother");
+                }
+                Send("easy");
+                Send("post");
+                Send($"sd {Level}");
+                if (playWhite)
+                {
+                    Send("go");
+                }
             }
         }
 
         public void MoveUserFigure(int fromRow, int fromColumn, int toRow, int toColumn)
         {
-            Send($"usermove {GetTextPosition(fromRow, fromColumn)}{GetTextPosition(toRow, toColumn)}");
+            if (useUCI)
+            {
+                string pos;
+                lock (mutex)
+                {
+                    moves.Add($"{GetTextPosition(fromRow, fromColumn)}{GetTextPosition(toRow, toColumn)}");
+                    pos = $"position startpos moves {string.Join(" ", moves)}";
+                }
+                Send(pos);
+                Send($"go depth {Level}");
+            }
+            else
+            {
+                Send($"usermove {GetTextPosition(fromRow, fromColumn)}{GetTextPosition(toRow, toColumn)}");
+            }
         }
 
         public void Quit()
@@ -88,22 +133,78 @@ namespace APIServer.Chess
             engineStream = engineProcess.StandardInput;
             engineStream.AutoFlush = true;
             engineProcess.BeginOutputReadLine();
-            // @TODO
-            // use xboard interface by now (uci might be supported in future versions)
-            Send("xboard");
+            if (useUCI)
+            {
+                Send("uci");
+                int cnt = 0;
+                while (cnt < 100) // wait at most 10 seconds
+                {
+                    lock (mutex)
+                    {
+                        if (uciokReveived)
+                        {
+                            break;
+                        }
+                    }
+                    Thread.Sleep(100);
+                    cnt++;
+                }
+                lock (mutex)
+                {
+                    if (!uciokReveived)
+                    {
+                        throw new ArgumentException("No uciok received!");
+                    }
+                }
+            }
+            else
+            {
+                Send("xboard");
+            }
         }
 
         private void OnOutputReceived(object sender, DataReceivedEventArgs e)
         {
             logger.LogDebug("ENGINE: {data}", e.Data);
-            if (!string.IsNullOrEmpty(e.Data) && e.Data.StartsWith("move "))
+            if (useUCI)
+            {                
+                if (!string.IsNullOrEmpty(e.Data))
+                { 
+                    if (e.Data.StartsWith("uciok"))
+                    {
+                        lock (mutex)
+                        {
+                            uciokReveived = true;
+                        }
+                    }
+                    else if (e.Data.StartsWith("bestmove "))
+                    {
+                        var posTxt = e.Data[9..];
+                        if (posTxt.Length >= 4)
+                        {
+                            posTxt = posTxt[..4];
+                            lock (mutex)
+                            {
+                                moves.Add(posTxt);
+                            }
+                            var from = GetRowColumnPosition(posTxt[..2]);
+                            var to = GetRowColumnPosition(posTxt[2..]);
+                            moveCompleted(from.Item1, from.Item2, to.Item1, to.Item2);
+                        }
+                    }
+                }
+            }
+            else
             {
-                var posTxt = e.Data[5..];
-                if (posTxt.Length == 4)
+                if (!string.IsNullOrEmpty(e.Data) && e.Data.StartsWith("move "))
                 {
-                    var from = GetRowColumnPosition(posTxt[..2]);
-                    var to = GetRowColumnPosition(posTxt[2..]);
-                    moveCompleted(from.Item1, from.Item2, to.Item1, to.Item2);
+                    var posTxt = e.Data[5..];
+                    if (posTxt.Length == 4)
+                    {
+                        var from = GetRowColumnPosition(posTxt[..2]);
+                        var to = GetRowColumnPosition(posTxt[2..]);
+                        moveCompleted(from.Item1, from.Item2, to.Item1, to.Item2);
+                    }
                 }
             }
         }

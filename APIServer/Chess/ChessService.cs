@@ -42,6 +42,8 @@ namespace APIServer.Chess
 
         private ChessEngine chessengine;
 
+        private bool computerGame;
+
         private readonly ILogger logger;
 
         public ChessService(IConfiguration configuration, ILogger<ChessService> logger)
@@ -57,13 +59,15 @@ namespace APIServer.Chess
             var ret = new StateModel();
             lock (mutex)
             {
+                var options = GetOptions();
+                var timeout = chessboard != null && chessboard.GameOver ? options.GameOverTimeout : options.SessionTimeout;
                 var now = DateTime.Now;
                 var nowUtc = DateTime.UtcNow;
                 foreach (var pair in userTickets)
                 {
                     var ctx = pair.Value;
                     var diff = (int)(now - ctx.LastAccess).TotalSeconds;
-                    if (diff > GetOptions().SessionTimeout * 60) // reset game after inactivity
+                    if (diff > timeout * 60) // reset game after inactivity
                     {
                         chessboard = null;
                         if (IsComputerGame())
@@ -177,13 +181,15 @@ namespace APIServer.Chess
         {
             lock (mutex)
             {
+                var options = GetOptions();
                 var ret = new ChessModel
                 {
                     State = GetState(),
                     AllUsers = GetAllUsers(),
                     IsBoardFull = userTickets.Count == 2 || IsComputerGame() && userTickets.Count == 1,
                     IsComputerGame = IsComputerGame(),
-                    CanPlayAgainstComputer = CanPlayAgainstComputer()
+                    CanPlayAgainstComputer = CanPlayAgainstComputer(),
+                    ChessEngineNames = GetChessEngineNames()
                 };
                 var ctx = GetContext(ticket);
                 if (ctx != null)
@@ -369,9 +375,22 @@ namespace APIServer.Chess
                 var ctx = GetContext(ticket);
                 if (ctx != null && chessboard == null && (IsComputerGame() || userTickets.Count == 2))
                 {
+                    ChessEngineOption engineOpt = null;
+                    if (IsComputerGame())
+                    {
+                        engineOpt = GetOptions().ChessEngines.SingleOrDefault((opt) => opt.Name == startGameModel.ChessEngineName);
+                        if (engineOpt == null)
+                        {
+                            throw new ArgumentException($"Invalid chess engine '{startGameModel.ChessEngineName}'.");
+                        }
+                        if (startGameModel.Level < 1 || startGameModel.Level > 9)
+                        {
+                            throw new ArgumentException($"Invalid level ${startGameModel.Level}.");
+                        }
+                    }
                     var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
                     string whitePlayer = users[0].Name;
-                    string blackPlayer = !IsComputerGame() ? users[1].Name : "Computer";
+                    string blackPlayer = !computerGame ? users[1].Name : engineOpt.Name;
                     if (startGameModel.MyColor == "W" && ctx.Name != whitePlayer ||
                         startGameModel.MyColor == "B" && ctx.Name != blackPlayer)
                     {
@@ -389,6 +408,7 @@ namespace APIServer.Chess
                     ctx.StartGameConfirmed = true;
                     if (IsComputerGame())
                     {
+                        StartChessEngine(engineOpt);
                         chessengine.Level = startGameModel.Level;
                         chessboard.GameStarted = true;
                         PlayChessEngineNewGame(ctx, chessboard);
@@ -411,7 +431,8 @@ namespace APIServer.Chess
                 var ctx = GetContext(ticket);
                 if (ctx != null && chessboard == null && userTickets.Count == 1)
                 {
-                    StartChessEngine();
+                    StopChessEngine();
+                    computerGame = true;
                     ret = true;
                 }
                 if (ret)
@@ -596,13 +617,17 @@ namespace APIServer.Chess
 
         private bool IsComputerGame()
         {
-            return chessengine != null;
+            return computerGame;
         }
 
         private bool CanPlayAgainstComputer()
         {
-            var opt = GetOptions();
-            return !string.IsNullOrEmpty(opt.ChessEngine) && File.Exists(opt.ChessEngine);
+            return GetOptions().ChessEngines.Count > 0;
+        }
+
+        private List<string> GetChessEngineNames()
+        {
+            return GetOptions().ChessEngines.Select(o => o.Name).ToList();
         }
 
         private void StopChessEngine()
@@ -612,13 +637,14 @@ namespace APIServer.Chess
                 chessengine.Quit();
                 chessengine = null;
             }
+            computerGame = false;
         }
 
-        private void StartChessEngine()
+        private void StartChessEngine(ChessEngineOption opt)
         {
             StopChessEngine();
-            var opt = GetOptions();
-            chessengine = new ChessEngine(opt.ChessEngine, OnChessEngineMoveCompleted, logger);
+            chessengine = new ChessEngine(opt.File, opt.UseUCI, OnChessEngineMoveCompleted, logger);
+            computerGame = true;
         }
 
         private void OnChessEngineMoveCompleted(int fromRow, int fromColumn, int toRow, int toColumn)
@@ -637,17 +663,23 @@ namespace APIServer.Chess
 
         private void SendChessEngineUserMove(Figure figure, PlaceModel placeModel)
         {
-            var fromRow = figure.Row;
-            var fromColumn = figure.Column;
-            var toRow = placeModel.ToRow;
-            var toColumn = placeModel.ToColumn;
-            Task.Delay(5000).ContinueWith(
-                _ => chessengine.MoveUserFigure(fromRow, fromColumn, toRow, toColumn));
+            if (chessengine != null)
+            {
+                var fromRow = figure.Row;
+                var fromColumn = figure.Column;
+                var toRow = placeModel.ToRow;
+                var toColumn = placeModel.ToColumn;
+                Task.Delay(5000).ContinueWith(
+                    _ => chessengine.MoveUserFigure(fromRow, fromColumn, toRow, toColumn));
+            }
         }
 
         private void PlayChessEngineNewGame(Context ctx, Chessboard chessboard)
         {
-            chessengine.StartNewGame(ctx.Name == chessboard.BlackPlayer);
+            if (chessengine != null)
+            {
+                chessengine.StartNewGame(ctx.Name == chessboard.BlackPlayer);
+            }
         }
     }
 }

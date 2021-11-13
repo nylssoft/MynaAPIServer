@@ -24,5 +24,7 @@ namespace APIServer.Chess.Model
         public string GameOption { get; set; }
 
         public int Level { get; set; }
+
+        public string ChessEngineName { get; set; }
     }
 }
