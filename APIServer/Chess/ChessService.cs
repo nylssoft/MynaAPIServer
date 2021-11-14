@@ -22,7 +22,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -60,7 +59,11 @@ namespace APIServer.Chess
             lock (mutex)
             {
                 var options = GetOptions();
-                var timeout = chessboard != null && chessboard.GameOver ? options.GameOverTimeout : options.SessionTimeout;
+                var timeout = options.GameOverTimeout;
+                if (chessboard != null && chessboard.GameStarted && !chessboard.GameOver)
+                {
+                    timeout = options.SessionTimeout;
+                }
                 var now = DateTime.Now;
                 var nowUtc = DateTime.UtcNow;
                 foreach (var pair in userTickets)
