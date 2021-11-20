@@ -102,6 +102,15 @@ namespace APIServer.Document
             return new JsonResult(DocumentService.UploadDocument(PwdManService, GetToken(), id, formFile.FileName, stream, overwrite));
         }
 
+        [HttpPut]
+        [Route("api/document/updatemarkdown/{id}")]
+        public IActionResult UpdateMarkdown(long id, [FromBody] string markdown)
+        {
+            if (markdown == null) throw new PwdManInvalidArgumentException("Markdown fehlt.");
+            if (markdown.Length > 1024 * 1024) throw new PwdManInvalidArgumentException("Markdown ist zu gross.");
+            return new JsonResult(DocumentService.UpdateMarkdown(PwdManService, GetToken(), id, markdown));
+        }
+
         [HttpGet]
         [Route("api/document/download/{id}")]
         public IActionResult DownloadDocument(long id)

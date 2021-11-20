@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace APIServer.Document
 {
@@ -245,6 +246,36 @@ namespace APIServer.Document
                 return true;
             }
             return false;
+        }
+
+        public bool UpdateMarkdown(IPwdManService pwdManService, string authenticationToken, long id, string markdown)
+        {
+            logger.LogDebug("Update markdown for item ID {id}...", id);
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            if (!pwdManService.HasRole(user, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var dbContext = pwdManService.GetDbContext();
+            var docItem = dbContext.DbDocItems.
+                Include(item => item.Content).
+                SingleOrDefault(item => item.OwnerId == user.Id && item.Id == id);
+            if (docItem == null || docItem.Type != DbDocItemType.Item || !docItem.Name.EndsWith(".md"))
+            {
+                throw new ArgumentException("Kein gültiges Markdown Dokument.");
+            }
+            var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
+            sum -= docItem.Size;
+            var bytes = Encoding.UTF8.GetBytes(markdown);
+            var size = bytes.Length;
+            if (sum + size > user.StorageQuota)
+            {
+                throw new PwdManInvalidArgumentException("Es ist nicht genügend Speicherplatz mehr verfügbar.");
+            }
+            docItem.Size = size;
+            docItem.Content.Data = bytes;
+            dbContext.SaveChanges();
+            return true;
         }
 
         public bool SetFolderAccessRole(IPwdManService pwdManService, string authenticationToken, long id, string accessRole)

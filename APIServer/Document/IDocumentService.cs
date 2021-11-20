@@ -34,6 +34,8 @@ namespace APIServer.Document
 
         DownloadResult DownloadDocument(IPwdManService pwdManService, string authenticationToken, long id);
 
+        bool UpdateMarkdown(IPwdManService pwdManService, string authenticationToken, long id, string markdown);
+
         ItemModel AddFolder(IPwdManService pwdManService, string authenticationToken, long parentId, string name);
 
         bool RenameItem(IPwdManService pwdManService, string authenticationToken, long id, string name);

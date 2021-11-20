@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.3";
+    let version = "1.1.4";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -15,6 +15,9 @@ var documents = (() => {
     let docItemsToMove = [];
     let currentIdBeforeMove = undefined;
     let move = false;
+
+    let updateMarkdownItem;
+    let markdownItemModified;
 
     // helper
 
@@ -342,6 +345,10 @@ var documents = (() => {
     const renderCurrentPath = () => {
         const elem = document.getElementById("currentpath-id");
         controls.removeAllChildren(elem);
+        if (updateMarkdownItem) {
+            controls.createSpan(elem, undefined, `${updateMarkdownItem.name} (${updateMarkdownItem.id})`);
+            return
+        }
         if (move) {
             controls.createSpan(elem, "path-item", "> ");
             if (currentId !== undefined) {
@@ -359,6 +366,9 @@ var documents = (() => {
     const renderTitle = () => {
         const elem = document.getElementById("title-id");
         controls.removeAllChildren(elem);
+        if (updateMarkdownItem) {
+            return;
+        }
         const cnt = move ? docItemsToMove.length : getSelected().length;
         let title;
         if (cnt > 0) {
@@ -371,12 +381,19 @@ var documents = (() => {
     };
 
     const renderActions = () => {
-        const selected = getSelected();
-        const cnt = selected.length;
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
+        if (updateMarkdownItem) {
+            const saveButton = controls.createButton(elem, "Speichern", onUpdateMarkdown);
+            saveButton.id = "savebutton-id";
+            saveButton.style.display = markdownItemModified ? "inline" : "none";
+            controls.createButton(elem, "Abbrechen", onCancelEditMarkdown);
+            return;
+        }
         const toolbar = document.getElementById("toolbar-id");
-        controls.removeAllChildren(toolbar);           
+        controls.removeAllChildren(toolbar);
+        const selected = getSelected();
+        const cnt = selected.length;
         if (move) {
             if (cnt == 1) {
                 controls.createButton(elem, "Verschieben", onMoveDocuments);
@@ -394,12 +411,17 @@ var documents = (() => {
         }
         else {
             if (cnt == 1) {
+                const currentItem = selected[0];
                 controls.createButton(elem, "Umbenennen", onConfirmRename);
                 const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png");
                 btnRename.title = "Umbenennen";
                 btnRename.addEventListener("click", onConfirmRename);                
-                if (currentUser.roles.includes("usermanager") && isContainer(selected[0])) {
+                if (currentUser.roles.includes("usermanager") && isContainer(currentItem)) {
                     controls.createButton(elem, "Ver\u00F6ffentlichen", onConfirmPublish);
+                }
+                if (isDocument(currentItem) && currentItem.name.endsWith(".md") &&
+                    currentItem.accessRole && currentItem.accessRole.length > 0) {
+                    controls.createButton(elem, "Bearbeiten", onEditMarkdown);
                 }
             }
             if (cnt > 0) {
@@ -434,6 +456,9 @@ var documents = (() => {
     const renderFilter = () => {
         const elem = document.getElementById("filter-id");
         controls.removeAllChildren(elem);
+        if (updateMarkdownItem) {
+            return;
+        }
         const searchLabel = controls.createLabel(elem, undefined, "Filter:  ");
         searchLabel.htmlFor = "filter-input-id";
         const filterInput = controls.createInputField(elem, "Filter", undefined, undefined, 32, 255);
@@ -474,11 +499,35 @@ var documents = (() => {
     };
 
     const renderDocItemsTable = (filteredItems) => {
-        const childItems = getItems(currentId);
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
+        if (updateMarkdownItem) {
+            let txtarea = controls.create(parent, "textarea");
+            txtarea.id = "textarea-entry-id";
+            txtarea.cols = 80;
+            txtarea.rows = 20;
+            txtarea.addEventListener("input", () => {
+                if (!markdownItemModified) {
+                    markdownItemModified = true;
+                    const saveButton = document.getElementById("savebutton-id");
+                    saveButton.style.display = "inline";
+                }
+            });
+            setWaitCursor(true);
+            const token = utils.get_authentication_token();
+            fetch(`api/document/download/${updateMarkdownItem.id}`, { headers: { "token": token } })
+                .then(resp => resp.blob())
+                .then(blob => blob.text())
+                .then(txt => {
+                    txtarea.value = txt;
+                    setWaitCursor(false);
+                })
+                .catch((err) => renderError(err.message));
+            return;
+        }
         const table = controls.create(parent, "table");
         const tbody = controls.create(table, "tbody", "table-content");
+        const childItems = getItems(currentId);
         const items = filteredItems ? filteredItems : childItems;
         const tr = controls.create(tbody, "tr");
         let td = controls.create(tr, "td", "column1");
@@ -882,6 +931,42 @@ var documents = (() => {
                     },
                     () => initItems(), renderError, setWaitCursor);
             }
+        }
+    };
+
+    const onEditMarkdown = () => {
+        const selected = getSelected();
+        if (selected && selected.length == 1) {
+            updateMarkdownItem = selected[0];
+            markdownItemModified = false;
+            renderState();
+        }
+    };
+
+    const onCancelEditMarkdown = () => {
+        if (updateMarkdownItem) {
+            updateMarkdownItem = undefined;
+            markdownItemModified = false;
+            renderState();
+        }
+    };
+
+    const onUpdateMarkdown = () => {
+        if (updateMarkdownItem) {
+            const elem = document.getElementById("textarea-entry-id");
+            const val = elem.value;
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/document/updatemarkdown/${updateMarkdownItem.id}`,
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(val)
+                },
+                () => {
+                    markdownItemModified = false;
+                    const saveButton = document.getElementById("savebutton-id");
+                    saveButton.style.display = "none";
+                }, renderError, setWaitCursor);
         }
     };
 
