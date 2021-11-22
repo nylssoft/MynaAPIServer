@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.4";
+    let version = "1.1.5";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -494,7 +494,7 @@ var documents = (() => {
             td.textContent = `${item.children}`;
         }
         else {
-            td.textContent = utils.format_size(item.size);
+            td.textContent = utils.format_size(item.size).replace(" ", "\u00A0");
         }
     };
 
@@ -504,7 +504,7 @@ var documents = (() => {
         if (updateMarkdownItem) {
             let txtarea = controls.create(parent, "textarea");
             txtarea.id = "textarea-entry-id";
-            txtarea.cols = 80;
+            txtarea.cols = utils.is_mobile() ? 40 : 80;
             txtarea.rows = 20;
             txtarea.addEventListener("input", () => {
                 if (!markdownItemModified) {
