@@ -409,6 +409,47 @@ var utils = (() => {
         return true;
     };
 
+
+    // --- cookies
+
+    const is_cookies_accepted = () => {
+        const key = "cookies-accepted";
+        let accepted = window.sessionStorage.getItem(key);
+        if (!accepted) {
+            accepted = window.localStorage.getItem(key);
+        }
+        return accepted && accepted == "true";
+    };
+
+    const set_cookies_accepted = (accepted) => {
+        const key = "cookies-accepted";
+        if (accepted) {
+            window.sessionStorage.setItem(key, "true");
+            window.localStorage.setItem(key, "true");
+        }
+        else {
+            window.sessionStorage.removeItem(key);
+            window.localStorage.removeItem(key);
+        }
+    };
+
+    const create_cookies_banner = (parent, onAccepted) => {
+        if (!is_cookies_accepted()) {
+            const cookieDiv = controls.createDiv(parent, "cookie-banner");
+            const spanDiv = controls.createDiv(cookieDiv, "cookie-container");
+            controls.createSpan(spanDiv, undefined, "Diese Website verwendet Cookies.");
+            const linkDiv = controls.createDiv(cookieDiv, "cookie-container");
+            controls.createA(linkDiv, undefined, "/markdown?page=cookies&hidecookiebanner", "Mehr erfahren?");
+            const btnDiv = controls.createDiv(cookieDiv, "cookie-container");
+            controls.createButton(btnDiv, "OK", () => {
+                set_cookies_accepted(true);
+                if (onAccepted) {
+                    onAccepted();
+                }
+            }, "", "button");
+        }
+    };
+
     // --- public API
 
     return {
@@ -438,6 +479,9 @@ var utils = (() => {
         set_menu_items: set_menu_items,
         show_encrypt_key: show_encrypt_key,
         hide_menu: hide_menu,
-        is_menu_hidden: is_menu_hidden
+        is_menu_hidden: is_menu_hidden,
+        is_cookies_accepted: is_cookies_accepted,
+        set_cookies_accepted: set_cookies_accepted,
+        create_cookies_banner: create_cookies_banner
     };
 })();

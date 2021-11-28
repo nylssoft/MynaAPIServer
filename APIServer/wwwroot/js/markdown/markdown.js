@@ -4,10 +4,14 @@ var markdown = (() => {
 
     let currentUser;
     let page;
+    let hideCookieBanner;
 
     const renderPage = () => {
         let parent = document.body;
         controls.removeAllChildren(parent);
+        if (!hideCookieBanner) {
+            utils.create_cookies_banner(parent, render);
+        }
         utils.create_menu(parent);
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
@@ -88,6 +92,7 @@ var markdown = (() => {
         if (!page) {
             page = "startpage";
         }
+        hideCookieBanner = urlParams.has("hidecookiebanner");
         currentUser = undefined;
         const token = utils.get_authentication_token();
         if (!token) {

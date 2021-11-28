@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.22";
+    let version = "1.2.23";
 
     let block;
     let nextBlock;
@@ -1070,6 +1070,7 @@ var tetris = (() => {
         dirtyNextBlock = true;
 
         controls.removeAllChildren(document.body);
+        utils.create_cookies_banner(document.body, render);
 
         let all = controls.createDiv(document.body);
         utils.create_menu(all);

@@ -78,6 +78,7 @@ var slideshow = (() => {
 
     const renderPage = () => {
         controls.removeAllChildren(document.body);
+        utils.create_cookies_banner(document.body, render);
         utils.create_menu(document.body);
         renderHeader(document.body);
         divFooter = controls.createDiv(document.body, "footer");
