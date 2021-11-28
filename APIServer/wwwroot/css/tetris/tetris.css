@@ -218,6 +218,26 @@ a {
     right: 2pt;
 }
 
+.button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 18pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
+}
+
+.button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
+
 /* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
 .dropbtn {
     position: fixed;
