@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.15";
+    let version = "1.1.16";
 
     // helper
 
@@ -203,7 +203,7 @@ var usermgmt = (() => {
             if (!mobile) {
                 td = controls.create(tr, "td", undefined, " ");
                 if (user.photo) {
-                    controls.createImg(td, "profile-photo-user", 45, 45, user.photo);
+                    controls.createImg(td, "profile-photo-user", 45, 45, user.photo, user.name);
                 }
             }
             controls.create(tr, "td", undefined, user.roles.join(", "));
@@ -281,13 +281,11 @@ var usermgmt = (() => {
         photoImg.height = 90;
         photoImg.title = "Profilbild (90 x 90 Pixel)";
         photoImg.addEventListener("click", onSelectPhoto);
-        let addImg = controls.createImg(parent, "profile-photo-add", 32, 32, "/images/buttons/list-add-4.png");
+        let addImg = controls.createImg(parent, "profile-photo-add", 32, 32, "/images/buttons/list-add-4.png", "Profilbild hinzuf\u00FCgen");
         addImg.addEventListener("click", onSelectPhoto);
-        addImg.title = "Profilbild hinzuf\u00FCgen";
         if (currentUser.photo) {
             photoImg.src = currentUser.photo;
-            let removeImg = controls.createImg(parent, "profile-photo-remove", 32, 32, "/images/buttons/list-remove-4.png");
-            removeImg.title = "Profilbild entfernen";
+            let removeImg = controls.createImg(parent, "profile-photo-remove", 32, 32, "/images/buttons/list-remove-4.png", "Profilbild entfernen");
             removeImg.addEventListener("click", onDeletePhoto);
         }
         else {

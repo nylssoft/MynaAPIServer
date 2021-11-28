@@ -36,7 +36,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.19";
+    let version = "1.1.20";
 
     // helper
 
@@ -360,10 +360,10 @@ var pwdman = (() => {
     };
 
     const renderUpdatePasswordStatus = (pwdDiv, pwdid, confirmPwdDiv, confirmpwdid) => {
-        let imgPwd = controls.createImg(pwdDiv, "img-pwd-status", 24, 24);
+        let imgPwd = controls.createImg(pwdDiv, "img-pwd-status", 24, 24, undefined, "Unsichtbar");
         imgPwd.id = "img-pwd-id";
         imgPwd.style.visibility = "hidden";
-        let imgConfirmPwd = controls.createImg(confirmPwdDiv, "img-pwd-status", 24, 24);
+        let imgConfirmPwd = controls.createImg(confirmPwdDiv, "img-pwd-status", 24, 24, undefined, "Unsichtbar");
         imgConfirmPwd.id = "img-confirmpwd-id";
         imgConfirmPwd.style.visibility = "hidden";
         newPasswordPwd.addEventListener("input", () =>

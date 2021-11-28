@@ -4,7 +4,7 @@ var password = (() => {
 
     // state
 
-    let version = "1.0.2";
+    let version = "1.0.3";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -44,12 +44,10 @@ var password = (() => {
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
         const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - Passw\u00F6rter`);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
-        helpImg.title = "Hilfe";
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-            imgPhoto.title = "Profil";
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
@@ -134,7 +132,7 @@ var password = (() => {
         });
     };
 
-    const renderPasswordItemDetails = (pwdItems, pwdItem) => {
+    const renderPasswordItemDetails = (pwdItem) => {
         const parent = document.getElementById("details-id");
         const content = document.getElementById("content-id");
         parent.style.display = "block";
@@ -144,7 +142,7 @@ var password = (() => {
         controls.createLabel(detailsNameDiv, "details-label", "Name:");
         if (pwdItem.Url.length > 0) {
             let host = getHostFromUrl(pwdItem.Url);
-            controls.createImg(detailsNameDiv, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`);
+            controls.createImg(detailsNameDiv, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`, pwdItem.Name);
             let url = pwdItem.Url;
             if (url.indexOf(":") == -1) {
                 url = `https://${url}`;
@@ -186,10 +184,10 @@ var password = (() => {
             let tdname = controls.create(tr, "td");
             if (pwdItem.Url.length > 0) {
                 let host = getHostFromUrl(pwdItem.Url);
-                controls.createImg(tdname, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`);
+                controls.createImg(tdname, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`, pwdItem.Name);
             }
             controls.createA(tdname, undefined, "#open", pwdItem.Name,
-                () => renderPasswordItemDetails(pwdItems, pwdItem));
+                () => renderPasswordItemDetails(pwdItem));
         });
     };
 

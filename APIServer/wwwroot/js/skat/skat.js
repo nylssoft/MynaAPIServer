@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.21";
+    let version = "1.3.22";
 
     // helper
 
@@ -283,26 +283,24 @@ var skat = (() => {
         utils.create_menu(parent);
         let title = currentUser ? `${currentUser.name} - Skat` : "Skat";
         const h1 = controls.create(parent, "h1", undefined, title);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
-        helpImg.title = "Hilfe";
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-            imgPhoto.title = "Profil";
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         let divInfoImages = controls.createDiv(parent, "infoimages");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/28.gif");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/20.gif");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/12.gif");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/04.gif");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/28.gif", "Kreuz Bube");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/20.gif", "Pik Bube");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/12.gif", "Herz Bube");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/04.gif", "Karo Bube");
         if (model.allUsers.length > 0) {
             controls.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
             let ul = controls.create(parent, "ul");
             let idx = 1;
             model.allUsers.forEach((user) => {
                 let li = controls.create(ul, "li");
-                let img = controls.createImg(li, "player-img", 45, 45);
+                let img = controls.createImg(li, "player-img", 45, 45, undefined, user.name);
                 let photo = photos[user.name.toLowerCase()];
                 if (!photo) {
                     photo = `/images/skat/profiles/default${idx}.png`;
@@ -334,8 +332,7 @@ var skat = (() => {
         let divHeader = controls.createDiv(divPage, "reservation-header")
         divHeader.textContent = "Tischreservierungen";
         if (currentUser) {
-            let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/buttons/list-add-4.png");
-            imgAdd.title = "Reservierung hinzuf\u00FCgen";
+            let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/buttons/list-add-4.png", "Reservierung hinzuf\u00FCgen");
             imgAdd.addEventListener("click", () => btnReserve_click(divReservations));
         }
         reservations.forEach(r => {
@@ -345,8 +342,7 @@ var skat = (() => {
             let txt = `${daystr} ${dd.getHours()}-${h} ${r.players.join(", ")}`;
             let divReservation = controls.create(divPage, "p", undefined, txt);
             if (currentUser && (currentUser.name == r.reservedBy || currentUser.roles.includes("skatadmin"))) {
-                let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/buttons/list-remove-4.png");
-                imgRemove.title = "Reservierung entfernen";
+                let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/buttons/list-remove-4.png", "Reservierung entfernen");
                 imgRemove.id = `imgremove-${r.id}`;
                 imgRemove.addEventListener("click", (elem) => {
                     const reservationId = elem.target.id.substring(10);
@@ -607,7 +603,7 @@ var skat = (() => {
             else {
                 if (model.skatTable.stitch.length == 0) {
                     if (!model.skatTable.gameEnded) {
-                        controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png");
+                        controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png", undefined, "Platzhalter");
                     }
                 }
                 else {
@@ -632,7 +628,7 @@ var skat = (() => {
         else {
             if (model.skatTable.skat.length == 0) {
                 if (!model.skatTable.gameEnded) {
-                    controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png");
+                    controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png", undefined, "Platzhalter");
                 }
             }
             else {
@@ -789,7 +785,7 @@ var skat = (() => {
             model.skatTable.currentPlayer.name == player.name) {
             elem.className += " blinking";
         }
-        let img = controls.createImg(elem, "player-img", 90, 90);
+        let img = controls.createImg(elem, "player-img", 90, 90, undefined, player.name);
         let photo = photos[player.name.toLowerCase()];
         if (!photo) {
             for (let idx = 0; idx < model.allUsers.length; idx++) {
@@ -971,9 +967,8 @@ var skat = (() => {
         });
         let token = utils.get_authentication_token();
         if (token) {
-            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png");
+            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", "Spielergebnisse");
             imgResults.addEventListener("click", () => window.open("/skat?results", "_blank"));
-            imgResults.title = "Spielergebnisse";
         }
         divChat = controls.createDiv(parent, "layout-right");
         let chatState = sessionStorage.getItem("chatstate");

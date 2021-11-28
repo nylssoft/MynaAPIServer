@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.5";
+    let version = "1.1.6";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -269,12 +269,10 @@ var documents = (() => {
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
         const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - Dokumente`);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
-        helpImg.title = "Hilfe";
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-            imgPhoto.title = "Profil";
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
@@ -397,15 +395,13 @@ var documents = (() => {
         if (move) {
             if (cnt == 1) {
                 controls.createButton(elem, "Verschieben", onMoveDocuments);
-                const btnPaste = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-paste-3.png");
-                btnPaste.title = "Verschieben";
+                const btnPaste = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-paste-3.png", "Verschieben");
                 btnPaste.addEventListener("click", onMoveDocuments);
             }
             controls.createButton(elem, "Abbrechen", onCancelMoveDocuments);
             if (currentId > 0) {
                 controls.createButton(elem, "Zur\u00FCck", onGotoUp);
-                const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png");
-                btnUp.title = "Zur\u00FCck";
+                const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", "Zur\u00FCck");
                 btnUp.addEventListener("click", onGotoUp);
             }
         }
@@ -413,8 +409,7 @@ var documents = (() => {
             if (cnt == 1) {
                 const currentItem = selected[0];
                 controls.createButton(elem, "Umbenennen", onConfirmRename);
-                const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png");
-                btnRename.title = "Umbenennen";
+                const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png", "Umbenennen");
                 btnRename.addEventListener("click", onConfirmRename);                
                 if (currentUser.roles.includes("usermanager") && isContainer(currentItem)) {
                     controls.createButton(elem, "Ver\u00F6ffentlichen", onConfirmPublish);
@@ -426,27 +421,22 @@ var documents = (() => {
             }
             if (cnt > 0) {
                 controls.createButton(elem, "Verschieben", onSelectDestinationFolder);
-                const btnCut = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-cut-5.png");
-                btnCut.title = "Verschieben";
+                const btnCut = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-cut-5.png", "Verschieben");
                 btnCut.addEventListener("click", onSelectDestinationFolder);
                 controls.createButton(elem, "L\u00F6schen", onConfirmDeleteDocuments);
-                const btnDelete = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-delete-6.png");
-                btnDelete.title = "L\u00F6schen";
+                const btnDelete = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-delete-6.png", "L\u00F6schen");
                 btnDelete.addEventListener("click", onConfirmDeleteDocuments);
             }
             else {
                 controls.createButton(elem, "Ordner anlegen", onConfirmAddFolder);
-                const btnAddFolder = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/folder-new-2.png");
-                btnAddFolder.title = "Ordner anlegen";
+                const btnAddFolder = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/folder-new-2.png", "Ordner anlegen");
                 btnAddFolder.addEventListener("click", onConfirmAddFolder);
                 controls.createButton(elem, "Dokument hochladen", onSelectFile);
-                const btnUploadDocument = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/list-add-4.png");
-                btnUploadDocument.title = "Dokument hochladen";
+                const btnUploadDocument = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/list-add-4.png", "Dokument hochladen");
                 btnUploadDocument.addEventListener("click", onSelectFile);
                 if (currentId > 1) {
                     controls.createButton(elem, "Zur\u00FCck", onGotoUp);
-                    const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png");
-                    btnUp.title = "Zur\u00FCck";
+                    const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", "Zur\u00FCck");
                     btnUp.addEventListener("click", onGotoUp);
                 }
             }
@@ -477,15 +467,13 @@ var documents = (() => {
         }
         td = controls.create(tr, "td", "column2");
         const url = isContainer(item) ? "/images/buttons/folder.png" : "/images/buttons/applications-office-6.png";
-        const img = controls.createImg(td, undefined, 32, 32, url);
+        const img = controls.createImg(td, undefined, 32, 32, url, isContainer(item) ? "Ordner" : "Dokument");
+        img.id = `item-open-id-${item.id}`;
         if (item.accessRole && item.accessRole.length > 0) {
             const isEverbody = item.accessRole == "everbody";
-            const imgAccess = controls.createImg(td, undefined, 32, 32, isEverbody ? "/images/buttons/homepage.png" : "/images/buttons/family.png");
-            imgAccess.title = isEverbody ? "Jeder" : "Familie";
+            controls.createImg(td, undefined, 32, 32, isEverbody ? "/images/buttons/homepage.png" : "/images/buttons/family.png", isEverbody ? "Jeder" : "Familie");
             td.className = "column2-access";
         }
-        img.title = isContainer(item) ? "Ordner" : "Dokument";
-        img.id = `item-open-id-${item.id}`;
         td = controls.create(tr, "td");
         const a = controls.createA(td, undefined, `#open(${item.id})`, item.name);
         a.id = `item-open-id-${item.id}`;

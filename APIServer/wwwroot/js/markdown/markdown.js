@@ -10,8 +10,7 @@ var markdown = (() => {
         controls.removeAllChildren(parent);
         utils.create_menu(parent);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-            imgPhoto.title = "Profil";
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         let div = controls.createDiv(parent);

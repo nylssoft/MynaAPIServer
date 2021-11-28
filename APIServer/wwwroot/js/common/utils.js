@@ -321,7 +321,7 @@ var utils = (() => {
         }        
         const dropdownDiv = controls.create(parent, "div", "dropdown");
         dropdownDiv.id = "div-dropdown-id";
-        const dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg");
+        const dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg", "Men\u00FC");
         const dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
         dropdownContentDiv.id = "dropdown-id";
         dropdownButton.addEventListener("click", () => document.getElementById("dropdown-id").classList.toggle("show"));

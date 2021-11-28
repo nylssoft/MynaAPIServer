@@ -35,8 +35,7 @@ var slideshow = (() => {
         title += ` ${backgroundIndex}/${slideShowPictures.length}`;
         let header = controls.create(parent, "h1", "header", title);
         header.id = "header-id";
-        imgPauseSlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-pause-3.png");
-        imgPauseSlideShow.title = "Bildergalerie anhalten";
+        imgPauseSlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-pause-3.png", "Bildergalerie anhalten");
         imgPauseSlideShow.addEventListener("click", () => {
             isSlideshowPlaying = false;
             imgPauseSlideShow.style.visibility = "hidden";
@@ -45,8 +44,7 @@ var slideshow = (() => {
             imgRightArrow.classList.add("greyed-out");
         });
         imgPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
-        imgPlaySlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-start-3.png");
-        imgPlaySlideShow.title = "Bildergalerie abspielen";
+        imgPlaySlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-start-3.png", "Bildergalerie abspielen");
         imgPlaySlideShow.addEventListener("click", () => {
             isSlideshowPlaying = true;
             imgPauseSlideShow.style.visibility = "visible";
@@ -55,21 +53,17 @@ var slideshow = (() => {
             imgRightArrow.classList.remove("greyed-out");
         });
         imgPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
-        imgShuffle = controls.createImg(parent, "header-shuffle-img header-img", 24, 24, "/images/buttons/media-seek-forward-3.png");
-        imgShuffle.title = "Zufallswiedergabe " + (shuffle ? "aus" : "ein");
+        imgShuffle = controls.createImg(parent, "header-shuffle-img header-img", 24, 24, "/images/buttons/media-seek-forward-3.png", "Zufallswiedergabe " + (shuffle ? "aus" : "ein"));
         if (!shuffle) {
             imgShuffle.classList.add("greyed-out");
         }
         imgShuffle.addEventListener("click", () => window.location.replace(`/slideshow?shuffle=${!shuffle}`));
-        imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png");
-        imgLeftArrow.title = "Vorheriges Bild";
+        imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png", "Vorheriges Bild");
         imgLeftArrow.addEventListener("click", onPictureLeft);
-        imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png");
-        imgRightArrow.title = "N\u00E4chstes Bild";
+        imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png", "N\u00E4chstes Bild");
         imgRightArrow.addEventListener("click", onPictureRight);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-            imgPhoto.title = "Profil";
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };

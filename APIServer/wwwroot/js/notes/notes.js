@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.1.10";
+    let version = "1.1.11";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -119,12 +119,10 @@ var notes = (() => {
         if (!title && currentUser) {
             title = `${currentUser.name} - Notizen`;
             const h1 = controls.create(parent, "h1", undefined, title);
-            const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
-            helpImg.title = "Hilfe";
+            const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
             helpImg.addEventListener("click", () => onUpdateHelp(true));
             if (currentUser && currentUser.photo) {
-                let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-                imgPhoto.title = "Profil";
+                let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
                 imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
             }
         }
@@ -235,7 +233,7 @@ var notes = (() => {
                 let captiontxt = controls.createSpan(caption, undefined);
                 captiontxt.textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
                 captiontxt.id = "captiontxt-id";
-                let imgStatus = controls.createImg(caption, "img-status", 24, 24);
+                let imgStatus = controls.createImg(caption, "img-status", 24, 24, "/images/buttons/document-save-3.png", "\u00C4nderung wird gespeichert...");
                 imgStatus.id = "img-status-id";
                 imgStatus.style.visibility = "hidden";
                 let txt = controls.create(parent, "textarea");
@@ -348,14 +346,7 @@ var notes = (() => {
     const onUpdateStatus = () => {
         let statusimg = document.getElementById("img-status-id");
         if (statusimg) {
-            if (!changeDate) {
-                statusimg.style.visibility = "hidden";
-            }
-            else {
-                statusimg.src = "/images/buttons/document-save-3.png";
-                statusimg.title = "\u00C4nderung wird gespeichert...";
-                statusimg.style.visibility = "visible";
-            }
+            statusimg.style.visibility = changeDate ? "visible" : "hidden";
         }
     };
 

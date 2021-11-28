@@ -42,7 +42,7 @@ var controls = (() => {
         return b;
     };
 
-    const createImg = (parent, classname, width, height, src) => {
+    const createImg = (parent, classname, width, height, src, title, alt) => {
         let img = create(parent, "img", classname);
         if (width) {
             img.width = width;
@@ -52,6 +52,12 @@ var controls = (() => {
         }
         if (src) {
             img.src = src;
+        }
+        if (title) {
+            img.title = title;
+        }
+        if (alt) {
+            img.alt = alt;
         }
         img.ondragstart = function () { return false; };
         return img;
@@ -109,6 +115,7 @@ var controls = (() => {
         }
         let img = create(button, "img");
         img.src = image;
+        img.title = title;
         img.height = imagesize;
         img.width = imagesize;
         return button;

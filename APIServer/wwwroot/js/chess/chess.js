@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "1.0.0";
+    let version = "1.0.1";
 
     // helper
 
@@ -578,12 +578,10 @@ var chess = (() => {
         utils.create_menu(parent);
         let title = currentUser ? `${currentUser.name} - Schach` : "Schach";
         const h1 = controls.create(parent, "h1", undefined, title);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png");
-        helpImg.title = "Hilfe";
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-            imgPhoto.title = "Profil";
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         // draw sample chessboard
@@ -600,7 +598,7 @@ var chess = (() => {
             let idx = 1;
             model.allUsers.forEach((user) => {
                 const li = controls.create(ul, "li");
-                const img = controls.createImg(li, "player-img", 45, 45);
+                const img = controls.createImg(li, "player-img", 45, 45, undefined, user.name);
                 let photo = photos[user.name.toLowerCase()];
                 if (!photo) {
                     photo = `/images/skat/profiles/default${idx}.png`;

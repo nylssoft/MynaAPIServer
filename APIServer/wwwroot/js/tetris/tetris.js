@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.21";
+    let version = "1.2.22";
 
     let block;
     let nextBlock;
@@ -479,7 +479,6 @@ var tetris = (() => {
         level += 1;
         levelDiv.textContent = `Stufe: ${level}`;
         setBackgroundPicture();
-        console.log(`Level ${level}: Speed is ${speed[Math.min(29, level)]} frames / cell.`);
     }
 
     // --- drawing canvas
@@ -791,8 +790,11 @@ var tetris = (() => {
 
     // --- rendering HTML elements
 
-    const createImage = (parent, url, size, action) => {
+    const createImage = (parent, url, size, action, title) => {
         let img = controls.create(parent, "img");
+        if (title) {
+            img.title = title;
+        }
         img.src = url;
         img.height = size;
         img.width = size;
@@ -826,8 +828,7 @@ var tetris = (() => {
         let title = currentUser ? `${currentUser.name} - Tetris` : "Tetris";
         controls.create(parent, "h1", "header", title);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo);
-            imgPhoto.title = "Profil";
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
@@ -891,8 +892,7 @@ var tetris = (() => {
     };
 
     const renderHelp = (parent) => {
-        let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/buttons/help.png");
-        helpImg.title = "Hilfe";
+        let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         helpDiv = controls.createDiv(parent, "invisible-div");
     };
@@ -982,13 +982,13 @@ var tetris = (() => {
         
         controls.createDiv(parent, "arrow-div");
         let arrowDivLeft = controls.createDiv(parent, "arrow-left");
-        createImage(arrowDivLeft, "/images/buttons/arrow-left-3.png", 32, "ArrowLeft");
+        createImage(arrowDivLeft, "/images/buttons/arrow-left-3.png", 32, "ArrowLeft", "Links");
         let arrowDivRight = controls.createDiv(parent, "arrow-right");
-        createImage(arrowDivRight, "/images/buttons/arrow-right-3.png", 32, "ArrowRight");
+        createImage(arrowDivRight, "/images/buttons/arrow-right-3.png", 32, "ArrowRight", "Rechts");
         let arrowDivUp = controls.createDiv(parent, "arrow-up");
-        createImage(arrowDivUp, "/images/buttons/arrow-up-3.png", 32, "ArrowUp");
+        createImage(arrowDivUp, "/images/buttons/arrow-up-3.png", 32, "ArrowUp", "Drehen");
         let arrowDivDown = controls.createDiv(parent, "arrow-down");
-        createImage(arrowDivDown, "/images/buttons/arrow-down-3.png", 32, "ArrowDown");
+        createImage(arrowDivDown, "/images/buttons/arrow-down-3.png", 32, "ArrowDown", "Fallen");
 
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
@@ -1054,8 +1054,6 @@ var tetris = (() => {
         score = 0;
         level = 0;
         lines = 0;
-
-        console.log(`Level ${level}: Speed is ${speed[level]} frames / cell.`);
 
         blockMoveDownCount = 0;
         isPaused = false;
