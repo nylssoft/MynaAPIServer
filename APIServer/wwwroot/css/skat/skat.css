@@ -738,11 +738,12 @@ h3 {
 @media (max-width: 480px) {
 
     .cookie-banner {
-        height: 40pt;
+        height: 60pt;
     }
 
     .cookie-container {
         font-size: 11pt;
+        margin-left: 5pt;
     }
 
     body {
