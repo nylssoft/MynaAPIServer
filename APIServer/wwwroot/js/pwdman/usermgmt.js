@@ -12,7 +12,7 @@ var usermgmt = (() => {
     let errorMessage;
     let nexturl;
 
-    let version = "1.1.16";
+    let version = "1.1.17";
 
     // helper
 
@@ -299,6 +299,7 @@ var usermgmt = (() => {
         controls.createCheckbox(checkboxDiv, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
             currentUser.requires2FA,
             () => onUpdate2FA());
+        controls.createDiv(checkboxDiv).id = "account-2fa-div-id";
         checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
         controls.createCheckbox(checkboxDiv, "account-keeplogin-id", undefined, "Angemeldet bleiben",
             currentUser.useLongLivedToken,
@@ -339,6 +340,11 @@ var usermgmt = (() => {
             controls.create(actionsDiv, "span", "confirmation", "Willst Du Dein Konto wirklich l\u00F6schen? ");
             controls.createButton(actionsDiv, "Ja", () => onDeleteCurrentUser());
             controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
+        }
+        else if (confirm == "disable2fa") {
+            controls.create(actionsDiv, "span", "confirmation", "Willst Du die Zwei-Schritt-Verifizierung wirklich deaktivieren? ");
+            controls.createButton(actionsDiv, "Ja", () => onDisable2FA());
+            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
         }
         else if (confirm == "deletepasswordfile") {
             controls.create(actionsDiv, "span", "confirmation", "Willst Du Deine Passw\u00F6rter wirklich l\u00F6schen? ");
@@ -673,25 +679,95 @@ var usermgmt = (() => {
     };
 
     const onUpdate2FA = () => {
-        let checkbox = document.getElementById("account-2fa-id");
-        if (checkbox) {
+        const checkbox = document.getElementById("account-2fa-id");
+        const div = document.getElementById("account-2fa-div-id");
+        if (checkbox && div) {
+            controls.removeAllChildren(div);
             let token = utils.get_authentication_token();
+            if (checkbox.checked) {
+                utils.fetch_api_call("api/pwdman/user/2fa",
+                    {
+                        method: "PUT",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+                    },
+                    (m) => {
+                        const secret = m.secretKey;
+                        const issuer = m.issuer;
+                        controls.create(div, "div", "text-2fa", `Sicherheitsschl\u00FCssel: ${secret}`);
+                        const qrDiv = controls.createDiv(div, "text-2fa");
+                        const url = `otpauth://totp/${issuer}:${currentUser.email}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+                        new QRCode(qrDiv, {
+                            text: url,
+                            width: 128,
+                            height: 128,
+                            colorDark: "#ffffff",
+                            colorLight: "#000000",
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                        controls.create(div, "div", "text-2fa",
+                            "Installiere die App Google Authenticator auf Deinem Smartphone " +
+                            "und scanne den QR-Code oder gibt den Sicherheitsschl\u00FCssel ein.");
+                        const info = controls.create(div, "div", "text-2fa", "Aktiviere die Zweit-Schritt-Verifizierung, indem Du den Sicherheitscode aus der App eingibst.");
+                        const input = controls.createInputField(info, "Sicherheitscode", () => onEnable2FA(), "input-2fa", 10, 10);
+                        input.id = "input-2fa-id";
+                        controls.createButton(info, "Jetzt aktivieren!", () => onEnable2FA(), "enable2fa");
+                        const msg = controls.createDiv(info, "error");
+                        msg.id = "msg-2fa-id";
+                    },
+                    onRejectError,
+                    setWaitCursor
+                );
+            }
+            else if (currentUser.requires2FA) {
+                renderAccountActions("disable2fa");
+            }
+        }
+    };
+
+    const onEnable2FA = () => {
+        const msg = document.getElementById("msg-2fa-id");
+        msg.textContent = "";
+        const input = document.getElementById("input-2fa-id");
+        const totp = input.value.trim();
+        if (totp.length > 0) {
+            const token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/user/2fa",
                 {
-                    method: "PUT",
+                    method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                    body: JSON.stringify(checkbox.checked)
+                    body: JSON.stringify(totp)
                 },
                 (changed) => {
                     if (changed) {
-                        currentUser.requires2FA = checkbox.checked;
+                        currentUser.requires2FA = true;
+                        renderCurrentUser();
                     }
-                    renderCurrentUser();
+                    else {
+                        msg.textContent = "Der Code ist ung\u00FCltig.";
+                    }
                 },
                 onRejectError,
                 setWaitCursor
             );
         }
+    };
+
+    const onDisable2FA = () => {
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/user/2fa",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            (changed) => {
+                if (changed) {
+                    currentUser.requires2FA = false;
+                }
+                renderCurrentUser();
+            },
+            onRejectError,
+            setWaitCursor
+        );
     };
 
     const onUpdateKeepLogin = () => {

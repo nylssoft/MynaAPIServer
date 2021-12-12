@@ -185,6 +185,17 @@ form {
     margin-top: 5pt;
 }
 
+.text-2fa {
+    margin: 10pt;
+    color: lightgreen;
+}
+
+.input-2fa {
+    margin-top: 10pt;
+    margin-right: 10pt;
+    display: block;
+}
+
 .resetpwd-link {
     font-family: Arial, Helvetica, sans-serif;
     color: lightgreen;
@@ -206,9 +217,10 @@ form {
 
 .profile-photo {
     position: absolute;
-    top: 120px;
+    top: 110px;
     left: 400px;
     border-radius: 50%;
+    z-index: -1;
 }
 
 .profile-photo-add {
@@ -470,7 +482,7 @@ form {
     }
 
     .profile-photo {
-        top: 40px;
+        top: 30px;
         left: 230px;
     }
 

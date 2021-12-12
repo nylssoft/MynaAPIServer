@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,26 +16,44 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using System;
-using System.Numerics;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace APIServer.PwdMan
 {
     // rfc6238 
+    // 
+    // see also
+    // https://github.com/BrandonPotter/GoogleAuthenticator/blob/master/Google.Authenticator/TwoFactorAuthenticator.cs
+    // https://github.com/google/google-authenticator/wiki/Key-Uri-Format
     public class TOTP
     {
-        public static string Generate(string totpKey, int digits, int validSeconds)
+        public static bool IsValid(string totp, string secret, int validSeconds)
         {
-            return Generate(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), totpKey, digits, validSeconds);
+            var unixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var secretKey = Base32.FromBase32(secret);
+            for (var cnt = unixSeconds - validSeconds; cnt <= unixSeconds + validSeconds; cnt += 30)
+            {
+                var validTOTP = Generate(cnt, secretKey);
+                if (validTOTP == totp)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        public static string Generate(long unixTimeSeconds, string totpKey, int digits, int validSeconds)
+        // --- private
+
+        private static string Generate(long unixTimeSeconds, byte[] privateKey, int digits = 6, int validSeconds = 30)
         {
-            var privateKey = Encoding.UTF8.GetBytes(totpKey);
             long msgtime = unixTimeSeconds / validSeconds;
-            byte[] msg = new BigInteger(msgtime).ToByteArray(isBigEndian: true);
-            byte[] hash = GetHMACSHA256(privateKey, msg);
+            var msg = BitConverter.GetBytes(msgtime);
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(msg);
+            }
+            using var alg = new HMACSHA1(privateKey); // HMACSHA256, HMACSHA512
+            var hash = alg.ComputeHash(msg);
             int offset = hash[^1] & 0xf;
             int binary =
                 ((hash[offset] & 0x7f) << 24) |
@@ -49,16 +67,6 @@ namespace APIServer.PwdMan
                 result = "0" + result;
             }
             return result;
-        }
-
-        // --- private
-
-        private static byte[] GetHMACSHA256(byte[] keyBytes, byte[] textBytes)
-        {
-            using (var hash = new HMACSHA256(keyBytes))
-            {
-                return hash.ComputeHash(textBytes);
-            }
         }
 
         private static readonly int[] DIGITS_POWER = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000 };

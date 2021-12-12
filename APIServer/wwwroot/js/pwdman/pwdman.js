@@ -36,7 +36,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.21";
+    let version = "1.1.22";
 
     // helper
 
@@ -109,22 +109,6 @@ var pwdman = (() => {
                 setState(state);
                 renderPage();
             },
-            (errMsg) => {
-                lastErrorMessage = errMsg;
-                renderPage();
-            },
-            setWaitCursor
-        );
-    };
-
-    const resendTOTP = () => {
-        lastErrorMessage = "";
-        utils.fetch_api_call("api/pwdman/totp",
-            {
-                method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": authToken }
-            },
-            () => renderPage(),
             (errMsg) => {
                 lastErrorMessage = errMsg;
                 renderPage();
@@ -417,24 +401,22 @@ var pwdman = (() => {
         controls.create(parent, "h1", undefined, "Anmelden");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             renderError(parent);
-            let buttonResendDiv = controls.createDiv(parent);
-            controls.createButton(buttonResendDiv, "Neuen Code anfordern", () => resendTOTP(), undefined, "button");
         }
-        else {
-            controls.create(parent, "p", undefined, "Gib den Sicherheitsscode f\u00FCr die Zwei-Schritt-Verifizierung ein. " +
-                "Der Code wurde per E-Mail an Dich gesendet. " +
-                "Er ist nur eine begrenzte Zeit g\u00FCltig.");
-            let codeDiv = controls.createDiv(parent);
-            let codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitsscode:");
-            codeLabel.htmlFor = "securitycode-id";
-            codeInput = controls.createInputField(codeDiv, "Sicherheitsscode", () => authenticatePass2(), undefined, 10, 10);
-            codeInput.id = "securitycode-id";
-            if (!utils.is_mobile()) {
-                codeInput.focus();
-            }
-            let buttonLoginDiv = controls.createDiv(parent);
-            controls.createButton(buttonLoginDiv, "Anmelden", () => authenticatePass2(), undefined, "button");
+        controls.create(parent, "p", undefined, "Gib den Sicherheitsscode f\u00FCr die Zwei-Schritt-Verifizierung ein.");
+        const codeDiv = controls.createDiv(parent);
+        const codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitsscode:");
+        codeLabel.htmlFor = "securitycode-id";
+        codeInput = controls.createInputField(codeDiv, "Sicherheitsscode", () => authenticatePass2(), undefined, 10, 10);
+        codeInput.id = "securitycode-id";
+        if (!utils.is_mobile()) {
+            codeInput.focus();
         }
+        const buttonLoginDiv = controls.createDiv(parent);
+        controls.createButton(buttonLoginDiv, "Anmelden", () => authenticatePass2(), undefined, "button");
+        controls.createButton(buttonLoginDiv, "Abbrechen", () => {
+            setState();
+            cancel();
+        }, undefined, "button");
         renderCopyright(parent, "Portal");
     };
 

@@ -151,9 +151,23 @@ namespace APIServer.PwdMan
 
         [HttpPut]
         [Route("api/pwdman/user/2fa")]
-        public IActionResult UpdateUser2FA([FromBody] bool requires2FA)
+        public IActionResult GenerateUser2FAKey()
         {
-            return new JsonResult(PwdManService.UpdateUser2FA(GetToken(), requires2FA));
+            return new JsonResult(PwdManService.GenerateUser2FAKey(GetToken()));
+        }
+
+        [HttpPost]
+        [Route("api/pwdman/user/2fa")]
+        public IActionResult EnableUser2FA([FromBody]string totp)
+        {
+            return new JsonResult(PwdManService.EnableUser2FA(GetToken(), totp));
+        }
+
+        [HttpDelete]
+        [Route("api/pwdman/user/2fa")]
+        public IActionResult DisableUser2FA()
+        {
+            return new JsonResult(PwdManService.DisableUser2FA(GetToken()));
         }
 
         [HttpPut]
@@ -231,14 +245,6 @@ namespace APIServer.PwdMan
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
             return new JsonResult(PwdManService.AuthenticateLongLivedToken(GetToken(), ipAddress));
-        }
-
-        [HttpPost]
-        [Route("api/pwdman/totp")]
-        public IActionResult SendTOTP()
-        {
-            PwdManService.SendTOTP(GetToken());
-            return new JsonResult(true);
         }
 
         [HttpGet]

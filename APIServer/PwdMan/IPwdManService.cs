@@ -66,7 +66,11 @@ namespace APIServer.PwdMan
 
         int DeleteLoginIpAddresses(string authenticiationToken);
 
-        bool UpdateUser2FA(string authenticationToken, bool requires2FA);
+        User2FAKeyModel GenerateUser2FAKey(string authenticationToken);
+
+        bool EnableUser2FA(string authenticationToken, string totp);
+
+        bool DisableUser2FA(string authenticationToken);
 
         bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken);
 
@@ -85,8 +89,6 @@ namespace APIServer.PwdMan
         AuthenticationResponseModel AuthenticateTOTP(string token, string totp);
 
         AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress);
-
-        void SendTOTP(string token);
 
         bool Logout(string token);
 

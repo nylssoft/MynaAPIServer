@@ -641,13 +641,60 @@ namespace APIServer.PwdMan
             return true;
         }
 
-        public bool UpdateUser2FA(string authenticationToken, bool requires2FA)
+        public User2FAKeyModel GenerateUser2FAKey(string authenticationToken)
         {
-            logger.LogDebug($"Update user two factor authentication to {requires2FA}...");
+            logger.LogDebug("Generate user secret key for two factor authentication...");
+            var opt = GetOptions();
             var user = GetUserFromToken(authenticationToken);
-            if (user.Requires2FA != requires2FA)
+            if (user.Requires2FA)
             {
-                user.Requires2FA = requires2FA;
+                throw new ArgumentException("Zwei-Schritt-Verifizierung ist bereits aktiviert.");
+            }
+            if (string.IsNullOrEmpty(user.TOTPKey))
+            {
+                var sharedSecret = new byte[10];
+                using (var rng = new RNGCryptoServiceProvider())
+                {
+                    rng.GetBytes(sharedSecret);
+                }
+                var totpKey = Base32.ToBase32(sharedSecret);
+                user.TOTPKey = totpKey;
+                var dbContext = GetDbContext();
+                dbContext.SaveChanges();
+            }
+            return new User2FAKeyModel
+            {
+                Issuer = opt.TOTPConfig.Issuer,
+                SecretKey = user.TOTPKey
+            };
+        }
+
+        public bool EnableUser2FA(string authenticationToken, string totp)
+        {
+            logger.LogDebug($"Enable user two factor authentication...");
+            var user = GetUserFromToken(authenticationToken);
+            if (!user.Requires2FA && !string.IsNullOrEmpty(user.TOTPKey))
+            {
+                var opt = GetOptions();
+                if (TOTP.IsValid(totp, user.TOTPKey, opt.TOTPConfig.ValidSeconds))
+                {
+                    user.Requires2FA = true;
+                    var dbContext = GetDbContext();
+                    dbContext.SaveChanges();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool DisableUser2FA(string authenticationToken)
+        {
+            logger.LogDebug($"Disable user two factor authentication...");
+            var user = GetUserFromToken(authenticationToken);
+            if (user.Requires2FA || !string.IsNullOrEmpty(user.TOTPKey))
+            {
+                user.Requires2FA = false;
+                user.TOTPKey = "";
                 var dbContext = GetDbContext();
                 dbContext.SaveChanges();
                 return true;
@@ -852,9 +899,10 @@ namespace APIServer.PwdMan
                     user.PasswordHash,
                     authentication.Password) == PasswordVerificationResult.Success)
                 {
-                    if (user.Requires2FA)
+                    // migration scenario, disable 2FA if TOTPKey is missing
+                    if (user.Requires2FA && string.IsNullOrEmpty(user.TOTPKey))
                     {
-                        Send2FAEmail(user, opt);
+                        user.Requires2FA = false;
                     }
                     var token = GenerateToken(user.Name, opt, user.Requires2FA);
                     if (token != null)
@@ -888,31 +936,6 @@ namespace APIServer.PwdMan
             throw new UnauthorizedException();
         }
 
-        public void SendTOTP(string token)
-        {
-            logger.LogDebug("Send TOTP...");
-            var opt = GetOptions();
-            if (ValidateToken(token, opt))
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-                var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
-                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
-                if (claim != null && amr?.Value == "2fa")
-                {
-                    var dbContext = GetDbContext();
-                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
-                    if (user != null && user.Requires2FA)
-                    {
-                        Send2FAEmail(user, opt);
-                        dbContext.SaveChanges();
-                        return;
-                    }
-                }
-            }
-            throw new InvalidTokenException();
-        }
-
         public AuthenticationResponseModel AuthenticateTOTP(string token, string totp)
         {
             logger.LogDebug("Authenticate using Time-Based One-Time Password (TOTP)...");
@@ -929,16 +952,16 @@ namespace APIServer.PwdMan
                     var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
                     if (user != null && !string.IsNullOrEmpty(user.TOTPKey))
                     {
-                        long utcNowSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                        var validTOTP = TOTP.Generate(utcNowSeconds, user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-                        if (validTOTP != totp)
+                        if (user.LoginTries >= opt.MaxLoginTryCount)
                         {
-                            utcNowSeconds -= opt.TOTPConfig.ValidSeconds;
-                            validTOTP = TOTP.Generate(utcNowSeconds, user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
+                            var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
+                            if (sec < opt.AccountLockTime)
+                            {
+                                logger.LogDebug("Account disabled. Too many login tries.");
+                                throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
+                            }
                         }
-                        user.TOTPKey = "";
-                        dbContext.SaveChanges();
-                        if (totp == validTOTP) // verify pass 2
+                        if (TOTP.IsValid(totp, user.TOTPKey, opt.TOTPConfig.ValidSeconds)) // verify pass 2
                         {
                             var ret = new AuthenticationResponseModel
                             {
@@ -949,11 +972,26 @@ namespace APIServer.PwdMan
                             {
                                 ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
                             }
+                            if (user.LoginTries > 0)
+                            {
+                                user.LoginTries = 0;
+                                dbContext.SaveChanges();
+                            }
                             return ret;
                         }
+                        user.LoginTries += 1;
+                        if (user.LoginTries >= opt.MaxLoginTryCount)
+                        {
+                            user.LogoutUtc = DateTime.UtcNow;
+                        }
+                        dbContext.SaveChanges();
+                        if (user.LoginTries >= opt.MaxLoginTryCount)
+                        {
+                            throw new UnauthorizedAndLockedException();
+                        }
                     }
-                    logger.LogDebug("User not found or TOTP token already consumed.");
-                    throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig. Fordere einen neuen Code an.");
+                    logger.LogDebug("User not found or TOTP token invalid.");
+                    throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig.");
                 }
                 logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
             }
@@ -1344,19 +1382,6 @@ namespace APIServer.PwdMan
             {
                 setting.Value = json;
             }
-        }
-
-        private void Send2FAEmail(DbUser user, PwdManOptions opt)
-        {
-            if (string.IsNullOrEmpty(user.Email)) throw new UnauthorizedException();
-            var pwdgen = new PwdGen { Length = 28 };
-            user.TOTPKey = pwdgen.Generate();
-            var totp = TOTP.Generate(user.TOTPKey, opt.TOTPConfig.Digits, opt.TOTPConfig.ValidSeconds);
-            var subject = $"Myna Portal 2-Schritt-Verifizierung";
-            var body =
-                $"{totp} ist Dein Sicherheitscode. Der Code ist {opt.TOTPConfig.ValidSeconds / 60} Minuten gültig. " +
-                "In dieser Zeit kann er genau 1 Mal verwendet werden.";
-            notificationService.Send(user.Email, subject, body);
         }
 
         private bool VerifyPasswordStrength(string pwd)

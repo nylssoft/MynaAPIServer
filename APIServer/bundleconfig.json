@@ -94,6 +94,15 @@
     "sourceMap": false
   },
   {
+    "outputFileName": "wwwroot/js/common/qrcode.min.js",
+    "inputFiles": [ "wwwroot/js/common/qrcode.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
     "outputFileName": "wwwroot/js/common/utils.min.js",
     "inputFiles": [ "wwwroot/js/common/utils.js" ],
     "minify": {
