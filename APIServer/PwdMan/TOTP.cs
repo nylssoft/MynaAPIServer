@@ -30,7 +30,7 @@ namespace APIServer.PwdMan
         public static bool IsValid(string totp, string secret, int validSeconds)
         {
             var unixSeconds = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var secretKey = Base32.FromBase32(secret);
+            var secretKey = ConvertExtension.FromBase32String(secret);
             for (var cnt = unixSeconds - validSeconds; cnt <= unixSeconds + validSeconds; cnt += 30)
             {
                 var validTOTP = Generate(cnt, secretKey);

@@ -66,7 +66,7 @@ namespace APIServer.PwdMan
 
         int DeleteLoginIpAddresses(string authenticiationToken);
 
-        User2FAKeyModel GenerateUser2FAKey(string authenticationToken);
+        User2FAKeyModel GenerateUser2FAKey(string authenticationToken, bool forceNew);
 
         bool EnableUser2FA(string authenticationToken, string totp);
 

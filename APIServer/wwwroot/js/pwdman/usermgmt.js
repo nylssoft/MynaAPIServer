@@ -11,8 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-
-    let version = "1.1.17";
+    let version = "1.1.18";
 
     // helper
 
@@ -678,17 +677,18 @@ var usermgmt = (() => {
         );
     };
 
-    const onUpdate2FA = () => {
+    const onUpdate2FA = (forceNew) => {
         const checkbox = document.getElementById("account-2fa-id");
         const div = document.getElementById("account-2fa-div-id");
         if (checkbox && div) {
             controls.removeAllChildren(div);
             let token = utils.get_authentication_token();
-            if (checkbox.checked) {
+            if (checkbox.checked && !currentUser.requires2FA) {
                 utils.fetch_api_call("api/pwdman/user/2fa",
                     {
                         method: "PUT",
-                        headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+                        headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                        body: JSON.stringify(forceNew === true)
                     },
                     (m) => {
                         const secret = m.secretKey;
@@ -710,7 +710,8 @@ var usermgmt = (() => {
                         const info = controls.create(div, "div", "text-2fa", "Aktiviere die Zweit-Schritt-Verifizierung, indem Du den Sicherheitscode aus der App eingibst.");
                         const input = controls.createInputField(info, "Sicherheitscode", () => onEnable2FA(), "input-2fa", 10, 10);
                         input.id = "input-2fa-id";
-                        controls.createButton(info, "Jetzt aktivieren!", () => onEnable2FA(), "enable2fa");
+                        controls.createButton(info, "Jetzt aktivieren!", () => onEnable2FA());
+                        controls.createButton(info, "Neuer Schl\u00FCssel", () => onUpdate2FA(true));
                         const msg = controls.createDiv(info, "error");
                         msg.id = "msg-2fa-id";
                     },
@@ -718,8 +719,11 @@ var usermgmt = (() => {
                     setWaitCursor
                 );
             }
-            else if (currentUser.requires2FA) {
+            else if (!checkbox.checked && currentUser.requires2FA) {
                 renderAccountActions("disable2fa");
+            }
+            else {
+                renderCurrentUser();
             }
         }
     };

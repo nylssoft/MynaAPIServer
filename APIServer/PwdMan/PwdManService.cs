@@ -641,23 +641,23 @@ namespace APIServer.PwdMan
             return true;
         }
 
-        public User2FAKeyModel GenerateUser2FAKey(string authenticationToken)
+        public User2FAKeyModel GenerateUser2FAKey(string authenticationToken, bool forceNew)
         {
             logger.LogDebug("Generate user secret key for two factor authentication...");
             var opt = GetOptions();
             var user = GetUserFromToken(authenticationToken);
             if (user.Requires2FA)
             {
-                throw new ArgumentException("Zwei-Schritt-Verifizierung ist bereits aktiviert.");
+                throw new PwdManInvalidArgumentException("Zwei-Schritt-Verifizierung ist bereits aktiviert.");
             }
-            if (string.IsNullOrEmpty(user.TOTPKey))
+            if (forceNew || string.IsNullOrEmpty(user.TOTPKey))
             {
                 var sharedSecret = new byte[10];
                 using (var rng = new RNGCryptoServiceProvider())
                 {
                     rng.GetBytes(sharedSecret);
                 }
-                var totpKey = Base32.ToBase32(sharedSecret);
+                var totpKey = ConvertExtension.ToBase32String(sharedSecret);
                 user.TOTPKey = totpKey;
                 var dbContext = GetDbContext();
                 dbContext.SaveChanges();

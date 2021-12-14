@@ -151,9 +151,9 @@ namespace APIServer.PwdMan
 
         [HttpPut]
         [Route("api/pwdman/user/2fa")]
-        public IActionResult GenerateUser2FAKey()
+        public IActionResult GenerateUser2FAKey([FromBody] bool forceNew)
         {
-            return new JsonResult(PwdManService.GenerateUser2FAKey(GetToken()));
+            return new JsonResult(PwdManService.GenerateUser2FAKey(GetToken(), forceNew));
         }
 
         [HttpPost]
