@@ -18,6 +18,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using APIServer.PwdMan.Model;
+using System.Threading.Tasks;
 
 namespace APIServer.PwdMan
 {
@@ -57,11 +58,11 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/resetpwd")]
-        public IActionResult RequestResetPwd([FromBody] string email)
+        public async Task<IActionResult> RequestResetPwdAsync([FromBody] string email)
         {
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            PwdManService.RequestResetPassword(email, ipAddress);
+            await PwdManService.RequestResetPasswordAsync(email, ipAddress);
             return new JsonResult(true);
         }
 
@@ -78,11 +79,12 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/register")]
-        public IActionResult IsRegisterAllowed([FromBody] string email)
+        public async Task<IActionResult> IsRegisterAllowedAsync([FromBody] string email)
         {
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            return new JsonResult(PwdManService.IsRegisterAllowed(email, ipAddress));
+            var ret = await PwdManService.IsRegisterAllowedAsync(email, ipAddress);
+            return new JsonResult(ret);
         }
 
         [HttpPost]
@@ -106,10 +108,11 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/confirmation")]
-        public IActionResult ConfirmRegistration([FromBody] OutstandingRegistrationModel confirmation)
+        public async Task<IActionResult> ConfirmRegistrationAsync([FromBody] OutstandingRegistrationModel confirmation)
         {
             if (confirmation?.Email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
-            return new JsonResult(PwdManService.ConfirmRegistration(GetToken(), confirmation));
+            var ret = await PwdManService.ConfirmRegistrationAsync(GetToken(), confirmation);
+            return new JsonResult(ret);
         }
 
         [HttpGet]

@@ -17,7 +17,6 @@
 */
 using APIServer.Database;
 using APIServer.Document.Model;
-using APIServer.Email;
 using APIServer.PasswordGenerator;
 using APIServer.PwdMan.Model;
 using Markdig;
@@ -27,6 +26,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
@@ -39,6 +40,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace APIServer.PwdMan
 {
@@ -52,25 +54,25 @@ namespace APIServer.PwdMan
 
         private readonly DbPostgresContext dbPostgresContext;
 
-        private readonly INotificationService notificationService;
+        private readonly ISendGridClient sendGridClient;
 
         public PwdManService(
             IConfiguration configuration,
             ILogger<PwdManService> logger,
             DbSqliteContext dbSqliteContext,
             DbPostgresContext dbPostgresContext,
-            INotificationService notificationService)
+            ISendGridClient sendGridClient)
         {
             Configuration = configuration;
             this.logger = logger;
             this.dbSqliteContext = dbSqliteContext;
             this.dbPostgresContext = dbPostgresContext;
-            this.notificationService = notificationService;
+            this.sendGridClient = sendGridClient;
         }
 
         // --- reset password
 
-        public void RequestResetPassword(string email, string ipAddress)
+        public async Task RequestResetPasswordAsync(string email, string ipAddress)
         {
             logger.LogDebug("Request password reset for email addresss '{email}' from IP address {ipAddress}.", email, ipAddress);
             if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
@@ -100,7 +102,7 @@ namespace APIServer.PwdMan
                 int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
                 if (min < 5)
                 {
-                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {5 - min} Minuten noch einmal.");
+                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {5 - min} Minute(n) noch einmal.");
                 }
             }
             var pwdgen = new PwdGen
@@ -144,7 +146,14 @@ namespace APIServer.PwdMan
                     $"&nexturl={WebUtility.UrlEncode(@"\index")}\n\n\n\n";
             }
             body += "Viele Grüsse!";
-            notificationService.Send(email, subject, body);
+            var msg = new SendGridMessage()
+            {
+                From = new EmailAddress(opt.RegistrationEmail),
+                Subject = subject
+            };
+            msg.AddContent(MimeType.Text, body);
+            msg.AddTo(new EmailAddress(email));
+            await sendGridClient.SendEmailAsync(msg);
         }
 
         public void ResetPassword(UserResetPasswordModel resetPasswordModel)
@@ -180,7 +189,7 @@ namespace APIServer.PwdMan
 
         // --- registration
 
-        public bool IsRegisterAllowed(string email, string ipAddress)
+        public async Task<bool> IsRegisterAllowedAsync(string email, string ipAddress)
         {
             logger.LogDebug("Check whether email addresss '{email}' is allowed to register from IP address {ipAddress}...", email, ipAddress);
             if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
@@ -224,7 +233,14 @@ namespace APIServer.PwdMan
             dbContext.SaveChanges();
             var subject = "Myna Portal Registrierungsanfrage";
             var body = $"Ein Benutzer möchte sich mit folgender E-Mail-Adresse registrieren:\n\n{email}.";
-            notificationService.Send(opt.RegistrationEmail, subject, body);
+            var msg = new SendGridMessage()
+            {
+                From = new EmailAddress(opt.RegistrationEmail),
+                Subject = subject
+            };
+            msg.AddContent(MimeType.Text, body);
+            msg.AddTo(new EmailAddress(opt.RegistrationEmail));
+            await sendGridClient.SendEmailAsync(msg);
             return false;
         }
 
@@ -253,7 +269,7 @@ namespace APIServer.PwdMan
             return confirmations;
         }
 
-        public string ConfirmRegistration(string authenticationToken, OutstandingRegistrationModel confirmation)
+        public async Task<string> ConfirmRegistrationAsync(string authenticationToken, OutstandingRegistrationModel confirmation)
         {
             logger.LogDebug("Confirm registration for email addresss '{email}'...", confirmation.Email);
             var email = confirmation.Email.ToLowerInvariant();
@@ -300,6 +316,7 @@ namespace APIServer.PwdMan
             }
             if (confirmation.Notification)
             {
+                var opt = GetOptions();
                 string subject;
                 string body;
                 if (confirmation.Reject)
@@ -315,7 +332,6 @@ namespace APIServer.PwdMan
                     subject = $"Myna Portal Registrierung";
                     body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
                         "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n";
-                    var opt = GetOptions();
                     if (!string.IsNullOrEmpty(opt.Hostname))
                     {                        
                         body += $"https://{opt.Hostname}/pwdman?confirm={registration.Token}" +
@@ -324,7 +340,14 @@ namespace APIServer.PwdMan
                     }
                     body += "Viele Grüsse!";
                 }
-                notificationService.Send(email, subject, body);
+                var msg = new SendGridMessage()
+                {
+                    From = new EmailAddress(opt.RegistrationEmail),
+                    Subject = subject
+                };
+                msg.AddContent(MimeType.Text, body);
+                msg.AddTo(new EmailAddress(email, user.Name));
+                await sendGridClient.SendEmailAsync(msg);
             }
             return registration.Token;
         }

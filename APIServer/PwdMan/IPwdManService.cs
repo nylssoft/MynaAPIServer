@@ -19,6 +19,7 @@ using APIServer.Database;
 using APIServer.PwdMan.Model;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace APIServer.PwdMan
 {
@@ -26,17 +27,17 @@ namespace APIServer.PwdMan
     {
         // --- reset password
 
-        void RequestResetPassword(string email, string ipAddress);
+        Task RequestResetPasswordAsync(string email, string ipAddress);
 
         void ResetPassword(UserResetPasswordModel resetPasswordModel);
 
         // --- registration
 
-        bool IsRegisterAllowed(string email, string ipAddress);
+        Task<bool> IsRegisterAllowedAsync(string email, string ipAddress);
 
         List<OutstandingRegistrationModel> GetOutstandingRegistrations(string authenticationToken);
 
-        string ConfirmRegistration(string authenticationToken, OutstandingRegistrationModel registration);
+        Task<string> ConfirmRegistrationAsync(string authenticationToken, OutstandingRegistrationModel registration);
 
         void RegisterUser(UserRegistrationModel userRegistration);
 

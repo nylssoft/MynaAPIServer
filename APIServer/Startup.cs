@@ -24,12 +24,12 @@ using Microsoft.Extensions.DependencyInjection;
 using APIServer.Chess;
 using APIServer.Database;
 using APIServer.Diary;
-using APIServer.Email;
 using APIServer.Notes;
 using APIServer.PwdMan;
 using APIServer.Skat;
 using APIServer.Tetris;
 using APIServer.Document;
+using SendGrid.Extensions.DependencyInjection;
 
 namespace APIServer
 {
@@ -52,7 +52,6 @@ namespace APIServer
             services.AddDbContext<DbSqliteContext>(builder => builder.UseSqlite(sqliteConnection));
             services.AddDbContext<DbPostgresContext>(builder => builder.UseNpgsql(postgresConnection));
             services.AddScoped<IPwdManService, PwdManService>();
-            services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ITetrisService, TetrisService>();
             services.AddScoped<IDiaryService, DiaryService>();
             services.AddScoped<INotesService, NotesService>();
@@ -64,6 +63,11 @@ namespace APIServer
             services.AddRazorPages();
             // all urls lower case
             services.AddRouting(options => options.LowercaseUrls = true);
+            // sendgrid service
+            services.AddSendGrid(options =>
+            {
+                options.ApiKey = Configuration.GetValue<string>("SendGridApiKey");
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
