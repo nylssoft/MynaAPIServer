@@ -4,13 +4,14 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.6";
+    let version = "1.1.7";
     let cryptoKey;
     let currentUser;
     let helpDiv;
     let waitDiv;
 
     let currentId;
+    let volumeId;
     let docItems = [];
     let docItemsToMove = [];
     let currentIdBeforeMove = undefined;
@@ -233,6 +234,7 @@ var documents = (() => {
             },
             (volume) => {
                 docItems.push(volume);
+                volumeId = volume.id;
                 currentId = volume.id;
                 renderState();
             },
@@ -256,6 +258,7 @@ var documents = (() => {
                     createVolume("Dokumente");
                 }
                 else {
+                    volumeId = volume.id;
                     if (currentId === undefined) {
                         currentId = volume.id;
                     }
@@ -399,7 +402,7 @@ var documents = (() => {
                 btnPaste.addEventListener("click", onMoveDocuments);
             }
             controls.createButton(elem, "Abbrechen", onCancelMoveDocuments);
-            if (currentId > 0) {
+            if (currentId !== null) {
                 controls.createButton(elem, "Zur\u00FCck", onGotoUp);
                 const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", "Zur\u00FCck");
                 btnUp.addEventListener("click", onGotoUp);
@@ -434,7 +437,7 @@ var documents = (() => {
                 controls.createButton(elem, "Dokument hochladen", onSelectFile);
                 const btnUploadDocument = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/list-add-4.png", "Dokument hochladen");
                 btnUploadDocument.addEventListener("click", onSelectFile);
-                if (currentId > 1) {
+                if (currentId !== null && currentId !== volumeId) {
                     controls.createButton(elem, "Zur\u00FCck", onGotoUp);
                     const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", "Zur\u00FCck");
                     btnUp.addEventListener("click", onGotoUp);
