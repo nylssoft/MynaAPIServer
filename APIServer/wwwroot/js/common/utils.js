@@ -433,7 +433,7 @@ var utils = (() => {
         }
     };
 
-    const create_cookies_banner = (parent, onAccepted) => {
+    const create_cookies_banner = (parent) => {
         if (!is_cookies_accepted()) {
             const cookieDiv = controls.createDiv(parent, "cookie-banner");
             const spanDiv = controls.createDiv(cookieDiv, "cookie-container");
@@ -443,9 +443,7 @@ var utils = (() => {
             const btnDiv = controls.createDiv(cookieDiv, "cookie-container");
             controls.createButton(btnDiv, "OK", () => {
                 set_cookies_accepted(true);
-                if (onAccepted) {
-                    onAccepted();
-                }
+                cookieDiv.style.display = "none";
             }, "", "button");
         }
     };

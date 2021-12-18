@@ -10,7 +10,7 @@ var markdown = (() => {
         let parent = document.body;
         controls.removeAllChildren(parent);
         if (!hideCookieBanner) {
-            utils.create_cookies_banner(parent, render);
+            utils.create_cookies_banner(parent);
         }
         utils.create_menu(parent);
         if (currentUser && currentUser.photo) {

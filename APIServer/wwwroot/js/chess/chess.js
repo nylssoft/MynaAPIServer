@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "1.0.2";
+    let version = "1.0.3";
 
     // helper
 
@@ -811,7 +811,7 @@ var chess = (() => {
         model = m;
         window.sessionStorage.setItem("chessstate", model.state.state);
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body, render);
+        utils.create_cookies_banner(document.body);
         document.body.className = "inactive-background";
         if (model.allUsers.length == 0) {
             clearTicket();

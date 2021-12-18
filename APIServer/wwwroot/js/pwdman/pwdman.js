@@ -36,7 +36,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.22";
+    let version = "1.1.23";
 
     // helper
 
@@ -627,7 +627,7 @@ var pwdman = (() => {
 
     const renderPage = () => {
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body, render);
+        utils.create_cookies_banner(document.body);
         let state = getState();
         if (state) {
             if (requiresPass2 == undefined) {

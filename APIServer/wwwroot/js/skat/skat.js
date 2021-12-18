@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.23";
+    let version = "1.3.24";
 
     // helper
 
@@ -1221,7 +1221,7 @@ var skat = (() => {
         model = m;
         controls.setState(model.state);
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body, render);
+        utils.create_cookies_banner(document.body);
         document.body.className = "inactive-background";
         if (model.allUsers.length == 0) {
             clearTicket();
