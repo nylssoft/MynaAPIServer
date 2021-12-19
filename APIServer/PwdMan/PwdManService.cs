@@ -100,9 +100,9 @@ namespace APIServer.PwdMan
             if (lastRequestedUtc != null)
             {
                 int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
-                if (min < 5)
+                if (min < opt.ResetPasswordTokenExpireMinutes)
                 {
-                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {5 - min} Minute(n) noch einmal.");
+                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {opt.ResetPasswordTokenExpireMinutes - min} Minute(n) noch einmal.");
                 }
             }
             var pwdgen = new PwdGen
@@ -136,24 +136,28 @@ namespace APIServer.PwdMan
                 resetpwd.IpAddress = ipAddress;
             }
             dbContext.SaveChanges();
-            string subject = $"Myna Portal Kennwort zurücksetzen";
-            string body = $"Hallo {user.Name}!\n\n{resetpwd.Token} ist Dein Sicherheitscode. Er ist 5 Minuten gültig.\n\n" +
-                "Du kannst jetzt Dein Kennwort neu vergeben.\n\n\n\n";
-            if (!string.IsNullOrEmpty(opt.Hostname))
+            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdResetPassword))
             {
-                body += $"https://{opt.Hostname}/pwdman?resetcode={resetpwd.Token}" +
-                    $"&email={WebUtility.UrlEncode(email)}" +
-                    $"&nexturl={WebUtility.UrlEncode(@"\index")}\n\n\n\n";
+                var msg = new SendGridMessage();
+                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.AddTo(user.Email, user.Name);
+                msg.SetTemplateId(opt.SendGridConfig.TemplateIdResetPassword);
+                msg.SetTemplateData(new ResetPasswordTemplateData
+                {
+                    Name = user.Name,
+                    Code = resetpwd.Token,
+                    Valid = opt.ResetPasswordTokenExpireMinutes,
+                    Hostname = opt.Hostname,
+                    Email = WebUtility.UrlEncode(email),
+                    Next = WebUtility.UrlEncode("/index")
+                });
+                var response = await sendGridClient.SendEmailAsync(msg);
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError($"Failed to send reset password email: {response.StatusCode}.");
+                }
             }
-            body += "Viele Grüsse!";
-            var msg = new SendGridMessage()
-            {
-                From = new EmailAddress(opt.RegistrationEmail),
-                Subject = subject
-            };
-            msg.AddContent(MimeType.Text, body);
-            msg.AddTo(new EmailAddress(email));
-            await sendGridClient.SendEmailAsync(msg);
         }
 
         public void ResetPassword(UserResetPasswordModel resetPasswordModel)
@@ -171,8 +175,9 @@ namespace APIServer.PwdMan
             {
                 throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig.");
             }
+            var opt = GetOptions();
             var diff = (DateTime.UtcNow - resetpwd.RequestedUtc).TotalMinutes;
-            if (diff > 5)
+            if (diff > opt.ResetPasswordTokenExpireMinutes)
             {
                 throw new PwdManInvalidArgumentException("Der Sicherheitscode ist abgelaufen.");
             }
@@ -195,13 +200,9 @@ namespace APIServer.PwdMan
             if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
             email = email.ToLowerInvariant();
             var opt = GetOptions();
-            if (string.IsNullOrEmpty(opt.RegistrationEmail))
-            {
-                throw new PwdManInvalidArgumentException("Registrieren ist deaktiviert.");
-            }
             // setup: first user can register without confirmation and token
             var dbContext = GetDbContext();
-            if (dbContext.DbUsers.Count() == 0)
+            if (!dbContext.DbUsers.Any())
             {
                 return true;
             }
@@ -224,23 +225,27 @@ namespace APIServer.PwdMan
             if (lastRequestedUtc != null)
             {
                 int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
-                if (min < 5)
+                if (min < opt.ResetPasswordTokenExpireMinutes)
                 {
-                    throw new PwdManInvalidArgumentException($"Registrieren ist z.Zt. nicht möglich. Versuche es in {5-min} Minuten noch einmal.");
+                    throw new PwdManInvalidArgumentException($"Registrieren ist z.Zt. nicht möglich. Versuche es in {opt.ResetPasswordTokenExpireMinutes - min} Minuten noch einmal.");
                 }
             }
             dbContext.DbRegistrations.Add(new DbRegistration { Email = email, RequestedUtc = DateTime.UtcNow, IpAddress = ipAddress });
             dbContext.SaveChanges();
-            var subject = "Myna Portal Registrierungsanfrage";
-            var body = $"Ein Benutzer möchte sich mit folgender E-Mail-Adresse registrieren:\n\n{email}.";
-            var msg = new SendGridMessage()
+            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationRequest))
             {
-                From = new EmailAddress(opt.RegistrationEmail),
-                Subject = subject
-            };
-            msg.AddContent(MimeType.Text, body);
-            msg.AddTo(new EmailAddress(opt.RegistrationEmail));
-            await sendGridClient.SendEmailAsync(msg);
+                var msg = new SendGridMessage();
+                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.AddTo(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationRequest);
+                msg.SetTemplateData(new RequestRegistrationTemplateData { Email = email });
+                var response = await sendGridClient.SendEmailAsync(msg);
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError($"Failed to send registration request email: {response.StatusCode}.");
+                }
+            }
             return false;
         }
 
@@ -314,40 +319,35 @@ namespace APIServer.PwdMan
                 registration.ConfirmedById = user.Id;
                 dbContext.SaveChanges();
             }
-            if (confirmation.Notification)
+            var opt = GetOptions();
+            if (confirmation.Notification &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationDenied) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationSuccess))
             {
-                var opt = GetOptions();
-                string subject;
-                string body;
+                var msg = new SendGridMessage();
+                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.AddTo(new EmailAddress(email));
                 if (confirmation.Reject)
                 {
-                    subject = $"Myna Portal Registrierung";
-                    body = $"Hallo!\n\n" +
-                        "Deine E-Mail-Adresse konnten nicht verifiziert werden. Die Registrierung wurde abgelehnt.\n\n" +
-                        "Verwende eine E-Mail-Adresse, die mir bekannt ist oder kontaktiere mich auf anderem Wege.\n\n\n\n" +
-                        "Viele Grüsse!";
+                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationDenied);
                 }
                 else
                 {
-                    subject = $"Myna Portal Registrierung";
-                    body = $"Hallo!\n\n{registration.Token} ist Dein Registrierungscode.\n\n" +
-                        "Deine E-Mail-Adresse wurde jetzt freigeschaltet und Du kannst Dich auf dem Portal registrieren.\n\n\n\n";
-                    if (!string.IsNullOrEmpty(opt.Hostname))
-                    {                        
-                        body += $"https://{opt.Hostname}/pwdman?confirm={registration.Token}" +
-                            $"&email={WebUtility.UrlEncode(email)}" +
-                            $"&nexturl={WebUtility.UrlEncode(@"\index")}\n\n\n\n";
-                    }
-                    body += "Viele Grüsse!";
+                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationSuccess);
+                    msg.SetTemplateData(new ConfirmRegistrationTemplateData
+                    {
+                        Code = registration.Token,
+                        Hostname = opt.Hostname,
+                        Email = WebUtility.UrlEncode(email),
+                        Next = WebUtility.UrlEncode("/index")
+                    });
                 }
-                var msg = new SendGridMessage()
+                var response = await sendGridClient.SendEmailAsync(msg);
+                if (!response.IsSuccessStatusCode)
                 {
-                    From = new EmailAddress(opt.RegistrationEmail),
-                    Subject = subject
-                };
-                msg.AddContent(MimeType.Text, body);
-                msg.AddTo(new EmailAddress(email, user.Name));
-                await sendGridClient.SendEmailAsync(msg);
+                    logger.LogError($"Failed to send confirmation email for successfull registration: {response.StatusCode}.");
+                }
             }
             return registration.Token;
         }
@@ -1367,7 +1367,7 @@ namespace APIServer.PwdMan
                 {
                     dotIdx = idx;
                 }
-                else if (!char.IsLetterOrDigit(ch))
+                else if (!char.IsLetterOrDigit(ch) && ch != '-')
                 {
                     return false;
                 }

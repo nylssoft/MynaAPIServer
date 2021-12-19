@@ -66,7 +66,8 @@ namespace APIServer
             // sendgrid service
             services.AddSendGrid(options =>
             {
-                options.ApiKey = Configuration.GetValue<string>("SendGridApiKey");
+                var pwdManOptions = Configuration.GetSection("PwdMan").Get<PwdManOptions>();
+                options.ApiKey = pwdManOptions.SendGridConfig.APIKey;
             });
         }
 

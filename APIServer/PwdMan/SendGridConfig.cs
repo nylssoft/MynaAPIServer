@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2021 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,32 +15,22 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
-
 namespace APIServer.PwdMan
 {
-    public class PwdManOptions
+    public class SendGridConfig
     {
-        public TokenConfig TokenConfig { get; set; }
+        public string APIKey { get; set; }
 
-        public TOTPConfig TOTPConfig { get; set; }
+        public string SenderAddress { get; set; }
 
-        public SendGridConfig SendGridConfig { get; set; }
+        public string SenderName { get; set; }
 
-        public int ResetPasswordTokenExpireMinutes { get; set; } = 15;
+        public string TemplateIdResetPassword { get; set; }
 
-        public int MaxLoginTryCount { get; set; } = 3;
+        public string TemplateIdRegistrationRequest { get; set; }
 
-        public int AccountLockTime { get; set; } = 300;
+        public string TemplateIdRegistrationSuccess { get; set; }
 
-        public string Hostname { get; set; }
-
-        public string SlideShowPublicPhotos { get; set; }
-
-        public string SlideShowFamilyPhotos { get; set; }
-
-        public List<MarkdownConfig> Markdown { get; set; }
-
-        public string StartPage { get; set; }
+        public string TemplateIdRegistrationDenied { get; set; }
     }
 }
