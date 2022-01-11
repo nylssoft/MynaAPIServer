@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021-2022 Niels Stockfleth
+    Copyright (C) 2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,24 +15,28 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using Newtonsoft.Json;
+
 namespace APIServer.PwdMan
 {
-    public class SendGridConfig
+    public class SecurityWarningTemplateData
     {
-        public string APIKey { get; set; }
+        [JsonProperty("Name")]
+        public string Name { get; set; }
 
-        public string SenderAddress { get; set; }
+        [JsonProperty("Date")]
+        public string Date { get; set; }
 
-        public string SenderName { get; set; }
+        [JsonProperty("Time")]
+        public string Time { get; set; }
 
-        public string TemplateIdResetPassword { get; set; }
+        [JsonProperty("IPAddress")]
+        public string IPAddress { get; set; }
 
-        public string TemplateIdRegistrationRequest { get; set; }
+        [JsonProperty("Hostname")]
+        public string Hostname { get; set; }
 
-        public string TemplateIdRegistrationSuccess { get; set; }
-
-        public string TemplateIdRegistrationDenied { get; set; }
-
-        public string TemplateIdSecurityWarning { get; set; }
+        [JsonProperty("Next")]
+        public string Next { get; set; }
     }
 }

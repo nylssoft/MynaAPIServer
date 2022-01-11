@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -85,7 +85,7 @@ namespace APIServer.PwdMan
 
         // --- authentication
 
-        AuthenticationResponseModel Authenticate(AuthenticationModel authenication, string ipAddress);
+        Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authenication, string ipAddress);
 
         AuthenticationResponseModel AuthenticateTOTP(string token, string totp);
 

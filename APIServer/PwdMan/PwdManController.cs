@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -226,12 +226,13 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/auth")]
-        public IActionResult Login([FromBody] AuthenticationModel authentication)
+        public async Task<IActionResult> Login([FromBody] AuthenticationModel authentication)
         {
             if (authentication?.Username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (authentication?.Password?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            return new JsonResult(PwdManService.Authenticate(authentication, ipAddress));
+            var ret = await PwdManService.AuthenticateAsync(authentication, ipAddress);
+            return new JsonResult(ret);
         }
 
         [HttpPost]

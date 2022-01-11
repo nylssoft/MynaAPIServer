@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -83,11 +83,13 @@ namespace APIServer.PwdMan
             {
                 throw new PwdManInvalidArgumentException("Die E-Mail-Adresse ist ungültig.");
             }
-            if (!user.AllowResetPassword)
+            var opt = GetOptions();
+            if (!user.AllowResetPassword ||
+                string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) ||
+                string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdResetPassword))
             {
                 throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist nicht erlaubt.");
             }
-            var opt = GetOptions();
             if (user.LoginTries >= opt.MaxLoginTryCount)
             {
                 var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
@@ -95,6 +97,7 @@ namespace APIServer.PwdMan
                 {
                     throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
                 }
+                user.LoginTries = 0;
             }
             var lastRequestedUtc = dbContext.DbResetPasswords.Where((r) => r.IpAddress == ipAddress).Max<DbResetPassword,DateTime?>((r) => r.RequestedUtc);
             if (lastRequestedUtc != null)
@@ -136,27 +139,24 @@ namespace APIServer.PwdMan
                 resetpwd.IpAddress = ipAddress;
             }
             dbContext.SaveChanges();
-            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdResetPassword))
+            var msg = new SendGridMessage();
+            msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+            msg.AddTo(user.Email, user.Name);
+            msg.SetTemplateId(opt.SendGridConfig.TemplateIdResetPassword);
+            msg.SetTemplateData(new ResetPasswordTemplateData
             {
-                var msg = new SendGridMessage();
-                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.AddTo(user.Email, user.Name);
-                msg.SetTemplateId(opt.SendGridConfig.TemplateIdResetPassword);
-                msg.SetTemplateData(new ResetPasswordTemplateData
-                {
-                    Name = user.Name,
-                    Code = resetpwd.Token,
-                    Valid = opt.ResetPasswordTokenExpireMinutes,
-                    Hostname = opt.Hostname,
-                    Email = WebUtility.UrlEncode(email),
-                    Next = WebUtility.UrlEncode("/index")
-                });
-                var response = await sendGridClient.SendEmailAsync(msg);
-                if (!response.IsSuccessStatusCode)
-                {
-                    logger.LogError($"Failed to send reset password email: {response.StatusCode}.");
-                }
+                Name = user.Name,
+                Code = resetpwd.Token,
+                Valid = opt.ResetPasswordTokenExpireMinutes,
+                Hostname = opt.Hostname,
+                Email = WebUtility.UrlEncode(email),
+                Next = WebUtility.UrlEncode("/index")
+            });
+            var response = await sendGridClient.SendEmailAsync(msg);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogError($"Failed to send reset password email: {response.StatusCode}.");
+                throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist z.Zt. nicht möglich. Email konnte nicht verschickt werden.");
             }
         }
 
@@ -171,11 +171,28 @@ namespace APIServer.PwdMan
             {
                 throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist nicht erlaubt.");
             }
+            var opt = GetOptions();
+            if (user.LoginTries >= opt.MaxLoginTryCount)
+            {
+                var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
+                if (sec < opt.AccountLockTime)
+                {
+                    throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
+                }
+                user.LoginTries = 0;
+            }
             if (resetpwd.Token != resetPasswordModel.Token)
             {
-                throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig.");
+                user.LastLoginTryUtc = DateTime.UtcNow;
+                user.LoginTries += 1;
+                dbContext.SaveChanges();
+                var msg = "Der Sicherheitscode ist ungültig.";                
+                if (user.LoginTries >= opt.MaxLoginTryCount)
+                {
+                    msg += " Das Konto ist vorrübergehend gesperrt.";
+                }
+                throw new PwdManInvalidArgumentException(msg);
             }
-            var opt = GetOptions();
             var diff = (DateTime.UtcNow - resetpwd.RequestedUtc).TotalMinutes;
             if (diff > opt.ResetPasswordTokenExpireMinutes)
             {
@@ -188,6 +205,7 @@ namespace APIServer.PwdMan
             var hasher = new PasswordHasher<string>();
             var hash = hasher.HashPassword(user.Name, resetPasswordModel.Password);
             user.PasswordHash = hash;
+            user.LoginTries = 0;
             dbContext.DbResetPasswords.Remove(resetpwd);
             dbContext.SaveChanges();
         }
@@ -888,7 +906,7 @@ namespace APIServer.PwdMan
 
         // --- authentication
 
-        public AuthenticationResponseModel Authenticate(AuthenticationModel authentication, string ipAddress)
+        public async Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authentication, string ipAddress)
         {
             logger.LogDebug("Authenticate '{username}' with client IP address {ipAddress}...", authentication.Username, ipAddress);
             var opt = GetOptions();
@@ -905,6 +923,7 @@ namespace APIServer.PwdMan
                     }
                     user.LoginTries = 0;
                 }
+                var sendSecurityWarning = false;
                 var dbContext = GetDbContext();
                 var loginIpAddress = dbContext.DbLoginIpAddresses
                     .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
@@ -913,6 +932,9 @@ namespace APIServer.PwdMan
                     CleanupLoginIpAddress(dbContext, user.Id);
                     loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
                     dbContext.DbLoginIpAddresses.Add(loginIpAddress);
+                    sendSecurityWarning =
+                        !string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                        !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdSecurityWarning);
                 }
                 loginIpAddress.LastUsedUtc = DateTime.UtcNow;
                 var hasher = new PasswordHasher<string>();
@@ -938,6 +960,28 @@ namespace APIServer.PwdMan
                         if (!user.Requires2FA && user.UseLongLivedToken)
                         {
                             ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
+                        }
+                        if (sendSecurityWarning)
+                        {
+                            var now = DateTime.UtcNow;
+                            var msg = new SendGridMessage();
+                            msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                            msg.AddTo(user.Email, user.Name);
+                            msg.SetTemplateId(opt.SendGridConfig.TemplateIdSecurityWarning);
+                            msg.SetTemplateData(new SecurityWarningTemplateData
+                            {
+                                Name = user.Name,
+                                Date = $"{now.Day}.{now.Month}.{now.Year}",
+                                Time = $"{now.Hour}:{now.Minute} UTC",
+                                IPAddress = ipAddress,
+                                Hostname = opt.Hostname,
+                                Next = WebUtility.UrlEncode("/index")
+                            });
+                            var response = await sendGridClient.SendEmailAsync(msg);
+                            if (!response.IsSuccessStatusCode)
+                            {
+                                logger.LogError($"Failed to send security warning email: {response.StatusCode}.");
+                            }                            
                         }
                         return ret;
                     }
@@ -1090,6 +1134,7 @@ namespace APIServer.PwdMan
             }
             var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
             user.PasswordHash = newhash;
+            user.LogoutUtc = DateTime.UtcNow;
             var dbContext = GetDbContext();
             dbContext.SaveChanges();
         }
