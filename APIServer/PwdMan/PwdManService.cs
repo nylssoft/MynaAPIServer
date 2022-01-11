@@ -923,7 +923,6 @@ namespace APIServer.PwdMan
                     }
                     user.LoginTries = 0;
                 }
-                var sendSecurityWarning = false;
                 var dbContext = GetDbContext();
                 var loginIpAddress = dbContext.DbLoginIpAddresses
                     .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
@@ -932,9 +931,6 @@ namespace APIServer.PwdMan
                     CleanupLoginIpAddress(dbContext, user.Id);
                     loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
                     dbContext.DbLoginIpAddresses.Add(loginIpAddress);
-                    sendSecurityWarning =
-                        !string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                        !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdSecurityWarning);
                 }
                 loginIpAddress.LastUsedUtc = DateTime.UtcNow;
                 var hasher = new PasswordHasher<string>();
@@ -961,7 +957,10 @@ namespace APIServer.PwdMan
                         {
                             ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
                         }
-                        if (sendSecurityWarning)
+                        // security warning email only if this is the first successfull login for the IP address
+                        if (loginIpAddress.Succeeded == 1 &&
+                            !string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                            !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdSecurityWarning))
                         {
                             var now = DateTime.UtcNow;
                             var msg = new SendGridMessage();
