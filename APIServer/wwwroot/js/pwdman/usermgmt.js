@@ -11,17 +11,12 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "1.1.18";
+    let version = "1.1.19";
 
     // helper
 
     const getLoginPerDeviceText = (ip) => {
         let txt = `${new Date(ip.lastUsedUtc).toLocaleString("de-DE")} mit Client-IP-Adresse ${ip.ipAddress}.`;
-        txt += ` Insgesamt ${ip.succeeded + ip.failed} Anmeldungen`;
-        if (ip.failed > 0) {
-            txt += `, davon sind ${ip.failed} fehlgeschlagen`;
-        }
-        txt += ".";
         return txt;
     };
 
@@ -50,7 +45,7 @@ var usermgmt = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020-2021 `);
+        controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };

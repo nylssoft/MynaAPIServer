@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,10 +27,18 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class InvalidUsernameException : APIException
+    {
+        public InvalidUsernameException() :
+            base("Ungültiger Benutzername.", 401)
+        {
+        }
+    }
+
     public class UnauthorizedException : APIException
     {
         public UnauthorizedException() :
-            base("Ungültiger Benutzername oder ungültiges Kennwort.", 401)
+            base("Ungültiges Kennwort.", 401)
         {
         }
     }
@@ -67,6 +75,22 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class InvalidSecurityCodeException : APIException
+    {
+        public InvalidSecurityCodeException() :
+            base("Der Sicherheitscode ist ungültig.", 401)
+        {
+        }
+    }
+
+    public class InvalidSecurityCodeAndLockedException : APIException
+    {
+        public InvalidSecurityCodeAndLockedException() :
+            base("Der Sicherheitscode ist ungültig. Das Konto ist jetzt vorrübergehend gesperrt.", 401)
+        {
+        }
+    }
+
     public class UserNotAllowedException : APIException
     {
         public UserNotAllowedException() :
@@ -75,10 +99,122 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class ExpiredSecurityCodeException : APIException
+    {
+        public ExpiredSecurityCodeException() :
+            base("Der Sicherheitscode ist abgelaufen.", 400)
+        {
+
+        }
+    }
     public class InvalidOldPasswordException : APIException
     {
         public InvalidOldPasswordException() :
             base("Das alte Kennwort ist ungültig.", 400)
+        {
+        }
+    }
+
+    public class ResetPasswordNotAllowedException : APIException
+    {
+        public ResetPasswordNotAllowedException() :
+            base("Kennwort zurücksetzen ist nicht erlaubt.", 400)
+        {
+        }
+    }
+
+    public class ResetPasswordLockedException : APIException
+    {
+        public ResetPasswordLockedException(int m) :
+            base($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {m} Minute(n) noch einmal.", 400)
+        {
+        }
+    }
+
+    public class InvalidEmailAddressException : APIException
+    {
+        public InvalidEmailAddressException() :
+            base("Die E-Mail-Adresse ist ungültig.", 400)
+        {
+        }
+    }
+
+    public class EmailAddressAlreadyRegisteredException : APIException
+    {
+        public EmailAddressAlreadyRegisteredException() :
+            base("Die E-Mail-Adresse wurde bereits registriert.", 400)
+        {
+        }
+    }
+
+    public class EmailAddressNotConfirmedException : APIException
+    {
+        public EmailAddressNotConfirmedException() :
+            base("Die E-Mail-Adresse wurde bisher nicht bestätigt.", 400)
+        {
+        }
+    }
+
+    public class EmailAddressRegistrationLockedException : APIException
+    {
+        public EmailAddressRegistrationLockedException(int m) :
+            base($"Registrieren ist z.Zt. nicht möglich. Versuche es in {m} Minute(n) noch einmal.", 400)
+        {
+        }
+    }
+
+    public class NoRegistrationRequestForEmailAddressException : APIException
+    {
+        public NoRegistrationRequestForEmailAddressException() :
+            base("Es liegt keine Registrierungsanfrage für die E-Mail-Adresse vor.", 400)
+        {
+        }
+    }
+
+    public class InvalidRegistrationCodeException : APIException
+    {
+        public InvalidRegistrationCodeException() :
+            base("Registrierungscode ist ungültig.", 400)
+        {
+        }
+    }
+
+    public class UsernameAlreadyUsedException : APIException
+    {
+        public UsernameAlreadyUsedException() :
+            base("Der Benutzername wird schon verwendet.", 400)
+        {
+        }
+    }
+
+    public class UserManagerRequiredException : APIException
+    {
+        public UserManagerRequiredException() :
+            base("Es muss mindestens ein Benutzer mit der Rolle 'usermanager' vorhanden sein.", 400)
+        {
+        }
+    }
+
+    public class SelfRemoveUserManagerRoleException : APIException
+    {
+        public SelfRemoveUserManagerRoleException() :
+            base("Du kannst Dir selber nicht die Rolle 'usermanager' entziehen.", 400)
+        {
+        }
+    }
+
+    public class InvalidStorageQuoataException : APIException
+    {
+        public InvalidStorageQuoataException() :
+            base("Ungültige Quota. Die Quota muss zwischen 2 MB und 1000 MB liegen.", 400)
+        {
+        }
+    }
+
+    public class TwoFactorAuthenticationAlreadyActivated : APIException
+    {
+        public TwoFactorAuthenticationAlreadyActivated() :
+            base("Zwei-Schritt-Verifizierung ist bereits aktiviert.", 400)
         {
         }
     }

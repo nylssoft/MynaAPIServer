@@ -29,7 +29,7 @@ namespace APIServer.PwdMan
 
         Task RequestResetPasswordAsync(string email, string ipAddress);
 
-        void ResetPassword(UserResetPasswordModel resetPasswordModel);
+        void ResetPassword(UserResetPasswordModel resetPasswordModel, string ipAddress);
 
         // --- registration
 
@@ -87,7 +87,7 @@ namespace APIServer.PwdMan
 
         Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authenication, string ipAddress);
 
-        AuthenticationResponseModel AuthenticateTOTP(string token, string totp);
+        AuthenticationResponseModel AuthenticateTOTP(string token, string totp, string ipAddress);
 
         AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress);
 
@@ -100,8 +100,6 @@ namespace APIServer.PwdMan
         bool DeletePasswordFile(string authenticationToken);
 
         string GetPasswordFile(string authenticationToken);
-
-        bool HasPasswordFile(string authenticationToken);
 
         // --- slideshow
 

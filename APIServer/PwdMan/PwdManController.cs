@@ -73,7 +73,8 @@ namespace APIServer.PwdMan
             if (resetPasswordModel?.Password?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             if (resetPasswordModel?.Token?.Length > Limits.MAX_RESETPWD_CODE) throw new InputValueTooLargeException();
             if (resetPasswordModel?.Email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
-            PwdManService.ResetPassword(resetPasswordModel);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+            PwdManService.ResetPassword(resetPasswordModel, ipAddress);
             return new JsonResult(true);
         }
 
@@ -240,7 +241,8 @@ namespace APIServer.PwdMan
         public IActionResult LoginPass2([FromBody] string totp)
         {
             if (totp?.Length > Limits.MAX_2FA_CODE) throw new InputValueTooLargeException();
-            return new JsonResult(PwdManService.AuthenticateTOTP(GetToken(), totp));
+            var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+            return new JsonResult(PwdManService.AuthenticateTOTP(GetToken(), totp, ipAddress));
         }
 
         [HttpGet]
@@ -291,13 +293,6 @@ namespace APIServer.PwdMan
         public IActionResult GetPasswordFile()
         {
             return new JsonResult(PwdManService.GetPasswordFile(GetToken()));
-        }
-
-        [HttpGet]
-        [Route("api/pwdman/fileinfo")]
-        public IActionResult HashPasswordFile()
-        {
-            return new JsonResult(PwdManService.HasPasswordFile(GetToken()));
         }
 
         // --- private

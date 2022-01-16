@@ -75,37 +75,30 @@ namespace APIServer.PwdMan
         public async Task RequestResetPasswordAsync(string email, string ipAddress)
         {
             logger.LogDebug("Request password reset for email addresss '{email}' from IP address {ipAddress}.", email, ipAddress);
-            if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
+            if (!IsValidEmailAddress(email))
+            {
+                throw new InvalidEmailAddressException();
+            }
             email = email.ToLowerInvariant();
             var dbContext = GetDbContext();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
             if (user == null)
             {
-                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse ist ungültig.");
+                throw new InvalidEmailAddressException();
+            }
+            if (!user.AllowResetPassword)
+            {
+                throw new ResetPasswordNotAllowedException();
             }
             var opt = GetOptions();
-            if (!user.AllowResetPassword ||
-                string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) ||
-                string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdResetPassword))
-            {
-                throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist nicht erlaubt.");
-            }
-            if (user.LoginTries >= opt.MaxLoginTryCount)
-            {
-                var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
-                if (sec < opt.AccountLockTime)
-                {
-                    throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
-                }
-                user.LoginTries = 0;
-            }
+            var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
             var lastRequestedUtc = dbContext.DbResetPasswords.Where((r) => r.IpAddress == ipAddress).Max<DbResetPassword,DateTime?>((r) => r.RequestedUtc);
             if (lastRequestedUtc != null)
             {
                 int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
                 if (min < opt.ResetPasswordTokenExpireMinutes)
                 {
-                    throw new PwdManInvalidArgumentException($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {opt.ResetPasswordTokenExpireMinutes - min} Minute(n) noch einmal.");
+                    throw new ResetPasswordLockedException(opt.ResetPasswordTokenExpireMinutes - min);
                 }
             }
             var pwdgen = new PwdGen
@@ -139,64 +132,40 @@ namespace APIServer.PwdMan
                 resetpwd.IpAddress = ipAddress;
             }
             dbContext.SaveChanges();
-            var msg = new SendGridMessage();
-            msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-            msg.AddTo(user.Email, user.Name);
-            msg.SetTemplateId(opt.SendGridConfig.TemplateIdResetPassword);
-            msg.SetTemplateData(new ResetPasswordTemplateData
-            {
-                Name = user.Name,
-                Code = resetpwd.Token,
-                Valid = opt.ResetPasswordTokenExpireMinutes,
-                Hostname = opt.Hostname,
-                Email = WebUtility.UrlEncode(email),
-                Next = WebUtility.UrlEncode("/index")
-            });
-            var response = await sendGridClient.SendEmailAsync(msg);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogError($"Failed to send reset password email: {response.StatusCode}.");
-                throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist z.Zt. nicht möglich. Email konnte nicht verschickt werden.");
-            }
+            await SendResetPasswordEmailAsync(user, resetpwd.Token, email, opt);
         }
 
-        public void ResetPassword(UserResetPasswordModel resetPasswordModel)
+        public void ResetPassword(UserResetPasswordModel resetPasswordModel, string ipAddress)
         {
             logger.LogDebug("Reset password for email addresss '{email}'.", resetPasswordModel.Email);
             var email = resetPasswordModel.Email.ToLowerInvariant();
             var dbContext = GetDbContext();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Email == email);
-            var resetpwd = dbContext.DbResetPasswords.SingleOrDefault((r) => r.Email == email);
-            if (user == null || resetpwd == null || !user.AllowResetPassword)
+            if (user == null)
             {
-                throw new PwdManInvalidArgumentException("Kennwort zurücksetzen ist nicht erlaubt.");
+                throw new InvalidEmailAddressException();
+            }
+            var resetpwd = dbContext.DbResetPasswords.SingleOrDefault((r) => r.Email == email);
+            if (resetpwd == null || !user.AllowResetPassword)
+            {
+                throw new ResetPasswordNotAllowedException();
             }
             var opt = GetOptions();
-            if (user.LoginTries >= opt.MaxLoginTryCount)
-            {
-                var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
-                if (sec < opt.AccountLockTime)
-                {
-                    throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
-                }
-                user.LoginTries = 0;
-            }
+            var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
             if (resetpwd.Token != resetPasswordModel.Token)
             {
-                user.LastLoginTryUtc = DateTime.UtcNow;
-                user.LoginTries += 1;
+                loginIpAddress.Failed += 1;
                 dbContext.SaveChanges();
-                var msg = "Der Sicherheitscode ist ungültig.";                
-                if (user.LoginTries >= opt.MaxLoginTryCount)
+                if (loginIpAddress.Failed >= opt.MaxLoginTryCount)
                 {
-                    msg += " Das Konto ist vorrübergehend gesperrt.";
+                    throw new InvalidSecurityCodeAndLockedException();
                 }
-                throw new PwdManInvalidArgumentException(msg);
+                throw new InvalidSecurityCodeException();
             }
             var diff = (DateTime.UtcNow - resetpwd.RequestedUtc).TotalMinutes;
             if (diff > opt.ResetPasswordTokenExpireMinutes)
             {
-                throw new PwdManInvalidArgumentException("Der Sicherheitscode ist abgelaufen.");
+                throw new ExpiredSecurityCodeException();
             }
             if (!VerifyPasswordStrength(resetPasswordModel.Password))
             {
@@ -205,7 +174,7 @@ namespace APIServer.PwdMan
             var hasher = new PasswordHasher<string>();
             var hash = hasher.HashPassword(user.Name, resetPasswordModel.Password);
             user.PasswordHash = hash;
-            user.LoginTries = 0;
+            loginIpAddress.Failed = 0;
             dbContext.DbResetPasswords.Remove(resetpwd);
             dbContext.SaveChanges();
         }
@@ -215,7 +184,10 @@ namespace APIServer.PwdMan
         public async Task<bool> IsRegisterAllowedAsync(string email, string ipAddress)
         {
             logger.LogDebug("Check whether email addresss '{email}' is allowed to register from IP address {ipAddress}...", email, ipAddress);
-            if (!IsValidEmailAddress(email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
+            if (!IsValidEmailAddress(email))
+            {
+                throw new InvalidEmailAddressException();
+            }
             email = email.ToLowerInvariant();
             var opt = GetOptions();
             // setup: first user can register without confirmation and token
@@ -228,14 +200,14 @@ namespace APIServer.PwdMan
             bool userEmailExists = user != null;
             if (userEmailExists)
             {
-                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde bereits registriert.");
+                throw new EmailAddressAlreadyRegisteredException();
             }
             var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
             if (registration != null)
             {
                 if (string.IsNullOrEmpty(registration.Token))
                 {
-                    throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde bisher nicht bestätigt.");
+                    throw new EmailAddressNotConfirmedException();
                 }
                 return true;
             }
@@ -245,25 +217,12 @@ namespace APIServer.PwdMan
                 int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
                 if (min < opt.ResetPasswordTokenExpireMinutes)
                 {
-                    throw new PwdManInvalidArgumentException($"Registrieren ist z.Zt. nicht möglich. Versuche es in {opt.ResetPasswordTokenExpireMinutes - min} Minuten noch einmal.");
+                    throw new EmailAddressRegistrationLockedException(opt.ResetPasswordTokenExpireMinutes - min);
                 }
             }
             dbContext.DbRegistrations.Add(new DbRegistration { Email = email, RequestedUtc = DateTime.UtcNow, IpAddress = ipAddress });
             dbContext.SaveChanges();
-            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationRequest))
-            {
-                var msg = new SendGridMessage();
-                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.AddTo(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationRequest);
-                msg.SetTemplateData(new RequestRegistrationTemplateData { Email = email });
-                var response = await sendGridClient.SendEmailAsync(msg);
-                if (!response.IsSuccessStatusCode)
-                {
-                    logger.LogError($"Failed to send registration request email: {response.StatusCode}.");
-                }
-            }
+            await SendRegistrationRequestEmailAsync(email, opt);
             return false;
         }
 
@@ -305,12 +264,12 @@ namespace APIServer.PwdMan
             var emailUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
             if (emailUser != null)
             {
-                throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde schon registriert.");
+                throw new EmailAddressAlreadyRegisteredException();
             }
             var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
             if (registration == null)
             {
-                throw new PwdManInvalidArgumentException("Es liegt keine Registrierungsanfrage für die E-Mail-Adresse vor.");
+                throw new NoRegistrationRequestForEmailAddressException();
             }
             if (confirmation.Reject)
             {
@@ -338,44 +297,25 @@ namespace APIServer.PwdMan
                 dbContext.SaveChanges();
             }
             var opt = GetOptions();
-            if (confirmation.Notification &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationDenied) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationSuccess))
-            {
-                var msg = new SendGridMessage();
-                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.AddTo(new EmailAddress(email));
-                if (confirmation.Reject)
-                {
-                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationDenied);
-                }
-                else
-                {
-                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationSuccess);
-                    msg.SetTemplateData(new ConfirmRegistrationTemplateData
-                    {
-                        Code = registration.Token,
-                        Hostname = opt.Hostname,
-                        Email = WebUtility.UrlEncode(email),
-                        Next = WebUtility.UrlEncode("/index")
-                    });
-                }
-                var response = await sendGridClient.SendEmailAsync(msg);
-                if (!response.IsSuccessStatusCode)
-                {
-                    logger.LogError($"Failed to send confirmation email for successfull registration: {response.StatusCode}.");
-                }
-            }
+            await SendConfirmationRegistrationEmailAsync(registration, confirmation.Reject, email, opt);
             return registration.Token;
         }
 
         public void RegisterUser(UserRegistrationModel registrationProfile)
         {
             logger.LogDebug("Register user '{username}', email '{email}'...", registrationProfile.Username, registrationProfile.Email);
-            if (!IsValidUsername(registrationProfile.Username)) throw new PwdManInvalidArgumentException("Benutzername ungültig.");
-            if (!IsValidEmailAddress(registrationProfile.Email)) throw new PwdManInvalidArgumentException("E-Mail-Adresse ungültig.");
-            if (string.IsNullOrEmpty(registrationProfile.Token)) throw new PwdManInvalidArgumentException("Registrierungscode ist ungültig.");
+            if (!IsValidUsername(registrationProfile.Username))
+            {
+                throw new InvalidUsernameException();
+            }
+            if (!IsValidEmailAddress(registrationProfile.Email))
+            {
+                throw new InvalidEmailAddressException();
+            }
+            if (string.IsNullOrEmpty(registrationProfile.Token))
+            {
+                throw new InvalidRegistrationCodeException();
+            }
             var email = registrationProfile.Email.ToLowerInvariant();
             var opt = GetOptions();
             // first user can register without token
@@ -386,17 +326,17 @@ namespace APIServer.PwdMan
                 var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
                 if (registration == null || registration.Token != registrationProfile.Token.ToUpperInvariant())
                 {
-                    throw new PwdManInvalidArgumentException("Der Registrierungscode ist ungültig.");
+                    throw new InvalidRegistrationCodeException();
                 }
                 var exsitingUser = GetDbUserByName(registrationProfile.Username);
                 if (exsitingUser != null)
                 {
-                    throw new PwdManInvalidArgumentException("Der Benutzername wird schon verwendet.");
+                    throw new UsernameAlreadyUsedException();
                 }
                 exsitingUser = dbContext.DbUsers.SingleOrDefault(u => u.Email == email);
                 if (exsitingUser != null)
                 {
-                    throw new PwdManInvalidArgumentException("Die E-Mail-Adresse wurde schon registriert.");
+                    throw new EmailAddressAlreadyRegisteredException();
                 }
             }
             if (!VerifyPasswordStrength(registrationProfile.Password))
@@ -457,6 +397,7 @@ namespace APIServer.PwdMan
 
         public string UploadPhoto(string authenticationToken, string contentType, Stream contentStream)
         {
+            logger.LogDebug("Upload photo...");
             var user = GetUserFromToken(authenticationToken);
             var pwdgen = new PwdGen
             {
@@ -509,45 +450,57 @@ namespace APIServer.PwdMan
                     File.Delete(fname);
                 }
                 user.Photo = null;
+                var dbContext = GetDbContext();
+                dbContext.SaveChanges();
+                return true;
             }
-            var dbContext = GetDbContext();
-            dbContext.SaveChanges();
-            return true;
+            return false;
         }
 
         public DbUser GetUserFromToken(string authenticationToken, bool useLongLivedToken = false)
         {
+            logger.LogDebug("Get user from token, use long lived token: {useLongLivedToken}.", useLongLivedToken);
             var opt = GetOptions();
-            if (ValidateToken(authenticationToken, opt, useLongLivedToken))
+            if (!ValidateToken(authenticationToken, opt, useLongLivedToken))
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var securityToken = tokenHandler.ReadToken(authenticationToken) as JwtSecurityToken;
-                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
-                if (claim != null)
-                {
-                    var dbContext = GetDbContext();
-                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
-                    if (user != null)
-                    {
-                        if (user.LogoutUtc > securityToken.IssuedAt)
-                        {
-                            throw new InvalidTokenException();
-                        }
-                        if (!useLongLivedToken && user.Requires2FA)
-                        {
-                            var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
-                            if (amr != null) throw new Requires2FAException();
-                        }
-                        return user;
-                    }
-                }
-                logger.LogDebug("Claim type 'unique_name' not found.");
+                logger.LogDebug("Token is invalid.");
+                throw new InvalidTokenException();
             }
-            throw new InvalidTokenException();
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var securityToken = tokenHandler.ReadToken(authenticationToken) as JwtSecurityToken;
+            var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+            if (claim == null)
+            {
+                logger.LogDebug("Claim type 'unique_name' not found.");
+                throw new InvalidTokenException();
+            }
+            var dbContext = GetDbContext();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+            if (user == null)
+            {
+                logger.LogDebug("Invalid username in token.");
+                throw new InvalidTokenException();
+            }
+            if (user.LogoutUtc > securityToken.IssuedAt)
+            {
+                logger.LogDebug("Token is expired.");
+                throw new InvalidTokenException();
+            }
+            if (!useLongLivedToken && user.Requires2FA)
+            {
+                var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+                if (amr != null)
+                {
+                    logger.LogDebug("2FA Token is required.");
+                    throw new Requires2FAException();
+                }
+            }
+            return user;
         }
 
         public bool HasRole(DbUser user, string roleName)
         {
+            logger.LogDebug("Has user '{name}' role '{roleName}'.", user.Name, roleName);
             if (user.Roles == null)
             {
                 var dbContext = GetDbContext();
@@ -565,7 +518,7 @@ namespace APIServer.PwdMan
 
         public UserModel GetUser(string authenticationToken, bool details = false)
         {
-            logger.LogDebug("Get user...");
+            logger.LogDebug("Get user, details: {details}...", details);
             var user = GetUserFromToken(authenticationToken);
             var userModel = new UserModel
             {
@@ -587,16 +540,14 @@ namespace APIServer.PwdMan
             if (details)
             {
                 var loginIpAddresses = dbContext.DbLoginIpAddresses
-                    .Where(ip => ip.DbUserId == user.Id)
+                    .Where(ip => ip.DbUserId == user.Id && ip.Succeeded > 0)
                     .OrderByDescending(ip => ip.LastUsedUtc);
                 foreach (var ip in loginIpAddresses)
                 {
                     userModel.LoginIpAddresses.Add(new LoginIpAddressModel
                     {
                         IpAddress = ip.IpAddress,
-                        LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value,
-                        Succeeded = ip.Succeeded,
-                        Failed = ip.Failed
+                        LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value
                     });
                 }
                 var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
@@ -607,31 +558,36 @@ namespace APIServer.PwdMan
 
         public bool UnlockUser(string authenticationToken, string userName)
         {
-            logger.LogDebug($"Unlock username '{userName}'...");
+            logger.LogDebug("Unlock username '{userName}'...", userName);
             var adminuser = GetUserFromToken(authenticationToken);
             if (!HasRole(adminuser, "usermanager"))
             {
                 throw new AccessDeniedPermissionException();
             }
-            var opt = GetOptions();
             var dbContext = GetDbContext();
             var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == userName);
-            if (user != null && user.LoginTries >= opt.MaxLoginTryCount)
+            if (user == null)
             {
-                var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
-                if (sec < opt.AccountLockTime)
+                throw new InvalidUsernameException();
+            }
+            var opt = GetOptions();
+            var failedIpAddresses = dbContext.DbLoginIpAddresses
+                .Where(ip => ip.DbUserId == user.Id && ip.Failed >= opt.MaxLoginTryCount);
+            if (failedIpAddresses.Any())
+            {
+                foreach (var ip in failedIpAddresses)
                 {
-                    user.LoginTries = 0;
-                    dbContext.SaveChanges();
-                    return true;
+                    ip.Failed = 0;
                 }
+                dbContext.SaveChanges();
+                return true;
             }
             return false;
         }
 
         public bool DeleteUser(string authenticationToken, string userName)
         {
-            logger.LogDebug($"Delete username '{userName}'...");
+            logger.LogDebug("Delete username '{userName}'...", userName);
             var user = GetUserFromToken(authenticationToken);
             var dbContext = GetDbContext();
             if (user.Name != userName)
@@ -643,7 +599,7 @@ namespace APIServer.PwdMan
                 user = dbContext.DbUsers.SingleOrDefault(u => u.Name == userName);
                 if (user == null)
                 {
-                    return false;
+                    throw new InvalidUsernameException();
                 }
             }
             var usermanagerRole = dbContext.DbRoles.SingleOrDefault((r) => r.DbUserId == user.Id && r.Name == "usermanager");
@@ -652,9 +608,10 @@ namespace APIServer.PwdMan
                 var cntUserManagers = dbContext.DbRoles.Count((r) => r.Name == "usermanager");
                 if (cntUserManagers == 1)
                 {
-                    throw new PwdManInvalidArgumentException("Es muss mindestens ein Benutzer mit der Rolle 'usermanager' vorhanden sein.");
+                    throw new UserManagerRequiredException();
                 }
             }
+            var photoFile = user.Photo;
             if (user.PasswordFileId.HasValue)
             {
                 var delpwdfile = new DbPasswordFile { Id = user.PasswordFileId.Value };
@@ -679,17 +636,25 @@ namespace APIServer.PwdMan
             dbContext.DbDocContents.RemoveRange(delDocContents);
             dbContext.DbUsers.Remove(user);
             dbContext.SaveChanges();
+            // try to delete photo file if user has been successfully deleted
+            if (!string.IsNullOrEmpty(photoFile))
+            {
+                var fname = $"wwwroot/{photoFile}";
+                if (File.Exists(fname))
+                {
+                    File.Delete(fname);
+                }
+            }
             return true;
         }
 
         public User2FAKeyModel GenerateUser2FAKey(string authenticationToken, bool forceNew)
         {
-            logger.LogDebug("Generate user secret key for two factor authentication...");
-            var opt = GetOptions();
+            logger.LogDebug("Generate user secret key for two factor authentication, forceNew: {forceNew}...", forceNew);
             var user = GetUserFromToken(authenticationToken);
             if (user.Requires2FA)
             {
-                throw new PwdManInvalidArgumentException("Zwei-Schritt-Verifizierung ist bereits aktiviert.");
+                throw new TwoFactorAuthenticationAlreadyActivated();
             }
             if (forceNew || string.IsNullOrEmpty(user.TOTPKey))
             {
@@ -703,6 +668,7 @@ namespace APIServer.PwdMan
                 var dbContext = GetDbContext();
                 dbContext.SaveChanges();
             }
+            var opt = GetOptions();
             return new User2FAKeyModel
             {
                 Issuer = opt.TOTPConfig.Issuer,
@@ -712,7 +678,7 @@ namespace APIServer.PwdMan
 
         public bool EnableUser2FA(string authenticationToken, string totp)
         {
-            logger.LogDebug($"Enable user two factor authentication...");
+            logger.LogDebug("Enable user two factor authentication...");
             var user = GetUserFromToken(authenticationToken);
             if (!user.Requires2FA && !string.IsNullOrEmpty(user.TOTPKey))
             {
@@ -730,7 +696,7 @@ namespace APIServer.PwdMan
 
         public bool DisableUser2FA(string authenticationToken)
         {
-            logger.LogDebug($"Disable user two factor authentication...");
+            logger.LogDebug("Disable user two factor authentication...");
             var user = GetUserFromToken(authenticationToken);
             if (user.Requires2FA || !string.IsNullOrEmpty(user.TOTPKey))
             {
@@ -745,7 +711,7 @@ namespace APIServer.PwdMan
 
         public bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken)
         {
-            logger.LogDebug($"Update user use long-lived token to {useLongLivedToken}...");
+            logger.LogDebug("Update user long-lived token usage to {useLongLivedToken}...", useLongLivedToken);
             var user = GetUserFromToken(authenticationToken);
             if (user.UseLongLivedToken != useLongLivedToken)
             {
@@ -759,7 +725,7 @@ namespace APIServer.PwdMan
 
         public bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword)
         {
-            logger.LogDebug($"Update user allow reset password to {allowResetPassword}...");
+            logger.LogDebug("Update user allow reset password to {allowResetPassword}...", allowResetPassword);
             var user = GetUserFromToken(authenticationToken);
             if (user.AllowResetPassword != allowResetPassword)
             {
@@ -773,7 +739,7 @@ namespace APIServer.PwdMan
 
         public bool UpdateUserRole(string authenticationToken, UserUpdateRoleModel model)
         {
-            logger.LogDebug($"Update role '{model.RoleName}' for user '{model.UserName}', set assigned to {model.Assigned}...");
+            logger.LogDebug("Update role '{roleName}' for user '{userName}', set assigned to {assigned}...", model.RoleName, model.UserName, model.Assigned);
             var adminuser = GetUserFromToken(authenticationToken);
             if (!HasRole(adminuser, "usermanager"))
             {
@@ -784,45 +750,46 @@ namespace APIServer.PwdMan
             var user = dbContext.DbUsers
                 .Include((u) => u.Roles)
                 .SingleOrDefault((u) => u.Name == model.UserName);
-            if (user != null)
+            if (user == null)
             {
-                var role = dbContext.DbRoles.SingleOrDefault((r) => r.DbUserId == user.Id && r.Name == model.RoleName);
-                if (model.Assigned && role == null)
+                throw new InvalidUsernameException();
+            }
+            var role = dbContext.DbRoles.SingleOrDefault((r) => r.DbUserId == user.Id && r.Name == model.RoleName);
+            if (model.Assigned && role == null)
+            {
+                user.Roles.Add(new DbRole { DbUserId = user.Id, Name = model.RoleName });
+                changed = true;
+            }
+            else if (!model.Assigned && role != null)
+            {
+                if (role.Name == "usermanager")
                 {
-                    user.Roles.Add(new DbRole { DbUserId = user.Id, Name = model.RoleName });
-                    changed = true;
-                }
-                else if (!model.Assigned && role != null)
-                {
-                    if (role.Name == "usermanager")
+                    if (adminuser.Id == user.Id)
                     {
-                        if (adminuser.Id == user.Id)
-                        {
-                            throw new PwdManInvalidArgumentException("Du kannst Dir selber nicht die Rolle 'usermanager' entziehen.");
-                        }
-                        var cntUserManagers = dbContext.DbRoles.Count((r) => r.Name == "usermanager");
-                        if (cntUserManagers == 1)
-                        {
-                            throw new PwdManInvalidArgumentException("Es muss mindestens ein Benutzer mit der Rolle 'usermanager' vorhanden sein.");
-                        }
+                        throw new SelfRemoveUserManagerRoleException();
                     }
-                    user.Roles.Remove(role);
-                    changed = true;
+                    var cntUserManagers = dbContext.DbRoles.Count((r) => r.Name == "usermanager");
+                    if (cntUserManagers == 1)
+                    {
+                        throw new UserManagerRequiredException();
+                    }
                 }
-                if (changed)
-                {
-                    dbContext.SaveChanges();
-                }
+                user.Roles.Remove(role);
+                changed = true;
+            }
+            if (changed)
+            {
+                dbContext.SaveChanges();
             }
             return changed;
         }
 
         public bool UpdateUserStorageQuota(string authenticationToken, long userId, long quota)
         {
-            logger.LogDebug($"Update storage quota for user ID {userId} to {quota}...", userId, quota);
+            logger.LogDebug("Update storage quota for user ID {userId} to {quota}...", userId, quota);
             if (quota < 2 * 1024 * 1024 || quota > 1000 * 1024 * 1024)
             {
-                throw new PwdManInvalidArgumentException("Ungültige Quota. Die Quota muss zwischen 2 MB und 1000 MB liegen.");
+                throw new InvalidStorageQuoataException();
             }
             var adminuser = GetUserFromToken(authenticationToken);
             if (!HasRole(adminuser, "usermanager"))
@@ -843,7 +810,7 @@ namespace APIServer.PwdMan
 
         public int DeleteLoginIpAddresses(string authenticationToken)
         {
-            logger.LogDebug($"Delete login IP addresses...");
+            logger.LogDebug("Delete login IP addresses...");
             var user = GetUserFromToken(authenticationToken);
             var dbContext = GetDbContext();
             var loginIpAddresses = dbContext.DbLoginIpAddresses
@@ -856,6 +823,7 @@ namespace APIServer.PwdMan
 
         public long GetUsedStorage(string authenticationToken, long userId)
         {
+            logger.LogDebug("Get used storage for user ID {userId}...", userId);
             var adminuser = GetUserFromToken(authenticationToken);
             if (!HasRole(adminuser, "usermanager"))
             {
@@ -868,6 +836,7 @@ namespace APIServer.PwdMan
 
         public List<UserModel> GetUsers(string authenticationToken)
         {
+            logger.LogDebug("Get users...");
             var user = GetUserFromToken(authenticationToken);
             if (!HasRole(user, "usermanager"))
             {
@@ -877,6 +846,7 @@ namespace APIServer.PwdMan
             var opt = GetOptions();
             var dbContext = GetDbContext();
             var users = dbContext.DbUsers.Include(u => u.Roles).OrderBy(u => u.Name);
+            var userModelMap = new Dictionary<long, UserModel>();
             foreach (var u in users)
             {
                 var userModel = new UserModel
@@ -891,15 +861,16 @@ namespace APIServer.PwdMan
                     Roles = u.Roles.Select(r => r.Name).ToList(),
                     LoginIpAddresses = new List<LoginIpAddressModel>()
                 };
-                if (u.LoginTries >= opt.MaxLoginTryCount)
-                {
-                    var sec = (DateTime.UtcNow - u.LastLoginTryUtc.Value).TotalSeconds;
-                    if (sec < opt.AccountLockTime)
-                    {
-                        userModel.AccountLocked = true;
-                    }
-                }
+                userModelMap[u.Id] = userModel;
                 ret.Add(userModel);
+            }
+            var lockedUserIds = dbContext.DbLoginIpAddresses.Where(ip => ip.Failed >= opt.MaxLoginTryCount).Select(ip => ip.DbUserId);
+            foreach (var userId in lockedUserIds)
+            {
+                if (userModelMap.TryGetValue(userId, out var userModel))
+                {
+                    userModel.AccountLocked = true;
+                }
             }
             return ret;
         }
@@ -911,165 +882,126 @@ namespace APIServer.PwdMan
             logger.LogDebug("Authenticate '{username}' with client IP address {ipAddress}...", authentication.Username, ipAddress);
             var opt = GetOptions();
             var user = GetDbUserByName(authentication.Username);
-            if (user != null)
+            if (user == null)
             {
-                if (user.LoginTries >= opt.MaxLoginTryCount)
-                {
-                    var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
-                    if (sec < opt.AccountLockTime)
-                    {
-                        logger.LogDebug("Account disabled. Too many login tries.");
-                        throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
-                    }
-                    user.LoginTries = 0;
-                }
-                var dbContext = GetDbContext();
-                var loginIpAddress = dbContext.DbLoginIpAddresses
-                    .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
-                if (loginIpAddress == null)
-                {
-                    CleanupLoginIpAddress(dbContext, user.Id);
-                    loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
-                    dbContext.DbLoginIpAddresses.Add(loginIpAddress);
-                }
-                loginIpAddress.LastUsedUtc = DateTime.UtcNow;
-                var hasher = new PasswordHasher<string>();
-                hasher.HashPassword(user.Name, authentication.Password);
-                if (hasher.VerifyHashedPassword(
-                    user.Name,
-                    user.PasswordHash,
-                    authentication.Password) == PasswordVerificationResult.Success)
-                {
-                    // migration scenario, disable 2FA if TOTPKey is missing
-                    if (user.Requires2FA && string.IsNullOrEmpty(user.TOTPKey))
-                    {
-                        user.Requires2FA = false;
-                    }
-                    var token = GenerateToken(user.Name, opt, user.Requires2FA);
-                    if (token != null)
-                    {
-                        user.LoginTries = 0;
-                        user.LastLoginTryUtc = DateTime.UtcNow;
-                        loginIpAddress.Succeeded += 1;
-                        dbContext.SaveChanges();
-                        var ret = new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
-                        if (!user.Requires2FA && user.UseLongLivedToken)
-                        {
-                            ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
-                        }
-                        // security warning email only if this is the first successfull login for the IP address
-                        if (loginIpAddress.Succeeded == 1 &&
-                            !string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                            !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdSecurityWarning))
-                        {
-                            var now = DateTime.UtcNow;
-                            var msg = new SendGridMessage();
-                            msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                            msg.AddTo(user.Email, user.Name);
-                            msg.SetTemplateId(opt.SendGridConfig.TemplateIdSecurityWarning);
-                            msg.SetTemplateData(new SecurityWarningTemplateData
-                            {
-                                Name = user.Name,
-                                Date = $"{now.Day}.{now.Month}.{now.Year}",
-                                Time = $"{now.Hour}:{now.Minute} UTC",
-                                IPAddress = ipAddress,
-                                Hostname = opt.Hostname,
-                                Next = WebUtility.UrlEncode("/index")
-                            });
-                            var response = await sendGridClient.SendEmailAsync(msg);
-                            if (!response.IsSuccessStatusCode)
-                            {
-                                logger.LogError($"Failed to send security warning email: {response.StatusCode}.");
-                            }                            
-                        }
-                        return ret;
-                    }
-                }
-                logger.LogDebug("Invalid password specified.");
-                user.LoginTries += 1;
-                user.LastLoginTryUtc = DateTime.UtcNow;
+                throw new InvalidUsernameException();
+            }
+            var dbContext = GetDbContext();
+            var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
+            var hasher = new PasswordHasher<string>();
+            hasher.HashPassword(user.Name, authentication.Password);
+            if (hasher.VerifyHashedPassword(
+                user.Name,
+                user.PasswordHash,
+                authentication.Password) != PasswordVerificationResult.Success)
+            {
                 loginIpAddress.Failed += 1;
                 dbContext.SaveChanges();
-                if (user.LoginTries >= opt.MaxLoginTryCount)
+                if (loginIpAddress.Failed >= opt.MaxLoginTryCount)
                 {
                     throw new UnauthorizedAndLockedException();
                 }
+                throw new UnauthorizedException();
             }
-            else
+            // migration scenario, disable 2FA if TOTPKey is missing
+            if (user.Requires2FA && string.IsNullOrEmpty(user.TOTPKey))
             {
-                logger.LogDebug("Username not found.");
+                user.Requires2FA = false;
             }
-            throw new UnauthorizedException();
+            var token = GenerateToken(user.Name, opt, user.Requires2FA);
+            loginIpAddress.Succeeded += 1;
+            if (loginIpAddress.Failed > 0)
+            {
+                loginIpAddress.Failed = 0;
+            }
+            if (!user.Requires2FA)
+            {
+                user.LoginTries += 1;
+                user.LastLoginTryUtc = DateTime.UtcNow;
+            }
+            dbContext.SaveChanges();
+            var ret = new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
+            if (!user.Requires2FA && user.UseLongLivedToken)
+            {
+                ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
+            }
+            // send security warning email if this is the first successful login for the IP address
+            if (loginIpAddress.Succeeded == 1)
+            {
+                await SendSecurityWarningEmailAsync(user, ipAddress, opt);
+            }
+            return ret;
         }
 
-        public AuthenticationResponseModel AuthenticateTOTP(string token, string totp)
+        public AuthenticationResponseModel AuthenticateTOTP(string token, string totp, string ipAddress)
         {
-            logger.LogDebug("Authenticate using Time-Based One-Time Password (TOTP)...");
+            logger.LogDebug("Authenticate using Time-Based One-Time Password (TOTP) for IP address {ipAddress}...", ipAddress);
             var opt = GetOptions();
-            if (ValidateToken(token, opt)) // verify pass 1
+            if (!ValidateToken(token, opt)) // verify pass 1
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
-                var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
-                var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
-                if (claim != null && amr?.Value == "2fa")
-                {
-                    var dbContext = GetDbContext();
-                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
-                    if (user != null && !string.IsNullOrEmpty(user.TOTPKey))
-                    {
-                        if (user.LoginTries >= opt.MaxLoginTryCount)
-                        {
-                            var sec = (DateTime.UtcNow - user.LastLoginTryUtc.Value).TotalSeconds;
-                            if (sec < opt.AccountLockTime)
-                            {
-                                logger.LogDebug("Account disabled. Too many login tries.");
-                                throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
-                            }
-                        }
-                        if (TOTP.IsValid(totp, user.TOTPKey, opt.TOTPConfig.ValidSeconds)) // verify pass 2
-                        {
-                            var ret = new AuthenticationResponseModel
-                            {
-                                Token = GenerateToken(user.Name, opt, false),
-                                RequiresPass2 = true
-                            };
-                            if (user.UseLongLivedToken)
-                            {
-                                ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
-                            }
-                            if (user.LoginTries > 0)
-                            {
-                                user.LoginTries = 0;
-                                dbContext.SaveChanges();
-                            }
-                            return ret;
-                        }
-                        user.LoginTries += 1;
-                        if (user.LoginTries >= opt.MaxLoginTryCount)
-                        {
-                            user.LogoutUtc = DateTime.UtcNow;
-                        }
-                        dbContext.SaveChanges();
-                        if (user.LoginTries >= opt.MaxLoginTryCount)
-                        {
-                            throw new UnauthorizedAndLockedException();
-                        }
-                    }
-                    logger.LogDebug("User not found or TOTP token invalid.");
-                    throw new PwdManInvalidArgumentException("Der Sicherheitscode ist ungültig.");
-                }
-                logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
+                throw new InvalidTokenException();
             }
-            throw new InvalidTokenException();
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+            var amr = securityToken.Claims.FirstOrDefault(claim => claim.Type == "amr");
+            var claim = securityToken.Claims.FirstOrDefault(claim => claim.Type == "unique_name");
+            if (claim == null || amr?.Value != "2fa")
+            {
+                logger.LogDebug("Claim type 'unique_name' not found or not a 2FA token.");
+                throw new InvalidTokenException();
+            }
+            var dbContext = GetDbContext();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+            if (user == null || string.IsNullOrEmpty(user.TOTPKey))
+            {
+                logger.LogDebug("User from token not found or TOTP token not configured.");
+                throw new InvalidTokenException();
+            }
+            if (user.LogoutUtc > securityToken.IssuedAt)
+            {
+                logger.LogDebug("Token is expired.");
+                throw new InvalidTokenException();
+            }
+            var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
+            if (!TOTP.IsValid(totp, user.TOTPKey, opt.TOTPConfig.ValidSeconds)) // verify pass 2
+            {
+                logger.LogDebug("Token is not valid anymore.");
+                loginIpAddress.Failed += 1;
+                if (loginIpAddress.Failed >= opt.MaxLoginTryCount)
+                {
+                    // invalidate all tokens => logout on all devices
+                    user.LogoutUtc = DateTime.UtcNow;
+                }
+                dbContext.SaveChanges();
+                if (loginIpAddress.Failed >= opt.MaxLoginTryCount)
+                {
+                    throw new InvalidSecurityCodeAndLockedException();
+                }
+                throw new InvalidSecurityCodeException();
+            }
+            var ret = new AuthenticationResponseModel
+            {
+                Token = GenerateToken(user.Name, opt, false),
+                RequiresPass2 = true
+            };
+            if (user.UseLongLivedToken)
+            {
+                ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
+            }
+            loginIpAddress.Failed = 0;
+            user.LoginTries += 1;
+            user.LastLoginTryUtc = DateTime.UtcNow;
+            dbContext.SaveChanges();
+            return ret;
         }
 
         public AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress)
         {
-            var opt = GetOptions();
+            logger.LogDebug("Authenticate long lived token for IP address {ipAddress}...", ipAddress);
             var user = GetUserFromToken(longLivedToken, true);
             if (!user.UseLongLivedToken)
             {
+                logger.LogDebug("User not configured for long lived token usage.");
                 throw new InvalidTokenException();
             }
             var dbContext = GetDbContext();
@@ -1082,9 +1014,12 @@ namespace APIServer.PwdMan
                 dbContext.DbLoginIpAddresses.Add(loginIpAddress);
             }
             loginIpAddress.LastUsedUtc = DateTime.UtcNow;
-            user.LastLoginTryUtc = DateTime.UtcNow;
+            user.LastLoginTryUtc = loginIpAddress.LastUsedUtc;
+            user.LoginTries += 1;
+            loginIpAddress.Failed = 0;
             loginIpAddress.Succeeded += 1;
             dbContext.SaveChanges();
+            var opt = GetOptions();
             var ret = new AuthenticationResponseModel
             {
                 Token = GenerateToken(user.Name, opt, false),
@@ -1093,21 +1028,6 @@ namespace APIServer.PwdMan
                 Username = user.Name
             };
             return ret;
-        }
-
-        private void CleanupLoginIpAddress(DbMynaContext dbContext, long userId)
-        {
-            var cnt = dbContext.DbLoginIpAddresses.Count(ip => ip.DbUserId == userId);
-            if (cnt > 99)
-            {
-                var cleanup = dbContext.DbLoginIpAddresses.Where(ip => ip.DbUserId == userId).OrderBy(ip => ip.LastUsedUtc).ToList();
-                var idx = 0;
-                while (cnt > 99 && idx < cleanup.Count)
-                {                    
-                    dbContext.DbLoginIpAddresses.Remove(cleanup[idx++]);
-                    cnt--;
-                }
-            }
         }
 
         public void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange)
@@ -1186,7 +1106,10 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Get password file...");
             var user = GetUserFromToken(authenticationToken);
-            if (user.PasswordFileId == null) throw new PasswordFileNotFoundException();
+            if (user.PasswordFileId == null)
+            {
+                throw new PasswordFileNotFoundException();
+            }
             var dbContext = GetDbContext();
             dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
             return user.PasswordFile.Content;
@@ -1207,17 +1130,11 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public bool HasPasswordFile(string authenticationToken)
-        {
-            logger.LogDebug("Has password file...");
-            var user = GetUserFromToken(authenticationToken);
-            return user.PasswordFileId != null;
-        }
-
         // --- slideshow
 
         public SlideShowModel GetSlideShow(string authenticationToken)
         {
+            logger.LogDebug("Get slideshow...");
             var opt = GetOptions();
             var model = new SlideShowModel { Interval = 10, Pictures = new List<SlideShowPictureModel>() };
             try
@@ -1259,6 +1176,7 @@ namespace APIServer.PwdMan
 
         public string GetMarkdown(string authenticationToken, string id)
         {
+            logger.LogDebug("Get markdown for id '{id}'...", id);
             var opt = GetOptions();
             if (id == "startpage")
             {
@@ -1302,12 +1220,22 @@ namespace APIServer.PwdMan
                 if (render)
                 {
                     var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
-                    var markdown = Markdig.Markdown.ToHtml(File.ReadAllText(content), pipeline);
+                    var markdown = Markdown.ToHtml(File.ReadAllText(content), pipeline);
                     return markdown;
                 }
             }
             return "<p>Zugriff verweigert.</p>";
         }
+
+        // --- database access
+
+        public DbMynaContext GetDbContext()
+        {
+            var connectionType = Configuration.GetValue<string>("ConnectionType");
+            return connectionType == "Postgres" ? dbPostgresContext : dbSqliteContext;
+        }
+
+        // --- private
 
         private string GetMarkdownByDocumentId(string authenticationToken, int docItemId)
         {
@@ -1343,16 +1271,6 @@ namespace APIServer.PwdMan
             return "<p>Zugriff verweigert.</p>";
         }
 
-        // --- database access
-
-        public DbMynaContext GetDbContext()
-        {
-            var connectionType = Configuration.GetValue<string>("ConnectionType");
-            return connectionType == "Postgres" ? dbPostgresContext : dbSqliteContext;
-        }
-
-        // --- private
-
         private DbUser GetDbUserByName(string username)
         {
             username = username.ToLowerInvariant();
@@ -1373,55 +1291,6 @@ namespace APIServer.PwdMan
                 return dbContext.DbUsers.SingleOrDefault(u => u.Email == username);
             }
             return null;
-        }
-
-        private bool IsValidUsername(string username)
-        {
-            if (string.IsNullOrEmpty(username))
-            {
-                return false;
-            }
-            foreach (var ch in username)
-            {
-                if (!char.IsLetterOrDigit(ch))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private bool IsValidEmailAddress(string email)
-        {
-            if (string.IsNullOrEmpty(email))
-            {
-                return false;
-            }
-            var atidx = email.IndexOf("@");
-            if (atidx <= 0 || atidx == email.Length - 1)
-            {
-                return false;
-            }
-            var dotIdx = -1;
-            var test = email[..atidx] + email[(atidx + 1)..];
-            var idx = 0;
-            foreach (var ch in test)
-            {
-                if (ch == '.')
-                {
-                    dotIdx = idx;
-                }
-                else if (!char.IsLetterOrDigit(ch) && ch != '-')
-                {
-                    return false;
-                }
-                idx++;
-            }
-            if (dotIdx <= atidx || dotIdx == test.Length - 1)
-            {
-                return false;
-            }
-            return true;
         }
 
         private T GetSetting<T>(string key)
@@ -1449,84 +1318,6 @@ namespace APIServer.PwdMan
             {
                 setting.Value = json;
             }
-        }
-
-        private bool VerifyPasswordStrength(string pwd)
-        {
-            var pwdGen = new PwdGen();
-            if (pwd.Length >= 8)
-            {
-                var cntSymbols = pwd.Count((c) => pwdGen.Symbols.Contains(c));
-                var cntUpper = pwd.Count((c) => pwdGen.UpperCharacters.Contains(c));
-                var cntLower = pwd.Count((c) => pwdGen.LowerCharacters.Contains(c));
-                var cntDigits = pwd.Count((c) => pwdGen.Digits.Contains(c));
-                if (cntSymbols >= 1 && cntUpper >= 1 && cntLower >= 1 && cntDigits >= 1)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private byte[] EncodeSecret(byte[] salt, string password, byte[] secret)
-        {
-            var iv = new byte[12];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(iv);
-            }
-            var key = KeyDerivation.Pbkdf2(password, salt, KeyDerivationPrf.HMACSHA256, 1000, 256 / 8);
-            var encoded = new byte[secret.Length];
-            var tag = new byte[16];
-            using (var cipher = new AesGcm(key))
-            {
-                cipher.Encrypt(iv, secret, encoded, tag);
-            }
-            var ret = new byte[iv.Length + encoded.Length + tag.Length];
-            iv.CopyTo(ret, 0);
-            encoded.CopyTo(ret, iv.Length);
-            tag.CopyTo(ret, iv.Length + encoded.Length);
-            return ret;
-        }
-
-        private string GenerateToken(string username, PwdManOptions opt, bool requires2FA)
-        {
-            return GenerateTokenPerType(false, username, opt, requires2FA);
-        }
-
-        private string GenerateLongLivedToken(string username, PwdManOptions opt)
-        {
-            return GenerateTokenPerType(true, username, opt);
-        }
-
-        private string GenerateTokenPerType(bool useLongLivedToken, string username, PwdManOptions opt, bool requires2FA = false)
-        {
-            var signKey = useLongLivedToken ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
-            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(signKey));
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                NotBefore = DateTime.UtcNow,
-                Issuer = opt.TokenConfig.Issuer,
-                Audience = opt.TokenConfig.Audience,
-                SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature)
-            };
-            if (useLongLivedToken)
-            {
-                tokenDescriptor.Expires = DateTime.UtcNow.AddDays(60);
-            }
-            else
-            {
-                tokenDescriptor.Expires = DateTime.UtcNow.AddMinutes(opt.TokenConfig.ExpireMinutes);
-            }
-            tokenDescriptor.Claims = new Dictionary<string, object>();
-            tokenDescriptor.Claims[ClaimTypes.Name] = username;
-            if (requires2FA)
-            {
-                tokenDescriptor.Claims["amr"] = "2fa";
-            }
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
         }
 
         private bool ValidateToken(string token, PwdManOptions opt, bool useLongLived = false)
@@ -1557,10 +1348,281 @@ namespace APIServer.PwdMan
             return true;
         }
 
+        private DbLoginIpAddress CheckLoginIpAddress(DbMynaContext dbContext, DbUser user, string ipAddress, PwdManOptions opt)
+        {
+            var loginIpAddress = dbContext.DbLoginIpAddresses
+                .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
+            if (loginIpAddress != null && loginIpAddress.Failed >= opt.MaxLoginTryCount)
+            {
+                var sec = (DateTime.UtcNow - loginIpAddress.LastUsedUtc).TotalSeconds;
+                if (sec < opt.AccountLockTime)
+                {
+                    logger.LogDebug("Account disabled. Too many login tries.");
+                    throw new AccountLockedException((opt.AccountLockTime - (int)sec) / 60 + 1);
+                }
+                loginIpAddress.Failed = 0;
+            }
+            if (loginIpAddress == null)
+            {
+                CleanupLoginIpAddress(dbContext, user.Id);
+                loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
+                dbContext.DbLoginIpAddresses.Add(loginIpAddress);
+            }
+            loginIpAddress.LastUsedUtc = DateTime.UtcNow;
+            return loginIpAddress;
+        }
+
+        private async Task SendSecurityWarningEmailAsync(DbUser user, string ipAddress, PwdManOptions opt)
+        {
+            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdSecurityWarning))
+            {
+                var now = DateTime.UtcNow;
+                var msg = new SendGridMessage();
+                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.AddTo(user.Email, user.Name);
+                msg.SetTemplateId(opt.SendGridConfig.TemplateIdSecurityWarning);
+                msg.SetTemplateData(new SecurityWarningTemplateData
+                {
+                    Name = user.Name,
+                    Date = $"{now.Day}.{now.Month}.{now.Year}",
+                    Time = $"{now.Hour}:{now.Minute:00} UTC",
+                    IPAddress = ipAddress,
+                    Hostname = opt.Hostname,
+                    Next = WebUtility.UrlEncode("/index")
+                });
+                var response = await sendGridClient.SendEmailAsync(msg);
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError($"Failed to send security warning email: {response.StatusCode}.");
+                }
+            }
+        }
+
+        private async Task SendResetPasswordEmailAsync(DbUser user, string code, string email, PwdManOptions opt)
+        {
+            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdResetPassword))
+            {
+                var msg = new SendGridMessage();
+                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.AddTo(user.Email, user.Name);
+                msg.SetTemplateId(opt.SendGridConfig.TemplateIdResetPassword);
+                msg.SetTemplateData(new ResetPasswordTemplateData
+                {
+                    Name = user.Name,
+                    Code = code,
+                    Valid = opt.ResetPasswordTokenExpireMinutes,
+                    Hostname = opt.Hostname,
+                    Email = WebUtility.UrlEncode(email),
+                    Next = WebUtility.UrlEncode("/index")
+                });
+                var response = await sendGridClient.SendEmailAsync(msg);
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError($"Failed to send reset password email: {response.StatusCode}.");
+                }
+            }
+        }
+
+        private async Task SendRegistrationRequestEmailAsync(string email, PwdManOptions opt)
+        {
+            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationRequest))
+            {
+                var msg = new SendGridMessage();
+                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.AddTo(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationRequest);
+                msg.SetTemplateData(new RequestRegistrationTemplateData { Email = email });
+                var response = await sendGridClient.SendEmailAsync(msg);
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError($"Failed to send registration request email: {response.StatusCode}.");
+                }
+            }
+        }
+
+        private async Task SendConfirmationRegistrationEmailAsync(DbRegistration registration, bool reject, string email, PwdManOptions opt)
+        {
+            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationDenied) &&
+                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationSuccess))
+            {
+                var msg = new SendGridMessage();
+                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
+                msg.AddTo(new EmailAddress(email));
+                if (reject)
+                {
+                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationDenied);
+                }
+                else
+                {
+                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationSuccess);
+                    msg.SetTemplateData(new ConfirmRegistrationTemplateData
+                    {
+                        Code = registration.Token,
+                        Hostname = opt.Hostname,
+                        Email = WebUtility.UrlEncode(email),
+                        Next = WebUtility.UrlEncode("/index")
+                    });
+                }
+                var response = await sendGridClient.SendEmailAsync(msg);
+                if (!response.IsSuccessStatusCode)
+                {
+                    logger.LogError($"Failed to send confirmation email for successfull registration: {response.StatusCode}.");
+                }
+            }
+        }
+
         private PwdManOptions GetOptions()
         {
             var opt = Configuration.GetSection("PwdMan").Get<PwdManOptions>();
             return opt ?? new PwdManOptions();
+        }
+
+        // --- private static
+
+        private static void CleanupLoginIpAddress(DbMynaContext dbContext, long userId)
+        {
+            var cnt = dbContext.DbLoginIpAddresses.Count(ip => ip.DbUserId == userId);
+            if (cnt > 99)
+            {
+                var cleanup = dbContext.DbLoginIpAddresses.Where(ip => ip.DbUserId == userId).OrderBy(ip => ip.LastUsedUtc).ToList();
+                var idx = 0;
+                while (cnt > 99 && idx < cleanup.Count)
+                {
+                    dbContext.DbLoginIpAddresses.Remove(cleanup[idx++]);
+                    cnt--;
+                }
+            }
+        }
+
+        private static bool VerifyPasswordStrength(string pwd)
+        {
+            var pwdGen = new PwdGen();
+            if (pwd.Length >= 8)
+            {
+                var cntSymbols = pwd.Count((c) => pwdGen.Symbols.Contains(c));
+                var cntUpper = pwd.Count((c) => pwdGen.UpperCharacters.Contains(c));
+                var cntLower = pwd.Count((c) => pwdGen.LowerCharacters.Contains(c));
+                var cntDigits = pwd.Count((c) => pwdGen.Digits.Contains(c));
+                if (cntSymbols >= 1 && cntUpper >= 1 && cntLower >= 1 && cntDigits >= 1)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static byte[] EncodeSecret(byte[] salt, string password, byte[] secret)
+        {
+            var iv = new byte[12];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(iv);
+            }
+            var key = KeyDerivation.Pbkdf2(password, salt, KeyDerivationPrf.HMACSHA256, 1000, 256 / 8);
+            var encoded = new byte[secret.Length];
+            var tag = new byte[16];
+            using (var cipher = new AesGcm(key))
+            {
+                cipher.Encrypt(iv, secret, encoded, tag);
+            }
+            var ret = new byte[iv.Length + encoded.Length + tag.Length];
+            iv.CopyTo(ret, 0);
+            encoded.CopyTo(ret, iv.Length);
+            tag.CopyTo(ret, iv.Length + encoded.Length);
+            return ret;
+        }
+
+        private static string GenerateToken(string username, PwdManOptions opt, bool requires2FA)
+        {
+            return GenerateTokenPerType(false, username, opt, requires2FA);
+        }
+
+        private static string GenerateLongLivedToken(string username, PwdManOptions opt)
+        {
+            return GenerateTokenPerType(true, username, opt);
+        }
+
+        private static string GenerateTokenPerType(bool useLongLivedToken, string username, PwdManOptions opt, bool requires2FA = false)
+        {
+            var signKey = useLongLivedToken ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
+            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(signKey));
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                NotBefore = DateTime.UtcNow,
+                Issuer = opt.TokenConfig.Issuer,
+                Audience = opt.TokenConfig.Audience,
+                SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature)
+            };
+            if (useLongLivedToken)
+            {
+                tokenDescriptor.Expires = DateTime.UtcNow.AddDays(60);
+            }
+            else
+            {
+                tokenDescriptor.Expires = DateTime.UtcNow.AddMinutes(opt.TokenConfig.ExpireMinutes);
+            }
+            tokenDescriptor.Claims = new Dictionary<string, object>();
+            tokenDescriptor.Claims[ClaimTypes.Name] = username;
+            if (requires2FA)
+            {
+                tokenDescriptor.Claims["amr"] = "2fa";
+            }
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        private static bool IsValidUsername(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return false;
+            }
+            foreach (var ch in username)
+            {
+                if (!char.IsLetterOrDigit(ch))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static bool IsValidEmailAddress(string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return false;
+            }
+            var atidx = email.IndexOf("@");
+            if (atidx <= 0 || atidx == email.Length - 1)
+            {
+                return false;
+            }
+            var dotIdx = -1;
+            var test = email[..atidx] + email[(atidx + 1)..];
+            var idx = 0;
+            foreach (var ch in test)
+            {
+                if (ch == '.')
+                {
+                    dotIdx = idx;
+                }
+                else if (!char.IsLetterOrDigit(ch) && ch != '-')
+                {
+                    return false;
+                }
+                idx++;
+            }
+            if (dotIdx <= atidx || dotIdx == test.Length - 1)
+            {
+                return false;
+            }
+            return true;
         }
 
         private static string ConvertToHexString(byte[] ba)
