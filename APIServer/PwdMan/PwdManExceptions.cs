@@ -59,6 +59,22 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class AccountLoginDisabledException : APIException
+    {
+        public AccountLoginDisabledException() :
+            base("Anmelden ist nicht erlaubt für dieses Konto.", 401)
+        {
+        }
+    }
+
+    public class SelfUpdateLoginEnabledException : APIException
+    {
+        public SelfUpdateLoginEnabledException() :
+            base("Du kannst Dir das Anmelden nicht selber verbieten.", 400)
+        {
+        }
+    }
+
     public class Requires2FAException : APIException
     {
         public Requires2FAException() :
@@ -190,7 +206,7 @@ namespace APIServer.PwdMan
     public class UserManagerRequiredException : APIException
     {
         public UserManagerRequiredException() :
-            base("Es muss mindestens ein Benutzer mit der Rolle 'usermanager' vorhanden sein.", 400)
+            base("Es muss mindestens ein Benutzer mit der Rolle 'Administrator' vorhanden sein.", 400)
         {
         }
     }
@@ -198,7 +214,7 @@ namespace APIServer.PwdMan
     public class SelfRemoveUserManagerRoleException : APIException
     {
         public SelfRemoveUserManagerRoleException() :
-            base("Du kannst Dir selber nicht die Rolle 'usermanager' entziehen.", 400)
+            base("Du kannst Dir selber nicht die Rolle 'Administrator' entziehen.", 400)
         {
         }
     }
@@ -262,7 +278,7 @@ namespace APIServer.PwdMan
     public class PasswordFileNotFoundException : APIException
     {
         public PasswordFileNotFoundException() :
-            base("Die Passworddatei wurde bisher nicht hochgeladen.", 400)
+            base("Die Passwortdatei wurde bisher nicht hochgeladen.", 400)
         {
         }
     }

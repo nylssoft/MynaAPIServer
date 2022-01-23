@@ -356,7 +356,8 @@ namespace APIServer.PwdMan
                 UseLongLivedToken = registrationProfile.UseLongLivedToken,
                 AllowResetPassword = registrationProfile.AllowResetPassword,
                 RegisteredUtc = DateTime.UtcNow,
-                StorageQuota = 100 * 1024 * 1024 // 100 MB default storage
+                StorageQuota = 100 * 1024 * 1024, // 100 MB default storage
+                LoginEnabled = true
             };
             // first user has the usermanager role
             if (firstUser)
@@ -409,14 +410,7 @@ namespace APIServer.PwdMan
                 MinLowerCharacters = 2,
                 MinSymbols = 0
             };
-            if (!string.IsNullOrEmpty(user.Photo))
-            {
-                var fname = $"wwwroot/{user.Photo}";
-                if (File.Exists(fname))
-                {
-                    File.Delete(fname);
-                }
-            }
+            var prevPhotoFile = user.Photo;
             string extension = "jpg";
             if (contentType.EndsWith("png", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -435,6 +429,15 @@ namespace APIServer.PwdMan
             }
             var dbContext = GetDbContext();
             dbContext.SaveChanges();
+            // try to delete photo file if new photo has been successfully updated
+            if (!string.IsNullOrEmpty(prevPhotoFile))
+            {
+                var fname = $"wwwroot/{prevPhotoFile}";
+                if (File.Exists(fname))
+                {
+                    File.Delete(fname);
+                }
+            }
             return user.Photo;
         }
 
@@ -479,6 +482,11 @@ namespace APIServer.PwdMan
             if (user == null)
             {
                 logger.LogDebug("Invalid username in token.");
+                throw new InvalidTokenException();
+            }
+            if (!user.LoginEnabled)
+            {
+                logger.LogDebug("Login is disabled.");
                 throw new InvalidTokenException();
             }
             if (user.LogoutUtc > securityToken.IssuedAt)
@@ -532,7 +540,8 @@ namespace APIServer.PwdMan
                 HasPasswordManagerFile = user.PasswordFileId != null,
                 PasswordManagerSalt = user.Salt,
                 Photo = user.Photo,
-                StorageQuota = user.StorageQuota                
+                StorageQuota = user.StorageQuota,
+                LoginEnabled = user.LoginEnabled
             };
             var dbContext = GetDbContext();
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
@@ -796,16 +805,38 @@ namespace APIServer.PwdMan
             {
                 throw new AccessDeniedPermissionException();
             }
-            var changed = false;
             var dbContext = GetDbContext();
             var user = dbContext.DbUsers.SingleOrDefault((u) => u.Id == userId);
             if (user != null && user.StorageQuota != quota)
             {
                 user.StorageQuota = quota;
                 dbContext.SaveChanges();
-                changed = true;
+                return true;
             }
-            return changed;
+            return false;
+        }
+
+        public bool UpdateUserLoginEnabled(string authenticationToken, long userId, bool loginEnabled)
+        {
+            logger.LogDebug("Update login enabled for user ID {userId} to {loginEnabled}...", userId, loginEnabled);
+            var adminuser = GetUserFromToken(authenticationToken);
+            if (!HasRole(adminuser, "usermanager"))
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            var dbContext = GetDbContext();
+            var user = dbContext.DbUsers.SingleOrDefault((u) => u.Id == userId);
+            if (user != null && user.LoginEnabled != loginEnabled)
+            {
+                if (adminuser.Id == user.Id && !loginEnabled)
+                {
+                    throw new SelfUpdateLoginEnabledException();
+                }
+                user.LoginEnabled = loginEnabled;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
         }
 
         public int DeleteLoginIpAddresses(string authenticationToken)
@@ -858,6 +889,7 @@ namespace APIServer.PwdMan
                     RegisteredUtc = DbMynaContext.GetUtcDateTime(u.RegisteredUtc),
                     Photo = u.Photo,
                     StorageQuota = u.StorageQuota,
+                    LoginEnabled = u.LoginEnabled,
                     Roles = u.Roles.Select(r => r.Name).ToList(),
                     LoginIpAddresses = new List<LoginIpAddressModel>()
                 };
@@ -885,6 +917,10 @@ namespace APIServer.PwdMan
             if (user == null)
             {
                 throw new InvalidUsernameException();
+            }
+            if (!user.LoginEnabled)
+            {
+                throw new AccountLoginDisabledException();
             }
             var dbContext = GetDbContext();
             var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
@@ -1394,7 +1430,7 @@ namespace APIServer.PwdMan
                 var response = await sendGridClient.SendEmailAsync(msg);
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogError($"Failed to send security warning email: {response.StatusCode}.");
+                    logger.LogError("Failed to send security warning email: {statusCode}.", response.StatusCode);
                 }
             }
         }
@@ -1420,7 +1456,7 @@ namespace APIServer.PwdMan
                 var response = await sendGridClient.SendEmailAsync(msg);
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogError($"Failed to send reset password email: {response.StatusCode}.");
+                    logger.LogError("Failed to send reset password email: {statusCode}.", response.StatusCode);
                 }
             }
         }
@@ -1438,7 +1474,7 @@ namespace APIServer.PwdMan
                 var response = await sendGridClient.SendEmailAsync(msg);
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogError($"Failed to send registration request email: {response.StatusCode}.");
+                    logger.LogError("Failed to send registration request email: {statusCode}.", response.StatusCode);
                 }
             }
         }
@@ -1470,7 +1506,7 @@ namespace APIServer.PwdMan
                 var response = await sendGridClient.SendEmailAsync(msg);
                 if (!response.IsSuccessStatusCode)
                 {
-                    logger.LogError($"Failed to send confirmation email for successfull registration: {response.StatusCode}.");
+                    logger.LogError("Failed to send confirmation email for successfull registration: {statusCode}.", response.StatusCode);
                 }
             }
         }

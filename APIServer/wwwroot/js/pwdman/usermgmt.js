@@ -11,12 +11,18 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "1.1.19";
+    let version = "1.1.20";
+
+    const roleMapping = {
+        "usermanager"   : "Administrator",
+        "skatadmin"     : "Skat",
+        "family"        : "Familie"
+    };
 
     // helper
 
     const getLoginPerDeviceText = (ip) => {
-        let txt = `${new Date(ip.lastUsedUtc).toLocaleString("de-DE")} mit Client-IP-Adresse ${ip.ipAddress}.`;
+        let txt = `${new Date(ip.lastUsedUtc).toLocaleString("de-DE")} mit IP-Adresse ${ip.ipAddress}.`;
         return txt;
     };
 
@@ -25,6 +31,17 @@ var usermgmt = (() => {
         if (waitDiv) {
             waitDiv.className = wait ? "wait-div" : "invisible-div";
         }
+    };
+
+    const getRoleDisplayName = (name) => {
+        return roleMapping[name];
+    };
+
+    const clearErrors = () => {
+        const elems = document.getElementsByClassName("error");
+        Array.prototype.filter.call(elems, (elem) => {
+            elem.textContent = "";
+        });
     };
 
     // rendering
@@ -142,20 +159,27 @@ var usermgmt = (() => {
         controls.createSpan(documentsP, undefined, " MB belegt.");
         const errorQuota = controls.createDiv(parent, "error");
         errorQuota.id = "error-quota-id";
+        const loginEnabledP = controls.create(parent, "p", undefined, "Optionen:");
+        const loginEnabledDiv = controls.createDiv(loginEnabledP, "checkbox-div");
+        controls.createCheckbox(loginEnabledDiv, "loginenabled-id", undefined, "Anmelden erlauben",
+            user.loginEnabled,
+            () => onUpdateLoginEnabled(parent, users, user));
+        const errorLoginEnabled = controls.createDiv(parent, "error");
+        errorLoginEnabled.id = "error-loginenabled-id";
         let rolesP = controls.create(parent, "p", undefined, "Rollen:");
         let checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "roles-skatadmin-id", undefined, "skatadmin",
-            user.roles.includes("skatadmin"),
-            () => onUpdateRole(parent, users, user, "skatadmin"));
-        checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "roles-usermanager-id", undefined, "usermanager",
+        controls.createCheckbox(checkboxDiv, "roles-usermanager-id", undefined, getRoleDisplayName("usermanager"),
             user.roles.includes("usermanager"),
             () => onUpdateRole(parent, users, user, "usermanager"));
         checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "roles-family-id", undefined, "family",
+        controls.createCheckbox(checkboxDiv, "roles-family-id", undefined, getRoleDisplayName("family"),
             user.roles.includes("family"),
             () => onUpdateRole(parent, users, user, "family"));
-        controls.createDiv(parent, "error").id="error-id";
+        checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
+        controls.createCheckbox(checkboxDiv, "roles-skatadmin-id", undefined, getRoleDisplayName("skatadmin"),
+            user.roles.includes("skatadmin"),
+            () => onUpdateRole(parent, users, user, "skatadmin"));
+        controls.createDiv(parent, "error").id = "error-id";
         let actionsDiv = controls.createDiv(parent);
         if (user.accountLocked) {
             controls.createButton(actionsDiv, "Konto entsperren", () => onUnlockUser(parent, users, user), undefined, "button");
@@ -200,7 +224,11 @@ var usermgmt = (() => {
                     controls.createImg(td, "profile-photo-user", 45, 45, user.photo, user.name);
                 }
             }
-            controls.create(tr, "td", undefined, user.roles.join(", "));
+            let roleNames = [];
+            user.roles.forEach((roleName) => {
+                roleNames.push(getRoleDisplayName(roleName));
+            });
+            controls.create(tr, "td", undefined, roleNames.join(", "));
             if (!mobile) {
                 let dt = user.lastLoginUtc ? new Date(user.lastLoginUtc).toLocaleString("de-DE") : " ";
                 controls.create(tr, "td", undefined, dt);
@@ -410,6 +438,7 @@ var usermgmt = (() => {
     // --- callbacks
 
     const onSelectPhoto = () => {
+        clearErrors();
         const inputFile = document.getElementById("file-input-id");
         if (inputFile) {
             inputFile.click();
@@ -417,6 +446,7 @@ var usermgmt = (() => {
     };
 
     const onDeletePhoto = () => {
+        clearErrors();
         const token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/photo",
             {
@@ -433,6 +463,7 @@ var usermgmt = (() => {
     };
 
     const onAddPhoto = () => {
+        clearErrors();
         const inputFile = document.getElementById("file-input-id");
         if (inputFile && inputFile.files.length == 1) {
             const curFile = inputFile.files[0];
@@ -489,7 +520,7 @@ var usermgmt = (() => {
         if (reject == undefined) {
             reject = false;
         }
-        document.getElementById("error-id").textContent = "";
+        clearErrors();
         let toBeConfirmed = [];
         for (let idx = 0; idx < confirmations.length; idx++) {
             let checkBox = document.getElementById(`confirm-registration-${idx}`);
@@ -533,7 +564,7 @@ var usermgmt = (() => {
     };
 
     const onDeleteUsers = (users) => {
-        document.getElementById("error-id").textContent = "";
+        clearErrors();
         let toBeDeleted = [];
         for (let idx = 0; idx < users.length; idx++) {
             let checkBox = document.getElementById(`delete-user-${idx}`);
@@ -552,7 +583,7 @@ var usermgmt = (() => {
     };
 
     const onUpdateDeleteUsersActions = () => {
-        document.getElementById("error-id").textContent = "";
+        clearErrors();
         let cntSelected = 0;
         let idx = 0;
         while (true) {
@@ -572,7 +603,7 @@ var usermgmt = (() => {
     };
 
     const onUpdateRegisterActions = () => {
-        document.getElementById("error-id").textContent = "";
+        clearErrors();
         let cntSelected = 0;
         let idx = 0;
         while (true) {
@@ -597,6 +628,7 @@ var usermgmt = (() => {
     };
 
     const onUnlockUser = (parent, users, user) => {
+        clearErrors();
         let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/user/unlock",
             {
@@ -631,6 +663,7 @@ var usermgmt = (() => {
     };
 
     const onDeleteCurrentUser = () => {
+        clearErrors();
         let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/user",
             {
@@ -645,6 +678,7 @@ var usermgmt = (() => {
     };
 
     const onDeletePasswordFile = () => {
+        clearErrors();
         let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/file",
             {
@@ -661,6 +695,7 @@ var usermgmt = (() => {
     };
 
     const onDeleteLoginIpAddresses = () => {
+        clearErrors();
         let token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/loginipaddress", { method: "DELETE", headers: { "token": token } },
             () => {
@@ -673,6 +708,7 @@ var usermgmt = (() => {
     };
 
     const onUpdate2FA = (forceNew) => {
+        clearErrors();
         const checkbox = document.getElementById("account-2fa-id");
         const div = document.getElementById("account-2fa-div-id");
         if (checkbox && div) {
@@ -724,6 +760,7 @@ var usermgmt = (() => {
     };
 
     const onEnable2FA = () => {
+        clearErrors();
         const msg = document.getElementById("msg-2fa-id");
         msg.textContent = "";
         const input = document.getElementById("input-2fa-id");
@@ -752,6 +789,7 @@ var usermgmt = (() => {
     };
 
     const onDisable2FA = () => {
+        clearErrors();
         const token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/user/2fa",
             {
@@ -770,6 +808,7 @@ var usermgmt = (() => {
     };
 
     const onUpdateKeepLogin = () => {
+        clearErrors();
         let checkbox = document.getElementById("account-keeplogin-id");
         if (checkbox) {
             let token = utils.get_authentication_token();
@@ -792,6 +831,7 @@ var usermgmt = (() => {
     };
 
     const onUpdateAllowResetPwd = () => {
+        clearErrors();
         let checkbox = document.getElementById("account-allowresetpwd-id");
         if (checkbox) {
             let token = utils.get_authentication_token();
@@ -814,6 +854,7 @@ var usermgmt = (() => {
     };
 
     const onUpdateRole = (parent, users, user, role) => {
+        clearErrors();
         let checkbox = document.getElementById(`roles-${role}-id`);
         if (checkbox) {
             let token = utils.get_authentication_token();
@@ -845,6 +886,7 @@ var usermgmt = (() => {
     };
 
     const onUpdateStorageQuota = (parent, users, user) => {
+        clearErrors();
         const u = Math.floor(user.usedStorage / (1024 * 1024));
         const quota = document.getElementById("quota-input-id");
         const v = quota.value.trim();
@@ -874,6 +916,32 @@ var usermgmt = (() => {
             else {
                 error.textContent = `Die Quota muss zwischen ${Math.max(u + 1, 2)} MB und 1000 MB liegen.`;
             }
+        }
+    };
+
+    const onUpdateLoginEnabled = (parent, users, user) => {
+        clearErrors();
+        const checkbox = document.getElementById("loginenabled-id");
+        if (checkbox) {
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/pwdman/user/${user.id}/loginenabled`,
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(checkbox.checked)
+                },
+                (changed) => {
+                    if (changed) {
+                        user.loginEnabled = checkbox.checked;
+                        renderUserDetails(parent, users, user);
+                    }
+                },
+                (errMsg) => {
+                    document.getElementById("error-loginenabled-id").textContent = errMsg;
+                    checkbox.checked = !checkbox.checked;
+                },
+                setWaitCursor
+            );
         }
     };
 

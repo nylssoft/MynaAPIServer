@@ -81,6 +81,8 @@ namespace APIServer.PwdMan
 
         bool UpdateUserStorageQuota(string authenticationToken, long userId, long quota);
 
+        bool UpdateUserLoginEnabled(string authenticationToken, long userId, bool loginEnabled);
+
         void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange);
 
         // --- authentication

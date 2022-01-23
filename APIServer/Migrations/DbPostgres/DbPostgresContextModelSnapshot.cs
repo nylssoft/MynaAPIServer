@@ -437,6 +437,9 @@ namespace APIServer.Migrations.DbPostgres
                     b.Property<DateTime?>("LastLoginTryUtc")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<bool>("LoginEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("LoginTries")
                         .HasColumnType("integer");
 

@@ -204,6 +204,13 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.UpdateUserStorageQuota(GetToken(), id, quota));
         }
 
+        [HttpPut]
+        [Route("api/pwdman/user/{id}/loginenabled")]
+        public IActionResult UpdatUserLoginEnabled(long id, [FromBody] bool loginEnabled)
+        {
+            return new JsonResult(PwdManService.UpdateUserLoginEnabled(GetToken(), id, loginEnabled));
+        }
+
         [HttpGet]
         [Route("api/pwdman/slideshow")]
         public IActionResult GetSlideShow()
