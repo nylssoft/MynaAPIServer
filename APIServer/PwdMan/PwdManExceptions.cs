@@ -283,6 +283,14 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class MissingParameterException : APIException
+    {
+        public MissingParameterException()
+            : base("Fehlende Parameter.", 400)
+        {
+        }
+    }
+
     public class PwdManInvalidArgumentException : APIException
     {
         public PwdManInvalidArgumentException(string msg) : base(msg, 400)

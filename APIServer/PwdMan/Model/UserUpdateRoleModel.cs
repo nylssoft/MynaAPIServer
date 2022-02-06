@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ namespace APIServer.PwdMan.Model
 {
     public class UserUpdateRoleModel
     {
-        public string UserName { get; set; }
+        public string Username { get; set; }
 
         public string RoleName { get; set; }
 

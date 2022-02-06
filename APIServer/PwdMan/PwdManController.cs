@@ -36,6 +36,7 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/photo")]
         public IActionResult GetPhoto([FromQuery] string username)
         {
+            if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
             return new JsonResult(PwdManService.GetPhoto(username));
         }
 
@@ -58,8 +59,9 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/resetpwd")]
-        public async Task<IActionResult> RequestResetPwdAsync([FromBody] string email)
+        public async Task<IActionResult> RequestResetPasswordAsync([FromBody] string email)
         {
+            if (string.IsNullOrEmpty(email)) throw new MissingParameterException();
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
             await PwdManService.RequestResetPasswordAsync(email, ipAddress);
@@ -68,8 +70,12 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/resetpwd2")]
-        public IActionResult RequestReset([FromBody] UserResetPasswordModel resetPasswordModel)
+        public IActionResult ResetPassword([FromBody] UserResetPasswordModel resetPasswordModel)
         {
+            if (resetPasswordModel == null ||
+                string.IsNullOrEmpty(resetPasswordModel.Password) ||
+                string.IsNullOrEmpty(resetPasswordModel.Token) ||
+                string.IsNullOrEmpty(resetPasswordModel.Email)) throw new MissingParameterException();
             if (resetPasswordModel?.Password?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             if (resetPasswordModel?.Token?.Length > Limits.MAX_RESETPWD_CODE) throw new InputValueTooLargeException();
             if (resetPasswordModel?.Email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
@@ -82,6 +88,7 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/register")]
         public async Task<IActionResult> IsRegisterAllowedAsync([FromBody] string email)
         {
+            if (string.IsNullOrEmpty(email)) throw new MissingParameterException();
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
             var ret = await PwdManService.IsRegisterAllowedAsync(email, ipAddress);
@@ -92,6 +99,11 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/profile")]
         public IActionResult RegisterUser([FromBody] UserRegistrationModel userRegistration)
         {
+            if (userRegistration == null ||
+                string.IsNullOrEmpty(userRegistration.Email) ||
+                string.IsNullOrEmpty(userRegistration.Username) ||
+                string.IsNullOrEmpty(userRegistration.Token) ||
+                string.IsNullOrEmpty(userRegistration.Password)) throw new MissingParameterException();
             if (userRegistration?.Email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             if (userRegistration?.Username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (userRegistration?.Token?.Length > Limits.MAX_REGISTER_CODE) throw new InputValueTooLargeException();
@@ -111,6 +123,8 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/confirmation")]
         public async Task<IActionResult> ConfirmRegistrationAsync([FromBody] OutstandingRegistrationModel confirmation)
         {
+            if (confirmation == null ||
+                string.IsNullOrEmpty(confirmation.Email)) throw new MissingParameterException();
             if (confirmation?.Email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ret = await PwdManService.ConfirmRegistrationAsync(GetToken(), confirmation);
             return new JsonResult(ret);
@@ -132,16 +146,18 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/user/unlock")]
-        public IActionResult UnlockUser([FromBody] string userName)
+        public IActionResult UnlockUser([FromBody] string username)
         {
-            if (userName?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
-            return new JsonResult(PwdManService.UnlockUser(GetToken(), userName));
+            if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
+            if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            return new JsonResult(PwdManService.UnlockUser(GetToken(), username));
         }
 
         [HttpDelete]
         [Route("api/pwdman/user")]
         public IActionResult DeleteUser([FromBody] string username)
         {
+            if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
             if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             return new JsonResult(PwdManService.DeleteUser(GetToken(), username));
         }
@@ -164,6 +180,7 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/user/2fa")]
         public IActionResult EnableUser2FA([FromBody]string totp)
         {
+            if (string.IsNullOrEmpty(totp)) throw new MissingParameterException();
             return new JsonResult(PwdManService.EnableUser2FA(GetToken(), totp));
         }
 
@@ -189,10 +206,31 @@ namespace APIServer.PwdMan
         }
 
         [HttpPut]
+        [Route("api/pwdman/user/name")]
+        public IActionResult UpdateUsername([FromBody] string username)
+        {
+            if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
+            if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            return new JsonResult(PwdManService.UpdateUsername(GetToken(), username));
+        }
+
+        [HttpPut]
+        [Route("api/pwdman/user/email")]
+        public IActionResult UpdateUserEmailAddress([FromBody] string emailAddress)
+        {
+            if (string.IsNullOrEmpty(emailAddress)) throw new MissingParameterException();
+            if (emailAddress?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
+            return new JsonResult(PwdManService.UpdateUserEmailAddress(GetToken(), emailAddress));
+        }
+
+        [HttpPut]
         [Route("api/pwdman/user/role")]
         public IActionResult UpdateUserRole([FromBody] UserUpdateRoleModel userUpdateRoleModel)
         {
-            if (userUpdateRoleModel?.UserName?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (userUpdateRoleModel == null ||
+                string.IsNullOrEmpty(userUpdateRoleModel.Username) ||
+                string.IsNullOrEmpty(userUpdateRoleModel.RoleName)) throw new MissingParameterException();
+            if (userUpdateRoleModel?.Username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (userUpdateRoleModel?.RoleName?.Length > Limits.MAX_ROLE_NAME) throw new InputValueTooLargeException();
             return new JsonResult(PwdManService.UpdateUserRole(GetToken(), userUpdateRoleModel));
         }
@@ -222,6 +260,7 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/markdown/{id}")]
         public IActionResult GetMarkdown(string id)
         {
+            if (string.IsNullOrEmpty(id)) throw new MissingParameterException();
             return new JsonResult(PwdManService.GetMarkdown(GetToken(), id));
         }
 
@@ -236,6 +275,9 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/auth")]
         public async Task<IActionResult> Login([FromBody] AuthenticationModel authentication)
         {
+            if (authentication == null ||
+                string.IsNullOrEmpty(authentication.Username) ||
+                string.IsNullOrEmpty(authentication.Password)) throw new MissingParameterException();
             if (authentication?.Username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (authentication?.Password?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
@@ -247,6 +289,7 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/auth2")]
         public IActionResult LoginPass2([FromBody] string totp)
         {
+            if (string.IsNullOrEmpty(totp)) throw new MissingParameterException();
             if (totp?.Length > Limits.MAX_2FA_CODE) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
             return new JsonResult(PwdManService.AuthenticateTOTP(GetToken(), totp, ipAddress));
@@ -271,6 +314,9 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/userpwd")]
         public IActionResult ChangeUserPassword([FromBody] UserPasswordChangeModel userPasswordChange)
         {
+            if (userPasswordChange == null ||
+                string.IsNullOrEmpty(userPasswordChange.OldPassword) ||
+                string.IsNullOrEmpty(userPasswordChange.NewPassword)) throw new MissingParameterException();
             if (userPasswordChange?.OldPassword?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             if (userPasswordChange?.NewPassword?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             PwdManService.ChangeUserPassword(GetToken(), userPasswordChange);
@@ -283,6 +329,7 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/file")]
         public IActionResult SavePasswordFile([FromBody] string encodedContent)
         {
+            if (string.IsNullOrEmpty(encodedContent)) throw new MissingParameterException();
             if (encodedContent?.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
             PwdManService.SavePasswordFile(GetToken(), encodedContent);
             return new JsonResult(true);

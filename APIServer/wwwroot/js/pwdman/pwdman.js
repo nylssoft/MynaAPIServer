@@ -13,9 +13,6 @@ var pwdman = (() => {
     let errorDiv;
     let emailDiv;
     let emailInput;
-    let facCheckbox;
-    let keepLoginCheckbox;
-    let allowResetPwdCheckbox;
     let waitDiv;
 
     // state
@@ -36,7 +33,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.23";
+    let version = "1.1.24";
 
     // helper
 
@@ -173,7 +170,7 @@ var pwdman = (() => {
     const register = () => {
         lastErrorMessage = "";
         if (userNameInput.value.trim().length == 0) {
-            errorDiv.textContent = "Der Benutzername fehlt.";
+            errorDiv.textContent = "Der Name fehlt.";
             return;
         }
         if (codeInput.value.trim().length == 0) {
@@ -196,9 +193,6 @@ var pwdman = (() => {
                     "Username": userNameInput.value.trim(),
                     "Password": newPasswordPwd.value,
                     "Email": userEmail,
-                    "Requires2FA": facCheckbox.checked,
-                    "UseLongLivedToken": keepLoginCheckbox.checked,
-                    "AllowResetPassword": allowResetPwdCheckbox.checked,
                     "Token": codeInput.value.trim()
                 })
             },
@@ -535,7 +529,7 @@ var pwdman = (() => {
             controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
             return;
         }
-        controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse an. Wenn Sie freigeschaltet wurde, kannst Du Dich mit einem Benutzernamen registrieren.");
+        controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse an. Wenn Sie freigeschaltet wurde, kannst Du Dich registrieren.");
         emailDiv = controls.createDiv(parent);
         let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
         emailLabel.htmlFor = "email-id";
@@ -565,7 +559,7 @@ var pwdman = (() => {
         }
         if (successRegister) {
             controls.create(parent, "p", undefined,
-                `Die Registrierung war erfolgreich! Du kannst Dich jetzt mit dem Benutzernamen ${userName} anmelden.`);
+                `Die Registrierung war erfolgreich! Du kannst Dich jetzt mit dem Namen ${userName} anmelden.`);
             let buttonOKDiv = controls.createDiv(parent);
             controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
             if (userEmail) {
@@ -578,15 +572,14 @@ var pwdman = (() => {
             return;
         }
         controls.create(parent, "p", undefined,
-            "W\u00E4hle Deinen Benutzernamen, ein Kennwort und" +
-            " ob die Zwei-Schritt-Verifizierung aktiviert werden soll." +
+            "W\u00E4hle einen Namen zum Anmelden und ein Kennwort." +
             ` Verwende den Registrierungscode, welcher Dir per E-Mail an ${userEmail} zugestellt wurde.` +
             " Das Kennwort muss mindestens 8 Zeichen lang sein, mindestens einen Grossbuchstaben (A-Z)," +
             " einen Kleinbuchstaben (a-z), eine Ziffer (0-9) und ein Sonderzeichen (!@$()=+-,:.) enthalten.");
         let userNameDiv = controls.createDiv(parent);
-        let nameNameLabel = controls.createLabel(userNameDiv, undefined, "Benutzername:");
-        nameNameLabel.htmlFor = "username-id";
-        userNameInput = controls.createInputField(userNameDiv, "Benutzername", () => newPasswordPwd.focus(), undefined, 16, 32);
+        const userNameLabel = controls.createLabel(userNameDiv, undefined, "Name:");
+        userNameLabel.htmlFor = "username-id";
+        userNameInput = controls.createInputField(userNameDiv, "Name", () => newPasswordPwd.focus(), undefined, 16, 32);
         userNameInput.id = "username-id";
         if (!utils.is_mobile()) {
             userNameInput.focus();
@@ -602,14 +595,6 @@ var pwdman = (() => {
         confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
-
-        let optionsP = controls.create(parent,"p", undefined, "Optionen:");
-        let checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
-        facCheckbox = controls.createCheckbox(checkboxDiv, undefined, undefined, "Zwei-Schritt-Verifizierung", false, undefined, false);
-        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
-        keepLoginCheckbox = controls.createCheckbox(checkboxDiv, undefined, undefined, "Angemeldet bleiben", true, undefined, false);
-        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
-        allowResetPwdCheckbox = controls.createCheckbox(checkboxDiv, undefined, undefined, "Kennwort kann zur\u00FCckgesetzt werden", true, undefined, false);
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
         codeLabel.htmlFor = "code-id";

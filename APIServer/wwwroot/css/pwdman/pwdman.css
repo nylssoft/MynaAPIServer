@@ -216,30 +216,21 @@ form {
 }
 
 .profile-photo {
-    position: absolute;
-    top: 110px;
-    left: 400px;
     border-radius: 50%;
-    z-index: -1;
 }
 
 .profile-photo-add {
-    position: absolute;
-    top: 130px;
-    left: 500px;
+    position: relative;
+    top: -60px;
+    left: 16px;
 }
 
 .profile-photo-remove {
-    position: absolute;
-    top: 170px;
-    left: 500px;
+    position: relative;
+    left: -16px;
 }
 
-.profile-photo-remove:hover {
-    background-color: darkgray;
-}
-
-.profile-photo-add:hover {
+.profile-photo-add:hover, .profile-photo-remove:hover {
     background-color: darkgray;
 }
 
@@ -479,21 +470,6 @@ form {
 
     .button {
         font-size: 11pt;
-    }
-
-    .profile-photo {
-        top: 30px;
-        left: 230px;
-    }
-
-    .profile-photo-add {
-        top: 50px;
-        left: 325px;
-    }
-
-    .profile-photo-remove {
-        top: 80px;
-        left: 325px;
     }
 
     .header {

@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "1.1.20";
+    let version = "1.1.21";
 
     const roleMapping = {
         "usermanager"   : "Administrator",
@@ -297,49 +297,36 @@ var usermgmt = (() => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         utils.create_menu(parent);
         renderHeader(parent);
-        let photoImg = controls.create(parent, "img", "profile-photo");
-        photoImg.id = "profile-photo-id";
-        photoImg.width = 90;
-        photoImg.height = 90;
-        photoImg.title = "Profilbild (90 x 90 Pixel)";
-        photoImg.addEventListener("click", onSelectPhoto);
-        let addImg = controls.createImg(parent, "profile-photo-add", 32, 32, "/images/buttons/list-add-4.png", "Profilbild hinzuf\u00FCgen");
-        addImg.addEventListener("click", onSelectPhoto);
-        if (currentUser.photo) {
-            photoImg.src = currentUser.photo;
-            let removeImg = controls.createImg(parent, "profile-photo-remove", 32, 32, "/images/buttons/list-remove-4.png", "Profilbild entfernen");
-            removeImg.addEventListener("click", onDeletePhoto);
-        }
-        else {
-            photoImg.src = "/images/buttons/user-new-3.png";
-        }
-        let emailP = controls.create(parent, "p");
+        // username
+        const usernameP = controls.create(parent, "p");
+        controls.createSpan(usernameP, undefined, "Name: ");
+        controls.createSpan(usernameP, undefined, currentUser.name);
+        // email address
+        const emailP = controls.create(parent, "p");
         controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");
         controls.createSpan(emailP, undefined, currentUser.email);
-        let optionsP = controls.create(parent, "p", undefined, "Optionen:");
-        let checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
-            currentUser.requires2FA,
-            () => onUpdate2FA());
-        controls.createDiv(checkboxDiv).id = "account-2fa-div-id";
-        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "account-keeplogin-id", undefined, "Angemeldet bleiben",
-            currentUser.useLongLivedToken,
-            () => onUpdateKeepLogin());
-        checkboxDiv = controls.createDiv(optionsP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "account-allowresetpwd-id", undefined, "Kennwort kann zur\u00FCckgesetzt werden",
-            currentUser.allowResetPassword,
-            () => onUpdateAllowResetPwd());
-        let lastLoginP = controls.create(parent, "p");
-        let dt = new Date(currentUser.lastLoginUtc).toLocaleString("de-DE");
+        // profile photo
+        if (currentUser.photo) {
+            const photoImg = controls.create(parent, "img", "profile-photo");
+            photoImg.width = 90;
+            photoImg.height = 90;
+            photoImg.title = "Profilbild (90 x 90 Pixel)";
+            photoImg.src = currentUser.photo;
+        }
+        // last login
+        const lastLoginP = controls.create(parent, "p");
+        const lastLoginDate = new Date(currentUser.lastLoginUtc).toLocaleString("de-DE");
         controls.createSpan(lastLoginP, undefined, "Letzte Anmeldung: ");
-        controls.createSpan(lastLoginP, undefined, dt);
-        let registeredP = controls.create(parent, "p");
-        dt = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
+        controls.createSpan(lastLoginP, undefined, lastLoginDate);
+        // register date
+        const registeredP = controls.create(parent, "p");
+        const registerDate = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
         controls.createSpan(registeredP, undefined, "Registriert seit: ");
-        controls.createSpan(registeredP, undefined, dt);
+        controls.createSpan(registeredP, undefined, registerDate);
+        // documents quota
         const documentsP = controls.create(parent, "p");
         controls.createSpan(documentsP, undefined, `Speicherplatz f\u00FCr Dokumente: ${utils.format_size(currentUser.usedStorage)} von ${utils.format_size(currentUser.storageQuota)} belegt.`);
+        // last logins
         if (currentUser.loginIpAddresses.length > 0) {
             const loginIpP = controls.create(parent, "p");
             controls.createSpan(loginIpP, undefined, "Anmeldungen: ");
@@ -347,11 +334,16 @@ var usermgmt = (() => {
             const ul = controls.create(loginIpP, "ul");
             currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
         }
+        // skat results
         controls.createA(parent, undefined, "/skat/results", "Skatergebnisse", () => window.open("/skat?results", "_blank"));
+        // actions
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
+        // error message
         controls.createDiv(parent, "error").id = "error-id";
+        // copyright
         renderCopyright(parent);
+        // menu items
         utils.set_menu_items(currentUser);
     };
 
@@ -363,11 +355,6 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, "Ja", () => onDeleteCurrentUser());
             controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
         }
-        else if (confirm == "disable2fa") {
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du die Zwei-Schritt-Verifizierung wirklich deaktivieren? ");
-            controls.createButton(actionsDiv, "Ja", () => onDisable2FA());
-            controls.createButton(actionsDiv, "Nein", () => renderCurrentUser());
-        }
         else if (confirm == "deletepasswordfile") {
             controls.create(actionsDiv, "span", "confirmation", "Willst Du Deine Passw\u00F6rter wirklich l\u00F6schen? ");
             controls.createButton(actionsDiv, "Ja", () => onDeletePasswordFile());
@@ -376,6 +363,7 @@ var usermgmt = (() => {
         else {
             let div = controls.createDiv(actionsDiv);
             controls.createButton(div, "Kennwort \u00E4ndern", () => onChangePassword());
+            controls.createButton(div, "Konto bearbeiten", () => renderEditAccount());
             controls.createButton(div, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
             if (currentUser.hasPasswordManagerFile) {
                 controls.createButton(div, "Passw\u00F6rter l\u00F6schen", () => renderAccountActions("deletepasswordfile"));
@@ -435,6 +423,104 @@ var usermgmt = (() => {
         renderCopyright(parent);
     };
 
+    const renderEditAccount = () => {
+        const parent = document.body;
+        controls.removeAllChildren(parent);
+        // wait screen
+        waitDiv = controls.createDiv(parent, "invisible-div");
+        // menu
+        utils.create_menu(parent);
+        // header
+        renderHeader(parent);
+        // edit user name
+        const usernameDiv = controls.createDiv(parent);
+        const usernameLabel = controls.createLabel(usernameDiv, undefined, "Name:");
+        usernameLabel.htmlFor = "username-id";
+        const usernameInput = controls.createInputField(usernameDiv, "Name", undefined, undefined, 16, 32);
+        usernameInput.id = "username-id";
+        usernameInput.value = currentUser.name;
+        usernameInput.addEventListener("change", () => {
+            const val = document.getElementById("username-id").value;
+            if (currentUser.name != val) {
+                controls.removeAllChildren(document.getElementById("section-id"));
+                const usernameConfirmDiv = document.getElementById("username-confirm-id");
+                controls.create(usernameConfirmDiv, "p", undefined, "Du wird abgemeldet, wenn Du Deinen Namen \u00E4nderst.");
+                controls.create(usernameConfirmDiv, "span", "confirmation", "Willst Du Deinen Namen wirklich \u00E4ndern? ");
+                controls.createButton(usernameConfirmDiv, "Ja", () => onUpdateUsername());
+                controls.createButton(usernameConfirmDiv, "Nein", () => renderEditAccount());
+            }
+        });
+        controls.createDiv(usernameDiv).id = "username-confirm-id";
+        const errorNameDiv = controls.createDiv(parent, "error");
+        errorNameDiv.id = "error-username-id";
+        // section will be removed if username is changed
+        const section = controls.createDiv(parent);
+        section.id = "section-id";
+        // edit email address
+        const emailAddressDiv = controls.createDiv(section);
+        const emailAddressLabel = controls.createLabel(emailAddressDiv, undefined, "E-Mail-Adresse:");
+        emailAddressLabel.htmlFor = "emailaddress-id";
+        const emailAddressInput = controls.createInputField(emailAddressDiv, "E-Mail-Adresse", undefined, undefined, 30, 80);
+        emailAddressInput.id = "emailaddress-id";
+        emailAddressInput.value = currentUser.email;
+        emailAddressInput.addEventListener("change", onUpdateEmailAddress);
+        const errorEmailDiv = controls.createDiv(section, "error");
+        errorEmailDiv.id = "error-emailaddress-id";
+        // edit photo
+        controls.create(section, "p", undefined, "Profilbild:");
+        const photoImg = controls.create(section, "img", "profile-photo");
+        photoImg.id = "profile-photo-id";
+        photoImg.width = 90;
+        photoImg.height = 90;
+        photoImg.title = "Profilbild (90 x 90 Pixel)";
+        photoImg.addEventListener("click", onSelectPhoto);
+        const addImg = controls.createImg(section, "profile-photo-add", 32, 32, "/images/buttons/list-add-4.png", "Profilbild hinzuf\u00FCgen");
+        addImg.addEventListener("click", onSelectPhoto);
+        if (currentUser.photo) {
+            photoImg.src = currentUser.photo;
+            const removeImg = controls.createImg(section, "profile-photo-remove", 32, 32, "/images/buttons/list-remove-4.png", "Profilbild entfernen");
+            removeImg.addEventListener("click", onDeletePhoto);
+        }
+        else {
+            photoImg.src = "/images/buttons/user-new-3.png";
+        }
+        const errorPhotoDiv = controls.createDiv(section, "error");
+        errorPhotoDiv.id = "error-photo-id";
+        // edit options
+        const optionsP = controls.create(section, "p", undefined, "Optionen:");
+        // option two factor
+        const facDiv = controls.createDiv(optionsP, "checkbox-div");
+        controls.createCheckbox(facDiv, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
+            currentUser.requires2FA,
+            () => onUpdate2FA());
+        controls.createDiv(facDiv).id = "account-2fa-div-id";
+        const errorFacDiv = controls.createDiv(section, "error");
+        errorFacDiv.id = "error-2fa-id";
+        // option keep login
+        const keepLoginDiv = controls.createDiv(optionsP, "checkbox-div");
+        controls.createCheckbox(keepLoginDiv, "account-keeplogin-id", undefined, "Angemeldet bleiben",
+            currentUser.useLongLivedToken,
+            () => onUpdateKeepLogin());
+        const errorKeepLoginDiv = controls.createDiv(section, "error");
+        errorKeepLoginDiv.id = "error-keeplogin-id";
+        // option allow reset password
+        const allowResetPwdDiv = controls.createDiv(optionsP, "checkbox-div");
+        controls.createCheckbox(allowResetPwdDiv, "account-allowresetpwd-id", undefined, "Kennwort kann zur\u00FCckgesetzt werden",
+            currentUser.allowResetPassword,
+            () => onUpdateAllowResetPwd());
+        const errorAllowResetDiv = controls.createDiv(section, "error");
+        errorAllowResetDiv.id = "error-allowresetpwd-id";
+        // back button
+        const backP = controls.create(section, "p", undefined);
+        controls.createButton(backP, "Zur\u00FCck", () => renderCurrentUser(), undefined, "button");
+        // hidden photo upload controls
+        renderUploadPhoto(section);
+        // copyright
+        renderCopyright(parent);
+        // menu items
+        utils.set_menu_items(currentUser);
+    };
+
     // --- callbacks
 
     const onSelectPhoto = () => {
@@ -455,9 +541,9 @@ var usermgmt = (() => {
             },
             () => {
                 currentUser.photo = undefined;
-                renderCurrentUser();
+                renderEditAccount();
             },
-            (errMsg) => document.getElementById("error-id").textContent = errMsg,
+            (errMsg) => document.getElementById("error-photo-id").textContent = errMsg,
             setWaitCursor
         );
     };
@@ -479,14 +565,14 @@ var usermgmt = (() => {
                     },
                     (photo) => {
                         currentUser.photo = photo;
-                        renderCurrentUser();
+                        renderEditAccount();
                     },
-                    (errMsg) => document.getElementById("error-id").textContent = errMsg,
+                    (errMsg) => document.getElementById("error-photo-id").textContent = errMsg,
                     setWaitCursor
                 );
             }
             else {
-                document.getElementById("error-id").textContent = "Ung\u00FCltige Datei. Erlaubt sind JPG und PNG bis 10 MB.";
+                document.getElementById("error-photo-id").textContent = "Ung\u00FCltige Datei. Erlaubt sind JPG und PNG bis 10 MB.";
             }
         }
     };
@@ -711,51 +797,54 @@ var usermgmt = (() => {
         clearErrors();
         const checkbox = document.getElementById("account-2fa-id");
         const div = document.getElementById("account-2fa-div-id");
-        if (checkbox && div) {
-            controls.removeAllChildren(div);
-            let token = utils.get_authentication_token();
-            if (checkbox.checked && !currentUser.requires2FA) {
-                utils.fetch_api_call("api/pwdman/user/2fa",
-                    {
-                        method: "PUT",
-                        headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                        body: JSON.stringify(forceNew === true)
-                    },
-                    (m) => {
-                        const secret = m.secretKey;
-                        const issuer = m.issuer;
-                        controls.create(div, "div", "text-2fa", `Sicherheitsschl\u00FCssel: ${secret}`);
-                        const qrDiv = controls.createDiv(div, "text-2fa");
-                        const url = `otpauth://totp/${issuer}:${currentUser.email}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
-                        new QRCode(qrDiv, {
-                            text: url,
-                            width: 128,
-                            height: 128,
-                            colorDark: "#ffffff",
-                            colorLight: "#000000",
-                            correctLevel: QRCode.CorrectLevel.H
-                        });
-                        controls.create(div, "div", "text-2fa",
-                            "Installiere die App Google Authenticator auf Deinem Smartphone " +
-                            "und scanne den QR-Code oder gibt den Sicherheitsschl\u00FCssel ein.");
-                        const info = controls.create(div, "div", "text-2fa", "Aktiviere die Zweit-Schritt-Verifizierung, indem Du den Sicherheitscode aus der App eingibst.");
-                        const input = controls.createInputField(info, "Sicherheitscode", () => onEnable2FA(), "input-2fa", 10, 10);
-                        input.id = "input-2fa-id";
-                        controls.createButton(info, "Jetzt aktivieren!", () => onEnable2FA());
-                        controls.createButton(info, "Neuer Schl\u00FCssel", () => onUpdate2FA(true));
-                        const msg = controls.createDiv(info, "error");
-                        msg.id = "msg-2fa-id";
-                    },
-                    onRejectError,
-                    setWaitCursor
-                );
-            }
-            else if (!checkbox.checked && currentUser.requires2FA) {
-                renderAccountActions("disable2fa");
-            }
-            else {
-                renderCurrentUser();
-            }
+        controls.removeAllChildren(div);
+        let token = utils.get_authentication_token();
+        if (checkbox.checked && !currentUser.requires2FA) {
+            utils.fetch_api_call("api/pwdman/user/2fa",
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(forceNew === true)
+                },
+                (m) => {
+                    const secret = m.secretKey;
+                    const issuer = m.issuer;
+                    controls.create(div, "div", "text-2fa", `Sicherheitsschl\u00FCssel: ${secret}`);
+                    const qrDiv = controls.createDiv(div, "text-2fa");
+                    const url = `otpauth://totp/${issuer}:${currentUser.email}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+                    new QRCode(qrDiv, {
+                        text: url,
+                        width: 128,
+                        height: 128,
+                        colorDark: "#ffffff",
+                        colorLight: "#000000",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    controls.create(div, "div", "text-2fa",
+                        "Installiere die App Google Authenticator auf Deinem Smartphone " +
+                        "und scanne den QR-Code oder gibt den Sicherheitsschl\u00FCssel ein.");
+                    const info = controls.create(div, "div", "text-2fa", "Aktiviere die Zweit-Schritt-Verifizierung, indem Du den Sicherheitscode aus der App eingibst.");
+                    const input = controls.createInputField(info, "Sicherheitscode", () => onEnable2FA(), "input-2fa", 10, 10);
+                    input.id = "input-2fa-id";
+                    controls.createButton(info, "Jetzt aktivieren!", () => onEnable2FA());
+                    controls.createButton(info, "Neuer Schl\u00FCssel", () => onUpdate2FA(true));
+                    const msg = controls.createDiv(info, "error");
+                    msg.id = "msg-2fa-id";
+                },
+                (errMsg) => {
+                    document.getElementById("error-2fa-id").textContent = errMsg;
+                    checkbox.checked = !checkbox.checked;
+                },
+                setWaitCursor
+            );
+        }
+        else if (!checkbox.checked && currentUser.requires2FA) {
+            controls.create(div, "span", "confirmation", "Willst Du die Zwei-Schritt-Verifizierung wirklich deaktivieren? ");
+            controls.createButton(div, "Ja", () => onDisable2FA());
+            controls.createButton(div, "Nein", () => renderEditAccount());
+        }
+        else {
+            renderEditAccount();
         }
     };
 
@@ -776,13 +865,16 @@ var usermgmt = (() => {
                 (changed) => {
                     if (changed) {
                         currentUser.requires2FA = true;
-                        renderCurrentUser();
+                        renderEditAccount();
                     }
                     else {
                         msg.textContent = "Der Code ist ung\u00FCltig.";
                     }
                 },
-                onRejectError,
+                (errMsg) => {
+                    document.getElementById("error-2fa-id").textContent = errMsg;
+                    checkbox.checked = !checkbox.checked;
+                },
                 setWaitCursor
             );
         }
@@ -800,9 +892,12 @@ var usermgmt = (() => {
                 if (changed) {
                     currentUser.requires2FA = false;
                 }
-                renderCurrentUser();
+                renderEditAccount();
             },
-            onRejectError,
+            (errMsg) => {
+                document.getElementById("error-2fa-id").textContent = errMsg;
+                checkbox.checked = !checkbox.checked;
+            },
             setWaitCursor
         );
     };
@@ -822,9 +917,12 @@ var usermgmt = (() => {
                     if (changed) {
                         currentUser.useLongLivedToken = checkbox.checked;
                     }
-                    renderCurrentUser();
+                    renderEditAccount();
                 },
-                onRejectError,
+                (errMsg) => {
+                    document.getElementById("error-keeplogin-id").textContent = errMsg;
+                    checkbox.checked = !checkbox.checked;
+                },
                 setWaitCursor
             );
         }
@@ -845,9 +943,65 @@ var usermgmt = (() => {
                     if (changed) {
                         currentUser.allowResetPassword = checkbox.checked;
                     }
-                    renderCurrentUser();
+                    renderEditAccount();
                 },
-                onRejectError,
+                (errMsg) => {
+                    document.getElementById("error-allowresetpwd-id").textContent = errMsg;
+                    checkbox.checked = !checkbox.checked;
+                },
+                setWaitCursor
+            );
+        }
+    };
+
+    const onUpdateUsername = () => {
+        clearErrors();
+        const usernameInput = document.getElementById("username-id");
+        const newUsername = usernameInput.value.trim();
+        if (usernameInput && newUsername.length > 0 && newUsername != currentUser.name) {
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call("api/pwdman/user/name",
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(newUsername)
+                },
+                (changed) => {
+                    if (changed) {
+                        utils.logout(renderLogout, onRejectError);
+                    }
+                    else {
+                        renderEditAccount();
+                    }
+                },
+                (errMsg) => {
+                    document.getElementById("error-username-id").textContent = errMsg;
+                },
+                setWaitCursor
+            );
+        }
+    };
+
+    const onUpdateEmailAddress = () => {
+        clearErrors();
+        const emailInput = document.getElementById("emailaddress-id");
+        if (emailInput && emailInput.value.trim().length > 0) {
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call("api/pwdman/user/email",
+                {
+                    method: "PUT",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                    body: JSON.stringify(emailInput.value.trim())
+                },
+                (changed) => {
+                    if (changed) {
+                        currentUser.email = emailInput.value.trim();
+                    }
+                    renderEditAccount();
+                },
+                (errMsg) => {
+                    document.getElementById("error-emailaddress-id").textContent = errMsg;
+                },
                 setWaitCursor
             );
         }
@@ -862,7 +1016,7 @@ var usermgmt = (() => {
                 {
                     method: "PUT",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                    body: JSON.stringify({ "UserName": user.name, "RoleName": role, "Assigned": checkbox.checked })
+                    body: JSON.stringify({ "Username": user.name, "RoleName": role, "Assigned": checkbox.checked })
                 },
                 (changed) => {
                     if (changed) {

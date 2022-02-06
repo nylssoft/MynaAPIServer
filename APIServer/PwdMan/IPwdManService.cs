@@ -61,9 +61,9 @@ namespace APIServer.PwdMan
 
         long GetUsedStorage(string authenticationToken, long userId);
 
-        bool UnlockUser(string authenticationToken, string userName);
+        bool UnlockUser(string authenticationToken, string username);
 
-        bool DeleteUser(string authenticationToken, string userName);
+        bool DeleteUser(string authenticationToken, string username);
 
         int DeleteLoginIpAddresses(string authenticiationToken);
 
@@ -76,6 +76,10 @@ namespace APIServer.PwdMan
         bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken);
 
         bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword);
+
+        bool UpdateUsername(string authenticationToken, string username);
+
+        bool UpdateUserEmailAddress(string authenticationToken, string emailAddress);
 
         bool UpdateUserRole(string authenticationToken, UserUpdateRoleModel userUpdateRoleModel);
 

@@ -352,9 +352,9 @@ namespace APIServer.PwdMan
                 Salt = pwdgen.Generate(),
                 PasswordHash = hash,
                 Email = email,
-                Requires2FA = registrationProfile.Requires2FA,
-                UseLongLivedToken = registrationProfile.UseLongLivedToken,
-                AllowResetPassword = registrationProfile.AllowResetPassword,
+                Requires2FA = false,
+                UseLongLivedToken = true,
+                AllowResetPassword = true,
                 RegisteredUtc = DateTime.UtcNow,
                 StorageQuota = 100 * 1024 * 1024, // 100 MB default storage
                 LoginEnabled = true
@@ -565,16 +565,16 @@ namespace APIServer.PwdMan
             return userModel;
         }
 
-        public bool UnlockUser(string authenticationToken, string userName)
+        public bool UnlockUser(string authenticationToken, string username)
         {
-            logger.LogDebug("Unlock username '{userName}'...", userName);
+            logger.LogDebug("Unlock username '{username}'...", username);
             var adminuser = GetUserFromToken(authenticationToken);
             if (!HasRole(adminuser, "usermanager"))
             {
                 throw new AccessDeniedPermissionException();
             }
             var dbContext = GetDbContext();
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == userName);
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
             if (user == null)
             {
                 throw new InvalidUsernameException();
@@ -594,18 +594,18 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public bool DeleteUser(string authenticationToken, string userName)
+        public bool DeleteUser(string authenticationToken, string username)
         {
-            logger.LogDebug("Delete username '{userName}'...", userName);
+            logger.LogDebug("Delete username '{username}'...", username);
             var user = GetUserFromToken(authenticationToken);
             var dbContext = GetDbContext();
-            if (user.Name != userName)
+            if (user.Name != username)
             {
                 if (!HasRole(user, "usermanager"))
                 {
                     throw new AccessDeniedPermissionException();
                 }
-                user = dbContext.DbUsers.SingleOrDefault(u => u.Name == userName);
+                user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
                 if (user == null)
                 {
                     throw new InvalidUsernameException();
@@ -746,9 +746,50 @@ namespace APIServer.PwdMan
             return false;
         }
 
+        public bool UpdateUsername(string authenticationToken, string username)
+        {
+            logger.LogDebug("Update user name to {username}", username);
+            var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
+            if (username != user.Name)
+            {
+                if (dbContext.DbUsers.Any((user) => user.Name == username))
+                {
+                    throw new UsernameAlreadyUsedException();
+                }
+                user.Name = username;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public bool UpdateUserEmailAddress(string authenticationToken, string emailAddress)
+        {
+            logger.LogDebug("Update user email address to {emailAddress}", emailAddress);
+            if (!IsValidEmailAddress(emailAddress))
+            {
+                throw new InvalidEmailAddressException();
+            }
+            var user = GetUserFromToken(authenticationToken);
+            emailAddress = emailAddress.ToLowerInvariant();
+            if (emailAddress != user.Email)
+            {
+                var dbContext = GetDbContext();
+                if (dbContext.DbUsers.Any((user) => user.Email == emailAddress))
+                {
+                    throw new EmailAddressAlreadyRegisteredException();
+                }
+                user.Email = emailAddress;
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
         public bool UpdateUserRole(string authenticationToken, UserUpdateRoleModel model)
         {
-            logger.LogDebug("Update role '{roleName}' for user '{userName}', set assigned to {assigned}...", model.RoleName, model.UserName, model.Assigned);
+            logger.LogDebug("Update role '{roleName}' for user '{username}', set assigned to {assigned}...", model.RoleName, model.Username, model.Assigned);
             var adminuser = GetUserFromToken(authenticationToken);
             if (!HasRole(adminuser, "usermanager"))
             {
@@ -758,7 +799,7 @@ namespace APIServer.PwdMan
             var dbContext = GetDbContext();
             var user = dbContext.DbUsers
                 .Include((u) => u.Roles)
-                .SingleOrDefault((u) => u.Name == model.UserName);
+                .SingleOrDefault((u) => u.Name == model.Username);
             if (user == null)
             {
                 throw new InvalidUsernameException();
