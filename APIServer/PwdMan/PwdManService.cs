@@ -749,6 +749,10 @@ namespace APIServer.PwdMan
         public bool UpdateUsername(string authenticationToken, string username)
         {
             logger.LogDebug("Update user name to {username}", username);
+            if (!IsValidUsername(username))
+            {
+                throw new InvalidUsernameException();
+            }
             var user = GetUserFromToken(authenticationToken);
             var dbContext = GetDbContext();
             if (username != user.Name)

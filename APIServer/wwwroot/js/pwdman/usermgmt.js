@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "1.1.21";
+    let version = "1.1.22";
 
     const roleMapping = {
         "usermanager"   : "Administrator",
@@ -373,7 +373,6 @@ var usermgmt = (() => {
                 controls.createButton(adminDiv, "Anfragen bearbeiten", () => renderConfirmRegistrations());
                 controls.createButton(adminDiv, "Benutzer bearbeiten", () => renderEditUsers());
             }
-            renderUploadPhoto(div);
         }
     };
 
@@ -444,6 +443,7 @@ var usermgmt = (() => {
             if (currentUser.name != val) {
                 controls.removeAllChildren(document.getElementById("section-id"));
                 const usernameConfirmDiv = document.getElementById("username-confirm-id");
+                controls.removeAllChildren(usernameConfirmDiv);
                 controls.create(usernameConfirmDiv, "p", undefined, "Du wird abgemeldet, wenn Du Deinen Namen \u00E4nderst.");
                 controls.create(usernameConfirmDiv, "span", "confirmation", "Willst Du Deinen Namen wirklich \u00E4ndern? ");
                 controls.createButton(usernameConfirmDiv, "Ja", () => onUpdateUsername());

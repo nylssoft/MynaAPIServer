@@ -30,7 +30,7 @@ namespace APIServer.PwdMan
     public class InvalidUsernameException : APIException
     {
         public InvalidUsernameException() :
-            base("Ungültiger Benutzername.", 401)
+            base("Ungültiger Benutzername.", 403)
         {
         }
     }
