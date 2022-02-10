@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "1.1.22";
+    let version = "1.1.23";
 
     const roleMapping = {
         "usermanager"   : "Administrator",
@@ -432,10 +432,10 @@ var usermgmt = (() => {
         // header
         renderHeader(parent);
         // edit user name
-        const usernameDiv = controls.createDiv(parent);
-        const usernameLabel = controls.createLabel(usernameDiv, undefined, "Name:");
+        const usernameP = controls.create(parent, "p");
+        const usernameLabel = controls.createLabel(usernameP, undefined, "Name:");
         usernameLabel.htmlFor = "username-id";
-        const usernameInput = controls.createInputField(usernameDiv, "Name", undefined, undefined, 16, 32);
+        const usernameInput = controls.createInputField(usernameP, "Name", undefined, undefined, 16, 32);
         usernameInput.id = "username-id";
         usernameInput.value = currentUser.name;
         usernameInput.addEventListener("change", () => {
@@ -450,7 +450,7 @@ var usermgmt = (() => {
                 controls.createButton(usernameConfirmDiv, "Nein", () => renderEditAccount());
             }
         });
-        controls.createDiv(usernameDiv).id = "username-confirm-id";
+        controls.createDiv(usernameP).id = "username-confirm-id";
         const errorNameDiv = controls.createDiv(parent, "error");
         errorNameDiv.id = "error-username-id";
         // section will be removed if username is changed
