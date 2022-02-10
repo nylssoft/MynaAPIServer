@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.24";
+    let version = "1.3.25";
 
     // helper
 
@@ -1131,7 +1131,7 @@ var skat = (() => {
             if (h.gameValue > 0) {
                 playerWins[idx] += 1;
             }
-            else {
+            else if (h.gameValue < 0) {
                 playerLoss[idx] += 1;
                 otherWins[opponentPlayerIndex[0]] += 1;
                 otherWins[opponentPlayerIndex[1]] += 1;
