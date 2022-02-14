@@ -8,6 +8,10 @@
     "inputFiles": [ "wwwroot/css/chess/chess.css" ]
   },
   {
+    "outputFileName": "wwwroot/css/backgammon/backgammon.min.css",
+    "inputFiles": [ "wwwroot/css/backgammon/backgammon.css" ]
+  },
+  {
     "outputFileName": "wwwroot/css/skat/skat.min.css",
     "inputFiles": [ "wwwroot/css/skat/skat.css" ]
   },
@@ -60,6 +64,15 @@
   {
     "outputFileName": "wwwroot/js/chess/chess.min.js",
     "inputFiles": [ "wwwroot/js/chess/chess.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/backgammon/backgammon.min.js",
+    "inputFiles": [ "wwwroot/js/backgammon/backgammon.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true

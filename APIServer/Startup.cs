@@ -22,6 +22,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using APIServer.Chess;
+using APIServer.Backgammon;
 using APIServer.Database;
 using APIServer.Diary;
 using APIServer.Notes;
@@ -59,6 +60,7 @@ namespace APIServer
             // singletons
             services.AddSingleton<ISkatService, SkatService>();
             services.AddSingleton<IChessService, ChessService>();
+            services.AddSingleton<IBackgammonService, BackgammonService>();
             // enable cshtml pages
             services.AddRazorPages();
             // all urls lower case
