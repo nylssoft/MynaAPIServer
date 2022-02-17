@@ -391,6 +391,7 @@ namespace APIServer.Backgammon.Core
             CurrentColor = CurrentColor.Value == CheckerColor.White ? CheckerColor.Black : CheckerColor.White;
             LastRoll = CurrentRoll;
             CurrentRoll = null;
+            remainingRollNumbers.Clear();
         }
 
         public void Move(int from, int to)
@@ -589,7 +590,21 @@ namespace APIServer.Backgammon.Core
             // bear off
             if (to == OFFBOARD)
             {
-                remainingRollNumbers.Remove(color == CheckerColor.White ? 24 - from : from + 1);
+                var rollNumber = color == CheckerColor.White ? 24 - from : from + 1;
+                // roll number can be higher for bear off, use highest roll number
+                if (!remainingRollNumbers.Contains(rollNumber))
+                {
+                    if (remainingRollNumbers.Count == 1 ||
+                        remainingRollNumbers[0] >= remainingRollNumbers[1])
+                    {
+                        rollNumber = remainingRollNumbers[0];
+                    }
+                    else
+                    {
+                        rollNumber = remainingRollNumbers[1];
+                    }
+                }
+                remainingRollNumbers.Remove(rollNumber);
                 checker = board[from].Checkers.Pop();
                 offBoard.Add(checker);
                 checker.Position = OFFBOARD;
@@ -607,7 +622,7 @@ namespace APIServer.Backgammon.Core
                 if (from == BAR)
                 {
                     remainingRollNumbers.Remove(color == CheckerColor.White ? to + 1 : 24 - to);
-                    checker = bar.Single((c) => c.Color == color);
+                    checker = bar.Find((c) => c.Color == color);
                     bar.Remove(checker);
                 }
                 // move in board
