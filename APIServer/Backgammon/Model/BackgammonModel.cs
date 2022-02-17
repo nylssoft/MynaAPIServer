@@ -21,7 +21,7 @@ namespace APIServer.Backgammon.Model
 {
     public class BackgammonModel
     {
-        public StateModel State { get; set; }
+        public long State { get; set; }
 
         public List<UserModel> AllUsers { get; set; }
 

@@ -48,9 +48,8 @@ namespace APIServer.Backgammon
 
         // --- without authentication
 
-        public StateModel GetState()
+        public long GetState()
         {
-            var ret = new StateModel();
             lock (mutex)
             {
                 var options = GetOptions();
@@ -60,7 +59,6 @@ namespace APIServer.Backgammon
                     timeout = options.SessionTimeout;
                 }
                 var now = DateTime.Now;
-                var nowUtc = DateTime.UtcNow;
                 foreach (var pair in userTickets)
                 {
                     var ctx = pair.Value;
@@ -69,16 +67,12 @@ namespace APIServer.Backgammon
                     {
                         board = null;
                         userTickets.Clear();
-                        stateChanged = nowUtc;
+                        stateChanged = DateTime.UtcNow;
                         break;
                     }
                 }
-                if (stateChanged.HasValue)
-                {
-                    ret.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
-                }
+                return GetStateChanged();
             }
-            return ret;
         }
 
         public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username)
@@ -95,19 +89,19 @@ namespace APIServer.Backgammon
                         if (e.Value.Name == username)
                         {
                             ret.Ticket = e.Key;
-                            return ret;
+                            break;
                         }
                     }
                 }
                 else if (pwdManService.IsRegisteredUsername(username))
                 {
                     ret.IsAuthenticationRequired = true;
-                    return ret;
                 }
-                if (!userTickets.Values.Any((v) => string.Equals(v.Name, username, StringComparison.OrdinalIgnoreCase))
-                    && board == null
-                    && userTickets.Count < 2
-                    && username.Trim().Length > 0)
+                if (string.IsNullOrEmpty(ret.Ticket) && !ret.IsAuthenticationRequired &&
+                    !userTickets.Values.Any((v) => string.Equals(v.Name, username, StringComparison.OrdinalIgnoreCase))
+                        && board == null
+                        && userTickets.Count < 2
+                        && username.Trim().Length > 0)
                 {
                     // only lower chars and digits except 0 and o
                     var pwdgen = new PasswordGenerator.PwdGen()
@@ -129,31 +123,12 @@ namespace APIServer.Backgammon
                     stateChanged = DateTime.UtcNow;
                     ret.Ticket = ticket;
                 }
+                ret.State = GetStateChanged();
+                return ret;
             }
-            return ret;
         }
 
         // --- with authentication
-
-        public bool Logout(string ticket)
-        {
-            lock (mutex)
-            {
-                var ctx = GetContext(ticket);
-                if (ctx != null)
-                {
-                    board = null;
-                    userTickets.Remove(ticket);
-                    foreach (var c in userTickets.Values)
-                    {
-                        c.StartGameConfirmed = false;
-                    }
-                    stateChanged = DateTime.UtcNow;
-                    return true;
-                }
-            }
-            return false;
-        }
 
         public BackgammonModel GetBackgammonModel(string ticket)
         {
@@ -219,37 +194,69 @@ namespace APIServer.Backgammon
                         ret.Board.CurrentRollNumbers.Add(board.CurrentRoll.Number2);
                         ret.Board.RemainingRollNumbers.AddRange(board.GetRemainingRollNumbers());
                     }
+                    ret.Board.Items = new List<ItemModel>();
+                    // items
+                    foreach (var item in board.GetItems())
+                    {
+                        ret.Board.Items.Add(new ItemModel
+                        {
+                            Color = ConvertCheckerColor(item.Color),
+                            Count = item.Count,
+                            Position = item.Position
+                        });
+                    }
+                    // moves
+                    ret.Board.Moves = new List<MoveModel>();
+                    foreach (var move in board.GetAllMoves())
+                    {
+                        ret.Board.Moves.Add(new MoveModel
+                        {
+                            From = move.Item1,
+                            To = move.Item2
+                        });
+                    }
                 }
                 return ret;
             }
         }
 
-        public bool StartNewGame(string ticket)
+        public long Logout(string ticket)
         {
-            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null)
+                {
+                    board = null;
+                    userTickets.Remove(ticket);
+                    foreach (var c in userTickets.Values)
+                    {
+                        c.StartGameConfirmed = false;
+                    }
+                    stateChanged = DateTime.UtcNow;
+                }
+                return GetStateChanged();
+            }
+        }
+
+        public long StartNewGame(string ticket)
+        {
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
                 if (ctx != null && board == null && userTickets.Count == 2)
                 {
                     var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
-                    string whitePlayer = users[0].Name;
-                    string blackPlayer = users[1].Name;
-                    board = new BackgammonBoard(whitePlayer, blackPlayer);
+                    board = new BackgammonBoard(users[0].Name, users[1].Name);
                     ctx.StartGameConfirmed = true;
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool Roll(string ticket)
+        public long Roll(string ticket)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -262,23 +269,20 @@ namespace APIServer.Backgammon
                         if (!startRollNumber.HasValue)
                         {
                             board.RollStartDice(currentColor);
-                            ret = true;
+                            stateChanged = DateTime.UtcNow;
                         }
                     }
                     else if (currentColor == board.CurrentColor && board.CurrentRoll == null)
                     {
                         board.RollDice();
+                        stateChanged = DateTime.UtcNow;
                     }
                 }
-                if (ret)
-                {
-                    stateChanged = DateTime.UtcNow;
-                }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool GiveUp(string ticket)
+        public long GiveUp(string ticket)
         {
             lock (mutex)
             {
@@ -287,19 +291,17 @@ namespace APIServer.Backgammon
                     board != null &&
                     board.GameStarted &&
                     !board.GameOver &&
-                    board.CurrentColor == GetPlayerColor(ctx.Name))
+                    IsActiveUser(ctx))
                 {
                     board.GiveUp = true;
                     stateChanged = DateTime.UtcNow;
-                    return true;
                 }
+                return GetStateChanged();
             }
-            return false;
         }
 
-        public bool ConfirmNextGame(string ticket, bool ok)
+        public long ConfirmNextGame(string ticket, bool ok)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -325,19 +327,14 @@ namespace APIServer.Backgammon
                             board = new BackgammonBoard(board.WhitePlayer, board.BlackPlayer);
                         }
                     }
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool StartNextGame(string ticket)
+        public long StartNextGame(string ticket)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -353,17 +350,54 @@ namespace APIServer.Backgammon
                     }
                     board.NextGameRequested = true;
                     ctx.StartGameConfirmed = true;
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
+        }
+
+        public long Move(string ticket, MoveModel move)
+        {
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null &&
+                    board != null &&
+                    board.GameStarted &&
+                    !board.GameOver &&
+                    IsActiveUser(ctx))
+                {
+                    board.Move(move.From, move.To);
+                    stateChanged = DateTime.UtcNow;
+                }
+                return GetStateChanged();
+            }
+        }
+
+        public long Skip(string ticket)
+        {
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null &&
+                    board != null &&
+                    board.GameStarted &&
+                    !board.GameOver &&
+                    IsActiveUser(ctx))
+                {
+                    board.Skip();
+                    stateChanged = DateTime.UtcNow;
+                }
+                return GetStateChanged();
+            }
         }
 
         // --- private
+
+        private bool IsActiveUser(Context ctx)
+        {
+            return GetPlayerColor(ctx.Name) == board.CurrentColor;
+        }
 
         private CheckerColor GetPlayerColor(string playerName)
         {
@@ -400,6 +434,11 @@ namespace APIServer.Backgammon
                 ret.Add(new UserModel { Name = user.Name });
             }
             return ret;
+        }
+
+        private long GetStateChanged()
+        {
+            return stateChanged.HasValue ? (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds : 0;
         }
 
         // --- private static

@@ -17,8 +17,12 @@
 */
 namespace APIServer.Backgammon.Model
 {
-    public class StateModel
+    public class ItemModel
     {
-        public long State { get; set; } = 0;
+        public string Color { get; set; }
+
+        public int Count { get; set; }
+
+        public int Position { get; set; }
     }
 }

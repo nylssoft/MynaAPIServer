@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.Backgammon.Model;
 using APIServer.PwdMan;
 using Microsoft.AspNetCore.Mvc;
 
@@ -99,6 +100,20 @@ namespace APIServer.Backgammon
         public IActionResult ConfirmNextGame([FromBody] bool ok)
         {
             return new JsonResult(BackgammonService.ConfirmNextGame(GetTicket(), ok));
+        }
+
+        [HttpPost]
+        [Route("api/backgammon/move")]
+        public IActionResult Move([FromBody] MoveModel move)
+        {
+            return new JsonResult(BackgammonService.Move(GetTicket(), move));
+        }
+
+        [HttpPost]
+        [Route("api/backgammon/skip")]
+        public IActionResult Skip()
+        {
+            return new JsonResult(BackgammonService.Skip(GetTicket()));
         }
 
         // --- private

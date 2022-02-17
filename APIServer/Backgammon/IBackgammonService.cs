@@ -24,25 +24,30 @@ namespace APIServer.Backgammon
     {
         // --- without authentication
 
-        StateModel GetState();
+        long GetState();
 
         LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username);
 
         // --- with authentication (ticket)
 
-        bool Logout(string ticket);
-
         BackgammonModel GetBackgammonModel(string ticket);
 
-        bool StartNewGame(string ticket);
+        // following actions return the service state
 
-        bool Roll(string ticket);
+        long Logout(string ticket);
 
-        bool GiveUp(string ticket);
+        long StartNewGame(string ticket);
 
-        bool StartNextGame(string ticket);
+        long GiveUp(string ticket);
 
-        bool ConfirmNextGame(string ticket, bool ok);
+        long StartNextGame(string ticket);
 
+        long ConfirmNextGame(string ticket, bool ok);
+
+        long Roll(string ticket);
+
+        long Move(string ticket, MoveModel move);
+
+        long Skip(string ticket);
     }
 }

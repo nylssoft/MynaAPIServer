@@ -44,5 +44,9 @@ namespace APIServer.Backgammon.Model
         public List<int> RemainingRollNumbers { get; set; }
 
         public int? DoubleRoll { get; set; }
+
+        public List<ItemModel> Items { get; set; }
+
+        public List<MoveModel> Moves { get; set; }
     }
 }

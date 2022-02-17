@@ -17,12 +17,10 @@
 */
 namespace APIServer.Backgammon.Model
 {
-    public class LoginModel
+    public class MoveModel
     {
-        public string Ticket { get; set; }
+        public int From { get; set; }
 
-        public bool IsAuthenticationRequired { get; set; }
-
-        public long State { get; set; }
+        public int To { get; set; }
     }
 }
