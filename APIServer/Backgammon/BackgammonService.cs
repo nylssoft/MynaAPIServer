@@ -166,10 +166,12 @@ namespace APIServer.Backgammon
                     ret.Board.CurrentRollNumbers = new List<int>();
                     ret.Board.RemainingRollNumbers = new List<int>();
                     ret.Board.DoubleRoll = null;
+                    ret.Board.Items = new List<ItemModel>();
+                    ret.Board.Moves = new List<MoveModel>();
                     if (!board.GameStarted)
                     {
                         // start rolls
-                        var playerColor = GetPlayerColor(ctx.Name);
+                        var playerColor = ctx != null ? GetPlayerColor(ctx.Name) : CheckerColor.White;
                         var opponentColor = GetOpponentColor(playerColor);
                         var startRollPlayer = board.GetStartRollNumber(playerColor);
                         var startRollOpponent = board.GetStartRollNumber(opponentColor);
@@ -187,14 +189,25 @@ namespace APIServer.Backgammon
                             ret.Board.DoubleRoll = board.CurrentRoll.Number1;
                         }
                     }
-                    else if (board.CurrentRoll != null)
+                    else // game started
                     {
-                        // current rolls and remaining rolls
-                        ret.Board.CurrentRollNumbers.Add(board.CurrentRoll.Number1);
-                        ret.Board.CurrentRollNumbers.Add(board.CurrentRoll.Number2);
-                        ret.Board.RemainingRollNumbers.AddRange(board.GetRemainingRollNumbers());
+                        if (board.CurrentRoll != null)
+                        {
+                            // current rolls and remaining rolls
+                            ret.Board.CurrentRollNumbers.Add(board.CurrentRoll.Number1);
+                            ret.Board.CurrentRollNumbers.Add(board.CurrentRoll.Number2);
+                            ret.Board.RemainingRollNumbers.AddRange(board.GetRemainingRollNumbers());
+                        }
+                        // moves
+                        foreach (var move in board.GetAllMoves())
+                        {
+                            ret.Board.Moves.Add(new MoveModel
+                            {
+                                From = move.Item1,
+                                To = move.Item2
+                            });
+                        }
                     }
-                    ret.Board.Items = new List<ItemModel>();
                     // items
                     foreach (var item in board.GetItems())
                     {
@@ -203,16 +216,6 @@ namespace APIServer.Backgammon
                             Color = ConvertCheckerColor(item.Color),
                             Count = item.Count,
                             Position = item.Position
-                        });
-                    }
-                    // moves
-                    ret.Board.Moves = new List<MoveModel>();
-                    foreach (var move in board.GetAllMoves())
-                    {
-                        ret.Board.Moves.Add(new MoveModel
-                        {
-                            From = move.Item1,
-                            To = move.Item2
                         });
                     }
                 }
@@ -396,7 +399,7 @@ namespace APIServer.Backgammon
 
         private bool IsActiveUser(Context ctx)
         {
-            return GetPlayerColor(ctx.Name) == board.CurrentColor;
+            return ctx != null && GetPlayerColor(ctx.Name) == board.CurrentColor;
         }
 
         private CheckerColor GetPlayerColor(string playerName)
