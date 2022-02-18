@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "0.9.0";
+    let version = "0.9.1";
 
     let dirty;
 
@@ -659,7 +659,7 @@ var backgammon = (() => {
     // rendering
 
     const renderBoardFull = (parent, ignoreToken) => {
-        if (ignoreToken || !model.currentUser) {
+        if (ignoreToken || !currentUser) {
             controls.create(parent, "p", undefined, "Das Brett ist leider schon belegt!");
             controls.createButton(parent, "Zuschauen als Gast", () => window.open("/backgammon?guest", "_blank"));
             document.body.className = "inactive-background";
@@ -727,7 +727,7 @@ var backgammon = (() => {
 
     const renderLogin = (parent) => {
         document.body.className = "active-background";
-        if (!model.currentUser) {
+        if (!currentUser) {
             controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
             const label = controls.createLabel(parent, undefined, "Name:");
             label.htmlFor = "username-id";
