@@ -2,11 +2,6 @@
 
 var backgammon = (() => {
 
-    // UI elements
-
-    let inputUsername;
-    let canvas;
-
     // state
 
     let ticket;
@@ -22,20 +17,41 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let pixelPerField;
-
-    let version = "0.0.1";
+    let version = "0.9.0";
 
     let dirty;
+
+    const colorCheckerWhite = "white";
+    const colorCheckerBlack = "darkred";
+    const colorCheckerSelected = "blue";
+    const colorCheckerMoveTo = "lightblue";
+    const colorPointLight = "palegreen";
+    const colorPointDark = "darkseagreen";
+    const colorLightBrown = "navajowhite";
+    const colorDarkBrown = "peru";
+    const colorShadowLight = "white";
+    const colorShadowDark = "black";
+
+    const gap = 4;
+
+    let checkerRadius;
+    let pointWidth;
+    let pointHeight;
+    let borderWidth;
+    let borderHeight;
+
+    let lastPos;
+    let selectedItem;
+    let moveItem;
 
     // helper
 
     const handleError = (err) => {
         console.error(err);
         window.sessionStorage.removeItem("backgammonstate");
-        timerEnabled = true;
         endGameClicked = false;
         giveUpClicked = false;
+        enableTimer();
     }
 
     const clearTicket = () => {
@@ -61,207 +77,22 @@ var backgammon = (() => {
         return t;
     }
 
-    const getPositionFromEvent = (evt) => {
-        /*
-        const ymax = pixelPerField * 7;
-        const y = ymax - evt.offsetY + pixelPerField;
-        const x = evt.offsetX;
-        const col = Math.floor(x / pixelPerField);
-        const row = Math.floor(y / pixelPerField);
-        if (row >= 0 && row <= 7 && col >= 0 && col <= 7) {
-            if (!model.currentUser || model.currentUser.name === model.board.whitePlayer) {
-                return { row: row, col: col };
-            }
-            else {
-                return { row: 7 - row, col: col };
-            }
-        }
-        */
-        return undefined;
+    const getState = () => {
+        return window.sessionStorage.getItem("backgammonstate");
     };
 
-    const drawBoard = (ctx) => {
-        /*
-        for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
-                drawEmptyField(ctx, r, c);
-            }
-        }
-        drawFigures(ctx);
-        */
+    const setState = (state) => {
+        window.sessionStorage.setItem("backgammonstate", state);
     };
 
-    const drawEmptyField = (ctx, row, column) => {
-        /*
-        if (isBlackPlayer()) {
-            row = 7 - row;
-        }
-        let color = row % 2 == 0 ? colorLight : colorDark;
-        if (column % 2 == 1) {
-            color = color == colorLight ? colorDark : colorLight;
-        }
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.fillRect(column * pixelPerField, pixelPerField * 7 - row * pixelPerField, pixelPerField, pixelPerField);
-        */
+    const enableTimer = () => {
+        console.log("TIMER ENABLED!");
+        timerEnabled = true;
     };
 
-    const drawSampleBoard = (ctx) => {
-        /*
-        const px = 32;
-        ctx.clearRect(0, 0, 8 * px, 8 * px);
-        for (let r = 0; r < 8; r++) {
-            let color = r % 2 == 0 ? colorLight : colorDark;
-            for (let c = 0; c < 8; c++) {
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.fillRect(c * px, px * 7 - r * px, px, px);
-                color = color == colorLight ? colorDark : colorLight;
-            }
-        }
-        const ymax = px * 7;
-        let figures = [
-            { type: "P", color: "W", row: 1, column: 0 },
-            { type: "P", color: "W", row: 1, column: 1 },
-            { type: "P", color: "W", row: 1, column: 2 },
-            { type: "P", color: "W", row: 1, column: 3 },
-            { type: "P", color: "W", row: 1, column: 4 },
-            { type: "P", color: "W", row: 1, column: 5 },
-            { type: "P", color: "W", row: 1, column: 6 },
-            { type: "P", color: "W", row: 1, column: 7 },
-            { type: "R", color: "W", row: 0, column: 0 },
-            { type: "N", color: "W", row: 0, column: 1 },
-            { type: "B", color: "W", row: 0, column: 2 },
-            { type: "Q", color: "W", row: 0, column: 3 },
-            { type: "K", color: "W", row: 0, column: 4 },
-            { type: "B", color: "W", row: 0, column: 5 },
-            { type: "N", color: "W", row: 0, column: 6 },
-            { type: "R", color: "W", row: 0, column: 7 },
-            { type: "P", color: "B", row: 6, column: 0 },
-            { type: "P", color: "B", row: 6, column: 1 },
-            { type: "P", color: "B", row: 6, column: 2 },
-            { type: "P", color: "B", row: 6, column: 3 },
-            { type: "P", color: "B", row: 6, column: 4 },
-            { type: "P", color: "B", row: 6, column: 5 },
-            { type: "P", color: "B", row: 6, column: 6 },
-            { type: "P", color: "B", row: 6, column: 7 },
-            { type: "R", color: "B", row: 7, column: 0 },
-            { type: "N", color: "B", row: 7, column: 1 },
-            { type: "B", color: "B", row: 7, column: 2 },
-            { type: "Q", color: "B", row: 7, column: 3 },
-            { type: "K", color: "B", row: 7, column: 4 },
-            { type: "B", color: "B", row: 7, column: 5 },
-            { type: "N", color: "B", row: 7, column: 6 },
-            { type: "R", color: "B", row: 7, column: 7 },
-        ];
-        figures.forEach(f => {
-            const image = figureImageMap.get(`${f.type}${f.color}`);
-            if (image) {
-                ctx.drawImage(image, f.column * px, ymax - f.row * px, px, px);
-            }
-        });
-        */
-    };
-
-    const drawFigure = (ctx, f) => {
-        /*
-        const image = figureImageMap.get(`${f.type}${f.color}`);
-        if (!image) return; // not yet loaded
-        const row = isBlackPlayer() ? 7 - f.row : f.row;
-        ctx.drawImage(image, f.column * pixelPerField, pixelPerField * 7 - row * pixelPerField, pixelPerField, pixelPerField);
-        */
-    };
-
-    const drawFigures = (ctx) => {
-        /*
-        if (!model.board || !model.board.figures) return;
-        model.board.figures.forEach(f => drawFigure(ctx, f));
-        */
-    };
-
-    const drawSelectionRect = (ctx, figure) => {
-        /*
-        drawRect(ctx, figure.row, figure.column, colorSelection);
-        if (previewMoves) {
-            figure.moves.forEach(move => {
-                drawRect(ctx, move.row, move.column, colorPreview);
-            });
-        }
-        */
-    };
-
-    const drawRect = (ctx, row, col, color) => {
-        /*
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = color;
-        if (isBlackPlayer()) {
-            row = 7 - row;
-        }
-        ctx.strokeRect(col * pixelPerField + 6, pixelPerField * 7 - row * pixelPerField + 6, pixelPerField - 12, pixelPerField - 12);
-        */
-    };
-
-    const loadFigureImages = (finished) => {
-        /*
-        const names = ["BW", "BB", "KW", "KB", "NW", "NB", "PW", "PB", "QW", "QB", "RW", "RB"];
-        let loaded = 0;
-        names.forEach(name => {
-            const image = new Image();
-            image.onload = (evt) => {
-                figureImageMap.set(name, evt.currentTarget);
-                loaded++;
-                if (finished && loaded == names.length) {
-                    finished();
-                }
-            };
-            image.src = `/images/chess/${name}.svg`;
-        });
-        */
-    };
-
-    const draw = () => {
-        /*
-        if (frameCounterlastMoved > 0) {
-            frameCounterlastMoved--;
-            if (frameCounterlastMoved == 0) {
-                dirty = true;
-            }
-        }
-        if (canvas && (dirty || dirtyClock)) {
-            let ctx = canvas.getContext("2d");
-            if (dirty) {
-                drawBoard(ctx);
-                drawClocks(ctx);
-                if (selectedFigure) {
-                    drawSelectionRect(ctx, selectedFigure);
-                }
-                if (isPlaying() && (isActivePlayer() || guestMode) && frameCounterlastMoved > 0) {
-                    let idx = 0;
-                    let color;
-                    model.board.lastMoves.forEach(lm => {
-                        color = colorMoves[idx];
-                        drawFigure(ctx, lm.figure);
-                        drawRect(ctx, lm.figure.row, lm.figure.column, color);
-                        drawEmptyField(ctx, lm.row, lm.column);
-                        if (model.board.lastStroke &&
-                            model.board.lastStroke.row == lm.row &&
-                            model.board.lastStroke.column == lm.column) {
-                            drawFigure(ctx, model.board.lastStroke);
-                        }
-                        drawRect(ctx, lm.row, lm.column, color);
-                        idx = (idx + 1) % colorMoves.length;
-                    });
-                }
-                dirty = false;
-                dirtyClock = false;
-            }
-            if (dirtyClock) {
-                drawClocks(ctx);
-                dirtyClock = false;
-            }
-        }
-        */
-        window.requestAnimationFrame(draw);
+    const disableTimer = () => {
+        console.log("TIMER DISABLED!");
+        timerEnabled = false;
     };
 
     const isPlaying = () => {
@@ -295,13 +126,16 @@ var backgammon = (() => {
         const pConfirmNextGame = document.getElementById("confirmnextgame");
         if (model && model.board) {
             if (model.board.gameOver) {
-                if (model.board.giveUp) {
-                    msg = `Das Spiel wurde aufgegeben. Gewinner ist ${model.board.winner}.`;
+                if (model.currentUser && model.currentUser.name === model.board.winner) {
+                    msg = "Du hast gewonnen.";
                 }
                 else {
-                    msg = `Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                    msg = `${model.board.winner} hat gewonnen.`;                
                 }
-                if (ticket) {
+                if (model.board.giveUp) {
+                    msg += " Das Spiel wurde aufgegeben.";
+                }
+                if (ticket && model.currentUser) {
                     if (model.board.nextGameRequested) {
                         if (model.currentUser.startGameConfirmed) {
                             controls.create(pConfirmNextGame, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
@@ -322,53 +156,61 @@ var backgammon = (() => {
             }
             else {
                 controls.removeAllChildren(pConfirmNextGame);
-
-                const hasStart = model.board.hasStartRoll;
-                const rolls = model.board.currentRollNumbers;
-                const remain = model.board.remainingRollNumbers;
-                const double = model.board.doubleRoll;
                 // roll to find out which player starts
                 if (!model.board.gameStarted) {
-                    if (double) {
-                        msg += `${double}-${double}! Pasch! Es muss erneuert gew\u00FCrfelt werden. `;
-                    }
-                    if (!hasStart) {
-                        msg += "Du musst w\u00FCrfeln.";
-                        if (rolls.length > 0) {
-                            msg += ` ${getOpponentPlayer()} hat ${rolls[0]} gew\u00FCrfelt.`;
+                    if (model.board.doubleRoll) {
+                        msg = "Pasch!";
+                        if (model.currentUser) {
+                            msg += " Du musst erneuert w\u00FCrfeln!";
+                            document.body.className = "active-background";
                         }
-                        document.body.className = "active-background";
+                    }
+                    else if (model.board.currentRollNumbers.length == 0) {
+                        msg = "Wer f\u00E4ngt an?";
+                        if (model.currentUser) {
+                            document.body.className = "active-background";
+                        }
                     }
                     else {
-                        msg = `Du hast eine ${rolls[0]} gew\u00FCrfelt.`;
-                        document.body.className = "inactive-background";
+                        if (model.currentUser && !model.board.hasStartRoll) {
+                            msg = "Du bist am Zug.";
+                            document.body.className = "active-background";
+                        }
+                        else {
+                            msg = `${getActivePlayer()} ist am Zug.`;
+                            document.body.className = "inactive-background";
+                        }
                     }
                 }
                 // game started
                 else {
-                    if (isActivePlayer()) {
-                        if (rolls.length == 0) {
-                            msg = "Du musst w\u00FCrfeln!";
-                        }
-                        else {
-                            if (remain.length == 0) {
-                                msg = `Es wurde ${rolls[0]} - ${rolls[1]} gew\u00FCfelt. Du kannst nicht mehr ziehen. Du musst den Zug aufgeben.`;
+                    if (isActivePlayer()) {                        
+                        msg = "Du bist dran.";
+                        if (model.board.currentRollNumbers.length > 0) {
+                            if (model.board.moves.length == 0) {
+                                msg += " Es gibt keinen Zug mehr.";
                             }
                             else {
-                                msg = `Es wurde ${rolls[0]} - ${rolls[1]} gew\u00FCfelt. Du musst ziehen.`;
-                                if (remain.length == 1) {
-                                    msg += ` Du kannst jetzt noch ${remain[0]} Schritte machen.`;
-                                }
+                                msg += " Verbleibende Z\u00FCge: ";
+                                model.board.remainingRollNumbers.forEach((nr) => {
+                                    controls.createImg(pConfirmNextGame, "roll-img", 32, 32, `/images/backgammon/dice-${nr}-fill.svg`);
+                                });
                             }
                         }
                         document.body.className = "active-background";
                     }
                     else {
-                        if (rolls.length == 0) {
-                            msg = `${getOpponentPlayer()} muss w\u00FCrfeln.`;
-                        }
-                        else {
-                            msg = `${getOpponentPlayer()} hat ${rolls[0]} - ${rolls[1]} gew\u00FCrfelt und muss jetzt ziehen.`;
+                        msg = `${getActivePlayer()} ist am Zug.`;
+                        if (model.board.currentRollNumbers.length > 0) {
+                            if (model.board.moves.length == 0) {
+                                msg += " Es gibt keinen Zug mehr.";
+                            }
+                            else {
+                                msg += " Verbleibende Z\u00FCge: ";
+                                model.board.remainingRollNumbers.forEach((nr) => {
+                                    controls.createImg(pConfirmNextGame, "roll-img", 32, 32, `/images/backgammon/dice-${nr}-fill.svg`);
+                                });
+                            }
                         }
                         document.body.className = "inactive-background";
                     }
@@ -378,10 +220,334 @@ var backgammon = (() => {
         return msg;
     };
 
+    const updateCanvasWidthAndHeight = (canvas) => {
+        canvas.width = pointWidth * 14 + 2 * borderWidth + 2;
+        canvas.height = pointHeight * 2 + 2 * checkerRadius + 2 * borderHeight + 2;
+    };
+
+    const calculatePointWidth = () => {
+        const xmin = utils.is_mobile() ? 330 : 400;
+        const w = Math.max(xmin, Math.min(window.innerHeight - 100, window.innerWidth - 100));
+        setPointWidth(w);
+    };
+
+    const setPointWidth = (w) => {
+        pointWidth = w / 14;
+        checkerRadius = pointWidth / 2 - 7;
+        pointHeight = 5 * checkerRadius * 2;
+        borderWidth = pointWidth / 3;
+        borderHeight = borderWidth;
+    };
+
+    const getPositionFromEvent = (evt) => {
+        if (evt.offsetY > borderHeight && evt.offsetY < pointHeight * 2 + 2 * checkerRadius + borderHeight) {
+            if (evt.offsetX > borderWidth && evt.offsetX < borderWidth + 13 * pointWidth) {
+                let x = Math.floor((evt.offsetX - borderWidth) / pointWidth);
+                let y = Math.floor((evt.offsetY - borderHeight) / pointHeight);
+                let pos = undefined;
+                if (isBlackPlayer()) {
+                    if (x >= 7 && x <= 12) {
+                        if (y == 0) {
+                            pos = 11 + x;
+                        }
+                        else {
+                            pos = 12 - x;
+                        }
+                    }
+                    else if (x == 6) {
+                        pos = -1; // bar
+                    }
+                    else {
+                        if (y == 0) {
+                            pos = 12 + x;
+                        }
+                        else {
+                            pos = 11 - x;
+                        }
+                    }
+                }
+                else {
+                    if (x >= 7 && x <= 12) {
+                        if (y == 0) {
+                            pos = 12 - x;
+                        }
+                        else {
+                            pos = 23 - (12 - x);
+                        }
+                    }
+                    else if (x == 6) {
+                        pos = -1; // bar
+                    }
+                    else {
+                        if (y == 0) {
+                            pos = 11 - x;
+                        }
+                        else {
+                            pos = 12 + x;
+                        }
+                    }
+                }
+                return pos;
+            }
+        }
+        return undefined;
+    };
+    
+    const drawBoard = (ctx, items) => {
+        const xm = pointWidth * 13 + 2 * borderWidth;
+        const ym = pointHeight * 2 + checkerRadius * 2 + 2 * borderHeight;
+        // dark brown border
+        ctx.fillStyle = colorDarkBrown;
+        ctx.fillRect(0, 0, xm, ym);
+        // light brown background
+        ctx.fillStyle = colorLightBrown;
+        ctx.fillRect(borderWidth, borderHeight, xm - 2 * borderWidth, ym - 2 * borderHeight);
+        // bar
+        ctx.fillStyle = colorDarkBrown;
+        ctx.fillRect(borderWidth + pointWidth * 6, borderHeight, pointWidth, ym - 2 * borderHeight);
+        // outer border
+        ctx.strokeStyle = colorShadowDark;
+        ctx.strokeRect(0, 0, xm, ym);
+        // shadow black
+        ctx.beginPath();
+        ctx.moveTo(borderWidth, borderHeight);
+        ctx.lineTo(borderWidth, ym - 1 * borderHeight);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(borderWidth, borderHeight);
+        ctx.lineTo(borderWidth + 6 * pointWidth, borderHeight);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(borderWidth + 7 * pointWidth, borderHeight);
+        ctx.lineTo(borderWidth + 7 * pointWidth, ym - 1 * borderHeight);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(borderWidth + 7 * pointWidth, borderHeight);
+        ctx.lineTo(borderWidth + 13 * pointWidth, borderHeight);
+        ctx.stroke();
+        // shadow white
+        ctx.strokeStyle = colorShadowLight;
+        ctx.beginPath();
+        ctx.moveTo(borderWidth + 6 * pointWidth, borderHeight);
+        ctx.lineTo(borderWidth + 6 * pointWidth, ym - 1 * borderHeight);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(borderWidth, ym - 1 * borderHeight);
+        ctx.lineTo(borderWidth + 6 * pointWidth, ym - 1 * borderHeight);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(borderWidth + 13 * pointWidth, borderHeight);
+        ctx.lineTo(borderWidth + 13 * pointWidth, ym - 1 * borderHeight);
+        ctx.lineTo(borderWidth + 7 * pointWidth, ym - 1 * borderHeight);
+        ctx.stroke();
+        // points
+        for (let pos = 0; pos <= 23; pos++) {
+            drawPoint(ctx, pos);
+        }
+        // checkers
+        items.forEach((item) => {
+            drawCheckers(ctx, item.position, item.count, item.color);
+        });
+    };
+
+    const drawCheckers = (ctx, pos, count, col) => {
+        for (let idx = 1; idx <= count; idx++) {
+            drawChecker(ctx, pos, idx, col);
+        }
+    };
+
+    const drawChecker = (ctx, pos, nr, col) => {
+        const ym = pointHeight * 2 + checkerRadius * 2 + 2 * borderHeight;
+        let x, y;
+        // y
+        if (pos === -1 || pos === -2) {
+            
+            if (isBlackPlayer() && col === "W" || !isBlackPlayer() && col === "B") {
+                // stack checkers if more than 5 have to be placed on the point
+                if (nr <= 5) {
+                    y = borderHeight + 1 + (nr - 1) * checkerRadius * 2 + checkerRadius;
+                }
+                else if (nr <= 10) {
+                    y = borderHeight + 1 + (nr - 6) * checkerRadius * 2 + checkerRadius + 4;
+                }
+                else {
+                    y = borderHeight + 1 + (nr - 11) * checkerRadius * 2 + checkerRadius + 8;
+                }
+            }
+            else {
+                if (nr <= 5) {
+                    y = ym - borderHeight - 1 - (nr - 1) * checkerRadius * 2 - checkerRadius;
+                }
+                else if (nr <= 10) {
+                    y = ym - borderHeight - 1 - (nr - 6) * checkerRadius * 2 - checkerRadius - 4;
+                }
+                else {
+                    y = ym - borderHeight - 1 - (nr - 11) * checkerRadius * 2 - checkerRadius - 8;
+                }
+            }
+        }
+        else if (isBlackPlayer() && (pos >= 12 && pos <= 23) ||
+            !isBlackPlayer() && pos >= 0 && pos <= 11) {
+            // stack checkers if more than 5 have to be placed on the point
+            if (nr <= 5) {
+                y = borderHeight + 1 + (nr - 1) * checkerRadius * 2 + checkerRadius;
+            }
+            else if (nr <= 10) {
+                y = borderHeight + 1 + (nr - 6) * checkerRadius * 2 + checkerRadius + 4;
+            }
+            else {
+                y = borderHeight + 1 + (nr - 11) * checkerRadius * 2 + checkerRadius + 8;
+            }
+        }
+        else {
+            // stack checkers if more than 5 have to be placed on the point
+            if (nr <= 5) {
+                y = ym - borderHeight - 1 - (nr - 1) * checkerRadius * 2 - checkerRadius;
+            }
+            else if (nr <= 10) {
+                y = ym - borderHeight - 1 - (nr - 6) * checkerRadius * 2 - checkerRadius - 4;
+            }
+            else {
+                y = ym - borderHeight - 1 - (nr - 11) * checkerRadius * 2 - checkerRadius - 8;
+            }
+        }
+        // x
+        if (pos === -1) {
+            x = borderWidth + 6 * pointWidth + gap + 3 + checkerRadius;
+        }
+        else if (pos === -2) {
+            x = 2 * borderWidth + 13 * pointWidth + checkerRadius + gap;
+        }
+        else if (pos >= 0 && pos <= 5) {
+            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gap + 3 + checkerRadius;
+        }
+        else if (pos >= 6 && pos <= 11) {
+            x = borderWidth + (11 - pos) * pointWidth + gap + 3 + checkerRadius;
+        }
+        else if (pos >= 12 && pos <= 17) {
+            x = borderWidth + (pos - 12) * pointWidth + gap + 3 + checkerRadius;
+        }
+        else if (pos >= 18 && pos <= 23) {
+            x = borderWidth + 7 * pointWidth + (pos - 18) * pointWidth + gap + 3 + checkerRadius;
+        }
+        if (col === "W" || col === "B") {
+            ctx.fillStyle = col === "W" ? colorCheckerWhite : colorCheckerBlack;
+        }
+        else {
+            ctx.fillStyle = col;
+        }
+        ctx.beginPath();
+        ctx.arc(x, y, checkerRadius, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = colorShadowDark;
+        ctx.beginPath();
+        ctx.arc(x, y, checkerRadius, 0, 2 * Math.PI);
+        ctx.stroke();
+    };
+
+    const drawPoint = (ctx, pos) => {
+        const w = pointWidth - gap;
+        const ym = pointHeight * 2 + checkerRadius * 2 + 2 * borderHeight;
+        let x, y, yt;
+        if (pos >= 0 && pos <= 5) {
+            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gap;
+            y = borderHeight + 1;
+            yt = y + pointHeight;
+        }
+        else if (pos >= 6 && pos <= 11) {
+            x = borderWidth + (11 - pos) * pointWidth + gap;
+            y = borderHeight + 1;
+            yt = y + pointHeight;
+        }
+        else if (pos >= 12 && pos <= 17) {
+            x = borderWidth + (pos - 12) * pointWidth + gap;
+            y = ym - borderHeight - 1;
+            yt = y - pointHeight;
+        }
+        else if (pos >= 18 && pos <= 23) {
+            x = borderWidth + (7 + pos - 18) * pointWidth + gap;
+            y = ym - borderHeight - 1;
+            yt = y - pointHeight;
+        }
+        ctx.fillStyle = pos % 2 == 0 ? colorPointLight : colorPointDark;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + w / 2, yt);
+        ctx.lineTo(x + pointWidth - 2 * gap, y);
+        ctx.fill();
+        // shadow
+        ctx.strokeStyle = colorShadowLight;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + w / 2, yt);
+        ctx.stroke();
+        ctx.strokeStyle = colorShadowDark;
+        ctx.beginPath();
+        ctx.moveTo(x + w / 2, yt);
+        ctx.lineTo(x + pointWidth - 2 * gap, y);
+        ctx.stroke();
+    };
+
+    const draw = () => {
+        const canvas = document.getElementById("playground-id");
+        if (canvas && dirty) {
+            console.log("DRAW");
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (model && model.board && model.board.items) {
+                drawBoard(ctx, model.board.items);
+                if (moveItem !== undefined) {
+                    drawChecker(ctx, moveItem.position, moveItem.count, colorCheckerSelected);
+                    if (lastPos !== undefined && lastPos != moveItem.position) {
+                        model.board.moves.forEach((move) => {
+                            if (move.from === moveItem.position && move.to === lastPos) {
+                                let cnt = 1;
+                                model.board.items.forEach((item) => {
+                                    if (item.position === lastPos) {
+                                        cnt = item.count;
+                                    }
+                                });
+                                drawChecker(ctx, lastPos, cnt, colorCheckerMoveTo);
+                            }
+                        });
+                    }
+                }
+                else if (selectedItem !== undefined) {
+                    drawChecker(ctx, selectedItem.position, selectedItem.count, colorCheckerSelected);
+                }
+            }
+            dirty = false;
+        }
+        window.requestAnimationFrame(draw);
+    };
+
     const updateMessage = () => {
-        const messageElem = document.getElementById("message");
+        const messageElem = document.getElementById("message-id");
         if (messageElem) {
             messageElem.textContent = getStateMessage();
+        }
+    };
+
+    const updateRoll = () => {
+        const rollElem = document.getElementById("roll-id");
+        if (rollElem) {
+            controls.removeAllChildren(rollElem);
+            if (model && model.board && !model.board.gameOver &&
+                (model.board.currentRollNumbers.length > 0 || model.board.doubleRoll)) {
+                rollElem.classList.toggle("hide", false);
+                if (model.board.doubleRoll) {
+                    controls.createImg(rollElem, "roll-img", 32, 32, `/images/backgammon/dice-${model.board.doubleRoll}-fill.svg`);
+                    controls.createImg(rollElem, "roll-img", 32, 32, `/images/backgammon/dice-${model.board.doubleRoll}-fill.svg`);
+                }
+                else {
+                    model.board.currentRollNumbers.forEach((nr) => {
+                        controls.createImg(rollElem, "roll-img", 32, 32, `/images/backgammon/dice-${nr}-fill.svg`);
+                    });
+                }
+            }
+            else {
+                rollElem.classList.toggle("hide", true);
+            }
         }
     };
 
@@ -396,14 +562,31 @@ var backgammon = (() => {
     const updateGiveUpButton = () => {
         const giveup = document.getElementById("giveupbutton");
         if (giveup) {
-            giveup.classList.toggle("hide", !isPlaying() || !isActivePlayer() || !model.board.gameStarted);
+            const hide =
+                !isPlaying() ||
+                !isActivePlayer() ||
+                !model.board.gameStarted;
+            giveup.classList.toggle("hide", hide);
+        }
+    };
+
+    const updateSkipButton = () => {
+        const skip = document.getElementById("skipbutton");
+        if (skip) {
+            const hide =
+                !isPlaying() ||
+                !isActivePlayer() ||
+                !model.board.gameStarted ||
+                model.board.currentRollNumbers.length == 0 ||
+                model.board.moves.length > 0;
+            skip.classList.toggle("hide", hide);
         }
     };
 
     const updateRollButton = () => {
         const giveup = document.getElementById("rollbutton");
         if (giveup) {
-            let hide = !isPlaying();
+            let hide = !model.currentUser || !isPlaying();
             if (!hide) {
                 if (model.board.gameStarted) {
                     if (!isActivePlayer()) {
@@ -422,16 +605,22 @@ var backgammon = (() => {
     };
 
     const update = () => {
+        disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
+                console.log(`MODEL RETRIEVED (update): New state ${m.state}!`);
                 console.log(m);
+                setState(m.state);
                 model = m;
                 if (isPlaying()) {
+                    updateRoll();
                     updateRollButton();
+                    updateSkipButton();
                     updateGiveUpButton();
                     updateLastUpdateTime();
                     updateMessage();
                     dirty = true;
+                    enableTimer();
                 }
                 else {
                     renderModel(model);
@@ -440,38 +629,13 @@ var backgammon = (() => {
             handleError);
     };
 
-    const handlePositionChange = (pos) => {
-        /*
-        if (selectedFigure) {
-            if (isActivePlayer()) {
-                for (let idx = 0; idx < selectedFigure.moves.length; idx++) {
-                    const move = selectedFigure.moves[idx];
-                    if (pos.row === move.row && pos.col === move.column) {
-                        placeFigure(selectedFigure.row, selectedFigure.column, move.row, move.column);
-                        break;
-                    }
-                }
-            }
-            selectedFigure = undefined;
-            dirty = true;
-        }
-        else {
-            const figure = getFigure(pos.row, pos.col);
-            if (figure && figure.moves.length > 0) {
-                selectedFigure = figure;
-                dirty = true;
-                return;
-            }
-        }
-        */
-    };
-
     const login = (name) => {
         const token = utils.get_authentication_token();
         if (!name || name.length == 0 || !token) {
             window.location.replace("/backgammon");
             return;
         }
+        disableTimer();
         utils.fetch_api_call("api/backgammon/login",
             {
                 method: "POST",
@@ -479,7 +643,9 @@ var backgammon = (() => {
                 body: JSON.stringify(name)
             },
             (loginModel) => {
-                if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
+                console.log(`LOGGED IN (login with name): new state ${loginModel.state}!`);
+                setState(loginModel.state);
+                if (loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
                 window.location.replace("/backgammon");
@@ -490,17 +656,11 @@ var backgammon = (() => {
             });
     };
 
-    const setPixelPerWidth = () => {
-        const xmin = utils.is_mobile() ? 330 : 400;
-        const w = Math.max(xmin, Math.min(window.innerHeight - 100, window.innerWidth - 100));
-        pixelPerField = w / 10;
-    };
-
     // rendering
 
     const renderBoardFull = (parent, ignoreToken) => {
-        if (ignoreToken || !currentUser) {
-            controls.create(parent, "p", undefined, "Das Backgammonbrett ist leider schon belegt!");
+        if (ignoreToken || !model.currentUser) {
+            controls.create(parent, "p", undefined, "Das Brett ist leider schon belegt!");
             controls.createButton(parent, "Zuschauen als Gast", () => window.open("/backgammon?guest", "_blank"));
             document.body.className = "inactive-background";
         }
@@ -528,11 +688,10 @@ var backgammon = (() => {
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         // draw sample board
-        let sampleBoard = controls.create(parent, "canvas", "playground");
-        sampleBoard.width = 32 * 8;
-        sampleBoard.height = 32 * 8;
-        let ctx = sampleBoard.getContext("2d");
-        drawSampleBoard(ctx, 32);
+        const sampleCanvas = controls.create(parent, "canvas", "sample-playground");
+        updateCanvasWidthAndHeight(sampleCanvas);
+        const ctx = sampleCanvas.getContext("2d");
+        drawBoard(ctx, []);
         // render content area        
         const divContent = controls.createDiv(parent, "content");
         if (model.allUsers.length > 0) {
@@ -568,11 +727,11 @@ var backgammon = (() => {
 
     const renderLogin = (parent) => {
         document.body.className = "active-background";
-        if (!currentUser) {
+        if (!model.currentUser) {
             controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
-            let label = controls.createLabel(parent, undefined, "Name:");
+            const label = controls.createLabel(parent, undefined, "Name:");
             label.htmlFor = "username-id";
-            inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
+            const inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
             inputUsername.placeholder = "Name";
             inputUsername.id = "username-id";
             if (!utils.is_mobile()) {
@@ -581,10 +740,11 @@ var backgammon = (() => {
             controls.createButton(parent, "Anmelden", btnLogin_click);
         }
         else {
-            let parentdiv = controls.create(parent, "p");
+            const parentdiv = controls.create(parent, "p");
             controls.create(parentdiv, "p", undefined, `${currentUser.name}! Du kannst noch mitspielen!`);
-            inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
+            const inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
             inputUsername.value = currentUser.name;
+            inputUsername.id = "username-id";
             controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
         }
     };
@@ -605,8 +765,30 @@ var backgammon = (() => {
     };
 
     const renderActions = (parent) => {
-        controls.create(parent, "p", undefined, "").id = "message";
-        controls.create(parent, "p", undefined, "").id = "confirmnextgame"
+        if (model && model.board) {
+            const opponent = document.getElementById("opponent-player-id");
+            const current = document.getElementById("current-player-id");
+            current.className = "playername-white";
+            opponent.className = "playername-black";
+            if (isBlackPlayer()) {
+                current.className = "playername-black";
+                opponent.className = "playername-white";
+            }
+            else {
+                current.className = "playername-white";
+                opponent.className = "playername-black";
+            }
+            if (model.currentUser) {
+                opponent.textContent = getOpponentPlayer();
+                current.textContent = model.currentUser.name;
+            }
+            else {
+                opponent.textContent = model.board.blackPlayer;
+                current.textContent = model.board.whitePlayer;
+            }
+        }
+        controls.create(parent, "p").id = "message-id";
+        controls.create(parent, "p").id = "confirmnextgame"
         if (endGameClicked) {
             controls.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
             controls.createButton(parent, "Ja", btnEndGame_click, "EndGameYes");
@@ -623,6 +805,8 @@ var backgammon = (() => {
         }
         controls.createButton(parent, "W\u00FCrfeln", btnRoll_click, "rollbutton").id = "rollbutton";
         updateRollButton();
+        controls.createButton(parent, "Weiter", btnSkip_click, "skipbutton").id = "skipbutton";
+        updateSkipButton();
         controls.createButton(parent, "Aufgeben", btnGiveUp_click, "giveupbutton").id = "giveupbutton";
         updateGiveUpButton();
         return false;
@@ -630,28 +814,31 @@ var backgammon = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Backgammon ${version}. Copyright 2022 `);
+        controls.create(div, "span", "copyright", `Backgammon ${version}. Copyright 2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         const time = new Date().toLocaleTimeString("de-DE");
         controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `).id = "lastupdatetime";
         if (ticket) {
             if (!model.board) {
-                controls.createButton(div, "Abmelden (Logout)", btnLogout_click, "Logout", "logout-button");
+                controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
             }
             else {
-                controls.createButton(div, "Abmelden (EndGame)", btnEndGame_click, "EndGame", "logout-button");
+                controls.createButton(div, "Abmelden", btnEndGame_click, "EndGame", "logout-button");
             }
         }
     };
 
     const renderMainPage = (parent) => {
-        let xoff = utils.is_mobile() ? 50 : 100;
-        canvas = controls.create(parent, "canvas", "playground");
-        canvas.width = pixelPerField * 8 + xoff;
-        canvas.height = pixelPerField * 8 + 10;
-        canvas.addEventListener("mouseup", onCanvasMouseUp);
+        calculatePointWidth();
+        controls.createDiv(parent).id = "opponent-player-id";
+        const canvas = controls.create(parent, "canvas", "playground");
+        canvas.id = "playground-id";
+        updateCanvasWidthAndHeight(canvas);
         canvas.addEventListener("mousedown", onCanvasMouseDown);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
+        controls.createDiv(parent).id = "current-player-id";
+        controls.createDiv(parent, "hide").id = "roll-id";
+        updateRoll();
         const divActions = controls.createDiv(parent, "actions-section");
         divActions.id = "actions"
         if (!renderActions(divActions)) {
@@ -685,7 +872,6 @@ var backgammon = (() => {
 
     const renderModel = (m) => {
         model = m;
-        window.sessionStorage.setItem("backgammonstate", model.state.state);
         controls.removeAllChildren(document.body);
         utils.create_cookies_banner(document.body);
         document.body.className = "inactive-background";
@@ -720,7 +906,7 @@ var backgammon = (() => {
         else {
             renderUsername(divMain);
         }
-        timerEnabled = true;
+        enableTimer();
     };
 
     const render = () => {
@@ -733,10 +919,16 @@ var backgammon = (() => {
         if (params.has("guest")) {
             guestMode = true;
         }
-        setPixelPerWidth();
-        timerEnabled = false;
+        const xmin = utils.is_mobile() ? 330 : 400;
+        setPointWidth(xmin);
+        disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
-            (m) => renderModel(m),
+            (m) => {
+                console.log(`MODEL RETRIEVED (render): new state: ${m.state}!`);
+                console.log(m);
+                setState(m.state);
+                renderModel(m);
+            },
             handleError);
     };
 
@@ -765,48 +957,72 @@ var backgammon = (() => {
 
     // callbacks
 
-    const onCanvasMouseUp = (evt) => {
-        /*
-        if (isPlaying()) {
-            const pos = getPositionFromEvent(evt);
-            if (pos) {
-                if (selectedFigure && (pos.row != selectedFigure.row || pos.col != selectedFigure.column)) {
-                    handlePositionChange(pos);
-                }
-                else {
-                    dirty = true;
-                }
-            }
+    const onCanvasMouseDown = () => {
+        if (moveItem === undefined && selectedItem != undefined) {
+            moveItem = selectedItem;
+            selectedItem == undefined;
+            dirty = true;
         }
-        */
-    };
-
-    const onCanvasMouseDown = (evt) => {
-        /*
-        if (isPlaying()) {
-            const pos = getPositionFromEvent(evt);
-            if (pos) {
-                handlePositionChange(pos);
-            }
-        }
-        */
-    };
-
-    const onCanvasMouseMove = (evt) => {
-        /*
-        if (isPlaying()) {
-            const pos = getPositionFromEvent(evt);
-            if (pos) {
-                if (!lastPos || lastPos.col != pos.col || lastPos.row != pos.row) {
-                    lastPos = pos;
-                    dirty = true;
+        else if (moveItem !== undefined) {
+            let found = false;
+            let pos = lastPos === undefined ? -2 : lastPos;
+            model.board.moves.forEach((move) => {
+                if (!found && move.from === moveItem.position && move.to === pos) {
+                    moveItem = undefined;
+                    selectedItem = undefined;
+                    lastPos = undefined;
+                    found = true;
+                    disableTimer();
+                    console.log("MOVE...");
+                    utils.fetch_api_call("api/backgammon/move",
+                        {
+                            method: "POST",
+                            headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                            body: JSON.stringify({ from: move.from, to: move.to })
+                        },
+                        (state) => {
+                            console.log(`MOVED: new state: ${state}.`);
+                            setState(state);
+                            update();
+                            enableTimer();
+                        },
+                        handleError);
                 }
-            }
-            else if (lastPos) {
+            });
+            if (!found) {
+                moveItem = undefined;
+                selectedItem = undefined;
                 dirty = true;
             }
         }
-        */
+    };
+
+    const onCanvasMouseMove = (evt) => {
+        if (model && model.board && model.board.gameStarted &&
+            isActivePlayer() && model.board.items && model.board.moves) {
+            const pos = getPositionFromEvent(evt);
+            if (lastPos != pos) {
+                selectedItem = undefined;
+                let clickedItem = undefined;
+                const currentColor = isBlackPlayer() ? "B" : "W";
+                if (moveItem === undefined) {
+                    model.board.items.forEach((item) => {
+                        if (item.position === pos && item.color == currentColor) {
+                            clickedItem = item;
+                        }
+                    });
+                    if (clickedItem !== undefined) {
+                        model.board.moves.forEach((move) => {
+                            if (moveItem === undefined && move.from == clickedItem.position) {
+                                selectedItem = clickedItem;
+                            }
+                        });
+                    }
+                }
+                lastPos = pos;
+                dirty = true;
+            }
+        }
     };
 
     const onUpdateHelp = (show) => {
@@ -814,8 +1030,8 @@ var backgammon = (() => {
             helpDiv.className = show ? "help-div" : undefined;
             controls.removeAllChildren(helpDiv);
             if (show) {
-                let contentDiv = controls.createDiv(helpDiv, "help-content");
-                let mdDiv = controls.createDiv(contentDiv, "help-item");
+                const contentDiv = controls.createDiv(helpDiv, "help-content");
+                const mdDiv = controls.createDiv(contentDiv, "help-item");
                 utils.fetch_api_call("/api/pwdman/markdown/help-backgammon", undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
             }
@@ -823,9 +1039,10 @@ var backgammon = (() => {
     };
 
     const btnLogin_click = () => {
+        const inputUsername = document.getElementById("username-id");
         const name = inputUsername.value.trim();
         if (name.length > 0) {
-            timerEnabled = false;
+            disableTimer();
             let token = utils.get_authentication_token();
             if (!token) {
                 token = "";
@@ -837,71 +1054,100 @@ var backgammon = (() => {
                     body: JSON.stringify(name)
                 },
                 (loginModel) => {
-                    if (loginModel) {
-                        if (loginModel.isAuthenticationRequired) {
-                            let nexturl = `/backgammon?login=${name}`;
-                            window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
-                                + "&username=" + encodeURI(name);
-                            return;
-                        }
-                        else if (loginModel.ticket && loginModel.ticket.length > 0) {
-                            setTicket(loginModel.ticket);
-                        }
+                    console.log(`LOGGED IN: New state ${loginModel.state}!`);
+                    console.log(loginModel);
+                    setState(loginModel.state);
+                    if (loginModel.isAuthenticationRequired) {
+                        let nexturl = `/backgammon?login=${name}`;
+                        window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
+                            + "&username=" + encodeURI(name);
+                        return;
+                    }
+                    else if (loginModel.ticket && loginModel.ticket.length > 0) {
+                        setTicket(loginModel.ticket);
                     }
                     render();
                 },
                 (errMsg) => {
                     document.getElementById("login-error-id").textContent = errMsg;
-                    timerEnabled = true;
+                    enableTimer();
                 });
         }
     };
 
     const btnRoll_click = () => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/backgammon/roll", { method: "POST", headers: { "ticket": ticket } },
-            () => {
-                timerEnabled = true;
+            (state) => {
+                console.log(`ROLLED: new state: ${state}.`);
+                setState(state);
                 update();
+                enableTimer();
             },
             handleError);
     };
 
     const btnNextGame_click = () => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/backgammon/nextgame", { method: "POST", headers: { "ticket": ticket } },
-            () => render(),
+            (state) => {
+                console.log(`NEXT GAME REQUESTED: New state ${state}!`);
+                setState(state);
+                render();
+            },
             handleError);
     };
 
     const btnConfirmNextGame_click = (ok) => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/backgammon/confirmnextgame",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
                 body: JSON.stringify(ok)
             },
-            () => render(),
+            (state) => {
+                console.log(`CONFIRM NEXT GAME: New state ${state}!`);
+                setState(state);
+                render();
+            },
             handleError);
     };
 
     const btnStartGame_click = () => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/backgammon/newgame",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket }
             },
-            () => render(),
+            (state) => {
+                console.log(`NEW GAME STARTED: New state ${state}!`);
+                setState(state);
+                render();
+            },
+            handleError);
+    };
+
+    const btnSkip_click = () => {
+        disableTimer();
+        utils.fetch_api_call("api/backgammon/skip", { method: "POST", headers: { "ticket": ticket } },
+            (state) => {
+                console.log(`SKIPPED: New state ${state}!`);
+                setState(state);
+                update();
+                enableTimer();
+            },
             handleError);
     };
 
     const btnGiveUp_click = (elem) => {
         if (elem.value == "GiveUpYes") {
-            timerEnabled = false;
+            disableTimer();
             utils.fetch_api_call("api/backgammon/giveup", { method: "POST", headers: { "ticket": ticket } },
-                () => {
+                (state) => {
+                    console.log(`GAVE UP: New state ${state}!`);
+                    setState(state);
                     giveUpClicked = false;
                     render();
                 },
@@ -919,9 +1165,11 @@ var backgammon = (() => {
 
     const btnEndGame_click = (elem) => {
         if (elem.value == "EndGameYes") {
-            timerEnabled = false;
+            disableTimer();
             utils.fetch_api_call("api/backgammon/logout", { method: "POST", headers: { "ticket": ticket } },
-                () => {
+                (state) => {
+                    console.log(`LOGGED OUT (game): New state ${state}!`);
+                    setState(state);
                     endGameClicked = false;
                     render();
                 },
@@ -938,9 +1186,11 @@ var backgammon = (() => {
     };
 
     const btnLogout_click = () => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/backgammon/logout", { method: "POST", headers: { "ticket": ticket } },
-            () => {
+            (state) => {
+                console.log(`LOGGED OUT (ticket): New state ${state}!`);
+                setState(state);
                 ticket = undefined;
                 window.sessionStorage.removeItem("backgammonticket");
                 window.localStorage.removeItem("backgammonticket");
@@ -950,10 +1200,10 @@ var backgammon = (() => {
     };
 
     const onResize = () => {
-        if (canvas && model && model.board) {
-            setPixelPerWidth();
-            canvas.width = pixelPerField * 8 + 100;
-            canvas.height = pixelPerField * 8;
+        const canvas = document.getElementById("playground-id");
+        if (canvas && model && model.board && model.board.items) {
+            calculatePointWidth();
+            updateCanvasWidthAndHeight(canvas);
             dirty = true;
         }
     };
@@ -961,23 +1211,17 @@ var backgammon = (() => {
     const onTimer = () => {
         if (!timerEnabled) return;
         utils.fetch_api_call("api/backgammon/state", undefined,
-            (sm) => {
-                const d = sm.state;
-                const statechanged = window.sessionStorage.getItem("backgammonstate");
-                if (statechanged === undefined || d > statechanged) {
-                    console.log("STATE CHANGED!");
-                    console.log(statechanged);
-                    console.log(d);
-                    window.sessionStorage.setItem("backgammonstate", d);
+            (state) => {
+                const currentState = getState();
+                if (currentState === undefined || state > currentState) {
+                    console.log(`ON TIMER: STATE CHANGED: ${state}!`);
+                    setState(state);
                     if (model && model.board) {
                         update();
                     }
                     else {
                         render();
                     }
-                }
-                else if (model && model.board) {
-                    model.state = sm;
                 }
             },
             (errMsg) => console.error(errMsg));

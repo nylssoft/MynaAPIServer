@@ -54,7 +54,25 @@ p {
 }
 
 canvas {
+    margin-top: 2pt;
+}
+
+.playername-white {
+    font-weight: bold;
+    color: white;
+}
+
+.playername-black {
+    font-weight: bold;
+    color: darkred;
+}
+
+.sample-playground {
     margin-top: 48px;
+}
+
+.roll-img {
+    margin: 2pt;
 }
 
 .quitbutton {
