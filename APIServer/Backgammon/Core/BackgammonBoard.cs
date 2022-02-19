@@ -26,19 +26,23 @@ namespace APIServer.Backgammon.Core
 
     public class Checker
     {
-        public Checker(CheckerColor color, int position)
+        public Checker(int id, CheckerColor color, int position)
         {
+            Id = id;
             Color = color;
             Position = position;
         }
 
         public Checker(Checker c)
         {
+            Id = c.Id;
             Color = c.Color;
             Position = c.Position;
         }
 
-        public CheckerColor Color { get; set; }
+        public int Id { get; }
+
+        public CheckerColor Color { get; }
 
         public int Position { get; set; }
     }
@@ -61,17 +65,9 @@ namespace APIServer.Backgammon.Core
             }
         }
 
-        public void AddNewCheckers(CheckerColor color, int count)
-        {
-            for (; count > 0; count--)
-            {
-                Checkers.Push(new Checker(color, Position));
-            }
-        }
+        public int Position { get; }
 
-        public int Position { get; set; }
-
-        public Stack<Checker> Checkers;
+        public Stack<Checker> Checkers { get; }
     }
 
     public class Roll
@@ -105,11 +101,11 @@ namespace APIServer.Backgammon.Core
                 Count = count;
             }
 
-            public CheckerColor Color { get; private set; }
+            public CheckerColor Color { get; }
 
-            public int Count { get; private set; }
+            public int Count { get; }
 
-            public int Position { get; private set; }
+            public int Position { get; }
         }
 
         // --- constants
@@ -169,10 +165,13 @@ namespace APIServer.Backgammon.Core
 
         private bool giveUp;
 
+        private int nextCheckerId;
+
         // --- constructors
 
         public BackgammonBoard(string whitePlayer, string blackPlayer)
         {
+            nextCheckerId = 1;
             WhitePlayer = whitePlayer;
             BlackPlayer = blackPlayer;
             remainingRollNumbers = new List<int>();
@@ -184,14 +183,14 @@ namespace APIServer.Backgammon.Core
             {
                 board[pos] = new Point(pos);
             }
-            board[0].AddNewCheckers(CheckerColor.White, 2);
-            board[11].AddNewCheckers(CheckerColor.White, 5);
-            board[16].AddNewCheckers(CheckerColor.White, 3);
-            board[18].AddNewCheckers(CheckerColor.White, 5);
-            board[5].AddNewCheckers(CheckerColor.Black, 5);
-            board[7].AddNewCheckers(CheckerColor.Black, 3);
-            board[12].AddNewCheckers(CheckerColor.Black, 5);
-            board[23].AddNewCheckers(CheckerColor.Black, 2);
+            AddNewCheckers(board[0], CheckerColor.White, 2);
+            AddNewCheckers(board[11], CheckerColor.White, 5);
+            AddNewCheckers(board[16], CheckerColor.White, 3);
+            AddNewCheckers(board[18], CheckerColor.White, 5);
+            AddNewCheckers(board[5], CheckerColor.Black, 5);
+            AddNewCheckers(board[7], CheckerColor.Black, 3);
+            AddNewCheckers(board[12], CheckerColor.Black, 5);
+            AddNewCheckers(board[23], CheckerColor.Black, 2);
         }
 
         private BackgammonBoard(BackgammonBoard source)
@@ -223,8 +222,16 @@ namespace APIServer.Backgammon.Core
             startRollNumbers = new Dictionary<CheckerColor, int>(source.startRollNumbers);
         }
 
+        public void AddNewCheckers(Point p, CheckerColor color, int count)
+        {
+            for (; count > 0; count--)
+            {
+                p.Checkers.Push(new Checker(nextCheckerId++, color, p.Position));
+            }
+        }
+
         // state
-    
+
         public List<Item> GetItems()
         {
             var ret = new List<Item>();
