@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "0.9.1";
+    let version = "0.9.2";
 
     let dirty;
 
@@ -32,13 +32,14 @@ var backgammon = (() => {
     const colorShadowLight = "white";
     const colorShadowDark = "black";
 
-    const gap = 4;
-
     let checkerRadius;
     let pointWidth;
     let pointHeight;
     let borderWidth;
     let borderHeight;
+    let checkerOverlay;
+    let gapPointHeight
+    let gapCheckers;
 
     let lastPos;
     let selectedItem;
@@ -222,7 +223,7 @@ var backgammon = (() => {
 
     const updateCanvasWidthAndHeight = (canvas) => {
         canvas.width = pointWidth * 14 + 2 * borderWidth + 2;
-        canvas.height = pointHeight * 2 + 2 * checkerRadius + 2 * borderHeight + 2;
+        canvas.height = pointHeight * 2 + gapPointHeight + 2 * borderHeight + 2;
     };
 
     const calculatePointWidth = () => {
@@ -232,15 +233,18 @@ var backgammon = (() => {
     };
 
     const setPointWidth = (w) => {
-        pointWidth = w / 14;
-        checkerRadius = pointWidth / 2 - 7;
+        pointWidth = Math.floor(w / 14);
+        checkerRadius = Math.floor(pointWidth / 2) - 7;
         pointHeight = 5 * checkerRadius * 2;
-        borderWidth = pointWidth / 3;
+        gapPointHeight = 4 * checkerRadius;
+        gapCheckers = 4;
+        checkerOverlay = Math.floor(checkerRadius / 2);
+        borderWidth = Math.floor(pointWidth / 3);
         borderHeight = borderWidth;
     };
 
     const getPositionFromEvent = (evt) => {
-        if (evt.offsetY > borderHeight && evt.offsetY < pointHeight * 2 + 2 * checkerRadius + borderHeight) {
+        if (evt.offsetY > borderHeight && evt.offsetY < pointHeight * 2 + gapPointHeight + borderHeight) {
             if (evt.offsetX > borderWidth && evt.offsetX < borderWidth + 13 * pointWidth) {
                 let x = Math.floor((evt.offsetX - borderWidth) / pointWidth);
                 let y = Math.floor((evt.offsetY - borderHeight) / pointHeight);
@@ -295,7 +299,7 @@ var backgammon = (() => {
     
     const drawBoard = (ctx, items) => {
         const xm = pointWidth * 13 + 2 * borderWidth;
-        const ym = pointHeight * 2 + checkerRadius * 2 + 2 * borderHeight;
+        const ym = pointHeight * 2 + gapPointHeight + 2 * borderHeight;
         // dark brown border
         ctx.fillStyle = colorDarkBrown;
         ctx.fillRect(0, 0, xm, ym);
@@ -356,85 +360,46 @@ var backgammon = (() => {
         }
     };
 
-    const drawChecker = (ctx, pos, nr, col) => {
-        const ym = pointHeight * 2 + checkerRadius * 2 + 2 * borderHeight;
+    const drawChecker = (ctx, pos, nr, col, fillColor) => {
+        const ym = pointHeight * 2 + gapPointHeight + 2 * borderHeight;
         let x, y;
         // y
-        if (pos === -1 || pos === -2) {
-            
-            if (isBlackPlayer() && col === "W" || !isBlackPlayer() && col === "B") {
-                // stack checkers if more than 5 have to be placed on the point
-                if (nr <= 5) {
-                    y = borderHeight + 1 + (nr - 1) * checkerRadius * 2 + checkerRadius;
-                }
-                else if (nr <= 10) {
-                    y = borderHeight + 1 + (nr - 6) * checkerRadius * 2 + checkerRadius + 4;
-                }
-                else {
-                    y = borderHeight + 1 + (nr - 11) * checkerRadius * 2 + checkerRadius + 8;
-                }
-            }
-            else {
-                if (nr <= 5) {
-                    y = ym - borderHeight - 1 - (nr - 1) * checkerRadius * 2 - checkerRadius;
-                }
-                else if (nr <= 10) {
-                    y = ym - borderHeight - 1 - (nr - 6) * checkerRadius * 2 - checkerRadius - 4;
-                }
-                else {
-                    y = ym - borderHeight - 1 - (nr - 11) * checkerRadius * 2 - checkerRadius - 8;
-                }
-            }
-        }
-        else if (isBlackPlayer() && (pos >= 12 && pos <= 23) ||
-            !isBlackPlayer() && pos >= 0 && pos <= 11) {
-            // stack checkers if more than 5 have to be placed on the point
-            if (nr <= 5) {
-                y = borderHeight + 1 + (nr - 1) * checkerRadius * 2 + checkerRadius;
-            }
-            else if (nr <= 10) {
-                y = borderHeight + 1 + (nr - 6) * checkerRadius * 2 + checkerRadius + 4;
-            }
-            else {
-                y = borderHeight + 1 + (nr - 11) * checkerRadius * 2 + checkerRadius + 8;
-            }
+        const n = Math.floor((nr - 1) / 5);
+        const y1 = borderHeight + 1 + (nr - 1 - n * 5) * checkerRadius * 2 + checkerRadius - n * checkerOverlay;
+        const y2 = ym - borderHeight - 1 - (nr - 1 - n * 5) * checkerRadius * 2 - checkerRadius - n * checkerOverlay;
+        if (isBlackPlayer() && pos >= 12 && pos <= 23 ||
+            !isBlackPlayer() && pos >= 0 && pos <= 11 ||
+            (pos === -1 && (isBlackPlayer() && col === "B" || !isBlackPlayer() && col === "W")) ||
+            (pos === -2 && (isBlackPlayer() && col === "W" || !isBlackPlayer() && col === "B"))) {
+            y = y1;
         }
         else {
-            // stack checkers if more than 5 have to be placed on the point
-            if (nr <= 5) {
-                y = ym - borderHeight - 1 - (nr - 1) * checkerRadius * 2 - checkerRadius;
-            }
-            else if (nr <= 10) {
-                y = ym - borderHeight - 1 - (nr - 6) * checkerRadius * 2 - checkerRadius - 4;
-            }
-            else {
-                y = ym - borderHeight - 1 - (nr - 11) * checkerRadius * 2 - checkerRadius - 8;
-            }
+            y = y2;
         }
         // x
         if (pos === -1) {
-            x = borderWidth + 6 * pointWidth + gap + 3 + checkerRadius;
+            x = borderWidth + 6 * pointWidth + gapCheckers + 3 + checkerRadius;
         }
         else if (pos === -2) {
-            x = 2 * borderWidth + 13 * pointWidth + checkerRadius + gap;
+            x = 2 * borderWidth + 13 * pointWidth + checkerRadius + gapCheckers;
         }
         else if (pos >= 0 && pos <= 5) {
-            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gap + 3 + checkerRadius;
+            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gapCheckers + 3 + checkerRadius;
         }
         else if (pos >= 6 && pos <= 11) {
-            x = borderWidth + (11 - pos) * pointWidth + gap + 3 + checkerRadius;
+            x = borderWidth + (11 - pos) * pointWidth + gapCheckers + 3 + checkerRadius;
         }
         else if (pos >= 12 && pos <= 17) {
-            x = borderWidth + (pos - 12) * pointWidth + gap + 3 + checkerRadius;
+            x = borderWidth + (pos - 12) * pointWidth + gapCheckers + 3 + checkerRadius;
         }
         else if (pos >= 18 && pos <= 23) {
-            x = borderWidth + 7 * pointWidth + (pos - 18) * pointWidth + gap + 3 + checkerRadius;
+            x = borderWidth + 7 * pointWidth + (pos - 18) * pointWidth + gapCheckers + 3 + checkerRadius;
         }
-        if (col === "W" || col === "B") {
-            ctx.fillStyle = col === "W" ? colorCheckerWhite : colorCheckerBlack;
+        if (fillColor) {
+            ctx.fillStyle = fillColor;
         }
         else {
-            ctx.fillStyle = col;
+            ctx.fillStyle = col === "W" ? colorCheckerWhite : colorCheckerBlack;
         }
         ctx.beginPath();
         ctx.arc(x, y, checkerRadius, 0, 2 * Math.PI);
@@ -446,26 +411,26 @@ var backgammon = (() => {
     };
 
     const drawPoint = (ctx, pos) => {
-        const w = pointWidth - gap;
-        const ym = pointHeight * 2 + checkerRadius * 2 + 2 * borderHeight;
+        const w = pointWidth - gapCheckers;
+        const ym = pointHeight * 2 + gapPointHeight + 2 * borderHeight;
         let x, y, yt;
         if (pos >= 0 && pos <= 5) {
-            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gap;
+            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gapCheckers;
             y = borderHeight + 1;
             yt = y + pointHeight;
         }
         else if (pos >= 6 && pos <= 11) {
-            x = borderWidth + (11 - pos) * pointWidth + gap;
+            x = borderWidth + (11 - pos) * pointWidth + gapCheckers;
             y = borderHeight + 1;
             yt = y + pointHeight;
         }
         else if (pos >= 12 && pos <= 17) {
-            x = borderWidth + (pos - 12) * pointWidth + gap;
+            x = borderWidth + (pos - 12) * pointWidth + gapCheckers;
             y = ym - borderHeight - 1;
             yt = y - pointHeight;
         }
         else if (pos >= 18 && pos <= 23) {
-            x = borderWidth + (7 + pos - 18) * pointWidth + gap;
+            x = borderWidth + (7 + pos - 18) * pointWidth + gapCheckers;
             y = ym - borderHeight - 1;
             yt = y - pointHeight;
         }
@@ -473,7 +438,7 @@ var backgammon = (() => {
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x + w / 2, yt);
-        ctx.lineTo(x + pointWidth - 2 * gap, y);
+        ctx.lineTo(x + pointWidth - 2 * gapCheckers, y);
         ctx.fill();
         // shadow
         ctx.strokeStyle = colorShadowLight;
@@ -484,7 +449,7 @@ var backgammon = (() => {
         ctx.strokeStyle = colorShadowDark;
         ctx.beginPath();
         ctx.moveTo(x + w / 2, yt);
-        ctx.lineTo(x + pointWidth - 2 * gap, y);
+        ctx.lineTo(x + pointWidth - 2 * gapCheckers, y);
         ctx.stroke();
     };
 
@@ -497,7 +462,7 @@ var backgammon = (() => {
             if (model && model.board && model.board.items) {
                 drawBoard(ctx, model.board.items);
                 if (moveItem !== undefined) {
-                    drawChecker(ctx, moveItem.position, moveItem.count, colorCheckerSelected);
+                    drawChecker(ctx, moveItem.position, moveItem.count, model.board.currentColor, colorCheckerSelected);
                     if (lastPos !== undefined && lastPos != moveItem.position) {
                         model.board.moves.forEach((move) => {
                             if (move.from === moveItem.position && move.to === lastPos) {
@@ -507,13 +472,13 @@ var backgammon = (() => {
                                         cnt = item.count;
                                     }
                                 });
-                                drawChecker(ctx, lastPos, cnt, colorCheckerMoveTo);
+                                drawChecker(ctx, lastPos, cnt, model.board.currentColor, colorCheckerMoveTo);
                             }
                         });
                     }
                 }
                 else if (selectedItem !== undefined) {
-                    drawChecker(ctx, selectedItem.position, selectedItem.count, colorCheckerSelected);
+                    drawChecker(ctx, selectedItem.position, selectedItem.count, model.board.currentColor, colorCheckerSelected);
                 }
             }
             dirty = false;
