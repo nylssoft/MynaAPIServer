@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "0.9.2";
+    let version = "0.9.3";
 
     let dirty;
 
@@ -44,6 +44,8 @@ var backgammon = (() => {
     let lastPos;
     let selectedItem;
     let moveItem;
+
+    let diceImageMap = new Map();
 
     // helper
 
@@ -192,10 +194,7 @@ var backgammon = (() => {
                                 msg += " Es gibt keinen Zug mehr.";
                             }
                             else {
-                                msg += " Verbleibende Z\u00FCge: ";
-                                model.board.remainingRollNumbers.forEach((nr) => {
-                                    controls.createImg(pConfirmNextGame, "roll-img", 32, 32, `/images/backgammon/dice-${nr}-fill.svg`);
-                                });
+                                msg += ` Verbleibende Schritte: ${model.board.remainingRollNumbers.join(", ")}.`;
                             }
                         }
                         document.body.className = "active-background";
@@ -207,10 +206,7 @@ var backgammon = (() => {
                                 msg += " Es gibt keinen Zug mehr.";
                             }
                             else {
-                                msg += " Verbleibende Z\u00FCge: ";
-                                model.board.remainingRollNumbers.forEach((nr) => {
-                                    controls.createImg(pConfirmNextGame, "roll-img", 32, 32, `/images/backgammon/dice-${nr}-fill.svg`);
-                                });
+                                msg += ` Verbleibende Schritte: ${model.board.remainingRollNumbers.join(", ")}.`;
                             }
                         }
                         document.body.className = "inactive-background";
@@ -453,6 +449,32 @@ var backgammon = (() => {
         ctx.stroke();
     };
 
+    const drawDice = (ctx) => {
+        if (model && model.board && (model.board.currentRollNumbers.length > 0 || model.board.doubleRoll)) {
+            const numbers = [];
+            if (model.board.doubleRoll) {
+                numbers.push(model.board.doubleRoll);
+                numbers.push(model.board.doubleRoll);
+            }
+            else {
+                model.board.currentRollNumbers.forEach((nr) => {
+                    numbers.push(nr);
+                });
+            }
+            let count = 0;
+            numbers.forEach((nr) => {
+                const image = diceImageMap.get(`dice${nr}`);
+                if (!image) return; // not yet loaded
+                let x = borderWidth + 2 * pointWidth + count * checkerRadius * 3;
+                if (isActivePlayer()) {
+                    x += 7 * pointWidth;
+                }
+                ctx.drawImage(image, x, borderHeight + pointHeight + checkerRadius, checkerRadius * 2, checkerRadius * 2);
+                count++;
+            });
+        }
+    };
+
     const draw = () => {
         const canvas = document.getElementById("playground-id");
         if (canvas && dirty) {
@@ -461,6 +483,7 @@ var backgammon = (() => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (model && model.board && model.board.items) {
                 drawBoard(ctx, model.board.items);
+                drawDice(ctx);
                 if (moveItem !== undefined) {
                     drawChecker(ctx, moveItem.position, moveItem.count, model.board.currentColor, colorCheckerSelected);
                     if (lastPos !== undefined && lastPos != moveItem.position) {
@@ -490,29 +513,6 @@ var backgammon = (() => {
         const messageElem = document.getElementById("message-id");
         if (messageElem) {
             messageElem.textContent = getStateMessage();
-        }
-    };
-
-    const updateRoll = () => {
-        const rollElem = document.getElementById("roll-id");
-        if (rollElem) {
-            controls.removeAllChildren(rollElem);
-            if (model && model.board && !model.board.gameOver &&
-                (model.board.currentRollNumbers.length > 0 || model.board.doubleRoll)) {
-                rollElem.classList.toggle("hide", false);
-                if (model.board.doubleRoll) {
-                    controls.createImg(rollElem, "roll-img", 32, 32, `/images/backgammon/dice-${model.board.doubleRoll}-fill.svg`);
-                    controls.createImg(rollElem, "roll-img", 32, 32, `/images/backgammon/dice-${model.board.doubleRoll}-fill.svg`);
-                }
-                else {
-                    model.board.currentRollNumbers.forEach((nr) => {
-                        controls.createImg(rollElem, "roll-img", 32, 32, `/images/backgammon/dice-${nr}-fill.svg`);
-                    });
-                }
-            }
-            else {
-                rollElem.classList.toggle("hide", true);
-            }
         }
     };
 
@@ -549,8 +549,8 @@ var backgammon = (() => {
     };
 
     const updateRollButton = () => {
-        const giveup = document.getElementById("rollbutton");
-        if (giveup) {
+        const roll = document.getElementById("rollbutton");
+        if (roll) {
             let hide = !model.currentUser || !isPlaying();
             if (!hide) {
                 if (model.board.gameStarted) {
@@ -565,7 +565,7 @@ var backgammon = (() => {
                     hide = true;
                 }
             }
-            giveup.classList.toggle("hide", hide);
+            roll.classList.toggle("hide", hide);
         }
     };
 
@@ -578,7 +578,6 @@ var backgammon = (() => {
                 setState(m.state);
                 model = m;
                 if (isPlaying()) {
-                    updateRoll();
                     updateRollButton();
                     updateSkipButton();
                     updateGiveUpButton();
@@ -619,6 +618,21 @@ var backgammon = (() => {
                 handleError(errMsg);
                 window.location.replace("/backgammon");
             });
+    };
+
+    const loadDiceImages = (finished) => {
+        let loaded = 0;
+        for (let idx = 1; idx < 7; idx++) {
+            const image = new Image();
+            image.onload = (evt) => {
+                diceImageMap.set(`dice${idx}`, evt.currentTarget);
+                loaded++;
+                if (finished && loaded == 6) {
+                    finished();
+                }
+            };
+            image.src = `/images/backgammon/dice-${idx}.svg`;
+        }
     };
 
     // rendering
@@ -802,8 +816,6 @@ var backgammon = (() => {
         canvas.addEventListener("mousedown", onCanvasMouseDown);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
         controls.createDiv(parent).id = "current-player-id";
-        controls.createDiv(parent, "hide").id = "roll-id";
-        updateRoll();
         const divActions = controls.createDiv(parent, "actions-section");
         divActions.id = "actions"
         if (!renderActions(divActions)) {
@@ -1198,13 +1210,14 @@ var backgammon = (() => {
         renderInit: renderInit,
         onTimer: onTimer,
         onResize: onResize,
+        loadDiceImages: loadDiceImages
     };
 })();
 
 window.onload = () => {
     window.setInterval(backgammon.onTimer, 1000);
     window.addEventListener("resize", backgammon.onResize);
-    utils.auth_lltoken(backgammon.renderInit);
+    utils.auth_lltoken(() => backgammon.loadDiceImages(backgammon.renderInit));
 };
 
 window.onclick = (event) => utils.hide_menu(event);
