@@ -841,6 +841,10 @@ h3 {
         margin-left: 5pt;
     }
 
+    .layout-left {
+        left: 11pt;
+    }
+
     table {
         min-width: 200pt;
         width: 200pt;

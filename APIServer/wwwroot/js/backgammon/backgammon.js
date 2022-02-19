@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "0.9.3";
+    let version = "0.9.4";
 
     let dirty;
 
@@ -229,11 +229,11 @@ var backgammon = (() => {
     };
 
     const setPointWidth = (w) => {
+        gapCheckers = utils.is_mobile() ? 2 : 7;
         pointWidth = Math.floor(w / 14);
-        checkerRadius = Math.floor(pointWidth / 2) - 7;
+        checkerRadius = Math.floor(pointWidth / 2) - gapCheckers;
         pointHeight = 5 * checkerRadius * 2;
         gapPointHeight = 4 * checkerRadius;
-        gapCheckers = 4;
         checkerOverlay = Math.floor(checkerRadius / 2);
         borderWidth = Math.floor(pointWidth / 3);
         borderHeight = borderWidth;
@@ -374,22 +374,22 @@ var backgammon = (() => {
         }
         // x
         if (pos === -1) {
-            x = borderWidth + 6 * pointWidth + gapCheckers + 3 + checkerRadius;
+            x = borderWidth + 6 * pointWidth + gapCheckers + checkerRadius;
         }
         else if (pos === -2) {
             x = 2 * borderWidth + 13 * pointWidth + checkerRadius + gapCheckers;
         }
         else if (pos >= 0 && pos <= 5) {
-            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gapCheckers + 3 + checkerRadius;
+            x = borderWidth + 7 * pointWidth + (5 - pos) * pointWidth + gapCheckers + checkerRadius;
         }
         else if (pos >= 6 && pos <= 11) {
-            x = borderWidth + (11 - pos) * pointWidth + gapCheckers + 3 + checkerRadius;
+            x = borderWidth + (11 - pos) * pointWidth + gapCheckers + checkerRadius;
         }
         else if (pos >= 12 && pos <= 17) {
-            x = borderWidth + (pos - 12) * pointWidth + gapCheckers + 3 + checkerRadius;
+            x = borderWidth + (pos - 12) * pointWidth + gapCheckers + checkerRadius;
         }
         else if (pos >= 18 && pos <= 23) {
-            x = borderWidth + 7 * pointWidth + (pos - 18) * pointWidth + gapCheckers + 3 + checkerRadius;
+            x = borderWidth + 7 * pointWidth + (pos - 18) * pointWidth + gapCheckers + checkerRadius;
         }
         if (fillColor) {
             ctx.fillStyle = fillColor;
@@ -501,7 +501,7 @@ var backgammon = (() => {
                     }
                 }
                 else if (selectedItem !== undefined) {
-                    drawChecker(ctx, selectedItem.position, selectedItem.count, model.board.currentColor, colorCheckerSelected);
+                    drawChecker(ctx, selectedItem.position, selectedItem.count, model.board.currentColor, colorCheckerMoveTo);
                 }
             }
             dirty = false;
@@ -815,6 +815,7 @@ var backgammon = (() => {
         updateCanvasWidthAndHeight(canvas);
         canvas.addEventListener("mousedown", onCanvasMouseDown);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
+        canvas.addEventListener("mouseleave", onCanvasMouseLeave);
         controls.createDiv(parent).id = "current-player-id";
         const divActions = controls.createDiv(parent, "actions-section");
         divActions.id = "actions"
@@ -938,6 +939,7 @@ var backgammon = (() => {
         if (moveItem === undefined && selectedItem != undefined) {
             moveItem = selectedItem;
             selectedItem == undefined;
+            lastPos = undefined;
             dirty = true;
         }
         else if (moveItem !== undefined) {
@@ -969,6 +971,7 @@ var backgammon = (() => {
             if (!found) {
                 moveItem = undefined;
                 selectedItem = undefined;
+                lastPos = undefined;
                 dirty = true;
             }
         }
@@ -1000,6 +1003,12 @@ var backgammon = (() => {
                 dirty = true;
             }
         }
+    };
+
+    const onCanvasMouseLeave = () => {
+        selectedItem = undefined;
+        lastPos = undefined;
+        dirty = true;
     };
 
     const onUpdateHelp = (show) => {
