@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.25";
+    let version = "1.3.26";
 
     // helper
 
@@ -539,10 +539,6 @@ var skat = (() => {
                 controls.createButton(parent, "Reservierungen", () => btnShowReservations_click());
             }
         }
-        const chessDiv = controls.createDiv(parent, "advertisment");
-        controls.create(chessDiv, "span", undefined, "Probiere mal ");
-        controls.createA(chessDiv, "advertisment", "/chess", "Schach");
-        controls.create(chessDiv, "span", undefined, "!");
     };
 
     const renderWaitForUsers = (parent) => {
@@ -892,10 +888,8 @@ var skat = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Skat ${version}. Copyright 2020-2021 `);
+        controls.create(div, "span", "copyright", `Skat ${version}. Copyright 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
-        let time = new Date().toLocaleTimeString("de-DE");
-        controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `);
         if (ticket) {
             controls.createButton(div, "Tisch verlassen", btnLogout_click, "Logout", "logout-button");
         }
