@@ -463,10 +463,9 @@ var tetris = (() => {
 
     const setBackgroundPicture = () => {
         if (backgroundPictures && level < backgroundPictures.length + 1) {
-            let pic = backgroundPictures[level];
-            document.body.style.background = `#000000 url('${pic.url}')`;
-            document.body.style.backgroundSize = "cover";
-            document.body.style.backgroundRepeat = "no-repeat";
+            const pic = backgroundPictures[level];
+            const wrapBody = document.getElementById("wrap-body-id");
+            wrapBody.style.setProperty("--bgimg", `url('${pic.url}')`);
         }
     }
 
@@ -835,7 +834,7 @@ var tetris = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
-        controls.create(div, "span", undefined, `Myna Tetris ${version}. Copyright 2020-2021 `);
+        controls.create(div, "span", undefined, `Tetris ${version}. Copyright 2020-2022 `);
         controls.createA(div, undefined, "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", undefined, ".");
     };
@@ -1070,9 +1069,10 @@ var tetris = (() => {
         dirtyNextBlock = true;
 
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body);
-
-        let all = controls.createDiv(document.body);
+        const wrapBody = controls.createDiv(document.body, "wrap-body");
+        wrapBody.id = "wrap-body-id";
+        utils.create_cookies_banner(wrapBody);
+        const all = controls.createDiv(wrapBody);
         utils.create_menu(all);
         renderHeader(all);
         renderTetris(all);

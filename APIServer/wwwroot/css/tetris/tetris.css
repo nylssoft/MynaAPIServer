@@ -1,8 +1,48 @@
+:root {
+    --bgimg: url('/images/buttons/gpe-tetris.png');
+}
+
 * {
     user-select: none; /* supported by Chrome and Opera */
     -webkit-user-select: none; /* Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+body {
+    margin: 0pt;
+    border: none;
+    background-color: black;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    color: white;
+}
+
+input {
+    font-size: 18pt;
+    margin: 0pt;
+}
+
+a {
+    color: lightgreen;
+}
+
+.wrap-body {
+    position: relative;
+    height: 100vh;
+    width: 100%;
+}
+
+.wrap-body::before {
+    content: "";
+    background-image: var(--bgimg);
+    background-size: cover;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    opacity: 0.2;
 }
 
 .cookie-banner {
@@ -25,20 +65,6 @@
 
 .cookie-container a {
     color: lightgreen;
-}
-
-body {
-    margin: 0pt;
-    border: none;
-    background-color: black;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    color: white;
-}
-
-input {
-    font-size: 18pt;
-    margin: 0pt;
 }
 
 .playground {
@@ -193,10 +219,6 @@ input {
     padding: 10pt;
     font-size: 8pt;
     font-family: Arial, Helvetica, sans-serif;
-    color: lightgreen;
-}
-
-a {
     color: lightgreen;
 }
 
