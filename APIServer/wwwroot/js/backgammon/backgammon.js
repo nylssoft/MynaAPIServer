@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "0.9.4";
+    let version = "0.9.5";
 
     let dirty;
 
@@ -134,6 +134,12 @@ var backgammon = (() => {
                 }
                 else {
                     msg = `${model.board.winner} hat gewonnen.`;                
+                }
+                if (model.board.backgammon) {
+                    msg += " Backgammon!";
+                }
+                else if (model.board.gammon) {
+                    msg += " Gammon!";
                 }
                 if (model.board.giveUp) {
                     msg += " Das Spiel wurde aufgegeben.";
@@ -516,14 +522,6 @@ var backgammon = (() => {
         }
     };
 
-    const updateLastUpdateTime = () => {
-        const span = document.getElementById("lastupdatetime");
-        if (span) {
-            const time = new Date().toLocaleTimeString("de-DE");
-            span.textContent = `. Letzte Aktualisierung: ${time}. `;
-        }
-    };
-
     const updateGiveUpButton = () => {
         const giveup = document.getElementById("giveupbutton");
         if (giveup) {
@@ -569,6 +567,26 @@ var backgammon = (() => {
         }
     };
 
+    const updatePhoto = (img, name, fallback) => {
+        let photo = photos[name.toLowerCase()];
+        if (!photo) {
+            photo = `/images/skat/profiles/default${fallback}.png`;
+            photos[name.toLowerCase()] = photo;
+            img.src = photo;
+            utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(name)}`, undefined,
+                (p) => {
+                    if (p) {
+                        photos[name.toLowerCase()] = p;
+                        img.src = p;
+                    }
+                },
+                (errMsg) => console.error(errMsg));
+        }
+        else {
+            img.src = photo;
+        }
+    };
+
     const update = () => {
         disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
@@ -581,7 +599,6 @@ var backgammon = (() => {
                     updateRollButton();
                     updateSkipButton();
                     updateGiveUpButton();
-                    updateLastUpdateTime();
                     updateMessage();
                     dirty = true;
                     enableTimer();
@@ -680,23 +697,7 @@ var backgammon = (() => {
             model.allUsers.forEach((user) => {
                 const li = controls.create(ul, "li");
                 const img = controls.createImg(li, "player-img", 45, 45, undefined, user.name);
-                let photo = photos[user.name.toLowerCase()];
-                if (!photo) {
-                    photo = `/images/skat/profiles/default${idx}.png`;
-                    photos[user.name.toLowerCase()] = photo;
-                    img.src = photo;
-                    utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(user.name)}`, undefined,
-                        (p) => {
-                            if (p) {
-                                photos[user.name.toLowerCase()] = p;
-                                img.src = p;
-                            }
-                        },
-                        (errMsg) => console.error(errMsg));
-                }
-                else {
-                    img.src = photo;
-                }
+                updatePhoto(img, user.name, idx);
                 controls.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
                 idx++;
             });
@@ -795,8 +796,6 @@ var backgammon = (() => {
         const div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `Backgammon ${version}. Copyright 2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
-        const time = new Date().toLocaleTimeString("de-DE");
-        controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `).id = "lastupdatetime";
         if (ticket) {
             if (!model.board) {
                 controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
@@ -809,14 +808,30 @@ var backgammon = (() => {
 
     const renderMainPage = (parent) => {
         calculatePointWidth();
-        controls.createDiv(parent).id = "opponent-player-id";
+        let playerTop;
+        let playerBottom;
+        if (model.currentUser) {
+            playerTop = getOpponentPlayer();
+            playerBottom = model.currentUser.name;
+        }
+        else {
+            playerTop = model.board.blackPlayer;
+            playerBottom = model.board.whitePlayer;
+        }
+        const playerTopDiv = controls.createDiv(parent, "player-top");
+        const topImg = controls.createImg(playerTopDiv, "player-img", 45, 45, undefined, playerTop);
+        updatePhoto(topImg, playerTop, playerTop === model.board.blackPlayer ? 1 : 2);
+        controls.createSpan(playerTopDiv).id = "opponent-player-id";
         const canvas = controls.create(parent, "canvas", "playground");
         canvas.id = "playground-id";
         updateCanvasWidthAndHeight(canvas);
         canvas.addEventListener("mousedown", onCanvasMouseDown);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
         canvas.addEventListener("mouseleave", onCanvasMouseLeave);
-        controls.createDiv(parent).id = "current-player-id";
+        const playerBottomDiv = controls.createDiv(parent, "player-bottom");
+        const bottomImg = controls.createImg(playerBottomDiv, "player-img", 45, 45, undefined, playerBottom);
+        updatePhoto(bottomImg, playerBottom, playerTop === model.board.blackPlayer ? 2 : 1);
+        controls.createSpan(playerBottomDiv).id = "current-player-id";
         const divActions = controls.createDiv(parent, "actions-section");
         divActions.id = "actions"
         if (!renderActions(divActions)) {
@@ -856,8 +871,7 @@ var backgammon = (() => {
         if (model.allUsers.length == 0) {
             clearTicket();
         }
-        const divLayoutLeft = controls.createDiv(document.body, "layout-left");
-        const divMain = controls.createDiv(divLayoutLeft);
+        const divMain = controls.createDiv(document.body, "main");
         if (!ticket) {
             if (guestMode) {
                 document.title = "Backgammon - Gastansicht";

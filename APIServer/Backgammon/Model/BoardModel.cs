@@ -33,6 +33,10 @@ namespace APIServer.Backgammon.Model
 
         public bool GiveUp { get; set; }
 
+        public bool Gammon { get; set; }
+
+        public bool Backgammon { get; set; }
+
         public bool GameOver { get; set; }
 
         public string Winner { get; set; }

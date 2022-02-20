@@ -158,6 +158,8 @@ namespace APIServer.Backgammon
                     ret.Board.CurrentColor = ConvertCheckerColor(board.CurrentColor);
                     // reasons for game over and the winner
                     ret.Board.GiveUp = board.GiveUp;
+                    ret.Board.Gammon = board.Gammon;
+                    ret.Board.Backgammon = board.Backgammon;
                     if (board.Winner.HasValue)
                     {
                         ret.Board.Winner = board.Winner.Value == CheckerColor.White ? ret.Board.WhitePlayer : ret.Board.BlackPlayer;

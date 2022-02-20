@@ -128,6 +128,10 @@ namespace APIServer.Backgammon.Core
 
         public bool GameStarted { get; private set; }
 
+        public bool Gammon { get; private set; }
+
+        public bool Backgammon { get; private set; }
+
         public bool NextGameRequested { get; set; }
 
         public Roll CurrentRoll { get; private set; }
@@ -143,10 +147,10 @@ namespace APIServer.Backgammon.Core
             set
             {
                 giveUp = value;
-                GameOver = true;
                 if (giveUp)
                 {
-                    Winner = CurrentColor == CheckerColor.White ? CheckerColor.Black : CheckerColor.White;
+                    var winnerColor = CurrentColor == CheckerColor.White ? CheckerColor.Black : CheckerColor.White;
+                    SetWinner(winnerColor);
                 }
             }
         }
@@ -201,6 +205,8 @@ namespace APIServer.Backgammon.Core
             Winner = source.Winner;
             GameOver = source.GameOver;
             GameStarted = source.GameStarted;
+            Gammon = source.Gammon;
+            Backgammon = source.Backgammon;
             CurrentRoll = source.CurrentRoll;
             LastRoll = source.LastRoll;
             remainingRollNumbers = new List<int>(source.remainingRollNumbers);
@@ -415,6 +421,29 @@ namespace APIServer.Backgammon.Core
 
         // --- private methods
 
+        private void SetWinner(CheckerColor winnerColor)
+        {
+            GameOver = true;
+            Winner = winnerColor;
+            var looserItems = GetItems().Where((item) => item.Color != winnerColor);
+            if (!looserItems.Any((item) => item.Position == OFFBOARD))
+            {
+                Gammon = true;
+                if (looserItems.Any((item) => item.Position == BAR))
+                {
+                    Backgammon = true;
+                }
+                else
+                {
+                    var startPos = winnerColor == CheckerColor.White ? 0 : 18;
+                    if (looserItems.Any((item) => item.Position >= startPos && item.Position <= startPos + 5))
+                    {
+                        Backgammon = true;
+                    }
+                }
+            }
+        }
+
         private bool HasCheckersOnBar()
         {
             return bar.Any((c) => c.Color == CurrentColor.Value);
@@ -618,8 +647,7 @@ namespace APIServer.Backgammon.Core
                 var countOnBoard = GetCheckers().Count((c) => c.Position >= 0 && c.Position <= 23);
                 if (countOnBoard == 0)
                 {
-                    Winner = color;
-                    GameOver = true;
+                    SetWinner(color);
                 }
             }
             // remove from bar or move in board
