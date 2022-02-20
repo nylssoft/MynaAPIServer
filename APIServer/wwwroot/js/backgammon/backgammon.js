@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "0.9.5";
+    let version = "1.0.0";
 
     let dirty;
 
@@ -294,6 +294,9 @@ var backgammon = (() => {
                     }
                 }
                 return pos;
+            }
+            else if (evt.offsetX > borderWidth + 13 * pointWidth) {
+                return -2; // off board
             }
         }
         return undefined;
