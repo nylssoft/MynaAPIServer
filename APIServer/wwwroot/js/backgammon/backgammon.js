@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.0";
+    let version = "1.0.1";
 
     let dirty;
 
@@ -42,7 +42,7 @@ var backgammon = (() => {
     let gapCheckers;
 
     let lastPos;
-    let selectedItem;
+    let highlightItem;
     let moveItem;
 
     let diceImageMap = new Map();
@@ -108,6 +108,10 @@ var backgammon = (() => {
 
     const isBlackPlayer = () => {
         return model && model.currentUser && model.board && model.currentUser.name === model.board.blackPlayer;
+    };
+
+    const hasRolledDice = () => {
+        return model && model.board && model.board.currentRollNumbers.length > 0;
     };
 
     const getOpponentPlayer = () => {
@@ -502,6 +506,9 @@ var backgammon = (() => {
                                 model.board.items.forEach((item) => {
                                     if (item.position === lastPos) {
                                         cnt = item.count;
+                                        if (item.color == model.board.currentColor) {
+                                            cnt += 1;
+                                        }
                                     }
                                 });
                                 drawChecker(ctx, lastPos, cnt, model.board.currentColor, colorCheckerMoveTo);
@@ -509,8 +516,8 @@ var backgammon = (() => {
                         });
                     }
                 }
-                else if (selectedItem !== undefined) {
-                    drawChecker(ctx, selectedItem.position, selectedItem.count, model.board.currentColor, colorCheckerMoveTo);
+                else if (highlightItem) {
+                    drawChecker(ctx, highlightItem.position, highlightItem.count, model.board.currentColor, colorCheckerMoveTo);
                 }
             }
             dirty = false;
@@ -590,7 +597,7 @@ var backgammon = (() => {
         }
     };
 
-    const update = () => {
+    const update = (to) => {
         disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
@@ -603,6 +610,9 @@ var backgammon = (() => {
                     updateSkipButton();
                     updateGiveUpButton();
                     updateMessage();
+                    if (to) {
+                        updateHighlightItem(to);
+                    }
                     dirty = true;
                     enableTimer();
                 }
@@ -655,6 +665,69 @@ var backgammon = (() => {
         }
     };
 
+    const getCurrentItem = (pos) => {
+        let posItem = undefined;
+        model.board.items.forEach((item) => {
+            if (item.position === pos && item.color == model.board.currentColor) {
+                posItem = item;
+            }
+        });
+        return posItem;
+    };
+
+    const updateHighlightItem = (pos) => {
+        highlightItem = undefined;
+        const posItem = getCurrentItem(pos);
+        if (posItem) {
+            model.board.moves.forEach((move) => {
+                if (move.from == posItem.position) {
+                    if (!moveItem || moveItem.position != move.from) {
+                        highlightItem = posItem;
+                    }
+                }
+            });
+        }
+    };
+
+    const updateMoveItem = (pos) => {
+        moveItem = undefined;
+        const posItem = getCurrentItem(pos);
+        if (posItem) {
+            model.board.moves.forEach((move) => {
+                if (move.from == posItem.position) {
+                    moveItem = posItem;
+                }
+            });
+        }
+    };
+
+    const move = (from, to) => {
+        moveItem = undefined;
+        let toMove = undefined;
+        model.board.moves.forEach((move) => {
+            if (!toMove && move.from === from && move.to === to) {
+                toMove = move;
+            }
+        });
+        if (toMove) {
+            disableTimer();
+            console.log("MOVE...");
+            utils.fetch_api_call("api/backgammon/move",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
+                    body: JSON.stringify({ from: toMove.from, to: toMove.to })
+                },
+                (state) => {
+                    console.log(`MOVED: new state: ${state}.`);
+                    setState(state);
+                    update(to);
+                    enableTimer();
+                },
+                handleError);
+        }
+    };
+
     // rendering
 
     const renderBoardFull = (parent, ignoreToken) => {
@@ -700,7 +773,7 @@ var backgammon = (() => {
             model.allUsers.forEach((user) => {
                 const li = controls.create(ul, "li");
                 const img = controls.createImg(li, "player-img", 45, 45, undefined, user.name);
-                updatePhoto(img, user.name, idx);
+                updatePhoto(img, user.name, idx == 1 ? 2 : 1);
                 controls.create(li, "span", undefined, user.name).style.marginLeft = "10pt";
                 idx++;
             });
@@ -952,70 +1025,29 @@ var backgammon = (() => {
 
     // callbacks
 
-    const onCanvasMouseDown = () => {
-        if (moveItem === undefined && selectedItem != undefined) {
-            moveItem = selectedItem;
-            selectedItem == undefined;
+    const onCanvasMouseDown = (evt) => {
+        if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
+            const pos = getPositionFromEvent(evt);
+            if (!moveItem) {
+                console.log(`MOUSE DOWN: mark from position ${pos}.`);
+                updateMoveItem(pos);
+            }
+            else {
+                console.log(`MOUSE DOWN: move from ${moveItem.position} to ${pos}.`);
+                move(moveItem.position, pos);
+            }
+            updateHighlightItem(pos);
             lastPos = undefined;
             dirty = true;
-        }
-        else if (moveItem !== undefined) {
-            let found = false;
-            let pos = lastPos === undefined ? -2 : lastPos;
-            model.board.moves.forEach((move) => {
-                if (!found && move.from === moveItem.position && move.to === pos) {
-                    moveItem = undefined;
-                    selectedItem = undefined;
-                    lastPos = undefined;
-                    found = true;
-                    disableTimer();
-                    console.log("MOVE...");
-                    utils.fetch_api_call("api/backgammon/move",
-                        {
-                            method: "POST",
-                            headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
-                            body: JSON.stringify({ from: move.from, to: move.to })
-                        },
-                        (state) => {
-                            console.log(`MOVED: new state: ${state}.`);
-                            setState(state);
-                            update();
-                            enableTimer();
-                        },
-                        handleError);
-                }
-            });
-            if (!found) {
-                moveItem = undefined;
-                selectedItem = undefined;
-                lastPos = undefined;
-                dirty = true;
-            }
         }
     };
 
     const onCanvasMouseMove = (evt) => {
-        if (model && model.board && model.board.gameStarted &&
-            isActivePlayer() && model.board.items && model.board.moves) {
+        if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
             const pos = getPositionFromEvent(evt);
             if (lastPos != pos) {
-                selectedItem = undefined;
-                let clickedItem = undefined;
-                const currentColor = isBlackPlayer() ? "B" : "W";
-                if (moveItem === undefined) {
-                    model.board.items.forEach((item) => {
-                        if (item.position === pos && item.color == currentColor) {
-                            clickedItem = item;
-                        }
-                    });
-                    if (clickedItem !== undefined) {
-                        model.board.moves.forEach((move) => {
-                            if (moveItem === undefined && move.from == clickedItem.position) {
-                                selectedItem = clickedItem;
-                            }
-                        });
-                    }
-                }
+                console.log(`MOUSE MOVE: from ${lastPos} to ${pos}.`);
+                updateHighlightItem(pos);
                 lastPos = pos;
                 dirty = true;
             }
@@ -1023,7 +1055,8 @@ var backgammon = (() => {
     };
 
     const onCanvasMouseLeave = () => {
-        selectedItem = undefined;
+        console.log(`MOUSE LEAVE: last pos reset from ${lastPos}.`);
+        highlightItem = undefined;
         lastPos = undefined;
         dirty = true;
     };
