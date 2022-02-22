@@ -17,14 +17,16 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.2";
+    let version = "1.0.3";
 
     let dirty;
 
     const colorCheckerWhite = "white";
     const colorCheckerBlack = "darkred";
-    const colorCheckerSelected = "blue";
-    const colorCheckerMoveTo = "lightblue";
+    const colorCheckerWhiteHighlightItem = "#e0e0e0";
+    const colorCheckerBlackHighlightItem = "#e67b7b";
+    const colorCheckerWhiteMoveItem = "#a0a0a0";
+    const colorCheckerBlackMoveItem = "#dc0707";
     const colorPointLight = "palegreen";
     const colorPointDark = "darkseagreen";
     const colorLightBrown = "navajowhite";
@@ -494,11 +496,13 @@ var backgammon = (() => {
             console.log("DRAW");
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const colorCheckerMoveItem = model.board.currentColor == "W" ? colorCheckerWhiteMoveItem : colorCheckerBlackMoveItem;
+            const colorCheckerHighlightItem = model.board.currentColor == "W" ? colorCheckerWhiteHighlightItem : colorCheckerBlackHighlightItem;
             if (model && model.board && model.board.items) {
                 drawBoard(ctx, model.board.items);
                 drawDice(ctx);
                 if (moveItem !== undefined) {
-                    drawChecker(ctx, moveItem.position, moveItem.count, model.board.currentColor, colorCheckerSelected);
+                    drawChecker(ctx, moveItem.position, moveItem.count, model.board.currentColor, colorCheckerMoveItem);
                     if (lastPos !== undefined && lastPos != moveItem.position) {
                         model.board.moves.forEach((move) => {
                             if (move.from === moveItem.position && move.to === lastPos) {
@@ -511,13 +515,13 @@ var backgammon = (() => {
                                         }
                                     }
                                 });
-                                drawChecker(ctx, lastPos, cnt, model.board.currentColor, colorCheckerMoveTo);
+                                drawChecker(ctx, lastPos, cnt, model.board.currentColor, colorCheckerHighlightItem);
                             }
                         });
                     }
                 }
                 else if (highlightItem) {
-                    drawChecker(ctx, highlightItem.position, highlightItem.count, model.board.currentColor, colorCheckerMoveTo);
+                    drawChecker(ctx, highlightItem.position, highlightItem.count, model.board.currentColor, colorCheckerHighlightItem);
                 }
             }
             dirty = false;
@@ -902,6 +906,7 @@ var backgammon = (() => {
         canvas.id = "playground-id";
         updateCanvasWidthAndHeight(canvas);
         canvas.addEventListener("mousedown", onCanvasMouseDown);
+        canvas.addEventListener("mouseup", onCanvasMouseUp);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
         canvas.addEventListener("mouseleave", onCanvasMouseLeave);
         const playerBottomDiv = controls.createDiv(parent, "player-bottom");
@@ -1039,6 +1044,19 @@ var backgammon = (() => {
             updateHighlightItem(pos);
             lastPos = undefined;
             dirty = true;
+        }
+    };
+
+    const onCanvasMouseUp = (evt) => {
+        if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
+            const pos = getPositionFromEvent(evt);
+            if (moveItem && moveItem.position != pos) {
+                console.log(`MOUSE UP: drag and drop!!.`);
+                move(moveItem.position, pos);
+                updateHighlightItem(pos);
+                lastPos = undefined;
+                dirty = true;
+            }
         }
     };
 
