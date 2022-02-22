@@ -435,7 +435,7 @@ namespace APIServer.Backgammon.Core
                 }
                 else
                 {
-                    var startPos = winnerColor == CheckerColor.White ? 0 : 18;
+                    var startPos = winnerColor == CheckerColor.White ? 18 : 0;
                     if (looserItems.Any((item) => item.Position >= startPos && item.Position <= startPos + 5))
                     {
                         Backgammon = true;

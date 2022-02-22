@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.1";
+    let version = "1.0.2";
 
     let dirty;
 
@@ -190,7 +190,7 @@ var backgammon = (() => {
                             document.body.className = "active-background";
                         }
                         else {
-                            msg = `${getActivePlayer()} ist am Zug.`;
+                            msg = `${getOpponentPlayer()} ist am Zug.`;
                             document.body.className = "inactive-background";
                         }
                     }
