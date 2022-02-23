@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.3";
+    let version = "1.0.4";
 
     let dirty;
 
@@ -91,12 +91,12 @@ var backgammon = (() => {
     };
 
     const enableTimer = () => {
-        console.log("TIMER ENABLED!");
+        if (utils.is_debug()) utils.debug("TIMER ENABLED.");
         timerEnabled = true;
     };
 
     const disableTimer = () => {
-        console.log("TIMER DISABLED!");
+        if (utils.is_debug()) utils.debug("TIMER DISABLED.");
         timerEnabled = false;
     };
 
@@ -493,7 +493,7 @@ var backgammon = (() => {
     const draw = () => {
         const canvas = document.getElementById("playground-id");
         if (canvas && dirty) {
-            console.log("DRAW");
+            if (utils.is_debug()) utils.debug("DRAW.");
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             const colorCheckerMoveItem = model.board.currentColor == "W" ? colorCheckerWhiteMoveItem : colorCheckerBlackMoveItem;
@@ -605,8 +605,10 @@ var backgammon = (() => {
         disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
-                console.log(`MODEL RETRIEVED (update): New state ${m.state}!`);
-                console.log(m);
+                if (utils.is_debug()) {
+                    utils.debug(`MODEL RETRIEVED (update): new state is ${m.state}.`);
+                    utils.debug(m);
+                }
                 setState(m.state);
                 model = m;
                 if (isPlaying()) {
@@ -641,7 +643,10 @@ var backgammon = (() => {
                 body: JSON.stringify(name)
             },
             (loginModel) => {
-                console.log(`LOGGED IN (login with name): new state ${loginModel.state}!`);
+                if (utils.is_debug()) {
+                    utils.debug(`LOGIN (login with name): new state is ${loginModel.state}.`);
+                    utils.debug(loginModel);
+                }
                 setState(loginModel.state);
                 if (loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
@@ -715,7 +720,6 @@ var backgammon = (() => {
         });
         if (toMove) {
             disableTimer();
-            console.log("MOVE...");
             utils.fetch_api_call("api/backgammon/move",
                 {
                     method: "POST",
@@ -723,7 +727,7 @@ var backgammon = (() => {
                     body: JSON.stringify({ from: toMove.from, to: toMove.to })
                 },
                 (state) => {
-                    console.log(`MOVED: new state: ${state}.`);
+                    if (utils.is_debug()) utils.debug(`MOVE: new state is ${state}.`);
                     setState(state);
                     update(to);
                     enableTimer();
@@ -909,6 +913,7 @@ var backgammon = (() => {
         canvas.addEventListener("mouseup", onCanvasMouseUp);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
         canvas.addEventListener("mouseleave", onCanvasMouseLeave);
+        canvas.addEventListener("dblclick", onCanvasDoubleClick);
         const playerBottomDiv = controls.createDiv(parent, "player-bottom");
         const bottomImg = controls.createImg(playerBottomDiv, "player-img", 45, 45, undefined, playerBottom);
         updatePhoto(bottomImg, playerBottom, playerTop === model.board.blackPlayer ? 2 : 1);
@@ -992,13 +997,19 @@ var backgammon = (() => {
         if (params.has("guest")) {
             guestMode = true;
         }
+        if (params.has("debug")) {
+            utils.enable_debug(true);
+            utils.debug("DEBUG enabled.");
+        }
         const xmin = utils.is_mobile() ? 330 : 400;
         setPointWidth(xmin);
         disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
-                console.log(`MODEL RETRIEVED (render): new state: ${m.state}!`);
-                console.log(m);
+                if (utils.is_debug()) {
+                    utils.debug(`MODEL RETRIEVED (render): new state: ${m.state}!`);
+                    utils.debug(m);
+                }
                 setState(m.state);
                 renderModel(m);
             },
@@ -1034,11 +1045,11 @@ var backgammon = (() => {
         if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
             const pos = getPositionFromEvent(evt);
             if (!moveItem) {
-                console.log(`MOUSE DOWN: mark from position ${pos}.`);
+                if (utils.is_debug()) utils.debug(`MOUSE DOWN: mark item at position ${pos}.`);
                 updateMoveItem(pos);
             }
             else {
-                console.log(`MOUSE DOWN: move from ${moveItem.position} to ${pos}.`);
+                if (utils.is_debug()) utils.debug(`MOUSE DOWN: move item from position ${moveItem.position} to ${pos}.`);
                 move(moveItem.position, pos);
             }
             updateHighlightItem(pos);
@@ -1051,7 +1062,7 @@ var backgammon = (() => {
         if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
             const pos = getPositionFromEvent(evt);
             if (moveItem && moveItem.position != pos) {
-                console.log(`MOUSE UP: drag and drop!!.`);
+                if (utils.is_debug()) utils.debug(`MOUSE UP: drag and drop item from position ${moveItem.pos} to ${pos}.`);
                 move(moveItem.position, pos);
                 updateHighlightItem(pos);
                 lastPos = undefined;
@@ -1064,7 +1075,7 @@ var backgammon = (() => {
         if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
             const pos = getPositionFromEvent(evt);
             if (lastPos != pos) {
-                console.log(`MOUSE MOVE: from ${lastPos} to ${pos}.`);
+                if (utils.is_debug()) utils.debug(`MOUSE MOVE: update hightlight item at position ${pos}.`);
                 updateHighlightItem(pos);
                 lastPos = pos;
                 dirty = true;
@@ -1073,10 +1084,33 @@ var backgammon = (() => {
     };
 
     const onCanvasMouseLeave = () => {
-        console.log(`MOUSE LEAVE: last pos reset from ${lastPos}.`);
+        if (utils.is_debug()) utils.debug(`MOUSE LEAVE: set last position ${lastPos} to undefined.`);
         highlightItem = undefined;
         lastPos = undefined;
         dirty = true;
+    };
+
+    const onCanvasDoubleClick = (evt) => {
+        if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
+            const pos = getPositionFromEvent(evt);
+            if (utils.is_debug()) utils.debug(`DOUBLE CLICK: move item at position ${pos} if only a single move is possible.`);
+            const posItem = getCurrentItem(pos);
+            if (posItem) {
+                const moves = [];
+                model.board.moves.forEach((move) => {
+                    if (move.from == posItem.position) {
+                        moves.push(move);
+                    }
+                });
+                if (moves.length == 1) {
+                    move(pos, moves[0].to);
+                    highlightItem = undefined;
+                    moveItem = undefined;
+                    lastPos = undefined;
+                    dirty = true;
+                }
+            }
+        }
     };
 
     const onUpdateHelp = (show) => {
@@ -1108,8 +1142,10 @@ var backgammon = (() => {
                     body: JSON.stringify(name)
                 },
                 (loginModel) => {
-                    console.log(`LOGGED IN: New state ${loginModel.state}!`);
-                    console.log(loginModel);
+                    if (utils.is_debug()) {
+                        utils.debug(`LOGIN: new state is ${loginModel.state}.`);
+                        utils.debug(loginModel);
+                    }
                     setState(loginModel.state);
                     if (loginModel.isAuthenticationRequired) {
                         let nexturl = `/backgammon?login=${name}`;
@@ -1133,7 +1169,7 @@ var backgammon = (() => {
         disableTimer();
         utils.fetch_api_call("api/backgammon/roll", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
-                console.log(`ROLLED: new state: ${state}.`);
+                if (utils.is_debug()) utils.debug(`ROLL DICE: new state is ${state}.`);
                 setState(state);
                 update();
                 enableTimer();
@@ -1145,7 +1181,7 @@ var backgammon = (() => {
         disableTimer();
         utils.fetch_api_call("api/backgammon/nextgame", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
-                console.log(`NEXT GAME REQUESTED: New state ${state}!`);
+                if (utils.is_debug()) utils.debug(`NEXT GAME REQUESTED: new state is ${state}.`);
                 setState(state);
                 render();
             },
@@ -1161,7 +1197,7 @@ var backgammon = (() => {
                 body: JSON.stringify(ok)
             },
             (state) => {
-                console.log(`CONFIRM NEXT GAME: New state ${state}!`);
+                if (utils.is_debug()) utils.debug(`CONFIRM NEXT GAME: new state is ${state}.`);
                 setState(state);
                 render();
             },
@@ -1176,7 +1212,7 @@ var backgammon = (() => {
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket }
             },
             (state) => {
-                console.log(`NEW GAME STARTED: New state ${state}!`);
+                if (utils.is_debug()) utils.debug(`NEW GAME: new state is ${state}.`);
                 setState(state);
                 render();
             },
@@ -1187,7 +1223,7 @@ var backgammon = (() => {
         disableTimer();
         utils.fetch_api_call("api/backgammon/skip", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
-                console.log(`SKIPPED: New state ${state}!`);
+                if (utils.is_debug()) utils.debug(`SKIP: new state is ${state}.`);
                 setState(state);
                 update();
                 enableTimer();
@@ -1200,7 +1236,7 @@ var backgammon = (() => {
             disableTimer();
             utils.fetch_api_call("api/backgammon/giveup", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
-                    console.log(`GAVE UP: New state ${state}!`);
+                    if (utils.is_debug()) utils.debug(`GIVE UP: new state is ${state}.`);
                     setState(state);
                     giveUpClicked = false;
                     render();
@@ -1222,7 +1258,7 @@ var backgammon = (() => {
             disableTimer();
             utils.fetch_api_call("api/backgammon/logout", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
-                    console.log(`LOGGED OUT (game): New state ${state}!`);
+                    if (utils.is_debug()) utils.debug(`LOGOUT (game): new state is ${state}.`);
                     setState(state);
                     endGameClicked = false;
                     render();
@@ -1243,7 +1279,7 @@ var backgammon = (() => {
         disableTimer();
         utils.fetch_api_call("api/backgammon/logout", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
-                console.log(`LOGGED OUT (ticket): New state ${state}!`);
+                if (utils.is_debug()) utils.debug(`LOGOUT (ticket): new state is ${state}.`);
                 setState(state);
                 ticket = undefined;
                 window.sessionStorage.removeItem("backgammonticket");
@@ -1268,7 +1304,7 @@ var backgammon = (() => {
             (state) => {
                 const currentState = getState();
                 if (currentState === undefined || state > currentState) {
-                    console.log(`ON TIMER: STATE CHANGED: ${state}!`);
+                    if (utils.is_debug()) utils.debug(`ON TIMER: new state is ${state}.`);
                     setState(state);
                     if (model && model.board) {
                         update();

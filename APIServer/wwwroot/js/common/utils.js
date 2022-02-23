@@ -2,6 +2,22 @@
 
 var utils = (() => {
 
+    let debug_mode = false;
+
+    const is_debug = () => {
+        return debug_mode === true;
+    };
+
+    const enable_debug = (enable) => {
+        debug_mode = enable === true ? true : false;
+    };
+
+    const debug = (txt) => {
+        if (debug_mode === true) {
+            console.log(txt);
+        }
+    };
+
     const concat_strings = (arr, delim) => {
         let str = "";
         let idx = 0;
@@ -480,6 +496,9 @@ var utils = (() => {
         is_menu_hidden: is_menu_hidden,
         is_cookies_accepted: is_cookies_accepted,
         set_cookies_accepted: set_cookies_accepted,
-        create_cookies_banner: create_cookies_banner
+        create_cookies_banner: create_cookies_banner,
+        is_debug: is_debug,
+        enable_debug: enable_debug,
+        debug: debug
     };
 })();
