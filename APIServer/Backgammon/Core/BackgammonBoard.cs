@@ -301,9 +301,15 @@ namespace APIServer.Backgammon.Core
             {
                 if (HasCheckersOnBar())
                 {
-                    foreach (var rollNumber in remainingRollNumbers)
+                    if (remainingRollNumbers.Count == 1 ||
+                        remainingRollNumbers[0] == remainingRollNumbers[1])
                     {
-                        allMoves.AddRange(GetAllMoves(rollNumber));
+                        allMoves.AddRange(GetAllMoves(remainingRollNumbers[0]));
+                    }
+                    else
+                    {
+                        allMoves.AddRange(GetAllMoves(remainingRollNumbers[0]));
+                        allMoves.AddRange(GetAllMoves(remainingRollNumbers[1]));
                     }
                 }
                 else if (remainingRollNumbers.Count == 1 ||
