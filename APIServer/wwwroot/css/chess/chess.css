@@ -5,6 +5,66 @@
     -ms-user-select: none; /* Internet Explorer/Edge */
 }
 
+body {
+    margin-left: 20pt;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+}
+
+h1 {
+    color: white;
+    position: absolute;
+    top: 5pt;
+    left: 20pt;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0pt;
+}
+
+h2 {
+    color: lightyellow;
+}
+
+h3 {
+    color: yellow;
+}
+
+label, ul {
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-right: 5pt;
+}
+
+input {
+    font-size: 18pt;
+    margin: 5pt;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+span {
+    color: white;
+}
+
+p {
+    color: white;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
+canvas {
+    margin-top: 48px;
+}
+
+#timer-black, #timer-white {
+    margin-left: 100pt;
+}
+
 .cookie-banner {
     position: fixed;
     bottom: 0;
@@ -27,34 +87,9 @@
     color: lightgreen;
 }
 
-input {
-    font-size: 18pt;
-    margin: 5pt;
-    user-select: text;
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-}
-
-span {
-    color: white;
-}
-
 .username {
     margin-right: 10pt;
     margin-left: 10pt;
-}
-
-p {
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-    margin-top: 5pt;
-    margin-bottom: 5pt;
-}
-
-canvas {
-    margin-top: 48px;
 }
 
 .quitbutton {
@@ -62,12 +97,9 @@ canvas {
     top: 0;
     left: 0;
 }
+
 .content {
     margin-top: 0pt;
-}
-
-#timer-black, #timer-white {
-    margin-left: 100pt;
 }
 
 .black {
@@ -78,78 +110,7 @@ canvas {
     color: white;
 }
 
-label, ul {
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-    margin-right: 5pt;
-}
-
-body {
-    margin-left: 20pt;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-}
-
-h1 {
-    color: white;
-    position: absolute;
-    top: 5pt;
-    left: 20pt;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 0pt;
-}
-
-caption {
-    margin-top: 5pt;
-    margin-bottom: 5pt;
-}
-
-table {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    color: white;
-    min-width: 400pt;
-    border-collapse: collapse;
-    border: 3px solid blue;
-    background-color: blue;
-}
-
-td, th {
-    padding: 20px;
-    letter-spacing: 1px;
-}
-
-thead th {
-    text-align: left;
-}
-
-tbody td {
-    text-align: left;
-}
-
-tbody tr:nth-child(odd) {
-    background-color: dodgerblue;
-}
-
-tbody tr:nth-child(even) {
-    background-color: cornflowerblue;
-}
-
-td a {
-    color: white;
-}
-
 .external {
-    color: yellow;
-}
-
-h2 {
-    color: lightyellow;
-}
-
-h3 {
     color: yellow;
 }
 
@@ -184,68 +145,6 @@ h3 {
     color: orange;
 }
 
-.reservation-header {
-    color: lightgreen;
-    margin: 0pt;
-}
-
-.reservation-img {
-    position: relative;
-    top: 8px;
-    margin-left: 5pt;
-}
-
-.reservation-img:hover {
-    border-radius: 50%;
-    background-color: #008CBA;
-}
-
-.reservation-input {
-    margin-left: 0pt;
-}
-
-.reservation-calendar-caption {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    color: white;
-    margin-top: 10pt;
-    margin-bottom: 10pt;
-}
-
-.reservation-label {
-    width: 100pt;
-    display: inline-block;
-}
-
-.reservation-select {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    margin-bottom: 10pt;
-    min-width: 100pt;
-}
-
-.reservation-transparent {
-    background-color: transparent;
-    border: none;
-    outline: none;
-}
-
-.reservation-logout-alert {
-    color: orange;
-    margin-top: 10pt;
-}
-
-.result-bordertop {
-    border-top: 1px solid black;
-}
-
-.result-select {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    margin-bottom: 10pt;
-    min-width: 100pt;
-}
-
 .options {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 18pt;
@@ -274,112 +173,12 @@ h3 {
     margin-top: 20pt;
 }
 
-.layout-chat-button {
-    position: absolute;
-    top: 2pt;
-    right: 20pt;
-    z-index: 1;
-    margin-right: 5pt;
-}
-
-.layout-left {
+.main {
     position: absolute;
     top: 0pt;
     bottom: 20pt;
     left: 20pt;
     right: 20pt;
-}
-
-.layout-right {
-    visibility: hidden;
-    position: absolute;
-    margin: 5pt;
-    color: black;
-    background-color: blue;
-    top: 30pt;
-    bottom: 20pt;
-    width: 400pt;
-    right: 20pt;
-    z-index: 2;
-    overflow-y: auto;
-}
-
-.layout-reservations {
-    position: absolute;
-    background-color: darkblue;
-    padding: 5pt;
-    top: 40pt;
-    bottom: 30pt;
-    width: 500pt;
-    right: 50pt;
-    z-index: 1;
-    overflow-y: auto;
-}
-
-.chat-message {
-    margin: 5pt;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-link {
-    margin: 5pt;
-    color: yellow;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-input {
-    margin-left: 5pt;
-    background-color: blue;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-button {
-    background-color: blue;
-    color: white;
-    margin-top: 0pt;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    transition-duration: 0.4s;
-    cursor: pointer;
-    border: 2px solid #008CBA;
-    font-size: 8pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-button:hover {
-    background-color: #008CBA;
-    color: darkblue;
-}
-
-.chat-img-newmessage {
-    position: absolute;
-    top: 5pt;
-    right: 5pt;
-    z-index: -1;
-    transform: translate(25pt,-4pt);
-}
-
-.chat-img-newmessage:hover {
-    background-color: #008CBA;
-    border-radius: 50%;
-}
-
-.results-img-open {
-    position: absolute;
-    top: 30pt;
-    right: -20pt;
-    z-index: -1;
-}
-
-.results-img-open:hover {
-    background-color: #008CBA;
-    border-radius: 50%;
 }
 
 .header-profile-photo {
@@ -426,100 +225,8 @@ h3 {
     color: lightgreen;
 }
 
-.special {
-    position: absolute;
-    bottom: 10pt;
-    left: 0pt;
-}
-
-.special-link {
-    font-size: 11pt;
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 20pt;
-    color: lightgreen;
-}
-
-.summary-otherplayer {
-    display: inline;
-    color: white;
-    font-family: 'Comic Sans MS';
-    margin-right: 15pt;
-}
-
-.summary-currentplayer {
-    display: inline;
-    color: yellow;
-    font-family: 'Comic Sans MS';
-    margin-right: 15pt;
-}
-
-.header-section {
-}
-
-.specialsort-section {
-    text-align: left;
-    margin-bottom: 5pt;
-}
-
-.tooltip {
-    color: white;
-    font-size: 13pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
 .actions-section {
     min-height: 60px;
-}
-
-.left-section {
-    position: absolute;
-    top: 100px;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.left-section-ouvert {
-    position: absolute;
-    top: 250px;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.right-section {
-    position: absolute;
-    top: 100px;
-    right: 30px;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.right-section-ouvert {
-    position: absolute;
-    top: 250px;
-    right: 30px;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.bottom-section {
-    color: white;
-    margin-left: 40%;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    margin-top: 5pt;
-}
-
-.stitch-section {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cards-section {
 }
 
 .logout-button {
@@ -540,56 +247,32 @@ h3 {
     color: darkblue;
 }
 
-.blinkingWhite {
-    animation: blinkingTextWhite 1.2s infinite;
+.button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 18pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
 }
 
-.blinkingBlack {
-    animation: blinkingTextBlack 1.2s infinite;
+.button:hover {
+    background-color: #008CBA;
+    color: darkblue;
 }
 
-@keyframes blinkingTextWhite {
-    0% {
-        color: white;
-    }
-
-    49% {
-        color: white;
-    }
-
-    60% {
-        color: transparent;
-    }
-
-    99% {
-        color: transparent;
-    }
-
-    100% {
-        color: white;
-    }
+.hide {
+    display: none;
 }
 
-@keyframes blinkingTextBlack {
-    0% {
-        color: darkgray;
-    }
-
-    49% {
-        color: darkgray;
-    }
-
-    60% {
-        color: transparent;
-    }
-
-    99% {
-        color: transparent;
-    }
-
-    100% {
-        color: darkgray;
-    }
+.show {
+    display: block;
 }
 
 /* from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_checkbox */
@@ -727,26 +410,6 @@ h3 {
     background: white;
 }
 
-.button {
-    background-color: blue;
-    border: 2px solid #008CBA;
-    color: white;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    transition-duration: 0.4s;
-    cursor: pointer;
-    font-size: 18pt;
-    margin-top: 5pt;
-    margin-right: 10pt;
-    padding: 5pt;
-}
-
-.button:hover {
-    background-color: #008CBA;
-    color: darkblue;
-}
-
 /* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
 .dropbtn {
     position: fixed;
@@ -798,15 +461,29 @@ h3 {
     background-color: #ddd
 }
 
-.hide {
-    display: none;
-}
-
-.show {
-    display: block;
-}
-
 @media (max-width: 480px) {
+
+    body {
+        font-size: 11pt;
+        margin-left: 5pt;
+    }
+
+    p, span, label, .confirmation {
+        font-size: 11pt;
+    }
+
+    h1 {
+        top: 0;
+        padding: 0;
+        font-size: 11pt;
+        left: 12pt;
+    }
+
+    .main {
+        left: -20px;
+        top: 150px;
+        font-size: 11pt;
+    }
 
     .cookie-banner {
         height: 60pt;
@@ -817,81 +494,9 @@ h3 {
         margin-left: 5pt;
     }
 
-    body {
-        font-size: 11pt;
-        margin-left: 5pt;
-    }
-
-    table {
-        min-width: 200pt;
-        width: 200pt;
-        font-size: 11pt;
-    }
-
-    td, th {
-        padding: 15px;
-        letter-spacing: 1px;
-    }
-
-    .layout-right {
-        margin: 0;
-        bottom: 10pt;
-        width: 250pt;
-        right: 10pt;
-    }
-
-    .layout-reservations {
-        top: 0pt;
-        bottom: 10pt;
-        width: 250pt;
-        right: 10pt;
-    }
-
-    .chat-input {
-        width: 230pt;
-    }
-
     .username-input {
         width: 100pt;
         font-size: 11pt;
-    }
-
-    .ticket-password {
-        width: 100pt;
-    }
-
-    .left-section {
-        left: -20px;
-        top: 150px;
-        font-size: 11pt;
-    }
-
-    .left-section-ouvert {
-        left: -20px;
-        top: 300px;
-        font-size: 11pt;
-    }
-
-    .right-section {
-        right: 0;
-        top: 150px;
-        font-size: 11pt;
-    }
-
-    .right-section-ouvert {
-        right: 0;
-        top: 300px;
-        font-size: 11pt;
-    }
-
-    .bottom-section {
-        font-size: 11pt;
-    }
-
-    .card-img {
-        z-index: 2;
-        width: 60px;
-        height: 98px;
     }
 
     .container-radiobutton {
@@ -938,23 +543,8 @@ h3 {
         height: 45px;
     }
 
-    .chat-message, .chat-link, .chat-input {
-        font-size: 11pt;
-    }
-
     .copyright {
         font-size: 7pt;
-    }
-
-    p, span, label, .confirmation, .tooltip, .result-select {
-        font-size: 11pt;
-    }
-
-    h1 {
-        top: 0;
-        padding: 0;
-        font-size: 11pt;
-        left: 12pt;
     }
 
     .dropbtn {
