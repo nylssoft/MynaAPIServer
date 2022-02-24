@@ -47,16 +47,16 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "1.0.3";
+    let version = "1.0.4";
 
     // helper
 
     const handleError = (err) => {
         console.error(err);
         window.sessionStorage.removeItem("chessstate");
-        timerEnabled = true;
         endGameClicked = false;
         giveUpClicked = false;
+        enableTimer();
     }
 
     const clearTicket = () => {
@@ -81,6 +81,24 @@ var chess = (() => {
         }
         return t;
     }
+
+    const getState = () => {
+        return window.sessionStorage.getItem("backgammonstate");
+    };
+
+    const setState = (state) => {
+        window.sessionStorage.setItem("backgammonstate", state);
+    };
+
+    const enableTimer = () => {
+        if (utils.is_debug()) utils.debug("TIMER ENABLED.");
+        timerEnabled = true;
+    };
+
+    const disableTimer = () => {
+        if (utils.is_debug()) utils.debug("TIMER DISABLED.");
+        timerEnabled = false;
+    };
 
     const getFigure = (row, col) => {
         if (!model.board || !model.board.figures) return undefined;
@@ -294,6 +312,7 @@ var chess = (() => {
             }
         }
         if (canvas && (dirty || dirtyClock)) {
+            if (utils.is_debug()) utils.debug("DRAW.");
             let ctx = canvas.getContext("2d");
             if (dirty) {
                 drawBoard(ctx);
@@ -421,6 +440,7 @@ var chess = (() => {
 
     const placeFigure = (fromRow, fromColumn, toRow, toColumn) => {
         document.body.style.cursor = "wait";
+        disableTimer();
         utils.fetch_api_call("api/chess/place",
             {
                 method: "POST",
@@ -434,12 +454,14 @@ var chess = (() => {
                     })
             },
             () => {
+                if (utils.is_debug()) utils.debug("PLACED FIGURE.");
                 document.body.style.cursor = "default";
                 selectedFigure = undefined;
                 if (simulate) {
                     simulateCounter = simulateDelay;
                 }
                 update();
+                enableTimer();
             },
             (errMsg) => {
                 handleError(errMsg);
@@ -453,14 +475,6 @@ var chess = (() => {
         const messageElem = document.getElementById("message");
         if (messageElem) {
             messageElem.textContent = getStateMessage();
-        }
-    };
-
-    const updateLastUpdateTime = () => {
-        const span = document.getElementById("lastupdatetime");
-        if (span) {
-            const time = new Date().toLocaleTimeString("de-DE");
-            span.textContent = `. Letzte Aktualisierung: ${time}. `;
         }
     };
 
@@ -479,8 +493,13 @@ var chess = (() => {
     };
 
     const update = () => {
+        disableTimer();
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
+                if (utils.is_debug()) {
+                    utils.debug("MODEL RETRIEVED (update).");
+                    utils.debug(m);
+                }
                 model = m;
                 if (isPlaying()) {
                     if (isActivePlayer() || guestMode) {
@@ -488,9 +507,9 @@ var chess = (() => {
                     }
                     updateLastMovedButton();
                     updateGiveUpButton();
-                    updateLastUpdateTime();
                     updateMessage();
                     dirty = true;
+                    enableTimer();
                 }
                 else {
                     renderModel(model);
@@ -529,6 +548,7 @@ var chess = (() => {
             window.location.replace("/chess");
             return;
         }
+        disableTimer();
         utils.fetch_api_call("api/chess/login",
             {
                 method: "POST",
@@ -536,6 +556,10 @@ var chess = (() => {
                 body: JSON.stringify(name)
             },
             (loginModel) => {
+                if (utils.is_debug()) {
+                    utils.debug("LOGIN (name).");
+                    utils.debug(loginModel);
+                }
                 if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
@@ -756,10 +780,8 @@ var chess = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Schach ${version}. Copyright 2021 `);
+        controls.create(div, "span", "copyright", `Schach ${version}. Copyright 2021-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
-        const time = new Date().toLocaleTimeString("de-DE");
-        controls.create(div, "span", "copyright", `. Letzte Aktualisierung: ${time}. `).id = "lastupdatetime";
         if (ticket && (!model.board || !model.board.gameStarted)) {
             controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
         }
@@ -816,8 +838,7 @@ var chess = (() => {
         if (model.allUsers.length == 0) {
             clearTicket();
         }
-        const divLayoutLeft = controls.createDiv(document.body, "layout-left");
-        const divMain = controls.createDiv(divLayoutLeft);
+        const divMain = controls.createDiv(document.body, "main");
         if (!ticket) {
             if (guestMode) {
                 document.title = "Schach - Gastansicht";
@@ -844,7 +865,7 @@ var chess = (() => {
         else {
             renderUsername(divMain);
         }
-        timerEnabled = true;
+        enableTimer();
     };
 
     const render = () => {
@@ -856,6 +877,10 @@ var chess = (() => {
         ticket = getTicket();
         if (params.has("guest")) {
             guestMode = true;
+        }
+        if (params.has("debug")) {
+            utils.enable_debug(true);
+            utils.debug("DEBUG enabled.");
         }
         if (params.has("preview")) {
             previewMoves = true;
@@ -874,9 +899,15 @@ var chess = (() => {
         selectedFigure = undefined;
         lastPos = undefined;
         setPixelPerWidth();
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
-            (m) => renderModel(m),
+            (m) => {
+                if (utils.is_debug()) {
+                    utils.debug("MODEL RETRIEVED (render).");
+                    utils.debug(m);
+                }
+                renderModel(m);
+            },
             handleError);
     };
 
@@ -961,7 +992,7 @@ var chess = (() => {
     const btnLogin_click = () => {
         const name = inputUsername.value.trim();
         if (name.length > 0) {
-            timerEnabled = false;
+            disableTimer();
             let token = utils.get_authentication_token();
             if (!token) {
                 token = "";
@@ -973,6 +1004,10 @@ var chess = (() => {
                     body: JSON.stringify(name)
                 },
                 (loginModel) => {
+                    if (utils.is_debug()) {
+                        utils.debug("LOGIN (button).");
+                        utils.debug(loginModel);
+                    }
                     if (loginModel) {
                         if (loginModel.isAuthenticationRequired) {
                             let nexturl = `/chess?login=${name}`;
@@ -988,7 +1023,7 @@ var chess = (() => {
                 },
                 (errMsg) => {
                     document.getElementById("login-error-id").textContent = errMsg;
-                    timerEnabled = true;
+                    enableTimer();
                 });
         }
     };
@@ -1000,21 +1035,27 @@ var chess = (() => {
     };
 
     const btnNextGame_click = () => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/chess/nextgame", { method: "POST", headers: { "ticket": ticket } },
-            () => render(),
+            () => {
+                if (utils.is_debug()) utils.debug("NEXT GAME.");
+                render();
+            },
             handleError);
     };
 
     const btnConfirmNextGame_click = (ok) => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/chess/confirmnextgame",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
                 body: JSON.stringify(ok)
             },
-            () => render(),
+            () => {
+                if (utils.is_debug()) utils.debug("CONFIRM NEXT GAME.");
+                render();
+            },
             handleError);
     };
 
@@ -1037,27 +1078,33 @@ var chess = (() => {
                 }
                 settings.ChessEngineName = document.getElementById("engine").value;
             };
-            timerEnabled = false;
+            disableTimer();
             utils.fetch_api_call("api/chess/newgame",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
                     body: JSON.stringify(settings)
                 },
-                () => render(),
+                () => {
+                    if (utils.is_debug()) utils.debug("NEW GAME.");
+                    render();
+                },
                 handleError);
         }
     };
 
     const btnConfirmStartGame_click = (ok) => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/chess/confirmstartgame",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
                 body: JSON.stringify(ok)
             },
-            () => render(),
+            () => {
+                if (utils.is_debug()) utils.debug("CONFIRM START GAME.");
+                render();
+            },
             handleError);
     };
 
@@ -1068,9 +1115,10 @@ var chess = (() => {
 
     const btnGiveUp_click = (elem) => {
         if (elem.value == "GiveUpYes") {
-            timerEnabled = false;
+            disableTimer();
             utils.fetch_api_call("api/chess/giveup", { method: "POST", headers: { "ticket": ticket } },
                 () => {
+                    if (utils.is_debug()) utils.debug("GIVE UP.");
                     giveUpClicked = false;
                     render();
                 },
@@ -1088,9 +1136,10 @@ var chess = (() => {
 
     const btnEndGame_click = (elem) => {
         if (elem.value == "EndGameYes") {
-            timerEnabled = false;
+            disableTimer();
             utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
                 () => {
+                    if (utils.is_debug()) utils.debug("LOGOUT (EndGame).");
                     endGameClicked = false;
                     render();
                 },
@@ -1107,9 +1156,10 @@ var chess = (() => {
     };
 
     const btnLogout_click = () => {
-        timerEnabled = false;
+        disableTimer();
         utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
             () => {
+                if (utils.is_debug()) utils.debug("LOGOUT (Button).");
                 ticket = undefined;
                 window.sessionStorage.removeItem("chessticket");
                 window.localStorage.removeItem("chessticket");
@@ -1134,6 +1184,10 @@ var chess = (() => {
                 const d = sm.state;
                 const statechanged = window.sessionStorage.getItem("chessstate");
                 if (!statechanged || d > statechanged) {
+                    if (utils.is_debug()) {
+                        utils.debug(`ON TIMER: state is now ${d}.`);
+                        utils.debug(sm);
+                    }
                     window.sessionStorage.setItem("chessstate", d);
                     if (model && model.board && model.board.gameStarted) {
                         update();
