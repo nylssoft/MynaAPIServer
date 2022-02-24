@@ -83,11 +83,11 @@ var chess = (() => {
     }
 
     const getState = () => {
-        return window.sessionStorage.getItem("backgammonstate");
+        return window.sessionStorage.getItem("chessstate");
     };
 
     const setState = (state) => {
-        window.sessionStorage.setItem("backgammonstate", state);
+        window.sessionStorage.setItem("chessstate", state);
     };
 
     const enableTimer = () => {
@@ -831,7 +831,7 @@ var chess = (() => {
 
     const renderModel = (m) => {
         model = m;
-        window.sessionStorage.setItem("chessstate", model.state.state);
+        setState(model.state.state);
         controls.removeAllChildren(document.body);
         utils.create_cookies_banner(document.body);
         document.body.className = "inactive-background";
@@ -1182,13 +1182,13 @@ var chess = (() => {
         utils.fetch_api_call("api/chess/state", undefined,
             (sm) => {
                 const d = sm.state;
-                const statechanged = window.sessionStorage.getItem("chessstate");
+                const statechanged = getState();
                 if (!statechanged || d > statechanged) {
                     if (utils.is_debug()) {
                         utils.debug(`ON TIMER: state is now ${d}.`);
                         utils.debug(sm);
                     }
-                    window.sessionStorage.setItem("chessstate", d);
+                    setState(d);
                     if (model && model.board && model.board.gameStarted) {
                         update();
                     }
