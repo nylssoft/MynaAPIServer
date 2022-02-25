@@ -312,9 +312,9 @@ var chess = (() => {
             }
         }
         if (canvas && (dirty || dirtyClock)) {
-            if (utils.is_debug()) utils.debug("DRAW.");
             let ctx = canvas.getContext("2d");
             if (dirty) {
+                if (utils.is_debug()) utils.debug("DRAW BOARD.");
                 drawBoard(ctx);
                 drawClocks(ctx);
                 if (selectedFigure) {
@@ -453,15 +453,15 @@ var chess = (() => {
                         ToColumn: toColumn
                     })
             },
-            () => {
-                if (utils.is_debug()) utils.debug("PLACED FIGURE.");
+            (state) => {
+                if (utils.is_debug()) utils.debug(`PLACED FIGURE. New state is ${state}.`);
+                setState(state);
                 document.body.style.cursor = "default";
                 selectedFigure = undefined;
                 if (simulate) {
                     simulateCounter = simulateDelay;
                 }
                 update();
-                enableTimer();
             },
             (errMsg) => {
                 handleError(errMsg);
@@ -497,9 +497,10 @@ var chess = (() => {
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
-                    utils.debug("MODEL RETRIEVED (update).");
+                    utils.debug(`MODEL RETRIEVED (update). New state is ${m.state.state}.`);
                     utils.debug(m);
                 }
+                setState(m.state.state);
                 model = m;
                 if (isPlaying()) {
                     if (isActivePlayer() || guestMode) {
@@ -557,9 +558,10 @@ var chess = (() => {
             },
             (loginModel) => {
                 if (utils.is_debug()) {
-                    utils.debug("LOGIN (name).");
+                    utils.debug(`LOGIN (name). New state is ${loginModel.state}.`);
                     utils.debug(loginModel);
                 }
+                setState(loginModel.state);
                 if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
@@ -903,9 +905,10 @@ var chess = (() => {
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
-                    utils.debug("MODEL RETRIEVED (render).");
+                    utils.debug(`MODEL RETRIEVED (render). New state is ${m.state.state}.`);
                     utils.debug(m);
                 }
+                setState(m.state.state);
                 renderModel(m);
             },
             handleError);
@@ -1005,19 +1008,18 @@ var chess = (() => {
                 },
                 (loginModel) => {
                     if (utils.is_debug()) {
-                        utils.debug("LOGIN (button).");
+                        utils.debug(`LOGIN (button). New state is ${loginModel.state}.`);
                         utils.debug(loginModel);
                     }
-                    if (loginModel) {
-                        if (loginModel.isAuthenticationRequired) {
-                            let nexturl = `/chess?login=${name}`;
-                            window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
-                                + "&username=" + encodeURI(name);
-                            return;
-                        }
-                        else if (loginModel.ticket && loginModel.ticket.length > 0) {
-                            setTicket(loginModel.ticket);
-                        }
+                    setState(loginModel.state);
+                    if (loginModel.isAuthenticationRequired) {
+                        let nexturl = `/chess?login=${name}`;
+                        window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
+                            + "&username=" + encodeURI(name);
+                        return;
+                    }
+                    else if (loginModel.ticket && loginModel.ticket.length > 0) {
+                        setTicket(loginModel.ticket);
                     }
                     render();
                 },
@@ -1029,16 +1031,22 @@ var chess = (() => {
     };
 
     const btnPlayComputer_click = () => {
+        disableTimer();
         utils.fetch_api_call("api/chess/computergame", { method: "POST", headers: { "ticket": ticket } },
-            () => render(),
+            (state) => {
+                if (utils.is_debug()) utils.debug(`COMPUTER GAME. New state is ${state}.`);
+                setState(state);
+                render();
+            },
             handleError);
     };
 
     const btnNextGame_click = () => {
         disableTimer();
         utils.fetch_api_call("api/chess/nextgame", { method: "POST", headers: { "ticket": ticket } },
-            () => {
-                if (utils.is_debug()) utils.debug("NEXT GAME.");
+            (state) => {
+                if (utils.is_debug()) utils.debug(`NEXT GAME. New state is ${state}.`);
+                setState(state);
                 render();
             },
             handleError);
@@ -1052,8 +1060,9 @@ var chess = (() => {
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
                 body: JSON.stringify(ok)
             },
-            () => {
-                if (utils.is_debug()) utils.debug("CONFIRM NEXT GAME.");
+            (state) => {
+                if (utils.is_debug()) utils.debug(`CONFIRM NEXT GAME. New state is ${state}.`);
+                setState(state);
                 render();
             },
             handleError);
@@ -1085,8 +1094,9 @@ var chess = (() => {
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
                     body: JSON.stringify(settings)
                 },
-                () => {
-                    if (utils.is_debug()) utils.debug("NEW GAME.");
+                (state) => {
+                    if (utils.is_debug()) utils.debug(`NEW GAME. New state is ${state}.`);
+                    setState(state);
                     render();
                 },
                 handleError);
@@ -1101,8 +1111,9 @@ var chess = (() => {
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
                 body: JSON.stringify(ok)
             },
-            () => {
-                if (utils.is_debug()) utils.debug("CONFIRM START GAME.");
+            (state) => {
+                if (utils.is_debug()) utils.debug(`CONFIRM START GAME. New state is ${state}.`);
+                setState(state);
                 render();
             },
             handleError);
@@ -1117,8 +1128,9 @@ var chess = (() => {
         if (elem.value == "GiveUpYes") {
             disableTimer();
             utils.fetch_api_call("api/chess/giveup", { method: "POST", headers: { "ticket": ticket } },
-                () => {
-                    if (utils.is_debug()) utils.debug("GIVE UP.");
+                (state) => {
+                    if (utils.is_debug()) utils.debug(`GIVE UP. New state is ${state}.`);
+                    setState(state);
                     giveUpClicked = false;
                     render();
                 },
@@ -1138,8 +1150,9 @@ var chess = (() => {
         if (elem.value == "EndGameYes") {
             disableTimer();
             utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
-                () => {
-                    if (utils.is_debug()) utils.debug("LOGOUT (EndGame).");
+                (state) => {
+                    if (utils.is_debug()) utils.debug(`LOGOUT (EndGame). New state is ${state}.`);
+                    setState(state);
                     endGameClicked = false;
                     render();
                 },
@@ -1158,8 +1171,9 @@ var chess = (() => {
     const btnLogout_click = () => {
         disableTimer();
         utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
-            () => {
-                if (utils.is_debug()) utils.debug("LOGOUT (Button).");
+            (state) => {
+                if (utils.is_debug()) utils.debug(`LOGOUT (Button). New state is ${state}.`);
+                setState(state);
                 ticket = undefined;
                 window.sessionStorage.removeItem("chessticket");
                 window.localStorage.removeItem("chessticket");
@@ -1183,9 +1197,9 @@ var chess = (() => {
             (sm) => {
                 const d = sm.state;
                 const statechanged = getState();
-                if (!statechanged || d > statechanged) {
+                if (statechanged === undefined || d > statechanged) {
                     if (utils.is_debug()) {
-                        utils.debug(`ON TIMER: state is now ${d}.`);
+                        utils.debug(`ON TIMER. New state is ${d}.`);
                         utils.debug(sm);
                     }
                     setState(d);

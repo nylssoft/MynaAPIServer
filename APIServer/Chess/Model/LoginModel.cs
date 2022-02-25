@@ -19,6 +19,8 @@ namespace APIServer.Chess.Model
 {
     public class LoginModel
     {
+        public long State { get; set; }
+
         public string Ticket { get; set; }
 
         public bool IsAuthenticationRequired { get; set; }
