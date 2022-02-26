@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.4";
+    let version = "1.0.5";
 
     let dirty;
 
@@ -91,13 +91,17 @@ var backgammon = (() => {
     };
 
     const enableTimer = () => {
-        if (utils.is_debug()) utils.debug("TIMER ENABLED.");
-        timerEnabled = true;
+        if (!timerEnabled) {
+            if (utils.is_debug()) utils.debug("TIMER ENABLED.");
+            timerEnabled = true;
+        }
     };
 
     const disableTimer = () => {
-        if (utils.is_debug()) utils.debug("TIMER DISABLED.");
-        timerEnabled = false;
+        if (timerEnabled) {
+            if (utils.is_debug()) utils.debug("TIMER DISABLED.");
+            timerEnabled = false;
+        }
     };
 
     const isPlaying = () => {
@@ -589,6 +593,7 @@ var backgammon = (() => {
             img.src = photo;
             utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(name)}`, undefined,
                 (p) => {
+                    if (utils.is_debug()) utils.debug(`PHOTO RETRIEVED: ${p}.`);
                     if (p) {
                         photos[name.toLowerCase()] = p;
                         img.src = p;
@@ -989,6 +994,10 @@ var backgammon = (() => {
 
     const render = () => {
         const params = new URLSearchParams(window.location.search);
+        if (params.has("debug")) {
+            utils.enable_debug(true);
+            utils.debug("DEBUG enabled.");
+        }
         if (params.has("login")) {
             login(params.get("login"));
             return;
@@ -996,10 +1005,6 @@ var backgammon = (() => {
         ticket = getTicket();
         if (params.has("guest")) {
             guestMode = true;
-        }
-        if (params.has("debug")) {
-            utils.enable_debug(true);
-            utils.debug("DEBUG enabled.");
         }
         const xmin = utils.is_mobile() ? 330 : 400;
         setPointWidth(xmin);
@@ -1025,8 +1030,13 @@ var backgammon = (() => {
             window.requestAnimationFrame(draw);
             return;
         }
+        disableTimer();
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
+                if (utils.is_debug()) {
+                    utils.debug("USER RETRIEVED (renderInit).");
+                    utils.debug(user);
+                }
                 currentUser = user;
                 render();
                 window.requestAnimationFrame(draw);
@@ -1084,10 +1094,12 @@ var backgammon = (() => {
     };
 
     const onCanvasMouseLeave = () => {
-        if (utils.is_debug()) utils.debug(`MOUSE LEAVE: set last position ${lastPos} to undefined.`);
-        highlightItem = undefined;
-        lastPos = undefined;
-        dirty = true;
+        if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
+            if (utils.is_debug()) utils.debug("MOUSE LEAVE.");
+            highlightItem = undefined;
+            lastPos = undefined;
+            dirty = true;
+        }
     };
 
     const onCanvasDoubleClick = (evt) => {
