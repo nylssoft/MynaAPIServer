@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,24 +30,24 @@ namespace APIServer.Chess
 
         // --- with authentication (ticket)
 
-        bool Logout(string ticket);
+        long Logout(string ticket);
 
         ChessModel GetChessModel(string ticket);
 
-        bool StartNewGame(string ticket, StartGameModel startGameModel);
+        long StartNewGame(string ticket, StartGameModel startGameModel);
 
-        bool PlayAgainstComputer(string ticket);
+        long PlayAgainstComputer(string ticket);
 
-        bool EndGame(string ticket);
+        long EndGame(string ticket);
 
-        bool GiveUp(string ticket);
+        long GiveUp(string ticket);
 
-        bool ConfirmStartGame(string ticket, bool ok);
+        long ConfirmStartGame(string ticket, bool ok);
 
-        bool StartNextGame(string ticket);
+        long StartNextGame(string ticket);
 
-        bool ConfirmNextGame(string ticket, bool ok);
+        long ConfirmNextGame(string ticket, bool ok);
 
-        bool Place(string ticket, PlaceModel placeModel);
+        long Place(string ticket, PlaceModel placeModel);
     }
 }

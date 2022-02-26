@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@ namespace APIServer.Chess.Model
 {
     public class LoginModel
     {
+        public long State { get; set; }
+
         public string Ticket { get; set; }
 
         public bool IsAuthenticationRequired { get; set; }

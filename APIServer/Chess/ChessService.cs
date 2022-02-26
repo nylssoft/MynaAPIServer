@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -95,12 +95,9 @@ namespace APIServer.Chess
                     ret.BlackClock = chessboard.BlackClock;
                     ret.WhiteClock = chessboard.WhiteClock;
                 }
-                if (stateChanged.HasValue)
-                {
-                    ret.State = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
-                }
+                ret.State = GetStateChanged();
+                return ret;
             }
-            return ret;
         }
 
         public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username)
@@ -117,16 +114,15 @@ namespace APIServer.Chess
                         if (e.Value.Name == username)
                         {
                             ret.Ticket = e.Key;
-                            return ret;
                         }
                     }
                 }
                 else if (pwdManService.IsRegisteredUsername(username))
                 {
                     ret.IsAuthenticationRequired = true;
-                    return ret;
                 }
-                if (!userTickets.Values.Any((v) => string.Equals(v.Name, username, StringComparison.OrdinalIgnoreCase))
+                if (string.IsNullOrEmpty(ret.Ticket) && !ret.IsAuthenticationRequired &&
+                    !userTickets.Values.Any((v) => string.Equals(v.Name, username, StringComparison.OrdinalIgnoreCase))
                     && chessboard == null && (userTickets.Count < 2 && !IsComputerGame() || userTickets.Count == 1)
                     && username.Trim().Length > 0)
                 {
@@ -150,13 +146,14 @@ namespace APIServer.Chess
                     stateChanged = DateTime.UtcNow;
                     ret.Ticket = ticket;
                 }
+                ret.State = GetStateChanged();
             }
             return ret;
         }
 
         // --- with authentication
 
-        public bool Logout(string ticket)
+        public long Logout(string ticket)
         {
             lock (mutex)
             {
@@ -174,10 +171,9 @@ namespace APIServer.Chess
                         c.StartGameConfirmed = false;
                     }
                     stateChanged = DateTime.UtcNow;
-                    return true;
                 }
+                return GetStateChanged();
             }
-            return false;
         }
 
         public ChessModel GetChessModel(string ticket)
@@ -253,9 +249,8 @@ namespace APIServer.Chess
             }
         }
 
-        public bool Place(string ticket, PlaceModel placeModel)
+        public long Place(string ticket, PlaceModel placeModel)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -276,27 +271,22 @@ namespace APIServer.Chess
                                     SendChessEngineUserMove(figure, placeModel);
                                 }
                                 // ok to move
-                                ret = chessboard.Place(figure, placeModel.ToRow, placeModel.ToColumn);
-                                if (ret)
+                                if (chessboard.Place(figure, placeModel.ToRow, placeModel.ToColumn))
                                 {
                                     chessboard.UpdateState();
+                                    stateChanged = DateTime.UtcNow;
                                 }
                                 break;
                             }
                         }
                     }
                 }
-                if (ret)
-                {
-                    stateChanged = DateTime.UtcNow;
-                }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool StartNextGame(string ticket)
+        public long StartNextGame(string ticket)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -321,19 +311,14 @@ namespace APIServer.Chess
                         chessboard.NextGameRequested = true;
                     }
                     ctx.StartGameConfirmed = true;
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool ConfirmNextGame(string ticket, bool ok)
+        public long ConfirmNextGame(string ticket, bool ok)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -360,19 +345,14 @@ namespace APIServer.Chess
                             chessboard.GameStarted = true;
                         }
                     }
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool StartNewGame(string ticket, StartGameModel startGameModel)
+        public long StartNewGame(string ticket, StartGameModel startGameModel)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -420,19 +400,14 @@ namespace APIServer.Chess
                         chessboard.GameStarted = true;
                         PlayChessEngineNewGame(ctx, chessboard);
                     }
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool PlayAgainstComputer(string ticket)
+        public long PlayAgainstComputer(string ticket)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -440,19 +415,14 @@ namespace APIServer.Chess
                 {
                     StopChessEngine();
                     computerGame = true;
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool ConfirmStartGame(string ticket, bool ok)
+        public long ConfirmStartGame(string ticket, bool ok)
         {
-            var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
@@ -474,17 +444,13 @@ namespace APIServer.Chess
                             chessboard.GameStarted = true;
                         }
                     }
-                    ret = true;
-                }
-                if (ret)
-                {
                     stateChanged = DateTime.UtcNow;
                 }
+                return GetStateChanged();
             }
-            return ret;
         }
 
-        public bool EndGame(string ticket)
+        public long EndGame(string ticket)
         {
             lock (mutex)
             {
@@ -501,13 +467,12 @@ namespace APIServer.Chess
                         StopChessEngine();
                     }
                     stateChanged = DateTime.UtcNow;
-                    return true;
                 }
+                return GetStateChanged();
             }
-            return false;
         }
 
-        public bool GiveUp(string ticket)
+        public long GiveUp(string ticket)
         {
             lock (mutex)
             {
@@ -520,13 +485,17 @@ namespace APIServer.Chess
                 {
                     chessboard.GiveUp = true;
                     stateChanged = DateTime.UtcNow;
-                    return true;
                 }
+                return GetStateChanged();
             }
-            return false;
         }
 
         // --- private
+
+        private long GetStateChanged()
+        {
+            return stateChanged.HasValue ? (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds : 0;
+        }
 
         private static UserModel GetCurrentUser(Context ctx)
         {
