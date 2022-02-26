@@ -201,20 +201,6 @@ var controls = (() => {
         return menu;
     };
 
-    // --- storage
-
-    const getState = () => {
-        return window.sessionStorage.getItem("state");
-    }
-
-    const clearState = () => {
-        return window.sessionStorage.removeItem("state");
-    }
-
-    const setState = (state) => {
-        window.sessionStorage.setItem("state", state);
-    };
-
     // --- common helpers
 
     const hide = (elem) => {
@@ -251,9 +237,6 @@ var controls = (() => {
         createCheckbox: createCheckbox,
         createOption: createOption,
         createMenu: createMenu,
-        getState: getState,
-        clearState: clearState,
-        setState: setState,
         hide: hide,
         show: show,
         removeAllChildren: removeAllChildren
