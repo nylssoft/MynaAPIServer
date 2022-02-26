@@ -9,12 +9,20 @@ var utils = (() => {
     };
 
     const enable_debug = (enable) => {
-        debug_mode = enable === true ? true : false;
+        debug_mode = enable === true;
     };
 
-    const debug = (txt) => {
+    const debug = (obj) => {
         if (debug_mode === true) {
-            console.log(txt);
+            if (typeof obj === "string") {
+                const dt = new Date();
+                const time = dt.toLocaleTimeString("de-DE");
+                const ms = dt.getMilliseconds().toString().padStart(3, 0);
+                console.log(`${time}:${ms} ${obj}`);
+            }
+            else {
+                console.log(obj);
+            }
         }
     };
 

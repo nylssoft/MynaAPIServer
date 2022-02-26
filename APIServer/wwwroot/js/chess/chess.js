@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "1.0.4";
+    let version = "1.0.5";
 
     // helper
 
@@ -91,13 +91,17 @@ var chess = (() => {
     };
 
     const enableTimer = () => {
-        if (utils.is_debug()) utils.debug("TIMER ENABLED.");
-        timerEnabled = true;
+        if (!timerEnabled) {
+            if (utils.is_debug()) utils.debug("TIMER ENABLED.");
+            timerEnabled = true;
+        }
     };
 
     const disableTimer = () => {
-        if (utils.is_debug()) utils.debug("TIMER DISABLED.");
-        timerEnabled = false;
+        if (timerEnabled) {
+            if (utils.is_debug()) utils.debug("TIMER DISABLED.");
+            timerEnabled = false;
+        }
     };
 
     const getFigure = (row, col) => {
@@ -632,6 +636,7 @@ var chess = (() => {
                     img.src = photo;
                     utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(user.name)}`, undefined,
                         (p) => {
+                            if (utils.is_debug()) utils.debug(`PHOTO RETRIEVED: ${p}.`);
                             if (p) {
                                 photos[user.name.toLowerCase()] = p;
                                 img.src = p;
@@ -872,6 +877,10 @@ var chess = (() => {
 
     const render = () => {
         const params = new URLSearchParams(window.location.search);
+        if (params.has("debug")) {
+            utils.enable_debug(true);
+            utils.debug("DEBUG enabled.");
+        }
         if (params.has("login")) {
             login(params.get("login"));
             return;
@@ -879,10 +888,6 @@ var chess = (() => {
         ticket = getTicket();
         if (params.has("guest")) {
             guestMode = true;
-        }
-        if (params.has("debug")) {
-            utils.enable_debug(true);
-            utils.debug("DEBUG enabled.");
         }
         if (params.has("preview")) {
             previewMoves = true;
@@ -925,8 +930,13 @@ var chess = (() => {
             window.requestAnimationFrame(draw);
             return;
         }
+        disableTimer();
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
+                if (utils.is_debug()) {
+                    utils.debug("USER RETRIEVED (renderInit).");
+                    utils.debug(user);
+                }
                 currentUser = user;
                 render();
                 window.requestAnimationFrame(draw);
@@ -942,13 +952,15 @@ var chess = (() => {
     // callbacks
 
     const onCanvasMouseUp = (evt) => {
-        if (isPlaying()) {
+        if (isPlaying() && isActivePlayer()) {
             const pos = getPositionFromEvent(evt);
             if (pos) {
                 if (selectedFigure && (pos.row != selectedFigure.row || pos.col != selectedFigure.column)) {
+                    if (utils.is_debug()) utils.debug(`MOUSE UP. Handle position change for position (${pos.row}, ${pos.col}).`);
                     handlePositionChange(pos);
                 }
                 else {
+                    if (utils.is_debug()) utils.debug("MOUSE UP. Redraw");
                     dirty = true;
                 }
             }
@@ -956,24 +968,28 @@ var chess = (() => {
     };
 
     const onCanvasMouseDown = (evt) => {
-        if (isPlaying()) {
+        if (isPlaying() && isActivePlayer()) {
             const pos = getPositionFromEvent(evt);
             if (pos) {
+                if (utils.is_debug()) utils.debug(`MOUSE DOWN. Handle position change for position (${pos.row}, ${pos.col}).`);
                 handlePositionChange(pos);
             }
         }
     };
 
     const onCanvasMouseMove = (evt) => {
-        if (isPlaying()) {
+        if (isPlaying() && isActivePlayer()) {
             const pos = getPositionFromEvent(evt);
             if (pos) {
                 if (!lastPos || lastPos.col != pos.col || lastPos.row != pos.row) {
                     lastPos = pos;
+                    if (utils.is_debug()) utils.debug(`MOUSE MOVE. Last position changed to (${pos.row}, ${pos.col}).`);
                     dirty = true;
                 }
             }
             else if (lastPos) {
+                lastPos = undefined;
+                if (utils.is_debug()) utils.debug("MOUSE MOVE. Last pos is now undefined.");
                 dirty = true;
             }
         }
