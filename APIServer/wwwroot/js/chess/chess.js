@@ -1002,7 +1002,12 @@ var chess = (() => {
             if (show) {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call("/api/pwdman/markdown/help-chess", undefined, (html) => mdDiv.innerHTML = html);
+                utils.fetch_api_call("/api/pwdman/markdown/help-chess", undefined,
+                    (html) => {
+                        if (utils.is_debug()) utils.debug("HELP RETRIEVED");
+                        mdDiv.innerHTML = html;
+                    }
+                );
                 controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
             }
         }
