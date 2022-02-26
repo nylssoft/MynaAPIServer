@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.27";
+    let version = "1.3.28";
 
     // helper
 
@@ -53,20 +53,20 @@ var skat = (() => {
 
     const clearTicket = () => {
         ticket = undefined;
-        sessionStorage.removeItem("ticket");
-        localStorage.removeItem("ticket");
+        sessionStorage.removeItem("skatticket");
+        localStorage.removeItem("skatticket");
     };
 
     const setTicket = (t) => {
         ticket = t;
-        sessionStorage.setItem("ticket", t);
-        localStorage.setItem("ticket", t);
+        sessionStorage.setItem("skatticket", t);
+        localStorage.setItem("skatticket", t);
     };
 
     const getTicket = () => {
-        let t = sessionStorage.getItem("ticket");
+        let t = sessionStorage.getItem("skatticket");
         if (!t) {
-            t = localStorage.getItem("ticket");
+            t = localStorage.getItem("skatticket");
         }
         return t;
     }

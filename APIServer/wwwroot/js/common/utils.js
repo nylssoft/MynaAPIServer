@@ -115,13 +115,13 @@ var utils = (() => {
     };
 
     const logout_skat = (resolve, reject) => {
-        let skatTicket = window.sessionStorage.getItem("ticket");
+        let skatTicket = window.sessionStorage.getItem("skatticket");
         if (!skatTicket) {
-            skatTicket = window.localStorage.getItem("ticket");
+            skatTicket = window.localStorage.getItem("skatticket");
         }
         if (skatTicket) {
-            window.sessionStorage.removeItem("ticket");
-            window.localStorage.removeItem("ticket");
+            window.sessionStorage.removeItem("skatticket");
+            window.localStorage.removeItem("skatticket");
             fetch_api_call("api/skat/logout", { method: "POST", headers: { "ticket": skatTicket } }, resolve, reject);
         }
         else {
