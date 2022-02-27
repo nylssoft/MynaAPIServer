@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.5";
+    let version = "1.0.6";
 
     let dirty;
 
@@ -47,7 +47,7 @@ var backgammon = (() => {
     let highlightItem;
     let moveItem;
 
-    let diceImageMap = new Map();
+    let imageMap = new Map();
 
     // helper
 
@@ -109,7 +109,7 @@ var backgammon = (() => {
     };
 
     const isActivePlayer = () => {
-        return model && model.currentUser && model.board && model.currentUser.name === getActivePlayer();
+        return model && model.board && model.currentUser && model.currentUser.name === getActivePlayer();
     };
 
     const isBlackPlayer = () => {
@@ -118,6 +118,16 @@ var backgammon = (() => {
 
     const hasRolledDice = () => {
         return model && model.board && model.board.currentRollNumbers.length > 0;
+    };
+
+    const canRollDice = () => {
+        if (model && model.board) {
+            if (!model.board.gameStarted) {
+                return model.currentUser && !model.board.hasStartRoll;
+            }
+            return isActivePlayer() && model.board.currentRollNumbers.length == 0;
+        }
+        return false;
     };
 
     const getOpponentPlayer = () => {
@@ -131,7 +141,10 @@ var backgammon = (() => {
         if (model.board.currentColor === "B") {
             return model.board.blackPlayer;
         }
-        return model.board.whitePlayer;
+        else if (model.board.currentColor === "W") {
+            return model.board.whitePlayer;
+        }
+        return undefined;
     };
 
     const getStateMessage = () => {
@@ -468,6 +481,18 @@ var backgammon = (() => {
         ctx.stroke();
     };
 
+    const drawRollButton = (ctx) => {
+        if (canRollDice()) {
+            const rollImage = imageMap.get("roll");
+            if (!rollImage) return;
+            ctx.drawImage(rollImage,
+                borderWidth + 6 * pointWidth + Math.floor((pointWidth - checkerRadius * 2) / 2),
+                borderHeight + pointHeight + checkerRadius,
+                checkerRadius * 2,
+                checkerRadius * 2);
+        }
+    };
+
     const drawDice = (ctx) => {
         if (model && model.board && (model.board.currentRollNumbers.length > 0 || model.board.doubleRoll)) {
             const numbers = [];
@@ -482,8 +507,8 @@ var backgammon = (() => {
             }
             let count = 0;
             numbers.forEach((nr) => {
-                const image = diceImageMap.get(`dice${nr}`);
-                if (!image) return; // not yet loaded
+                const image = imageMap.get(`dice${nr}`);
+                if (!image) return;
                 let x = borderWidth + 2 * pointWidth + count * checkerRadius * 3;
                 if (isActivePlayer()) {
                     x += 7 * pointWidth;
@@ -505,6 +530,7 @@ var backgammon = (() => {
             if (model && model.board && model.board.items) {
                 drawBoard(ctx, model.board.items);
                 drawDice(ctx);
+                drawRollButton(ctx);
                 if (moveItem !== undefined) {
                     drawChecker(ctx, moveItem.position, moveItem.count, model.board.currentColor, colorCheckerMoveItem);
                     if (lastPos !== undefined && lastPos != moveItem.position) {
@@ -567,21 +593,7 @@ var backgammon = (() => {
     const updateRollButton = () => {
         const roll = document.getElementById("rollbutton");
         if (roll) {
-            let hide = !model.currentUser || !isPlaying();
-            if (!hide) {
-                if (model.board.gameStarted) {
-                    if (!isActivePlayer()) {
-                        hide = true;
-                    }
-                    else {
-                        hide = model.board.currentRollNumbers.length > 0;
-                    }
-                }
-                else if (model.board.hasStartRoll) {
-                    hide = true;
-                }
-            }
-            roll.classList.toggle("hide", hide);
+            roll.classList.toggle("hide", !canRollDice());
         }
     };
 
@@ -664,19 +676,15 @@ var backgammon = (() => {
             });
     };
 
-    const loadDiceImages = (finished) => {
-        let loaded = 0;
+    const loadImages = () => {
         for (let idx = 1; idx < 7; idx++) {
             const image = new Image();
-            image.onload = (evt) => {
-                diceImageMap.set(`dice${idx}`, evt.currentTarget);
-                loaded++;
-                if (finished && loaded == 6) {
-                    finished();
-                }
-            };
             image.src = `/images/backgammon/dice-${idx}.svg`;
+            imageMap.set(`dice${idx}`, image)
         }
+        const rollImage = new Image();
+        rollImage.src = "/images/backgammon/roll.png";
+        imageMap.set("roll", rollImage);
     };
 
     const getCurrentItem = (pos) => {
@@ -1024,6 +1032,7 @@ var backgammon = (() => {
     const renderInit = () => {
         currentUser = undefined;
         dirty = false;
+        loadImages();
         const token = utils.get_authentication_token();
         if (!token) {
             render();
@@ -1069,14 +1078,24 @@ var backgammon = (() => {
     };
 
     const onCanvasMouseUp = (evt) => {
+        let moved = false;
         if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
             const pos = getPositionFromEvent(evt);
             if (moveItem && moveItem.position != pos) {
                 if (utils.is_debug()) utils.debug(`MOUSE UP: drag and drop item from position ${moveItem.pos} to ${pos}.`);
+                moved = true;
                 move(moveItem.position, pos);
                 updateHighlightItem(pos);
                 lastPos = undefined;
                 dirty = true;
+            }
+        }
+        if (!moved && canRollDice()) {
+            const x = borderWidth + 6 * pointWidth + Math.floor((pointWidth - checkerRadius * 2) / 2);
+            const y = borderHeight + pointHeight + checkerRadius;
+            if (evt.offsetX >= x && evt.offsetX <= x + 2 * checkerRadius &&
+                evt.offsetY >= y && evt.offsetY <= y + 2 * checkerRadius) {
+                btnRoll_click();
             }
         }
     };
@@ -1105,20 +1124,19 @@ var backgammon = (() => {
     const onCanvasDoubleClick = (evt) => {
         if (isActivePlayer() && model.board.gameStarted && hasRolledDice()) {
             const pos = getPositionFromEvent(evt);
-            if (utils.is_debug()) utils.debug(`DOUBLE CLICK: move item at position ${pos} if only a single move is possible.`);
+            if (utils.is_debug()) utils.debug(`DOUBLE CLICK: bear off item at position ${pos}.`);
             const posItem = getCurrentItem(pos);
             if (posItem) {
-                const moves = [];
+                let toMove = undefined;
                 model.board.moves.forEach((move) => {
-                    if (move.from == posItem.position) {
-                        moves.push(move);
+                    if (move.from == posItem.position && move.to == -2) {
+                        toMove = move;
                     }
                 });
-                if (moves.length == 1) {
-                    move(pos, moves[0].to);
+                if (toMove) {
                     highlightItem = undefined;
-                    moveItem = undefined;
                     lastPos = undefined;
+                    move(toMove.from, -2);
                     dirty = true;
                 }
             }
@@ -1340,14 +1358,14 @@ var backgammon = (() => {
         renderInit: renderInit,
         onTimer: onTimer,
         onResize: onResize,
-        loadDiceImages: loadDiceImages
+        loadImages: loadImages
     };
 })();
 
 window.onload = () => {
     window.setInterval(backgammon.onTimer, 1000);
     window.addEventListener("resize", backgammon.onResize);
-    utils.auth_lltoken(() => backgammon.loadDiceImages(backgammon.renderInit));
+    utils.auth_lltoken(() => backgammon.renderInit());
 };
 
 window.onclick = (event) => utils.hide_menu(event);
