@@ -17,7 +17,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.6";
+    let version = "1.0.7";
 
     let dirty;
 
@@ -781,6 +781,7 @@ var backgammon = (() => {
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         // draw sample board
+        setPointWidth(utils.is_mobile() ? 330 : 400);
         const sampleCanvas = controls.create(parent, "canvas", "sample-playground");
         updateCanvasWidthAndHeight(sampleCanvas);
         const ctx = sampleCanvas.getContext("2d");
@@ -1014,8 +1015,6 @@ var backgammon = (() => {
         if (params.has("guest")) {
             guestMode = true;
         }
-        const xmin = utils.is_mobile() ? 330 : 400;
-        setPointWidth(xmin);
         disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
