@@ -1,5 +1,37 @@
 ﻿"use strict";
 
+class Sprite {
+    constructor(img, w, h) {
+        this.image = img;
+        this.w = w;
+        this.h = h;
+        this.x = 0;
+        this.y = 0;
+        this.rotate = 0;
+        this.dx = 1;
+        this.dy = 1;
+        this.drotate = 1;
+        this.lastX = undefined;
+        this.lastY = undefined;
+        this.lastRotate = undefined;
+    }
+
+    draw(ctx) {
+        this.lastX = this.x;
+        this.lastY = this.y;
+        this.lastRotate = this.rotate;
+        if (this.rotate > 0) {
+            ctx.setTransform(1, 0, 0, 1, this.x, this.y);
+            ctx.rotate(this.rotate * Math.PI / 180);
+            ctx.drawImage(this.image, -this.w / 2, -this.h / 2, this.w, this.h);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+        else {
+            ctx.drawImage(this.image, this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
+        }
+    }
+};
+
 var backgammon = (() => {
 
     // state
@@ -17,7 +49,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.7";
+    let version = "1.0.8";
 
     let dirty;
 
@@ -48,6 +80,60 @@ var backgammon = (() => {
     let moveItem;
 
     let imageMap = new Map();
+
+    let gameOverSprites = [];
+    let gameOverImageData;
+    let gameOverDelay = 10;
+
+    const animateGameOver = (canvas, winner) => {
+        const ctx = canvas.getContext("2d");
+        addGameOverSprite(canvas, winner);
+        if (gameOverImageData) {
+            ctx.putImageData(gameOverImageData, 0, 0);
+        }
+        gameOverImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        gameOverSprites.forEach((sprite) => {
+            sprite.rotate = (sprite.rotate + sprite.drotate) % 360;
+            if (sprite.drotate < 0) {
+                sprite.drotate = 360 + sprite.drotate;
+            }
+            sprite.x = (sprite.x + sprite.dx) % (canvas.width - pointWidth - borderWidth);
+            if (sprite.x < 0) {
+                sprite.x = canvas.width - pointWidth - borderWidth;
+            }
+            sprite.y = (sprite.y + sprite.dy) % canvas.height;
+            if (sprite.y < 0) {
+                sprite.y = canvas.height;
+            }
+            sprite.draw(ctx);
+        });
+    };
+
+    const addGameOverSprite = (canvas, winner) => {
+        if (gameOverSprites.length < 15) {
+            gameOverDelay -= 1;
+            if (gameOverDelay <= 0) {
+                gameOverDelay = 10;
+                const img = winner ? imageMap.get("winner") : imageMap.get("looser");
+                const sprite = new Sprite(img, 32, 32);
+                sprite.x = Math.floor(Math.random() * (canvas.width - pointWidth - borderWidth - 16)) + 16;
+                sprite.y = 0;
+                sprite.dx = winner ? Math.floor(Math.random() * 10) + 1 : 0;
+                if (sprite.dx > 5) {
+                    sprite.dx = 5 - sprite.dx;
+                }
+                sprite.dy = winner ? Math.floor(Math.random() * 10) + 1 : Math.floor(Math.random() * 5) + 1;
+                if (sprite.dy > 5) {
+                    sprite.dy = 5 - sprite.dy;
+                }
+                sprite.drotate = winner ? Math.floor(Math.random() * 10) + 1 : 0;
+                if (sprite.drotate > 5) {
+                    sprite.drotate = 5 - sprite.drotate;
+                }
+                gameOverSprites.push(sprite);
+            }
+        }
+    };
 
     // helper
 
@@ -522,6 +608,7 @@ var backgammon = (() => {
     const draw = () => {
         const canvas = document.getElementById("playground-id");
         if (canvas && dirty) {
+            gameOverImageData = undefined;
             if (utils.is_debug()) utils.debug("DRAW.");
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -555,6 +642,9 @@ var backgammon = (() => {
                 }
             }
             dirty = false;
+        }
+        if (canvas && model && model.board && model.board.gameOver && model.currentUser) {
+            animateGameOver(canvas, model.currentUser.name === model.board.winner);
         }
         window.requestAnimationFrame(draw);
     };
@@ -685,6 +775,12 @@ var backgammon = (() => {
         const rollImage = new Image();
         rollImage.src = "/images/backgammon/roll.png";
         imageMap.set("roll", rollImage);
+        const winnerImage = new Image();
+        winnerImage.src = "/images/backgammon/rating.png";
+        imageMap.set("winner", winnerImage);
+        const looserImage = new Image();
+        looserImage.src = "/images/backgammon/clanbomber-2.png";
+        imageMap.set("looser", looserImage);
     };
 
     const getCurrentItem = (pos) => {
