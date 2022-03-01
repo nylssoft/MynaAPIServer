@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "1.0.5";
+    let version = "1.0.6";
 
     // helper
 
@@ -149,7 +149,33 @@ var chess = (() => {
         return `${m}:${s}`;
     };
 
-    const drawClocks = (ctx) => {
+    const getCapturedFigures = () => {
+        const capturedFigures = {};
+        ["W", "B"].forEach((c) => {
+            ["P", "N", "B", "R", "Q", "K"].forEach((t) => {
+                let cnt;
+                switch (t) {
+                    case "P":
+                        cnt = 8;
+                        break;
+                    case "K":
+                    case "Q":
+                        cnt = 1;
+                        break;
+                    default:
+                        cnt = 2;
+                        break;
+                }
+                capturedFigures[`${t}${c}`] = cnt;
+            });
+        });
+        model.board.figures.forEach((figure) => {
+            capturedFigures[`${figure.type}${figure.color}`] -= 1;
+        });
+        return capturedFigures;
+    };
+
+    const drawInfoArea = (ctx) => {
         if (!model || !model.state || !model.board) return;
         let w = formatClock(model.state.whiteClock);
         let b = formatClock(model.state.blackClock);
@@ -157,32 +183,71 @@ var chess = (() => {
         let pb = model.board.blackPlayer;
         let xoff;
         let yoff;
-        let y;
-        let rectWidth;
+        let cy;
         if (utils.is_mobile()) {
             ctx.font = "11px Arial";
             xoff = 5;
             yoff = 20;
-            y = 10;
-            rectWidth = 50;
+            cy = 10;
         }
         else {
             ctx.font = "18px Arial";
             xoff = 10;
             yoff = 30;
-            y = 18;
-            rectWidth = 100;
+            cy = 18;
         }
         ctx.fillStyle = colorClocks;
         if (isBlackPlayer()) {
             [w, b] = [b, w];
             [pw, pb] = [pb, pw];
         }
-        ctx.clearRect(8 * pixelPerField + xoff, 0, 8 * pixelPerField + rectWidth, 8 * pixelPerField);
-        ctx.fillText(pb, 8 * pixelPerField + xoff, y);
-        ctx.fillText(b, 8 * pixelPerField + xoff, y + yoff);
-        ctx.fillText(pw, 8 * pixelPerField + xoff, 8 * pixelPerField - y - yoff);
-        ctx.fillText(w, 8 * pixelPerField + xoff, 8 * pixelPerField - y);
+        // info area for clock text and captured figures
+        const infoX = 8 * pixelPerField;
+        const infoY = 0;
+        const infoW = canvas.width - infoX;
+        const infoH = 8 * pixelPerField;
+        const textH = 2 * yoff;
+        // clear info area
+        ctx.clearRect(infoX, infoY, infoW, infoH);
+        // draw clock text
+        ctx.fillText(pb, infoX + xoff, cy);
+        ctx.fillText(b, infoX + xoff, cy + yoff);
+        ctx.fillText(pw, infoX + xoff, infoH - cy - yoff);
+        ctx.fillText(w, infoX + xoff, infoH - cy);
+        // draw captured figures
+        const fw = Math.floor(Math.min(infoW / 4, pixelPerField / 2));
+        const capturedFigures = getCapturedFigures();
+        ["W", "B"].forEach((c) => {
+            let fy;
+            if (isBlackPlayer()) {
+                fy = c == "B" ? infoY + textH : infoH - cy - yoff - fw - yoff;
+            }
+            else {
+                fy = c == "W" ? infoY + textH : infoH - cy - yoff - fw - yoff;
+            }
+            let fx = infoX;
+            let fidx = 0;
+            ["P", "B", "N", "R", "Q", "K"].forEach((t) => {
+                let cnt = capturedFigures[`${t}${c}`];
+                while (cnt > 0) {
+                    const image = figureImageMap.get(`${t}${c}`);
+                    ctx.drawImage(image, fx, fy, fw, fw);
+                    fx += fw;
+                    cnt--;
+                    fidx++;
+                    if (fidx >= 4) {
+                        fx = infoX;
+                        fidx = 0;
+                        if (isBlackPlayer()) {
+                            fy = fy + (c == "B" ? fw : -fw);
+                        }
+                        else {
+                            fy = fy + (c == "W" ? fw : -fw);
+                        }
+                    }
+                }
+            });
+        });
     };
 
     const drawBoard = (ctx) => {
@@ -320,7 +385,7 @@ var chess = (() => {
             if (dirty) {
                 if (utils.is_debug()) utils.debug("DRAW BOARD.");
                 drawBoard(ctx);
-                drawClocks(ctx);
+                drawInfoArea(ctx);
                 if (selectedFigure) {
                     drawSelectionRect(ctx, selectedFigure);
                 }
@@ -345,7 +410,7 @@ var chess = (() => {
                 dirtyClock = false;
             }
             if (dirtyClock) {
-                drawClocks(ctx);
+                drawInfoArea(ctx);
                 dirtyClock = false;
             }
         }
@@ -583,6 +648,15 @@ var chess = (() => {
         pixelPerField = w / 10;
     };
 
+    const setCanvasWidthAndHeight = () => {
+        if (canvas) {
+            setPixelPerWidth();
+            const xoff = utils.is_mobile() ? 50 : 100;
+            canvas.width = window.innerWidth - xoff;
+            canvas.height = pixelPerField * 8;
+        }
+    };
+
     // rendering
 
     const renderBoardFull = (parent, ignoreToken) => {
@@ -798,10 +872,8 @@ var chess = (() => {
     };
 
     const renderMainPage = (parent) => {
-        let xoff = utils.is_mobile() ? 50 : 100;
         canvas = controls.create(parent, "canvas", "playground");
-        canvas.width = pixelPerField * 8 + xoff;
-        canvas.height = pixelPerField * 8 + 10;
+        setCanvasWidthAndHeight();
         canvas.addEventListener("mouseup", onCanvasMouseUp);
         canvas.addEventListener("mousedown", onCanvasMouseDown);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
@@ -1205,9 +1277,7 @@ var chess = (() => {
 
     const onResize = () => {
         if (canvas && model && model.board && model.board.gameStarted) {
-            setPixelPerWidth();
-            canvas.width = pixelPerField * 8 + 100;
-            canvas.height = pixelPerField * 8;
+            setCanvasWidthAndHeight();
             dirty = true;
         }
     };
