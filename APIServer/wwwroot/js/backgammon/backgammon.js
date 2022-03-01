@@ -49,7 +49,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.8";
+    let version = "1.0.9";
 
     let dirty;
 
@@ -207,7 +207,7 @@ var backgammon = (() => {
     };
 
     const canRollDice = () => {
-        if (model && model.board) {
+        if (model && model.board && !model.board.gameOver) {
             if (!model.board.gameStarted) {
                 return model.currentUser && !model.board.hasStartRoll;
             }
@@ -710,6 +710,7 @@ var backgammon = (() => {
 
     const update = (to) => {
         disableTimer();
+        gameOverSprites = [];
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -1112,6 +1113,7 @@ var backgammon = (() => {
             guestMode = true;
         }
         disableTimer();
+        gameOverSprites = [];
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
