@@ -14,21 +14,17 @@ class Sprite {
         this.lastX = undefined;
         this.lastY = undefined;
         this.lastRotate = undefined;
+        this.scale = 1;
     }
 
     draw(ctx) {
         this.lastX = this.x;
         this.lastY = this.y;
         this.lastRotate = this.rotate;
-        if (this.rotate > 0) {
-            ctx.setTransform(1, 0, 0, 1, this.x, this.y);
-            ctx.rotate(this.rotate * Math.PI / 180);
-            ctx.drawImage(this.image, -this.w / 2, -this.h / 2, this.w, this.h);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-        }
-        else {
-            ctx.drawImage(this.image, this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
-        }
+        ctx.setTransform(this.scale, 0, 0, this.scale, this.x, this.y);
+        ctx.rotate(this.rotate * Math.PI / 180);
+        ctx.drawImage(this.image, -this.w / 2, -this.h / 2, this.w, this.h);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 };
 
@@ -49,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.9";
+    let version = "1.0.10";
 
     let dirty;
 
@@ -84,6 +80,7 @@ var backgammon = (() => {
     let gameOverSprites = [];
     let gameOverImageData;
     let gameOverDelay = 10;
+    let gameOverMaxSpeed = 3;
 
     const animateGameOver = (canvas, winner) => {
         const ctx = canvas.getContext("2d");
@@ -105,6 +102,7 @@ var backgammon = (() => {
             if (sprite.y < 0) {
                 sprite.y = canvas.height;
             }
+            sprite.scale = pointWidth < 64 ? pointWidth / 64 : 1;
             sprite.draw(ctx);
         });
     };
@@ -118,17 +116,17 @@ var backgammon = (() => {
                 const sprite = new Sprite(img, 32, 32);
                 sprite.x = Math.floor(Math.random() * (canvas.width - pointWidth - borderWidth - 16)) + 16;
                 sprite.y = 0;
-                sprite.dx = winner ? Math.floor(Math.random() * 10) + 1 : 0;
-                if (sprite.dx > 5) {
-                    sprite.dx = 5 - sprite.dx;
+                sprite.dx = winner ? Math.random() * gameOverMaxSpeed * 2 + 1 : 0;
+                if (sprite.dx > gameOverMaxSpeed) {
+                    sprite.dx = gameOverMaxSpeed - sprite.dx + 2;
                 }
-                sprite.dy = winner ? Math.floor(Math.random() * 10) + 1 : Math.floor(Math.random() * 5) + 1;
-                if (sprite.dy > 5) {
-                    sprite.dy = 5 - sprite.dy;
+                sprite.dy = winner ? Math.random() * gameOverMaxSpeed * 2 + 1 : Math.random() * gameOverMaxSpeed + 1;
+                if (sprite.dy > gameOverMaxSpeed) {
+                    sprite.dy = gameOverMaxSpeed - sprite.dy + 2;
                 }
-                sprite.drotate = winner ? Math.floor(Math.random() * 10) + 1 : 0;
-                if (sprite.drotate > 5) {
-                    sprite.drotate = 5 - sprite.drotate;
+                sprite.drotate = winner ? Math.random() * gameOverMaxSpeed * 2 + 1 : 0;
+                if (sprite.drotate > gameOverMaxSpeed) {
+                    sprite.drotate = gameOverMaxSpeed - sprite.drotate + 2;
                 }
                 gameOverSprites.push(sprite);
             }
@@ -335,6 +333,7 @@ var backgammon = (() => {
     const updateCanvasWidthAndHeight = (canvas) => {
         canvas.width = pointWidth * 14 + 2 * borderWidth + 2;
         canvas.height = pointHeight * 2 + gapPointHeight + 2 * borderHeight + 2;
+        gameOverMaxSpeed = Math.floor(canvas.height / 100);
     };
 
     const calculatePointWidth = () => {
@@ -646,6 +645,9 @@ var backgammon = (() => {
         if (canvas && model && model.board && model.board.gameOver && model.currentUser) {
             animateGameOver(canvas, model.currentUser.name === model.board.winner);
         }
+        else if (gameOverSprites.length > 0) {
+            gameOverSprites = [];
+        }
         window.requestAnimationFrame(draw);
     };
 
@@ -710,7 +712,6 @@ var backgammon = (() => {
 
     const update = (to) => {
         disableTimer();
-        gameOverSprites = [];
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -1113,7 +1114,6 @@ var backgammon = (() => {
             guestMode = true;
         }
         disableTimer();
-        gameOverSprites = [];
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -1424,6 +1424,9 @@ var backgammon = (() => {
     const onResize = () => {
         const canvas = document.getElementById("playground-id");
         if (canvas && model && model.board && model.board.items) {
+            if (gameOverSprites.length > 0) {
+                gameOverSprites = [];
+            }
             calculatePointWidth();
             updateCanvasWidthAndHeight(canvas);
             dirty = true;
