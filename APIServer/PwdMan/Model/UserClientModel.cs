@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,16 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System;
+
 namespace APIServer.PwdMan.Model
 {
-    public class AuthenticationModel
+    public class UserClientModel
     {
-        public string Username { get; set; }
-
-        public string Password { get; set; }
-
         public string ClientUUID { get; set; }
 
         public string ClientName { get; set; }
+
+        public string LastLoginIPAddress { get; set; }
+
+        public DateTime LastLoginUTC { get; set; }
     }
 }

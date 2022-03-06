@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +32,8 @@ namespace APIServer.Database
 
         public DbSet<DbLoginIpAddress> DbLoginIpAddresses { get; set; }
 
+        public DbSet<DbUserClient> DbUserClients { get; set; }
+
         public DbSet<DbRole> DbRoles { get; set; }
 
         public DbSet<DbRegistration> DbRegistrations { get; set; }
@@ -62,35 +64,38 @@ namespace APIServer.Database
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.Entity<DbRegistration>()
+            _ = builder.Entity<DbRegistration>()
                 .HasIndex(r => r.Email)
                 .IsUnique();
-            builder.Entity<DbRegistration>()
+            _ = builder.Entity<DbRegistration>()
                 .HasIndex(r => r.IpAddress);
-            builder.Entity<DbUser>()
+            _ = builder.Entity<DbUser>()
                 .HasIndex(u => u.Name)
                 .IsUnique();
-            builder.Entity<DbUser>()
+            _ = builder.Entity<DbUser>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
-            builder.Entity<DbSetting>()
+            _ = builder.Entity<DbSetting>()
                 .HasIndex(s => s.Key)
                 .IsUnique();
-            builder.Entity<DbLoginIpAddress>()
+            _ = builder.Entity<DbLoginIpAddress>()
                 .HasIndex(ip => new { ip.DbUserId, ip.IpAddress })
                 .IsUnique();
-            builder.Entity<DbResetPassword>()
+            _ = builder.Entity<DbResetPassword>()
                 .HasIndex(r => r.Email)
                 .IsUnique();
-            builder.Entity<DbResetPassword>()
+            _ = builder.Entity<DbResetPassword>()
                 .HasIndex(r => r.IpAddress);
-            builder.Entity<DbDiary>()
+            _ = builder.Entity<DbDiary>()
                 .HasIndex(d => new { d.DbUserId, d.Date })
                 .IsUnique();
-            builder.Entity<DbNote>()
+            _ = builder.Entity<DbNote>()
                 .HasIndex(n => n.DbUserId);
-            builder.Entity<DbSkatReservation>()
+            _ = builder.Entity<DbSkatReservation>()
                 .HasIndex(r => r.ReservedUtc);
+            _ = builder.Entity<DbUserClient>()
+                .HasIndex(ip => new { ip.DbUserId, ip.ClientUUID })
+                .IsUnique();
         }
 
         public static DateTime? GetUtcDateTime(DateTime? dbDateTime)

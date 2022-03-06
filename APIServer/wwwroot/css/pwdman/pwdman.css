@@ -74,7 +74,12 @@ a {
 
 h1 {
     padding: 2pt;
-    color: lightgreen;
+    color: white;
+    position: absolute;
+    top: 5pt;
+    left: 40pt;
+    font-size: 18pt;
+    margin: 0pt;
 }
 
 form {
@@ -462,6 +467,13 @@ form {
     input {
         font-size: 11pt;
         width: 200pt;
+    }
+
+    h1 {
+        top: 0;
+        padding: 0;
+        font-size: 11pt;
+        left: 32pt;
     }
 
     .container-checkbox {

@@ -545,20 +545,8 @@ namespace APIServer.PwdMan
             };
             var dbContext = GetDbContext();
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
-            userModel.LoginIpAddresses = new List<LoginIpAddressModel>();
             if (details)
             {
-                var loginIpAddresses = dbContext.DbLoginIpAddresses
-                    .Where(ip => ip.DbUserId == user.Id && ip.Succeeded > 0)
-                    .OrderByDescending(ip => ip.LastUsedUtc);
-                foreach (var ip in loginIpAddresses)
-                {
-                    userModel.LoginIpAddresses.Add(new LoginIpAddressModel
-                    {
-                        IpAddress = ip.IpAddress,
-                        LastUsedUtc = DbMynaContext.GetUtcDateTime(ip.LastUsedUtc).Value
-                    });
-                }
                 var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
                 userModel.UsedStorage = sum;
             }
@@ -935,8 +923,7 @@ namespace APIServer.PwdMan
                     Photo = u.Photo,
                     StorageQuota = u.StorageQuota,
                     LoginEnabled = u.LoginEnabled,
-                    Roles = u.Roles.Select(r => r.Name).ToList(),
-                    LoginIpAddresses = new List<LoginIpAddressModel>()
+                    Roles = u.Roles.Select(r => r.Name).ToList()
                 };
                 userModelMap[u.Id] = userModel;
                 ret.Add(userModel);
@@ -1000,14 +987,37 @@ namespace APIServer.PwdMan
                 user.LoginTries += 1;
                 user.LastLoginTryUtc = DateTime.UtcNow;
             }
+            var sendLoginWarning = true;
+            if (!string.IsNullOrEmpty(authentication.ClientUUID))
+            {
+                sendLoginWarning = false;
+                var userClient = dbContext.DbUserClients.SingleOrDefault(client => client.DbUserId == user.Id && client.ClientUUID == authentication.ClientUUID);
+                if (userClient == null)
+                {
+                    // send warning only if at least one login from a different client was successfull
+                    if (dbContext.DbUserClients.Any(client => client.DbUserId == user.Id))
+                    {
+                        sendLoginWarning = true;
+                    }
+                    userClient = new DbUserClient
+                    {
+                        DbUserId = user.Id,
+                        ClientUUID = authentication.ClientUUID,
+                        ClientName = authentication.ClientName
+                    };
+                    dbContext.DbUserClients.Add(userClient);
+                }
+                userClient.LastLoginIPAddress = ipAddress;
+                userClient.LastLoginUTC = DateTime.UtcNow;
+            }
             dbContext.SaveChanges();
             var ret = new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
             if (!user.Requires2FA && user.UseLongLivedToken)
             {
                 ret.LongLivedToken = GenerateLongLivedToken(user.Name, opt);
             }
-            // send security warning email if this is the first successful login for the IP address
-            if (loginIpAddress.Succeeded == 1)
+            // send security warning email if the an unknown client has been used to login
+            if (sendLoginWarning)
             {
                 await SendSecurityWarningEmailAsync(user, ipAddress, opt);
             }

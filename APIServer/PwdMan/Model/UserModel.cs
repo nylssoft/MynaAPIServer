@@ -46,8 +46,6 @@ namespace APIServer.PwdMan.Model
 
         public bool AccountLocked { get; set; }
 
-        public List<LoginIpAddressModel> LoginIpAddresses { get; set; }
-
         public string Photo { get; set; }
 
         public long StorageQuota { get; set; }

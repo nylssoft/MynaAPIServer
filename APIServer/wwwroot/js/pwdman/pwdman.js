@@ -33,7 +33,7 @@ var pwdman = (() => {
     let successRegister;
     let actionOk;
 
-    let version = "1.1.24";
+    let version = "1.1.25";
 
     // helper
 
@@ -63,13 +63,30 @@ var pwdman = (() => {
         }
     };
 
+    const getClientInfo = () => {
+        const ci = window.sessionStorage.getItem("clientinfo");
+        if (ci && ci.length > 0) {
+            return JSON.parse(ci);
+        }
+        const clientInfo = { "uuid": uuid.v4(), "name": window.navigator.userAgent };
+        window.sessionStorage.setItem("clientinfo", JSON.stringify(clientInfo));
+        return clientInfo;
+    }
+
     const authenticate = () => {
         lastErrorMessage = "";
+        const clientInfo = getClientInfo();
         utils.fetch_api_call("api/pwdman/auth",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                body: JSON.stringify({ "username": userNameInput.value, "password": userPasswordPwd.value })
+                body: JSON.stringify(
+                    {
+                        "username": userNameInput.value,
+                        "password": userPasswordPwd.value,
+                        "clientUUID": clientInfo.uuid,
+                        "clientName": clientInfo.name
+                    })
             },
             (authResult) => {
                 userName = userNameInput.value;
@@ -327,12 +344,9 @@ var pwdman = (() => {
         }
     };
 
-    const renderCopyright = (parent, title) => {
-        if (!title) {
-            title = "Password Manager";
-        }
-        let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna ${title} ${version}. Copyright 2020-2021 `);
+    const renderCopyright = (parent) => {
+        const div = controls.createDiv(parent);
+        controls.create(div, "span", "copyright", `Anmelden ${version}. Copyright 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -387,8 +401,8 @@ var pwdman = (() => {
             () => window.location.href = `/pwdman?resetpwd&nexturl=${encodeURI(window.location.href)}`);
         let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du Dich registrieren. ");
         controls.createButton(p, "Registrieren", () => window.location.href = `/pwdman?register&nexturl=${encodeURI(window.location.href)}`);
-        renderCopyright(parent, "Portal");
-    };
+        renderCopyright(parent);
+};
 
     const renderPass2 = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
@@ -411,7 +425,7 @@ var pwdman = (() => {
             setState();
             cancel();
         }, undefined, "button");
-        renderCopyright(parent, "Portal");
+        renderCopyright(parent);
     };
 
     const renderChangePwd = (parent) => {
@@ -451,7 +465,7 @@ var pwdman = (() => {
         controls.createButton(okCancelDiv, "OK", () => changePassword(), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
         renderError(parent);
-        renderCopyright(parent, "Portal");
+        renderCopyright(parent);
     };
 
     const renderResetPwd = (parent) => {
@@ -472,7 +486,7 @@ var pwdman = (() => {
         controls.createButton(okCancelDiv, "Weiter", () => requestResetPassword(), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
-        renderCopyright(parent, "Portal");
+        renderCopyright(parent);
     };
 
     const renderResetPwd2 = (parent, success) => {
@@ -517,7 +531,7 @@ var pwdman = (() => {
         controls.createButton(okCancelDiv, "Kennwort \u00E4ndern", () => resetPassword(parent), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
-        renderCopyright(parent, "Portal");
+        renderCopyright(parent);
     };
 
     const renderRequestRegistration = (parent) => {
@@ -545,7 +559,7 @@ var pwdman = (() => {
         controls.createButton(okCancelDiv, "Weiter", () => requestRegistration(), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
-        renderCopyright(parent, "Portal");
+        renderCopyright(parent);
     };
 
     const renderRegister = (parent) => {
@@ -607,12 +621,14 @@ var pwdman = (() => {
         controls.createButton(okCancelDiv, "Registrieren", () => register(), undefined, "button");
         controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
         renderError(parent);
-        renderCopyright(parent, "Portal");
+        renderCopyright(parent);
     };
 
     const renderPage = () => {
         controls.removeAllChildren(document.body);
+        utils.create_menu(document.body);
         utils.create_cookies_banner(document.body);
+        utils.set_menu_items();
         let state = getState();
         if (state) {
             if (requiresPass2 == undefined) {

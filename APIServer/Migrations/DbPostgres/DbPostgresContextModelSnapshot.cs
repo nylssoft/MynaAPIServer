@@ -489,6 +489,36 @@ namespace APIServer.Migrations.DbPostgres
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbUserClient", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .UseIdentityByDefaultColumn();
+
+                    b.Property<string>("ClientName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ClientUUID")
+                        .HasColumnType("text");
+
+                    b.Property<long>("DbUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("LastLoginIPAddress")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("LastLoginUTC")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbUserId", "ClientUUID")
+                        .IsUnique();
+
+                    b.ToTable("UserClients");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbUserSkatResult", b =>
                 {
                     b.Property<long>("Id")
@@ -623,6 +653,17 @@ namespace APIServer.Migrations.DbPostgres
                         .HasForeignKey("PasswordFileId");
 
                     b.Navigation("PasswordFile");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbUserClient", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "DbUser")
+                        .WithMany()
+                        .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DbUser");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbUserSkatResult", b =>

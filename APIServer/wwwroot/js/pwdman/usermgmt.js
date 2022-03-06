@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "1.1.23";
+    let version = "1.1.24";
 
     const roleMapping = {
         "usermanager"   : "Administrator",
@@ -20,11 +20,6 @@ var usermgmt = (() => {
     };
 
     // helper
-
-    const getLoginPerDeviceText = (ip) => {
-        let txt = `${new Date(ip.lastUsedUtc).toLocaleString("de-DE")} mit IP-Adresse ${ip.ipAddress}.`;
-        return txt;
-    };
 
     const setWaitCursor = (wait) => {
         document.body.style.cursor = wait ? "wait" : "default";
@@ -62,7 +57,7 @@ var usermgmt = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna User Manager ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", "copyright", `Profil ${version}. Copyright 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -70,9 +65,11 @@ var usermgmt = (() => {
     const renderConfirmRegistrations = (success, results) => {
         let parent = document.body;
         controls.removeAllChildren(parent);
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
         if (success) {
-            renderHeader(parent, "Ergebnisse:");
+            renderHeader(parent, "Ergebnisse:", "Registrierungen");
             results.reverse();
             results.forEach((r) => {
                 let div = controls.createDiv(parent);
@@ -140,6 +137,8 @@ var usermgmt = (() => {
             return;
         }
         controls.removeAllChildren(parent);
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
         controls.create(parent, "h1", undefined, "Benutzer");
         let nameP = controls.create(parent, "p", undefined, `Name: ${user.name}`);
@@ -186,6 +185,8 @@ var usermgmt = (() => {
         }
         controls.createButton(actionsDiv, "Zur\u00FCck", () => {
             controls.removeAllChildren(parent);
+            utils.create_menu(parent);
+            utils.set_menu_items(currentUser);
             renderUsersTable(parent, users);
         }, undefined, "button");
         renderCopyright(parent);
@@ -245,9 +246,11 @@ var usermgmt = (() => {
     const renderEditUsers = (success, results) => {
         let parent = document.body;
         controls.removeAllChildren(parent);
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
         if (success) {
-            renderHeader(parent, "Ergebnisse:");
+            renderHeader(parent, "Ergebnisse:", "Benutzer");
             results.reverse();
             results.forEach((r) => {
                 let div = controls.createDiv(parent);
@@ -296,6 +299,7 @@ var usermgmt = (() => {
         controls.removeAllChildren(parent);
         waitDiv = controls.createDiv(parent, "invisible-div");
         utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
         renderHeader(parent);
         // username
         const usernameP = controls.create(parent, "p");
@@ -326,14 +330,6 @@ var usermgmt = (() => {
         // documents quota
         const documentsP = controls.create(parent, "p");
         controls.createSpan(documentsP, undefined, `Speicherplatz f\u00FCr Dokumente: ${utils.format_size(currentUser.usedStorage)} von ${utils.format_size(currentUser.storageQuota)} belegt.`);
-        // last logins
-        if (currentUser.loginIpAddresses.length > 0) {
-            const loginIpP = controls.create(parent, "p");
-            controls.createSpan(loginIpP, undefined, "Anmeldungen: ");
-            controls.createButton(loginIpP, "Aufr\u00E4umen", () => onDeleteLoginIpAddresses());
-            const ul = controls.create(loginIpP, "ul");
-            currentUser.loginIpAddresses.forEach(ip => controls.create(ul, "li", undefined, getLoginPerDeviceText(ip)));
-        }
         // skat results
         controls.createA(parent, undefined, "/skat/results", "Skatergebnisse", () => window.open("/skat?results", "_blank"));
         // actions
@@ -343,8 +339,6 @@ var usermgmt = (() => {
         controls.createDiv(parent, "error").id = "error-id";
         // copyright
         renderCopyright(parent);
-        // menu items
-        utils.set_menu_items(currentUser);
     };
 
     const renderAccountActions = (confirm) => {
@@ -393,8 +387,10 @@ var usermgmt = (() => {
         currentUser = undefined;
         let parent = document.body;
         controls.removeAllChildren(parent);
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Du bist jetzt nicht mehr angemeldet.");
+        renderHeader(parent, "Du bist jetzt nicht mehr angemeldet.", "Abmelden");
         let p = controls.create(parent, "p");
         controls.createButton(p, "OK", () => onOK()).focus();
         renderCopyright(parent);
@@ -404,8 +400,10 @@ var usermgmt = (() => {
         let parent = document.body;
         utils.logout();
         controls.removeAllChildren(parent);
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Dein Konto wurde gel\u00F6scht. Du bist jetzt nicht mehr angemeldet.");
+        renderHeader(parent, "Dein Konto wurde gel\u00F6scht. Du bist jetzt nicht mehr angemeldet.", "Abmelden");
         let p = controls.create(parent, "p");
         controls.createButton(p, "OK", () => onOK()).focus();
         renderCopyright(parent);
@@ -414,7 +412,9 @@ var usermgmt = (() => {
     const renderErrorMessage = () => {
         let parent = document.body;
         controls.removeAllChildren(parent);
-        renderHeader(parent, "Es ist ein Fehler aufgetreten.");
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
+        renderHeader(parent, "Es ist ein Fehler aufgetreten.", "Fehler");
         let errorDiv = controls.createDiv(parent, "error");
         errorDiv.textContent = errorMessage;
         let p = controls.create(parent, "p");
@@ -429,6 +429,7 @@ var usermgmt = (() => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         // menu
         utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
         // header
         renderHeader(parent);
         // edit user name
@@ -517,8 +518,6 @@ var usermgmt = (() => {
         renderUploadPhoto(section);
         // copyright
         renderCopyright(parent);
-        // menu items
-        utils.set_menu_items(currentUser);
     };
 
     // --- callbacks
@@ -773,19 +772,6 @@ var usermgmt = (() => {
             },
             () => {
                 currentUser.hasPasswordManagerFile = false;
-                renderCurrentUser();
-            },
-            onRejectError,
-            setWaitCursor
-        );
-    };
-
-    const onDeleteLoginIpAddresses = () => {
-        clearErrors();
-        let token = utils.get_authentication_token();
-        utils.fetch_api_call("api/pwdman/loginipaddress", { method: "DELETE", headers: { "token": token } },
-            () => {
-                currentUser.loginIpAddresses = [];
                 renderCurrentUser();
             },
             onRejectError,
