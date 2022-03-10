@@ -32,6 +32,7 @@ var pwdman = (() => {
     let nexturl;
     let successRegister;
     let actionOk;
+    let currentUser;
 
     let version = "1.1.25";
 
@@ -292,6 +293,8 @@ var pwdman = (() => {
             },
             () => {
                 controls.removeAllChildren(parent);
+                utils.create_menu(parent);
+                utils.set_menu_items(currentUser);
                 renderResetPwd2(parent, true);
             },
             (errMsg) => errorDiv.textContent = errMsg,
@@ -337,6 +340,14 @@ var pwdman = (() => {
 
     // rendering
 
+    const renderHeader = (parent, title) => {
+        let txt = title;
+        if (currentUser) {
+            txt = `${currentUser.name} - ${txt}`;
+        }
+        controls.create(parent, "h1", undefined, txt);
+    };
+
     const renderError = (parent) => {
         errorDiv = controls.createDiv(parent, "error");
         if (lastErrorMessage) {
@@ -366,7 +377,7 @@ var pwdman = (() => {
 
     const renderAuthentication = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Anmelden");
+        renderHeader(parent, "Anmelden");
         controls.create(parent, "p", undefined, "Melde Dich mit Namen und Kennwort an.");
         let loginDiv = controls.createDiv(parent);
         let userNameLabel = controls.createLabel(loginDiv, undefined, "Name:");
@@ -406,7 +417,7 @@ var pwdman = (() => {
 
     const renderPass2 = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Anmelden");
+        renderHeader(parent, "Anmelden");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             renderError(parent);
         }
@@ -430,7 +441,7 @@ var pwdman = (() => {
 
     const renderChangePwd = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Kennwort \u00E4ndern");
+        renderHeader(parent, "Kennwort \u00E4ndern");
         if (actionOk === true) {
             controls.create(parent, "p", undefined,
                 "Das Kennwort wurde erfolgreich ge\u00E4ndert! Du kannst Dich jetzt mit dem neuen Kennwort anmelden.");
@@ -470,7 +481,7 @@ var pwdman = (() => {
 
     const renderResetPwd = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Kennwort vergessen");
+        renderHeader(parent, "Kennwort vergessen");
         controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse ein." +
             " Du bekommst einen Sicherheitscode per E-Mail zugesendet, mit dem Du Dein Kennwort neu vergeben kannst.");
         emailDiv = controls.createDiv(parent);
@@ -491,7 +502,7 @@ var pwdman = (() => {
 
     const renderResetPwd2 = (parent, success) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Kennwort neu vergeben");
+        renderHeader(parent, "Kennwort neu vergeben");
         if (success) {
             controls.create(parent, "p", undefined, "Die Kennwort\u00E4nderung war erfolgreich! Du kannst Dich jetzt mit dem neuen Kennwort anmelden.");
             let buttonOKDiv = controls.createDiv(parent);
@@ -536,7 +547,7 @@ var pwdman = (() => {
 
     const renderRequestRegistration = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Registrieren");
+        renderHeader(parent, "Registrieren");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
@@ -564,7 +575,7 @@ var pwdman = (() => {
 
     const renderRegister = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Registrieren");
+        renderHeader(parent, "Registrieren");
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
@@ -628,7 +639,7 @@ var pwdman = (() => {
         controls.removeAllChildren(document.body);
         utils.create_menu(document.body);
         utils.create_cookies_banner(document.body);
-        utils.set_menu_items();
+        utils.set_menu_items(currentUser);
         let state = getState();
         if (state) {
             if (requiresPass2 == undefined) {
@@ -709,7 +720,21 @@ var pwdman = (() => {
                 userEmail = params.get("email");                
             }
         }
-        renderPage();
+        const token = utils.get_authentication_token();
+        if (token && token.length > 0) {
+            utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+                (user) => {
+                    currentUser = user;
+                    renderPage();
+                },
+                (errMsg) => {
+                    console.error(errMsg);
+                    renderPage();
+                });
+        }
+        else {
+            renderPage();
+        }
     };
 
     // --- public API

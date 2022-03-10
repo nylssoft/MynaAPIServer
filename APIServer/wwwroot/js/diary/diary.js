@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.1.10";
+    let version = "1.1.11";
 
     let changeDate;
     let inSaveDiary;
@@ -88,7 +88,7 @@ var diary = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Diary ${version}. Copyright 2020-2021 `);
+        controls.create(div, "span", "copyright", `Tagebuch ${version}. Copyright 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };

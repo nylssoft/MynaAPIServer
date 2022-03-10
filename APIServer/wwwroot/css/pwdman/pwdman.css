@@ -470,7 +470,7 @@ form {
     }
 
     h1 {
-        top: 0;
+        top: 6pt;
         padding: 0;
         font-size: 11pt;
         left: 32pt;
@@ -497,6 +497,18 @@ form {
     .dropdown-content {
         top: 30pt;
         max-width: 200px;
+    }
+
+    .dropdown-content a {
+        padding: 6px 8px;
+    }
+}
+
+@media (max-height: 650px) {
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+        font-size: 11pt;
     }
 
     .dropdown-content a {

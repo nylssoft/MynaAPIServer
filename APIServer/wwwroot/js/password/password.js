@@ -4,7 +4,7 @@ var password = (() => {
 
     // state
 
-    let version = "1.0.3";
+    let version = "1.0.4";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -54,7 +54,7 @@ var password = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Password ${version}. Copyright 2020-2021 `);
+        controls.create(div, "span", "copyright", `Passw\u00F6rter ${version}. Copyright 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };

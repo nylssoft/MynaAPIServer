@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.1.11";
+    let version = "1.1.12";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -133,7 +133,7 @@ var notes = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Notes ${version}. Copyright 2020-2021 `);
+        controls.create(div, "span", "copyright", `Notizen ${version}. Copyright 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };

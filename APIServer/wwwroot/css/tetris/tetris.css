@@ -453,3 +453,15 @@ a {
         padding: 6px 8px;
     }
 }
+
+@media (max-height: 650px) {
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+        font-size: 11pt;
+    }
+
+    .dropdown-content a {
+        padding: 6px 8px;
+    }
+}

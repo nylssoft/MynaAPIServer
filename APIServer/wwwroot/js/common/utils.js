@@ -354,8 +354,7 @@ var utils = (() => {
     const set_menu_items = (currentUser) => {
         const parent = document.getElementById("dropdown-id");
         if (!parent) return;
-        let maxheight = is_mobile() ? '(max-height: 500px)' : '(max-height: 700px)';
-        const small_height = window.matchMedia(maxheight).matches;
+        const small_height = window.matchMedia('(max-height: 400px)').matches;
         controls.removeAllChildren(parent);
         controls.createA(parent, undefined, "/markdown", "Start");
         if (!small_height) {

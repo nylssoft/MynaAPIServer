@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.7";
+    let version = "1.1.8";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -282,7 +282,7 @@ var documents = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Myna Documents ${version}. Copyright 2021 `);
+        controls.create(div, "span", "copyright", `Dokumente ${version}. Copyright 2021-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
