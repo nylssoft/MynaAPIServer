@@ -34,7 +34,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "1.1.25";
+    let version = "1.1.26";
 
     // helper
 
@@ -65,12 +65,12 @@ var pwdman = (() => {
     };
 
     const getClientInfo = () => {
-        const ci = window.sessionStorage.getItem("clientinfo");
+        const ci = window.localStorage.getItem("clientinfo");
         if (ci && ci.length > 0) {
             return JSON.parse(ci);
         }
         const clientInfo = { "uuid": uuid.v4(), "name": window.navigator.userAgent };
-        window.sessionStorage.setItem("clientinfo", JSON.stringify(clientInfo));
+        window.localStorage.setItem("clientinfo", JSON.stringify(clientInfo));
         return clientInfo;
     }
 
