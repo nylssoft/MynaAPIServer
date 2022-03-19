@@ -231,7 +231,16 @@ var backgammon = (() => {
         return undefined;
     };
 
+    const setActive = (isActive) => {
+        document.body.className = isActive ? "active-background" : "inactive-background";
+        const canvas = document.getElementById("player-canvas-id");
+        if (canvas) {
+            canvas.classList.toggle("hide", !isActive);
+        }
+    };
+
     const getStateMessage = () => {
+        let isActive = false;
         let msg = "";
         const pConfirmNextGame = document.getElementById("confirmnextgame");
         if (model && model.board) {
@@ -255,18 +264,17 @@ var backgammon = (() => {
                     if (model.board.nextGameRequested) {
                         if (model.currentUser.startGameConfirmed) {
                             controls.create(pConfirmNextGame, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
-                            document.body.className = "inactive-background";
                         }
                         else {
                             controls.create(pConfirmNextGame, "span", "confirmation", "N\u00E4chstes Spiel?");
                             controls.createButton(pConfirmNextGame, "Ja", () => btnConfirmNextGame_click(true));
                             controls.createButton(pConfirmNextGame, "Nein", () => btnConfirmNextGame_click(false));
-                            document.body.className = "active-background";
+                            isActive = true;
                         }
                     }
                     else {
                         controls.createButton(pConfirmNextGame, "N\u00E4chstes Spiel", btnNextGame_click, "newgame").id = "newgame";
-                        document.body.className = "active-background";
+                        isActive = true;
                     }
                 }
             }
@@ -278,23 +286,22 @@ var backgammon = (() => {
                         msg = "Pasch!";
                         if (model.currentUser) {
                             msg += " Du musst erneuert w\u00FCrfeln!";
-                            document.body.className = "active-background";
+                            isActive = true;
                         }
                     }
                     else if (model.board.currentRollNumbers.length == 0) {
                         msg = "Wer f\u00E4ngt an?";
                         if (model.currentUser) {
-                            document.body.className = "active-background";
+                            isActive = true;
                         }
                     }
                     else {
                         if (model.currentUser && !model.board.hasStartRoll) {
                             msg = "Du bist am Zug.";
-                            document.body.className = "active-background";
+                            isActive = true;
                         }
                         else {
                             msg = `${getOpponentPlayer()} ist am Zug.`;
-                            document.body.className = "inactive-background";
                         }
                     }
                 }
@@ -310,7 +317,7 @@ var backgammon = (() => {
                                 msg += ` Verbleibende Schritte: ${model.board.remainingRollNumbers.join(", ")}.`;
                             }
                         }
-                        document.body.className = "active-background";
+                        isActive = true;
                     }
                     else {
                         msg = `${getActivePlayer()} ist am Zug.`;
@@ -322,11 +329,11 @@ var backgammon = (() => {
                                 msg += ` Verbleibende Schritte: ${model.board.remainingRollNumbers.join(", ")}.`;
                             }
                         }
-                        document.body.className = "inactive-background";
                     }
                 }
             }
         }
+        setActive(isActive);
         return msg;
     };
 
@@ -853,7 +860,7 @@ var backgammon = (() => {
         if (ignoreToken || !currentUser) {
             controls.create(parent, "p", undefined, "Das Brett ist leider schon belegt!");
             controls.createButton(parent, "Zuschauen als Gast", () => window.open("/backgammon?guest", "_blank"));
-            document.body.className = "inactive-background";
+            setActive(false);
         }
         else {
             let divParent = controls.createDiv(parent);
@@ -902,7 +909,7 @@ var backgammon = (() => {
     };
 
     const renderLogin = (parent) => {
-        document.body.className = "active-background";
+        setActive(true);
         if (!currentUser) {
             controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
             const label = controls.createLabel(parent, undefined, "Name:");
@@ -927,7 +934,7 @@ var backgammon = (() => {
 
     const renderWaitForUsers = (parent) => {
         controls.create(parent, "p", "activity", "Du musst warten, bis sich ein weiterer Spieler anmeldet.");
-        document.body.className = "inactive-background";
+        setActive(false);
     };
 
     const renderStartGame = (parent) => {
@@ -936,7 +943,7 @@ var backgammon = (() => {
         }
         else {
             controls.createButton(divActions, "Spiel starten", btnStartGame_click);
-            document.body.className = "active-background";
+            setActive(true);
         }
     };
 
@@ -969,14 +976,14 @@ var backgammon = (() => {
             controls.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
             controls.createButton(parent, "Ja", btnEndGame_click, "EndGameYes");
             controls.createButton(parent, "Nein", btnEndGame_click, "EndGameNo");
-            document.body.className = "active-background";
+            setActive(true);
             return true;
         }
         if (giveUpClicked) {
             controls.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
             controls.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
             controls.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
-            document.body.className = "active-background";
+            setActive(true);
             return true;
         }
         controls.createButton(parent, "W\u00FCrfeln", btnRoll_click, "rollbutton").id = "rollbutton";
@@ -1002,6 +1009,22 @@ var backgammon = (() => {
         }
     };
 
+    const renderPlayerCanvas = (parent, isBlackPlayer) => {
+        const canvas = controls.create(parent, "canvas", "player-canvas hide");
+        canvas.width = 45;
+        canvas.height = 45;
+        canvas.id = "player-canvas-id";
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = isBlackPlayer ? colorCheckerBlack : colorCheckerWhite;
+        ctx.beginPath();
+        ctx.arc(22, 22, 16, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.strokeStyle = colorShadowDark;
+        ctx.beginPath();
+        ctx.arc(22, 22, 16, 0, 2 * Math.PI);
+        ctx.stroke();
+    };
+
     const renderMainPage = (parent) => {
         calculatePointWidth();
         let playerTop;
@@ -1017,8 +1040,8 @@ var backgammon = (() => {
         const playerTopDiv = controls.createDiv(parent, "player-top");
         const topImg = controls.createImg(playerTopDiv, "player-img", 45, 45, undefined, playerTop);
         updatePhoto(topImg, playerTop, playerTop === model.board.blackPlayer ? 1 : 2);
+        const canvas = controls.create(parent, "canvas");
         controls.createSpan(playerTopDiv).id = "opponent-player-id";
-        const canvas = controls.create(parent, "canvas", "playground");
         canvas.id = "playground-id";
         updateCanvasWidthAndHeight(canvas);
         canvas.addEventListener("mousedown", onCanvasMouseDown);
@@ -1027,6 +1050,7 @@ var backgammon = (() => {
         canvas.addEventListener("mouseleave", onCanvasMouseLeave);
         canvas.addEventListener("dblclick", onCanvasDoubleClick);
         const playerBottomDiv = controls.createDiv(parent, "player-bottom");
+        renderPlayerCanvas(playerBottomDiv, playerBottom === model.board.blackPlayer);
         const bottomImg = controls.createImg(playerBottomDiv, "player-img", 45, 45, undefined, playerBottom);
         updatePhoto(bottomImg, playerBottom, playerTop === model.board.blackPlayer ? 2 : 1);
         controls.createSpan(playerBottomDiv).id = "current-player-id";
@@ -1065,7 +1089,7 @@ var backgammon = (() => {
         model = m;
         controls.removeAllChildren(document.body);
         utils.create_cookies_banner(document.body);
-        document.body.className = "inactive-background";
+        setActive(false);
         if (model.allUsers.length == 0) {
             clearTicket();
         }

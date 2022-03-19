@@ -122,6 +122,10 @@ label, ul {
     color: #e09292;
 }
 
+.player-canvas {
+    vertical-align: middle;
+}
+
 .help-button {
     margin-left: 10pt;
 }
