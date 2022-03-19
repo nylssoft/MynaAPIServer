@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.10";
+    let version = "1.0.11";
 
     let dirty;
 
