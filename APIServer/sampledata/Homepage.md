@@ -54,7 +54,55 @@ and the pictures that are additionally shown for users that have the role *famil
 A few pictures are provived as example. Recommended resolution is 1920 x 1440 pixels.
 For the mobile view the Url-43 image is used if configured.
 
+## Chess engine setup
+
+The **appsettings.json** file contains a list for chess engines
+to play chess against the computer.
+
+Example configuration for the stockfish chess engine:
+    "ChessEngines": \[
+      \{
+        "Name": "Stockfish",
+        "File": "chessengine/stockfish_14.1_win_x64_avx2.exe",
+        "UseUCI": true
+      \}]
+
+The settings **UseUCI** defines whether the engine will use the Universal Chess Interface.
+
+## SendGrid configuration
+
+For email notification SendGrid is used. In **appsettings.json** or in user secrets the following parameters have to be set for **SendGridConfig**:
+- APIKey: SendGrid API key, requires an account for SendGrid
+- SenderAddress: email address of the sender
+- SenderName: display name of the sender
+- TemplateIdResetPassword: email template ID for the reset password email
+- TemplateIdRegistrationRequest: email template ID for the registration request email
+- TemplateIdRegistrationDenied: email template ID for the registration denied email
+- TemplateIdRegistrationSuccess: email template ID for registration success email
+- TemplateIdSecurityWarning: email template ID for the security warning email
+
+The email templates in SendGrid can contain parameters that will be replaced.
+- TemplateIdResetPassword: Name, Code, Valid, Hostname, Email, Next
+- TemplateIdRegistrationRequest: Email
+- TemplateIdRegistrationSuccess: Code, Hostname, Email, Next
+- TemplateIdSecurityWarning: Name, Date, Time, IPAddress, Hostname, Next
+
+## Security Configuration
+
+For token generation the **appsettings.json** uses the **TokenConfig** section. The hostname in **PwdMan** is used only for email notification to
+replace the Hostname parameter in the email templates.
+The following data has to be provided either in the file or in user secrets:
+- SignKey: used to sign the authentication token for a successfully logged-in user. 28 secure random characters are required.
+- LongLivedSignKey: used to sign a long lived token (stored in local storage of the browser). 28 secure random characters are required.
+- Issuer: issuer of the token, e.g. the website domain
+- Audience: audience of the token
+
+For development in Visual Studio 2019 User Secrets should be used for sensitve data like security configuration,
+hostname, SendGrid configuration and PostgreSQL database connection string.
+
 ## Open Source
+
+The following source code and icon libraries are used for the project:
 
 - [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five){target="_blank" .external}
 - [Entity Framework Core 5](https://docs.microsoft.com/de-de/ef/core/what-is-new/ef-core-5.0/whatsnew){target="_blank" .external}
