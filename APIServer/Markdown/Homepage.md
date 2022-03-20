@@ -1,33 +1,64 @@
-# Homepage
+# Heading 1
+## Heading 2
+### Heading 3
 
-## Niels Stockfleth
+$background(/images/skat/empty.png)
 
-![](/images/markdown/niels-320.jpg)
+Template for a home page with examples.
 
-## Veröffentlichungen
+Images
+![](/images/backgammon/roll.png)
 
-Der Quellcode dieser Website ist auf GitHub veröffentlicht: [API Server](https://github.com/nylssoft/MynaAPIServer){target="_blank" .external}
+## Markdown
 
-Weitere Veröffentlichungen auf GitHub:
+The page rendering is based on [Markdown](https://de.wikipedia.org/wiki/Markdown){target="_blank" .external}.
+Customize the look and feel in the **markdown.css** file.
 
-- [Backup](https://github.com/nylssoft/MynaBackup){target="_blank" .external}
-- [Bank](https://github.com/nylssoft/MynaBank){target="_blank" .external}
-- [JukeBox](https://github.com/nylssoft/MynaJukeBox){target="_blank" .external}
-- [Password Manager](https://github.com/nylssoft/MynaPasswordManager){target="_blank" .external}
-- [Time Tracker](https://github.com/nylssoft/MynaTimeTracker){target="_blank" .external}
+## Database usage
 
-Und vor der Erfindung des World Wide Webs:
-- [Bomb Runner](https://archive.org/details/Happy.Computer.N51.1988.01-Cartman/page/36/mode/2up){target="_blank" .external}
+To use images stored in the database use the link */api/document/download/\{id\}*.
 
-Alle auf GitHub veröffentlichen Programme (nur für Windows) können auch von dieser Website
-heruntergeladen werden:
-- [Downloads](/markdown?page=downloads)
+Markdown pages like this one can also be stored in the database.
+Adjust the file **appsettings.json** that contains the mapping from page name to content (file or document ID).
+
+Example:
+"Markdown": \[\{"Id": "help-backgammon", "Content": "484"\},...\]
+
+*Note*: Documents have to be marked as *public* to be used in a markdown page or as *family* if used for family-role restricted content.
+## External and internal links
+
+Add additional attributes or a CSS class to a link with \{ and \}.
+
+External Link: [Source Code](https://github.com/nylssoft){target="_blank" .external}
+
+Internal Link: [Start](/markdown?page=welcome)
+
+## Role based rendering
+
+The following content will only be rendered if you are logged in and if you have the role *family* assigned.
 
 $role-begin(family)
-## Privat (Familie)
-
-- [Kontakt](/markdown?page=contact)
-- [Lebenslauf](/markdown?page=resume)
+**PRIVATE**: Family based content
 $role-end
+
+## Setup and user registration
+
+The first registered user is assumed to by the administrator of the portal.
+The registration code will not be verified, any non empty value can be used for the setup.
+
+## Open Source
+
+- [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five){target="_blank" .external}
+- [Entity Framework Core 5](https://docs.microsoft.com/de-de/ef/core/what-is-new/ef-core-5.0/whatsnew){target="_blank" .external}
+- [ImageSharp](https://github.com/SixLabors/ImageSharp){target="_blank" .external}
+- [Markdig](https://github.com/xoofx/markdig){target="_blank" .external}
+- [NGINX](https://www.nginx.com){target="_blank" .external}
+- [Open Icon Library](https://sourceforge.net/projects/openiconlibrary){target="_blank" .external}
+- [PostgreSQL](https://www.nuget.org/packages/Npgsql){target="_blank" .external}
+- [qrcode.js](https://github.com/davidshimjs/qrcodejs){target="_blank" .external}
+- [SendGrid](https://github.com/sendgrid/sendgrid-csharp){target="_blank" .external}
+- [Sqlite](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Sqlite){target="_blank" .external}
+- [uuid](https://github.com/uuidjs/uuid){target="_blank" .external}
+- [XSkat](http://xskat.de/xskat-cards-de.html){target="_blank" .external}
 
 $backbutton
