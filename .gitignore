@@ -50,6 +50,7 @@ Temporary Items
 /APIServer/obj
 /APIServer/bin
 /APIServer/Release
+/APIServer/chessengine
 /bin
 /APIServer/wwwroot/images/profiles
 /APIServer/wwwroot/images/skat/profiles
