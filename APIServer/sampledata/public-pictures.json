@@ -1,0 +1,29 @@
+{
+  "Interval": 10,
+  "Pictures": [
+    {
+      "Url": "/images/sample/biniaraix.jpg",
+      "Url43": "/images/sample/biniaraix-43.jpg",
+      "Country": "Mallorca",
+      "City": "Biniaraix",
+      "Summary": "",
+      "Date": "5 Oct 2021"
+    },
+    {
+      "Url": "/images/sample/heimgartengrat.jpg",
+      "Url43": "/images/sample/heimgartengrat-43.jpg",
+      "Country": "",
+      "City": "Walchensee",
+      "Summary": "Heimgartengrat",
+      "Date": "22 Sept 2021"
+    },
+    {
+      "Url": "/images/sample/schleierfaelle2.jpg",
+      "Url43": "/images/sample/schleierfaelle2-43.jpg",
+      "Country": "",
+      "City": "Bad Bayersoien",
+      "Summary": "Schleierf\u00E4lle",
+      "Date": "11 Jan 2021"
+    }
+  ]
+}

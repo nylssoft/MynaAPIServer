@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,8 +24,5 @@ namespace APIServer.Skat
         public int SessionTimeout { get; set; } = 30;
 
         public List<string> AllowedUsers { get; set; } = null;
-
-        public string DataDirectoy { get; set; } = "data";
-
     }
 }

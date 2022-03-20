@@ -59,9 +59,9 @@ Temporary Items
 /APIServer/wwwroot/images/stammtisch/*.jpg
 /APIServer/wwwroot/**/*.min.*
 /APIServer/data
+/APIServer/sampledata/apiserver.db
 
 # personal user files
 *.user
 
-APIServer/wwwroot/downloads/MynaPasswordManager.zip
 APIServer/Readme.txt

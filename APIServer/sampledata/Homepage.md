@@ -43,8 +43,16 @@ $role-end
 
 ## Setup and user registration
 
-The first registered user is assumed to by the administrator of the portal.
+The first registered user is assumed to be the administrator of the portal.
 The registration code will not be verified, any non empty value can be used for the setup.
+
+## Slideshow setup
+
+The **appsettings.json** file references two JSON files that are used for the slideshow.
+The files define the pictures that are shown for all users, **SlideShowPublicPhotos**,
+and the pictures that are additionally shown for users that have the role *family* assigned, **SlideShowFamilyPhotos**.
+A few pictures are provived as example. Recommended resolution is 1920 x 1440 pixels.
+For the mobile view the Url-43 image is used if configured.
 
 ## Open Source
 
