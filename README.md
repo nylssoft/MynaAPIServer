@@ -27,7 +27,7 @@ First the project has to be compiled with Visual Studio 2019.
 If you run the portal server you will see sample pages.
 All games can be used without further configuration.
 For the applications, the appsettings.json file has to be adjusted.
-Details are explained on the page [Homepage](/sampledata/Homepage.md).
+Details are explained on the page [Homepage](/APIServer/sampledata/Homepage.md).
 
 ## History
 
@@ -147,23 +147,3 @@ against a colleque as it usually takes only a few minutes.
 It is also the first project where I tried to use sprites in JavaScript in the sense of the old C64 days, i.e.
 drawing of a figure that is smartly hovering over the playground.
 The animation sequence for the winner and loosers is based on sprites.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
