@@ -111,7 +111,7 @@ used e.g. for this README file is much easier and also much more fun to use.
 I introduced the rendering of markup files in the portal to provide the start page and other pages linked by the start page.
 I used an open source framework named [Markdig](https://github.com/xoofx/markdig) to implement the rendering service.
 In the current version the markdown files and referenced images can be stored in the database and can be updated online
-by the portal administrator. A very simple version of a website content management system.
+by the portal administrator. So in that sense this project is a very simple version of a website content management system.
 I use this e.g. to update the start page if new features are available on the portal.
 
 A few sample markdown pages are provided in the portal, e.g. the welcome page as the start page and the home page that contains
