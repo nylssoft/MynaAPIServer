@@ -12,7 +12,7 @@ The following games are provided:
 - Tetris
 
 Skat requires 3 or 4 players, Backgammon and Chess 2 players. Tetris is a single player game.
-Chess can be uses as a single player game if a chess engine is configured, e.g. Zappa or Stockfish.
+Chess can be used as a single player game if a chess engine is configured, e.g. Zappa or Stockfish.
 
 The following applications are provided:
 - Diary, a secure online diary
@@ -57,7 +57,8 @@ A JSON file is used to provide additional information, e.g. when the photo was t
 The pictures can be provived in two resolutions, one for the default view (usually 1920 width) and one for the
 mobile view (usually 4 to 3 aspect ratio).
 
-A few sample slideshow images are provided in the portal server.
+A few sample slideshow images are provided in the portal server. Sample slideshow conigurations are available for
+[public pictures](/APIServer/sampledata/public-pictures.json) and [family pictures](/APIServer/sampledata/family-pictures.json).
 
 ### Tetris
 
