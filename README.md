@@ -1,7 +1,5 @@
 # MynaAPIServer
 
-## Introduction
-
 Provides a portal server with games and applications that can be published using a web server. The portal server runs on Unix or Windows.
 Currently all provided services are only available in german.
 
