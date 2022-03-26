@@ -57,7 +57,7 @@ A JSON file is used to provide additional information, e.g. when the photo was t
 The pictures can be provived in two resolutions, one for the default view (usually 1920 width) and one for the
 mobile view (usually 4 to 3 aspect ratio).
 
-A few sample slideshow images are provided in the portal server. Sample slideshow conigurations are available for
+A few sample slideshow images are provided in the portal server. Sample slideshow configurations are available for
 [public pictures](/APIServer/sampledata/public-pictures.json) and [family pictures](/APIServer/sampledata/family-pictures.json).
 
 ### Tetris
