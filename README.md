@@ -42,8 +42,8 @@ everbody that has provided and will provide feedback in the future.
 ### Skat
 
 During the pandemic it was quite difficult to meet people in person.
-With friends I started to play the online card game Skat on a commercial website to keep in touch.
-This was the starting point for the my first JavaScript project, the online Skat game.
+With friends I started to play Skat on a commercial website to keep in touch.
+This was the starting point for my first JavaScript project, the online Skat game.
 We are playing it now for about 2 years with family and friends.
 
 ### Slideshow
