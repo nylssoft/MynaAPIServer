@@ -108,7 +108,6 @@ The following source code and icon libraries are used for the project:
 - [Entity Framework Core 5](https://docs.microsoft.com/de-de/ef/core/what-is-new/ef-core-5.0/whatsnew){target="_blank" .external}
 - [ImageSharp](https://github.com/SixLabors/ImageSharp){target="_blank" .external}
 - [Markdig](https://github.com/xoofx/markdig){target="_blank" .external}
-- [NGINX](https://www.nginx.com){target="_blank" .external}
 - [Open Icon Library](https://sourceforge.net/projects/openiconlibrary){target="_blank" .external}
 - [PostgreSQL](https://www.nuget.org/packages/Npgsql){target="_blank" .external}
 - [qrcode.js](https://github.com/davidshimjs/qrcodejs){target="_blank" .external}
