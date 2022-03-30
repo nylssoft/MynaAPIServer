@@ -11,13 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "1.1.24";
-
-    const roleMapping = {
-        "usermanager"   : "Administrator",
-        "skatadmin"     : "Skat",
-        "family"        : "Familie"
-    };
+    let version = "1.1.25";
 
     // helper
 
@@ -29,7 +23,17 @@ var usermgmt = (() => {
     };
 
     const getRoleDisplayName = (name) => {
-        return roleMapping[name];
+        switch (name) {
+            case "usermanager":
+                return _T("ROLE_ADMINISTRATOR");
+            case "skatadmin":
+                return _T("ROLE_SKAT");
+            case "family":
+                return _T("ROLE_FAMILY");
+            default:
+                break;
+        }
+        return "";
     };
 
     const clearErrors = () => {
@@ -51,13 +55,13 @@ var usermgmt = (() => {
             }
         }
         else {
-            controls.create(parent, "h1", "header", `${currentUser.name} - Profil`);
+            controls.create(parent, "h1", "header", `${currentUser.name} - ${_T("HEADER_PROFILE")}`);
         }
     };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Profil ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_PROFILE")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -69,22 +73,22 @@ var usermgmt = (() => {
         utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
         if (success) {
-            renderHeader(parent, "Ergebnisse:", "Registrierungen");
+            renderHeader(parent, _T("LABEL_RESULTS"), _T("HEADER_REGISTRATIONS"));
             results.reverse();
             results.forEach((r) => {
                 let div = controls.createDiv(parent);
                 if (r.errmsg) {
-                    div.textContent = `Fehler f\u00FCr E-Mail-Adresse ${r.email}: ${r.errmsg}`;
+                    div.textContent = _T("ERROR_CONFIRM_REG_1_2", r.email, r.errmsg);
                 }
                 else if (r.token) {
-                    div.textContent = `Die E-Mail-Adresse ${r.email} hat den Registrierungscode ${r.token}.`;
+                    div.textContent = _T("INFO_EMAIL_REG_CODE_1_2", r.email, r.token);
                 }
                 else {
-                    div.textContent = `Die Registrierung f\u00FCr die E-Mail-Adresse ${r.email} wurde abgelehnt.`;
+                    div.textContent = _T("INFO_EMAIL_REG_DENIED_1", r.email);
                 }
             });
             let p = controls.create(parent, "p");
-            controls.createButton(p, "OK", () => render()).focus();
+            controls.createButton(p, _T("BUTTON_OK"), () => render()).focus();
             renderCopyright(parent);
             return;
         }
@@ -93,28 +97,28 @@ var usermgmt = (() => {
             "api/pwdman/confirmation",
             { headers: { "token": token } },
             (confirmations) => {
-                renderHeader(parent, "Offene Registrierungsanfragen:", "Anfragen");
+                renderHeader(parent, _T("LABEL_OPEN_REQUESTS"), _T("HEADER_REQUESTS"));
                 let idx = 0;
                 confirmations.forEach((confirmation) => {
                     let div = controls.createDiv(parent);
-                    let dt = new Date(confirmation.requestedUtc).toLocaleString("de-DE");
+                    let dt = new Date(confirmation.requestedUtc).toLocaleString(_T("LOCALE"));
                     controls.createCheckbox(div, `confirm-registration-${idx}`, undefined, undefined, false, () => onUpdateRegisterActions());
-                    controls.create(div, "span", undefined, `E-Mail-Adresse ${confirmation.email} vom ${dt}.`);
+                    controls.create(div, "span", undefined, _T("INFO_EMAIL_OF_DATE_1_2", confirmation.email, dt));
                     idx++;
                 });
                 let divOptions = controls.createDiv(parent);
                 divOptions.id = "register-options-id";
-                controls.create(divOptions, "p", undefined, "Optionen:");
+                controls.create(divOptions, "p", undefined, _T("LABEL_OPTIONS"));
                 let sendEmailDiv = controls.createDiv(divOptions);
-                controls.createCheckbox(sendEmailDiv, "send-emailnotification-id", undefined, "Antwort-E-Mail verschicken");
+                controls.createCheckbox(sendEmailDiv, "send-emailnotification-id", undefined, _T("OPTION_SEND_REPLY_EMAIL"));
                 let errorDiv = controls.createDiv(parent, "error");
                 errorDiv.id = "error-id";
                 let p = controls.create(parent, "p");
-                let b = controls.createButton(p, "Best\u00E4tigen", () => onConfirmRegistration(confirmations));
+                let b = controls.createButton(p, _T("BUTTON_CONFIRM"), () => onConfirmRegistration(confirmations));
                 b.id = "confirm-register-button-id";
-                b = controls.createButton(p, "Ablehnen", () => onConfirmRegistration(confirmations, true));
+                b = controls.createButton(p, _T("BUTTON_REJECT"), () => onConfirmRegistration(confirmations, true));
                 b.id = "reject-register-button-id";
-                controls.createButton(p, "Zur\u00FCck", () => render());
+                controls.createButton(p, _T("BUTTON_BACK"), () => render());
                 renderCopyright(parent);
                 onUpdateRegisterActions();
             },
@@ -140,50 +144,48 @@ var usermgmt = (() => {
         utils.create_menu(parent);
         utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
-        controls.create(parent, "h1", undefined, "Benutzer");
-        let nameP = controls.create(parent, "p", undefined, `Name: ${user.name}`);
-        if (user.accountLocked) {
-            nameP.textContent += " (gesperrt)";
-        }
-        controls.create(parent, "p", undefined, `E-Mail-Adresse: ${user.email}`);
+        controls.create(parent, "h1", undefined, _T("HEADER_USER"));
+        const namePattern = user.accountLocked ? _T("LABEL_NAME_LOCKED_1", user.name) : _T("LABEL_NAME_1", user.name);
+        controls.create(parent, "p", undefined, namePattern);
+        controls.create(parent, "p", undefined, _T("LABEL_EMAIL_1", user.email));
         if (user.lastLoginUtc) {
-            controls.create(parent, "p", undefined, `Letzte Anmeldung am ${new Date(user.lastLoginUtc).toLocaleString("de-DE")}`);
+            controls.create(parent, "p", undefined, _T("INFO_LAST_LOGIN_1", new Date(user.lastLoginUtc).toLocaleString(_T("LOCALE"))));
         }
-        controls.create(parent, "p", undefined, `Registriert seit ${new Date(user.registeredUtc).toLocaleString("de-DE")}`);
-        const documentsP = controls.create(parent, "p", undefined, `Speicherplatz f\u00FCr Dokumente: ${utils.format_size(user.usedStorage)} von `);
+        controls.create(parent, "p", undefined, _T("INFO_REGISTERED_SINCE_1", new Date(user.registeredUtc).toLocaleString(_T("LOCALE"))));
+        const documentsP = controls.create(parent, "p", undefined, _T("LABEL_QUOTA_OCCUPIED_OF_1", utils.format_size(user.usedStorage)));
         const quotaInput = controls.createInputField(documentsP, "", undefined, undefined, 4, 4);
         quotaInput.id = "quota-input-id";
         quotaInput.value = `${Math.floor(user.storageQuota / (1024 * 1024))}`;
         quotaInput.addEventListener("change", () => onUpdateStorageQuota(parent, users, user));
-        controls.createSpan(documentsP, undefined, " MB belegt.");
+        controls.createSpan(documentsP, undefined, _T("INFO_MB_OCCUPIED"));
         const errorQuota = controls.createDiv(parent, "error");
         errorQuota.id = "error-quota-id";
-        const loginEnabledP = controls.create(parent, "p", undefined, "Optionen:");
+        const loginEnabledP = controls.create(parent, "p", undefined, _T("LABEL_OPTIONS"));
         const loginEnabledDiv = controls.createDiv(loginEnabledP, "checkbox-div");
-        controls.createCheckbox(loginEnabledDiv, "loginenabled-id", undefined, "Anmelden erlauben",
+        controls.createCheckbox(loginEnabledDiv, "loginenabled-id", undefined, _T("OPTION_ALLOW_LOGIN"),
             user.loginEnabled,
             () => onUpdateLoginEnabled(parent, users, user));
         const errorLoginEnabled = controls.createDiv(parent, "error");
         errorLoginEnabled.id = "error-loginenabled-id";
-        let rolesP = controls.create(parent, "p", undefined, "Rollen:");
+        let rolesP = controls.create(parent, "p", undefined, _T("LABEL_ROLES"));
         let checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "roles-usermanager-id", undefined, getRoleDisplayName("usermanager"),
+        controls.createCheckbox(checkboxDiv, "roles-usermanager-id", undefined, _T("ROLE_ADMINISTRATOR"),
             user.roles.includes("usermanager"),
             () => onUpdateRole(parent, users, user, "usermanager"));
         checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "roles-family-id", undefined, getRoleDisplayName("family"),
+        controls.createCheckbox(checkboxDiv, "roles-family-id", undefined, _T("ROLE_FAMILY"),
             user.roles.includes("family"),
             () => onUpdateRole(parent, users, user, "family"));
         checkboxDiv = controls.createDiv(rolesP, "checkbox-div");
-        controls.createCheckbox(checkboxDiv, "roles-skatadmin-id", undefined, getRoleDisplayName("skatadmin"),
+        controls.createCheckbox(checkboxDiv, "roles-skatadmin-id", undefined, _T("ROLE_SKAT"),
             user.roles.includes("skatadmin"),
             () => onUpdateRole(parent, users, user, "skatadmin"));
         controls.createDiv(parent, "error").id = "error-id";
         let actionsDiv = controls.createDiv(parent);
         if (user.accountLocked) {
-            controls.createButton(actionsDiv, "Konto entsperren", () => onUnlockUser(parent, users, user), undefined, "button");
+            controls.createButton(actionsDiv, _T("BUTTON_UNLOCK_ACCOUNT"), () => onUnlockUser(parent, users, user), undefined, "button");
         }
-        controls.createButton(actionsDiv, "Zur\u00FCck", () => {
+        controls.createButton(actionsDiv, _T("BUTTON_BACK"), () => {
             controls.removeAllChildren(parent);
             utils.create_menu(parent);
             utils.set_menu_items(currentUser);
@@ -195,18 +197,18 @@ var usermgmt = (() => {
     const renderUsersTable = (parent, users) => {
         const mobile = utils.is_mobile();
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Registrierte Benutzer:", "Benutzer");
+        renderHeader(parent, _T("LABEL_REG_USERS"), _T("HEADER_USER"));
         let table = controls.create(parent, "table");
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
         controls.create(tr, "th", undefined, " ");
-        controls.create(tr, "th", undefined, "Name");
+        controls.create(tr, "th", undefined, _T("COLUMN_NAME"));
         if (!mobile) {
             controls.create(tr, "th", undefined, " ");
         }
-        controls.create(tr, "th", undefined, "Rollen");
+        controls.create(tr, "th", undefined, _T("COLUMN_ROLES"));
         if (!mobile) {
-            controls.create(tr, "th", undefined, "Letzte Anmeldung");
+            controls.create(tr, "th", undefined, _T("COLUMN_LAST_LOGIN"));
         }
         let tbody = controls.create(table, "tbody");
         let idx = 0;
@@ -215,10 +217,8 @@ var usermgmt = (() => {
             let td = controls.create(tr, "td");
             controls.createCheckbox(td, `delete-user-${idx}`, undefined, undefined, false, () => onUpdateDeleteUsersActions());
             td = controls.create(tr, "td");
-            let a = controls.createA(td, undefined, "#open", user.name, () => renderUserDetails(document.body, users, user));
-            if (user.accountLocked) {
-                a.textContent += " (gesperrt)";
-            }
+            const atxt = user.accountLocked ? _T("INFO_LOCKED_1", user.name) : user.name;
+            controls.createA(td, undefined, "#open", atxt, () => renderUserDetails(document.body, users, user));
             if (!mobile) {
                 td = controls.create(tr, "td", undefined, " ");
                 if (user.photo) {
@@ -231,7 +231,7 @@ var usermgmt = (() => {
             });
             controls.create(tr, "td", undefined, roleNames.join(", "));
             if (!mobile) {
-                let dt = user.lastLoginUtc ? new Date(user.lastLoginUtc).toLocaleString("de-DE") : " ";
+                let dt = user.lastLoginUtc ? new Date(user.lastLoginUtc).toLocaleString(_T("LOCALE")) : " ";
                 controls.create(tr, "td", undefined, dt);
             }
             idx++;
@@ -250,22 +250,22 @@ var usermgmt = (() => {
         utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
         if (success) {
-            renderHeader(parent, "Ergebnisse:", "Benutzer");
+            renderHeader(parent, _T("LABEL_RESULTS"), _T("HEADER_USER"));
             results.reverse();
             results.forEach((r) => {
                 let div = controls.createDiv(parent);
                 if (r.errmsg) {
-                    div.textContent = `Fehler f\u00FCr ${r.name}: ${r.errmsg}`;
+                    div.textContent = _T("ERROR_1_2", r.name, r.errmsg);
                 }
                 else if (r.deleted) {
-                    div.textContent = `Der Benutzer ${r.name} wurde gel\u00F6scht.`;
+                    div.textContent = _T("INFO_USER_DELETED_1", r.name);
                 }
                 else {
-                    div.textContent = `Der Benutzer ${r.name} wurde nicht gefunden.`;
+                    div.textContent = _T("INFO_USER_NOT_FOUND_1", r.name);
                 }
             });
             let p = controls.create(parent, "p");
-            controls.createButton(p, "OK", () => render()).focus();
+            controls.createButton(p, _T("BUTTON_OK"), () => render()).focus();
             renderCopyright(parent);
             return;
         }
@@ -282,14 +282,14 @@ var usermgmt = (() => {
         controls.removeAllChildren(actionsDiv);
         if (confirm) {
             document.getElementById("error-id").textContent = "";
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du die Benutzer wirklich l\u00F6schen? ");
-            controls.createButton(actionsDiv, "Ja", () => onDeleteUsers(users));
-            controls.createButton(actionsDiv, "Nein", () => renderDeleteUsersActions(users));
+            controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_USERS"));
+            controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteUsers(users));
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteUsersActions(users));
         }
         else {
-            let b = controls.createButton(actionsDiv, "Konto l\u00F6schen", () => renderDeleteUsersActions(users, true));
+            let b = controls.createButton(actionsDiv, _T("BUTTON_DELETE_ACCOUNT"), () => renderDeleteUsersActions(users, true));
             b.id = "delete-account-button-id";
-            controls.createButton(actionsDiv, "Zur\u00FCck", () => render());
+            controls.createButton(actionsDiv, _T("BUTTON_BACK"), () => render());
             onUpdateDeleteUsersActions();
         }
     };
@@ -303,35 +303,35 @@ var usermgmt = (() => {
         renderHeader(parent);
         // username
         const usernameP = controls.create(parent, "p");
-        controls.createSpan(usernameP, undefined, "Name: ");
+        controls.createSpan(usernameP, undefined, _T("LABEL_NAME") + " ");
         controls.createSpan(usernameP, undefined, currentUser.name);
         // email address
         const emailP = controls.create(parent, "p");
-        controls.createSpan(emailP, undefined, "E-Mail-Adresse: ");
+        controls.createSpan(emailP, undefined, _T("LABEL_EMAIL_ADDRESS") + " ");
         controls.createSpan(emailP, undefined, currentUser.email);
         // profile photo
         if (currentUser.photo) {
             const photoImg = controls.create(parent, "img", "profile-photo");
             photoImg.width = 90;
             photoImg.height = 90;
-            photoImg.title = "Profilbild (90 x 90 Pixel)";
+            photoImg.title = _T("INFO_PROFILE_PHOTO");
             photoImg.src = currentUser.photo;
         }
         // last login
         const lastLoginP = controls.create(parent, "p");
-        const lastLoginDate = new Date(currentUser.lastLoginUtc).toLocaleString("de-DE");
-        controls.createSpan(lastLoginP, undefined, "Letzte Anmeldung: ");
+        const lastLoginDate = new Date(currentUser.lastLoginUtc).toLocaleString(_T("LOCALE"));
+        controls.createSpan(lastLoginP, undefined, _T("LABEL_LAST_LOGIN") + " ");
         controls.createSpan(lastLoginP, undefined, lastLoginDate);
         // register date
         const registeredP = controls.create(parent, "p");
-        const registerDate = new Date(currentUser.registeredUtc).toLocaleString("de-DE");
-        controls.createSpan(registeredP, undefined, "Registriert seit: ");
+        const registerDate = new Date(currentUser.registeredUtc).toLocaleString(_T("LOCALE"));
+        controls.createSpan(registeredP, undefined, _T("LABEL_REGISTERED_SINCE") + " ");
         controls.createSpan(registeredP, undefined, registerDate);
         // documents quota
         const documentsP = controls.create(parent, "p");
-        controls.createSpan(documentsP, undefined, `Speicherplatz f\u00FCr Dokumente: ${utils.format_size(currentUser.usedStorage)} von ${utils.format_size(currentUser.storageQuota)} belegt.`);
+        controls.createSpan(documentsP, undefined, _T("LABEL_QUOTA_OCCUPIED_1_2", utils.format_size(currentUser.usedStorage), utils.format_size(currentUser.storageQuota)));
         // skat results
-        controls.createA(parent, undefined, "/skat/results", "Skatergebnisse", () => window.open("/skat?results", "_blank"));
+        controls.createA(parent, undefined, "/skat/results", _T("INFO_SKAT_RESULTS"), () => window.open("/skat?results", "_blank"));
         // actions
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
@@ -345,27 +345,27 @@ var usermgmt = (() => {
         let actionsDiv = document.getElementById("account-actions-id");
         controls.removeAllChildren(actionsDiv);
         if (confirm == "deleteaccount") {
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du Dein Konto wirklich l\u00F6schen? ");
-            controls.createButton(actionsDiv, "Ja", () => onDeleteCurrentUser());
-            controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
+            controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_ACCOUNT"));
+            controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteCurrentUser());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderAccountActions());
         }
         else if (confirm == "deletepasswordfile") {
-            controls.create(actionsDiv, "span", "confirmation", "Willst Du Deine Passw\u00F6rter wirklich l\u00F6schen? ");
-            controls.createButton(actionsDiv, "Ja", () => onDeletePasswordFile());
-            controls.createButton(actionsDiv, "Nein", () => renderAccountActions());
+            controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_PASSWORDS"));
+            controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeletePasswordFile());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderAccountActions());
         }
         else {
             let div = controls.createDiv(actionsDiv);
-            controls.createButton(div, "Kennwort \u00E4ndern", () => onChangePassword());
-            controls.createButton(div, "Konto bearbeiten", () => renderEditAccount());
-            controls.createButton(div, "Konto l\u00F6schen", () => renderAccountActions("deleteaccount"));
+            controls.createButton(div, _T("BUTTON_CHANGE_PWD"), () => onChangePassword());
+            controls.createButton(div, _T("BUTTON_EDIT_ACCOUNT"), () => renderEditAccount());
+            controls.createButton(div, _T("BUTTON_DELETE_ACCOUNT"), () => renderAccountActions("deleteaccount"));
             if (currentUser.hasPasswordManagerFile) {
-                controls.createButton(div, "Passw\u00F6rter l\u00F6schen", () => renderAccountActions("deletepasswordfile"));
+                controls.createButton(div, _T("BUTTON_DELETE_PASSWORDS"), () => renderAccountActions("deletepasswordfile"));
             }
             if (currentUser.roles.includes("usermanager")) {
                 let adminDiv = controls.createDiv(actionsDiv);
-                controls.createButton(adminDiv, "Anfragen bearbeiten", () => renderConfirmRegistrations());
-                controls.createButton(adminDiv, "Benutzer bearbeiten", () => renderEditUsers());
+                controls.createButton(adminDiv, _T("BUTTON_EDIT_REQUESTS"), () => renderConfirmRegistrations());
+                controls.createButton(adminDiv, _T("BUTTON_EDIT_USERS"), () => renderEditUsers());
             }
         }
     };
@@ -390,9 +390,9 @@ var usermgmt = (() => {
         utils.create_menu(parent);
         utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Du bist jetzt nicht mehr angemeldet.", "Abmelden");
+        renderHeader(parent, _T("INFO_LOGGED_OUT"), _T("HEADER_LOGOUT"));
         let p = controls.create(parent, "p");
-        controls.createButton(p, "OK", () => onOK()).focus();
+        controls.createButton(p, _T("BUTTON_OK"), () => onOK()).focus();
         renderCopyright(parent);
     }
 
@@ -403,9 +403,9 @@ var usermgmt = (() => {
         utils.create_menu(parent);
         utils.set_menu_items(currentUser);
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Dein Konto wurde gel\u00F6scht. Du bist jetzt nicht mehr angemeldet.", "Abmelden");
+        renderHeader(parent, _T("INFO_ACCOUNT_DELETED"), _T("HEADER_LOGOUT"));
         let p = controls.create(parent, "p");
-        controls.createButton(p, "OK", () => onOK()).focus();
+        controls.createButton(p, _T("BUTTON_OK"), () => onOK()).focus();
         renderCopyright(parent);
     };
 
@@ -414,11 +414,11 @@ var usermgmt = (() => {
         controls.removeAllChildren(parent);
         utils.create_menu(parent);
         utils.set_menu_items(currentUser);
-        renderHeader(parent, "Es ist ein Fehler aufgetreten.", "Fehler");
+        renderHeader(parent, _T("INFO_ERROR_OCCURED"), _T("HEADER_ERROR"));
         let errorDiv = controls.createDiv(parent, "error");
-        errorDiv.textContent = errorMessage;
+        errorDiv.textContent = _T(errorMessage);
         let p = controls.create(parent, "p");
-        controls.createButton(p, "OK", () => renderCurrentUser()).focus();
+        controls.createButton(p, _T("BUTTON_OK"), () => renderCurrentUser()).focus();
         renderCopyright(parent);
     };
 
@@ -434,9 +434,9 @@ var usermgmt = (() => {
         renderHeader(parent);
         // edit user name
         const usernameP = controls.create(parent, "p");
-        const usernameLabel = controls.createLabel(usernameP, undefined, "Name:");
+        const usernameLabel = controls.createLabel(usernameP, undefined, _T("LABEL_NAME"));
         usernameLabel.htmlFor = "username-id";
-        const usernameInput = controls.createInputField(usernameP, "Name", undefined, undefined, 16, 32);
+        const usernameInput = controls.createInputField(usernameP, _T("TEXT_NAME"), undefined, undefined, 16, 32);
         usernameInput.id = "username-id";
         usernameInput.value = currentUser.name;
         usernameInput.addEventListener("change", () => {
@@ -445,10 +445,10 @@ var usermgmt = (() => {
                 controls.removeAllChildren(document.getElementById("section-id"));
                 const usernameConfirmDiv = document.getElementById("username-confirm-id");
                 controls.removeAllChildren(usernameConfirmDiv);
-                controls.create(usernameConfirmDiv, "p", undefined, "Du wird abgemeldet, wenn Du Deinen Namen \u00E4nderst.");
-                controls.create(usernameConfirmDiv, "span", "confirmation", "Willst Du Deinen Namen wirklich \u00E4ndern? ");
-                controls.createButton(usernameConfirmDiv, "Ja", () => onUpdateUsername());
-                controls.createButton(usernameConfirmDiv, "Nein", () => renderEditAccount());
+                controls.create(usernameConfirmDiv, "p", undefined, _T("INFO_LOGOUT_IF_NAME_CHANGED"));
+                controls.create(usernameConfirmDiv, "span", "confirmation", _T("INFO_REALLY_NAME_CHANGE"));
+                controls.createButton(usernameConfirmDiv, _T("BUTTON_YES"), () => onUpdateUsername());
+                controls.createButton(usernameConfirmDiv, _T("BUTTON_NO"), () => renderEditAccount());
             }
         });
         controls.createDiv(usernameP).id = "username-confirm-id";
@@ -459,27 +459,27 @@ var usermgmt = (() => {
         section.id = "section-id";
         // edit email address
         const emailAddressDiv = controls.createDiv(section);
-        const emailAddressLabel = controls.createLabel(emailAddressDiv, undefined, "E-Mail-Adresse:");
+        const emailAddressLabel = controls.createLabel(emailAddressDiv, undefined, _T("LABEL_EMAIL_ADDRESS"));
         emailAddressLabel.htmlFor = "emailaddress-id";
-        const emailAddressInput = controls.createInputField(emailAddressDiv, "E-Mail-Adresse", undefined, undefined, 30, 80);
+        const emailAddressInput = controls.createInputField(emailAddressDiv, _T("TEXT_EMAIL_ADDRESS"), undefined, undefined, 30, 80);
         emailAddressInput.id = "emailaddress-id";
         emailAddressInput.value = currentUser.email;
         emailAddressInput.addEventListener("change", onUpdateEmailAddress);
         const errorEmailDiv = controls.createDiv(section, "error");
         errorEmailDiv.id = "error-emailaddress-id";
         // edit photo
-        controls.create(section, "p", undefined, "Profilbild:");
+        controls.create(section, "p", undefined, _T("LABEL_PROFILE_PHOTO"));
         const photoImg = controls.create(section, "img", "profile-photo");
         photoImg.id = "profile-photo-id";
         photoImg.width = 90;
         photoImg.height = 90;
-        photoImg.title = "Profilbild (90 x 90 Pixel)";
+        photoImg.title = _T("INFO_PROFILE_PHOTO");
         photoImg.addEventListener("click", onSelectPhoto);
-        const addImg = controls.createImg(section, "profile-photo-add", 32, 32, "/images/buttons/list-add-4.png", "Profilbild hinzuf\u00FCgen");
+        const addImg = controls.createImg(section, "profile-photo-add", 32, 32, "/images/buttons/list-add-4.png", _T("BUTTON_ADD_PROFILE_PHOTO"));
         addImg.addEventListener("click", onSelectPhoto);
         if (currentUser.photo) {
             photoImg.src = currentUser.photo;
-            const removeImg = controls.createImg(section, "profile-photo-remove", 32, 32, "/images/buttons/list-remove-4.png", "Profilbild entfernen");
+            const removeImg = controls.createImg(section, "profile-photo-remove", 32, 32, "/images/buttons/list-remove-4.png", _T("BUTTON_REMOVE_PROFILE_PHOTO"));
             removeImg.addEventListener("click", onDeletePhoto);
         }
         else {
@@ -488,10 +488,10 @@ var usermgmt = (() => {
         const errorPhotoDiv = controls.createDiv(section, "error");
         errorPhotoDiv.id = "error-photo-id";
         // edit options
-        const optionsP = controls.create(section, "p", undefined, "Optionen:");
+        const optionsP = controls.create(section, "p", undefined, _T("LABEL_OPTIONS"));
         // option two factor
         const facDiv = controls.createDiv(optionsP, "checkbox-div");
-        controls.createCheckbox(facDiv, "account-2fa-id", undefined, "Zwei-Schritt-Verifizierung",
+        controls.createCheckbox(facDiv, "account-2fa-id", undefined, _T("OPTION_TWO_FACTOR"),
             currentUser.requires2FA,
             () => onUpdate2FA());
         controls.createDiv(facDiv).id = "account-2fa-div-id";
@@ -499,21 +499,21 @@ var usermgmt = (() => {
         errorFacDiv.id = "error-2fa-id";
         // option keep login
         const keepLoginDiv = controls.createDiv(optionsP, "checkbox-div");
-        controls.createCheckbox(keepLoginDiv, "account-keeplogin-id", undefined, "Angemeldet bleiben",
+        controls.createCheckbox(keepLoginDiv, "account-keeplogin-id", undefined, _T("OPTION_KEEP_LOGIN"),
             currentUser.useLongLivedToken,
             () => onUpdateKeepLogin());
         const errorKeepLoginDiv = controls.createDiv(section, "error");
         errorKeepLoginDiv.id = "error-keeplogin-id";
         // option allow reset password
         const allowResetPwdDiv = controls.createDiv(optionsP, "checkbox-div");
-        controls.createCheckbox(allowResetPwdDiv, "account-allowresetpwd-id", undefined, "Kennwort kann zur\u00FCckgesetzt werden",
+        controls.createCheckbox(allowResetPwdDiv, "account-allowresetpwd-id", undefined, _T("OPTION_ALLOW_RESET_PWD"),
             currentUser.allowResetPassword,
             () => onUpdateAllowResetPwd());
         const errorAllowResetDiv = controls.createDiv(section, "error");
         errorAllowResetDiv.id = "error-allowresetpwd-id";
         // back button
         const backP = controls.create(section, "p", undefined);
-        controls.createButton(backP, "Zur\u00FCck", () => renderCurrentUser(), undefined, "button");
+        controls.createButton(backP, _T("BUTTON_BACK"), () => renderCurrentUser(), undefined, "button");
         // hidden photo upload controls
         renderUploadPhoto(section);
         // copyright
@@ -542,7 +542,7 @@ var usermgmt = (() => {
                 currentUser.photo = undefined;
                 renderEditAccount();
             },
-            (errMsg) => document.getElementById("error-photo-id").textContent = errMsg,
+            (errMsg) => document.getElementById("error-photo-id").textContent = _T(errMsg),
             setWaitCursor
         );
     };
@@ -566,12 +566,12 @@ var usermgmt = (() => {
                         currentUser.photo = photo;
                         renderEditAccount();
                     },
-                    (errMsg) => document.getElementById("error-photo-id").textContent = errMsg,
+                    (errMsg) => document.getElementById("error-photo-id").textContent = _T(errMsg),
                     setWaitCursor
                 );
             }
             else {
-                document.getElementById("error-photo-id").textContent = "Ung\u00FCltige Datei. Erlaubt sind JPG und PNG bis 10 MB.";
+                document.getElementById("error-photo-id").textContent = _T("ERROR_INVALID_PROFILE_PHOTO");
             }
         }
     };
@@ -591,7 +591,7 @@ var usermgmt = (() => {
                     onDoConfirm(list, results, notification, reject);
                 },
                 (errmsg) => {
-                    results.push({ "email": email, "errmsg": errmsg });
+                    results.push({ "email": email, "errmsg": _T(errmsg) });
                     onDoConfirm(list, results, notification, reject);
                 },
                 setWaitCursor
@@ -619,7 +619,7 @@ var usermgmt = (() => {
             onDoConfirm(toBeConfirmed, results, notification, reject);
         }
         else {
-            document.getElementById("error-id").textContent = "Es wurden keine Best\u00E4tigungen ausgew\u00E4hlt.";
+            document.getElementById("error-id").textContent = _T("ERROR_NO_CONFIRMATIONS_SELECTED");
         }
     };
 
@@ -638,7 +638,7 @@ var usermgmt = (() => {
                     onDoDeleteUsers(list, results);
                 },
                 (errmsg) => {
-                    results.push({ "name": name, "errmsg": errmsg });
+                    results.push({ "name": name, "errmsg": _T(errmsg) });
                     onDoDeleteUsers(list, results);
                 },
                 setWaitCursor
@@ -662,7 +662,7 @@ var usermgmt = (() => {
             onDoDeleteUsers(toBeDeleted, results);
         }
         else {
-            document.getElementById("error-id").textContent = "Es wurden keine Benutzer ausgew\u00E4hlt.";
+            document.getElementById("error-id").textContent = _T("ERROR_NO_USERS_SELECTED");
             renderDeleteUsersActions(users);
         }
     };
@@ -795,7 +795,7 @@ var usermgmt = (() => {
                 (m) => {
                     const secret = m.secretKey;
                     const issuer = m.issuer;
-                    controls.create(div, "div", "text-2fa", `Sicherheitsschl\u00FCssel: ${secret}`);
+                    controls.create(div, "div", "text-2fa", _T("INFO_SEC_KEY_1", secret));
                     const qrDiv = controls.createDiv(div, "text-2fa");
                     const url = `otpauth://totp/${issuer}:${currentUser.email}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
                     new QRCode(qrDiv, {
@@ -806,28 +806,26 @@ var usermgmt = (() => {
                         colorLight: "#000000",
                         correctLevel: QRCode.CorrectLevel.H
                     });
-                    controls.create(div, "div", "text-2fa",
-                        "Installiere die App Google Authenticator auf Deinem Smartphone " +
-                        "und scanne den QR-Code oder gibt den Sicherheitsschl\u00FCssel ein.");
-                    const info = controls.create(div, "div", "text-2fa", "Aktiviere die Zweit-Schritt-Verifizierung, indem Du den Sicherheitscode aus der App eingibst.");
-                    const input = controls.createInputField(info, "Sicherheitscode", () => onEnable2FA(), "input-2fa", 10, 10);
+                    controls.create(div, "div", "text-2fa", _T("INFO_INSTALL_GOOGLE_AUTH"));
+                    const info = controls.create(div, "div", "text-2fa", _T("INFO_ACTIVATE_TWO_FACTOR"));
+                    const input = controls.createInputField(info, _T("TEXT_SEC_KEY"), () => onEnable2FA(), "input-2fa", 10, 10);
                     input.id = "input-2fa-id";
-                    controls.createButton(info, "Jetzt aktivieren!", () => onEnable2FA());
-                    controls.createButton(info, "Neuer Schl\u00FCssel", () => onUpdate2FA(true));
+                    controls.createButton(info, _T("BUTTON_ACTIVATE_TWO_FACTOR"), () => onEnable2FA());
+                    controls.createButton(info, _T("BUTTON_NEW_SEC_KEY"), () => onUpdate2FA(true));
                     const msg = controls.createDiv(info, "error");
                     msg.id = "msg-2fa-id";
                 },
                 (errMsg) => {
-                    document.getElementById("error-2fa-id").textContent = errMsg;
+                    document.getElementById("error-2fa-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
                 },
                 setWaitCursor
             );
         }
         else if (!checkbox.checked && currentUser.requires2FA) {
-            controls.create(div, "span", "confirmation", "Willst Du die Zwei-Schritt-Verifizierung wirklich deaktivieren? ");
-            controls.createButton(div, "Ja", () => onDisable2FA());
-            controls.createButton(div, "Nein", () => renderEditAccount());
+            controls.create(div, "span", "confirmation", _T("INFO_REALLY_DEACTIVATE_TWO_FACTOR"));
+            controls.createButton(div, _T("BUTTON_YES"), () => onDisable2FA());
+            controls.createButton(div, _T("BUTTON_NO"), () => renderEditAccount());
         }
         else {
             renderEditAccount();
@@ -854,11 +852,11 @@ var usermgmt = (() => {
                         renderEditAccount();
                     }
                     else {
-                        msg.textContent = "Der Code ist ung\u00FCltig.";
+                        msg.textContent = _T("INFO_SEC_KEY_INVALID");
                     }
                 },
                 (errMsg) => {
-                    document.getElementById("error-2fa-id").textContent = errMsg;
+                    document.getElementById("error-2fa-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
                 },
                 setWaitCursor
@@ -881,7 +879,7 @@ var usermgmt = (() => {
                 renderEditAccount();
             },
             (errMsg) => {
-                document.getElementById("error-2fa-id").textContent = errMsg;
+                document.getElementById("error-2fa-id").textContent = _T(errMsg);
                 checkbox.checked = !checkbox.checked;
             },
             setWaitCursor
@@ -906,7 +904,7 @@ var usermgmt = (() => {
                     renderEditAccount();
                 },
                 (errMsg) => {
-                    document.getElementById("error-keeplogin-id").textContent = errMsg;
+                    document.getElementById("error-keeplogin-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
                 },
                 setWaitCursor
@@ -932,7 +930,7 @@ var usermgmt = (() => {
                     renderEditAccount();
                 },
                 (errMsg) => {
-                    document.getElementById("error-allowresetpwd-id").textContent = errMsg;
+                    document.getElementById("error-allowresetpwd-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
                 },
                 setWaitCursor
@@ -961,7 +959,7 @@ var usermgmt = (() => {
                     }
                 },
                 (errMsg) => {
-                    document.getElementById("error-username-id").textContent = errMsg;
+                    document.getElementById("error-username-id").textContent = _T(errMsg);
                 },
                 setWaitCursor
             );
@@ -986,7 +984,7 @@ var usermgmt = (() => {
                     renderEditAccount();
                 },
                 (errMsg) => {
-                    document.getElementById("error-emailaddress-id").textContent = errMsg;
+                    document.getElementById("error-emailaddress-id").textContent = _T(errMsg);
                 },
                 setWaitCursor
             );
@@ -1017,7 +1015,7 @@ var usermgmt = (() => {
                     renderUserDetails(parent, users, user);
                 },
                 (errMsg) => {
-                    document.getElementById("error-id").textContent = errMsg;
+                    document.getElementById("error-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
                 },
                 setWaitCursor
@@ -1049,12 +1047,12 @@ var usermgmt = (() => {
                             renderUserDetails(parent, users, user);
                         }
                     },
-                    (errMsg) => error.textContent = errMsg,
+                    (errMsg) => error.textContent = _T(errMsg),
                     setWaitCursor
                 );
             }
             else {
-                error.textContent = `Die Quota muss zwischen ${Math.max(u + 1, 2)} MB und 1000 MB liegen.`;
+                error.textContent = _T("ERROR_QUOTA_RANGE_MB_1_2", Math.max(u + 1, 2), 1000);
             }
         }
     };
@@ -1077,7 +1075,7 @@ var usermgmt = (() => {
                     }
                 },
                 (errMsg) => {
-                    document.getElementById("error-loginenabled-id").textContent = errMsg;
+                    document.getElementById("error-loginenabled-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
                 },
                 setWaitCursor
@@ -1125,6 +1123,6 @@ var usermgmt = (() => {
     };
 })();
 
-window.onload = () => utils.auth_lltoken(usermgmt.render);
+window.onload = () => utils.auth_lltoken(() => utils.set_locale(usermgmt.render));
 
 window.onclick = (event) => utils.hide_menu(event);
