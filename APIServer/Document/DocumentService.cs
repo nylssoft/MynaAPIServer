@@ -104,7 +104,7 @@ namespace APIServer.Document
                 var size = ms.Length;
                 if (sum + size > user.StorageQuota)
                 {
-                    throw new PwdManInvalidArgumentException("Es ist nicht genügend Speicherplatz mehr verfügbar.");
+                    throw new StorageQuotaExceededException();
                 }
                 if (docItem != null)
                 {
@@ -262,7 +262,7 @@ namespace APIServer.Document
                 SingleOrDefault(item => item.OwnerId == user.Id && item.Id == id);
             if (docItem == null || docItem.Type != DbDocItemType.Item || !docItem.Name.EndsWith(".md"))
             {
-                throw new ArgumentException("Kein gültiges Markdown Dokument.");
+                throw new InvalidParameterException();
             }
             var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
             sum -= docItem.Size;
@@ -270,7 +270,7 @@ namespace APIServer.Document
             var size = bytes.Length;
             if (sum + size > user.StorageQuota)
             {
-                throw new PwdManInvalidArgumentException("Es ist nicht genügend Speicherplatz mehr verfügbar.");
+                throw new StorageQuotaExceededException();
             }
             docItem.Size = size;
             docItem.Content.Data = bytes;

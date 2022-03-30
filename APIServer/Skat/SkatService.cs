@@ -119,7 +119,7 @@ namespace APIServer.Skat
         {
             if (!VerifyReservation(pwdManService, new [] { username }))
             {
-                throw new PwdManInvalidArgumentException("Der Tisch ist bereits reserviert.");
+                throw new TableAlreadyReservedException();
             }
             var ret = new LoginModel();
             lock (mutex)
@@ -836,15 +836,15 @@ namespace APIServer.Skat
             var highest = nowUtc.AddMonths(2);
             if (reservationModel.ReservedUtc < lowest || reservationModel.ReservedUtc > highest)
             {
-                throw new PwdManInvalidArgumentException("Ungültiges Reservierungsdatum.");
+                throw new InvalidReservationDateException();
             }
             if (reservationModel.Duration < 60 || reservationModel.Duration > 240)
             {
-                throw new PwdManInvalidArgumentException("Ungültige Reservierungsdauer.");
+                throw new InvalidReservationDurationException();
             }
             if (reservationModel.Players == null)
             {
-                throw new PwdManInvalidArgumentException("Spielernamen sind ungültig.");
+                throw new InvalidPlayerNamesException();
             }
             var playerNames = new List<string>();
             foreach (var p in reservationModel.Players)
@@ -852,13 +852,13 @@ namespace APIServer.Skat
                 var name = p.Trim();
                 if (string.IsNullOrEmpty(name) || name.Length > Limits.MAX_USERNAME || ContainsCaseInsensitive(playerNames, name))
                 {
-                    throw new PwdManInvalidArgumentException("Ungültiger Spielername.");
+                    throw new InvalidPlayerNameException();
                 }
                 playerNames.Add(name);
             }
             if (playerNames.Count < 3 || playerNames.Count > 4)
             {
-                throw new PwdManInvalidArgumentException("Es sind mindestens 3 Spieler erforderlich für eine Reservierung.");
+                throw new ReservationRequirementException();
             }
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
@@ -870,7 +870,7 @@ namespace APIServer.Skat
             );
             if (overlapping.Any())
             {
-                throw new PwdManInvalidArgumentException("Es gibt schon Reservierungen für diesen Zeitraum.");
+                throw new ReservationAlreadyExistsException();
             }
             var dbSkatReservation = new DbSkatReservation
             {

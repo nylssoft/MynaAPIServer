@@ -4,6 +4,8 @@ var utils = (() => {
 
     let debug_mode = false;
 
+    let translationMap;
+
     const is_debug = () => {
         return debug_mode === true;
     };
@@ -471,6 +473,52 @@ var utils = (() => {
         }
     };
 
+    // --- locale
+
+    const set_locale = (resolve, locale) => {
+        translationMap = new Map();
+        if (!locale) {
+            locale = navigator.language.split("-")[0];
+        }
+        locale = locale.toLowerCase();
+        fetch(`/locale/${locale}.json`)
+            .then(resp => {
+                resp.json()
+                    .then(json => {
+                        Object.entries(json).forEach(([key, value]) => translationMap.set(key, value));
+                        resolve();
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        if (locale != "de") {
+                            set_locale(resolve, "de");
+                        }
+                        else {
+                            resolve();
+                        }
+                    });
+            })
+            .catch(err => {
+                console.log(err);
+                resolve();
+            });
+    };
+
+    const translate = (id) => {
+        if (translationMap && translationMap.has(id)) {
+            return translationMap.get(id);
+        }
+        return id;
+    };
+
+    const format = (s, ...restArgs) => {
+        for (let i = 0; i < restArgs.length; i++) {
+            const reg = new RegExp("\\{" + i + "\\}", "gm");
+            s = s.replace(reg, restArgs[i]);
+        }
+        return s;
+    };
+
     // --- public API
 
     return {
@@ -506,6 +554,17 @@ var utils = (() => {
         create_cookies_banner: create_cookies_banner,
         is_debug: is_debug,
         enable_debug: enable_debug,
-        debug: debug
+        debug: debug,
+        set_locale: set_locale,
+        translate: translate,
+        format: format
     };
 })();
+
+function _T(id, ...restArgs) {
+    const arr = id.split(":");
+    if (arr.length > 0) {
+        return utils.format(utils.translate(arr[0]), arr.slice(1));
+    }
+    return utils.format(utils.translate(id), restArgs);
+};

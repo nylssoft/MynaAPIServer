@@ -44,8 +44,8 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/photo")]
         public IActionResult UploadPhoto([FromForm(Name ="photo-file")] IFormFile formFile)
         {
-            if (formFile == null) throw new PwdManInvalidArgumentException("Datei fehlt.");
-            if (formFile.Length > 10 * 1024 * 1024) throw new PwdManInvalidArgumentException("Datei grösser als 10 MB.");
+            if (formFile == null) throw new MissingParameterException();
+            if (formFile.Length > 10 * 1024 * 1024) throw new FileTooLargeException();
             using var stream = formFile.OpenReadStream();
             return new JsonResult(PwdManService.UploadPhoto(GetToken(), formFile.ContentType, stream));
         }

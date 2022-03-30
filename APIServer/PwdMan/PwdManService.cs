@@ -831,7 +831,7 @@ namespace APIServer.PwdMan
             logger.LogDebug("Update storage quota for user ID {userId} to {quota}...", userId, quota);
             if (quota < 2 * 1024 * 1024 || quota > 1000 * 1024 * 1024)
             {
-                throw new InvalidStorageQuoataException();
+                throw new InvalidStorageQuotaException();
             }
             var adminuser = GetUserFromToken(authenticationToken);
             if (!HasRole(adminuser, "usermanager"))

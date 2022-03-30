@@ -34,7 +34,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "1.1.26";
+    let version = "1.1.27";
 
     // helper
 
@@ -99,7 +99,7 @@ var pwdman = (() => {
                 setState({ "token": authToken, "userName": userName, "requiresPass2": requiresPass2 });
                 renderPage();
             },
-            (errMsg) => errorDiv.textContent = errMsg,
+            (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
         );
     };
@@ -125,7 +125,7 @@ var pwdman = (() => {
                 renderPage();
             },
             (errMsg) => {
-                lastErrorMessage = errMsg;
+                lastErrorMessage = _T(errMsg);
                 renderPage();
             },
             setWaitCursor
@@ -134,11 +134,11 @@ var pwdman = (() => {
 
     const changePassword = () => {
         if (oldPasswordPwd.value.length == 0 || newPasswordPwd.value.length == 0) {
-            errorDiv.textContent = "Es fehlen Eingabewerte.";
+            errorDiv.textContent = _T("ERROR_MISSING_INPUT");
             return;
         }
         if (newPasswordPwd.value != confirmPasswordPwd.value) {
-            errorDiv.textContent = "Das best\u00E4tigte Kennwort passt nicht mit dem neuen Kennwort \u00FCberein.";
+            errorDiv.textContent = _T("ERROR_MISMATCH_CONFIRM_PWD");
             return;
         }
         lastErrorMessage = "";
@@ -150,7 +150,7 @@ var pwdman = (() => {
                 body: JSON.stringify({ "oldpassword": oldPasswordPwd.value, "newpassword": newPasswordPwd.value })
             },
             () => window.location.replace(window.location.href + "&ok"),
-            (errMsg) => errorDiv.textContent = errMsg,
+            (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
         )
     };
@@ -159,7 +159,7 @@ var pwdman = (() => {
         lastErrorMessage = "";
         let email = emailInput.value.trim();
         if (email.length == 0 || email.indexOf("@") <= 0 ) {
-            errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse.";
+            errorDiv.textContent = _T("ERROR_INVALID_EMAIL");
             return;
         }
         utils.fetch_api_call("api/pwdman/register",
@@ -175,12 +175,11 @@ var pwdman = (() => {
                     userEmail = email;
                 }
                 else {
-                    lastErrorMessage = `Die E-Mail-Adresse ${email} ist noch nicht freigeschaltet.` +
-                        " Du bekommst eine Antwort, sobald Deine Identit\u00E4t best\u00E4tigt wurde.";
+                    lastErrorMessage = _T("ERROR_EMAIL_NOT_VALIDATED_1", email);
                 }
                 renderPage();
             },
-            (errMsg) => errorDiv.textContent = errMsg,
+            (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
         );
     };
@@ -188,19 +187,19 @@ var pwdman = (() => {
     const register = () => {
         lastErrorMessage = "";
         if (userNameInput.value.trim().length == 0) {
-            errorDiv.textContent = "Der Name fehlt.";
+            errorDiv.textContent = _T("ERROR_MISSING_NAME");
             return;
         }
         if (codeInput.value.trim().length == 0) {
-            errorDiv.textContent = "Der Registrierungscode fehlt.";
+            errorDiv.textContent = _T("ERROR_MISSING_REG_CODE");
             return;
         }
         if (newPasswordPwd.value.length == 0) {
-            errorDiv.textContent = "Das Kennwort fehlt.";
+            errorDiv.textContent = _T("ERROR_MISSING_PWD");
             return;
         }
         if (newPasswordPwd.value != confirmPasswordPwd.value) {
-            errorDiv.textContent = "Die Best\u00E4tigung passt nicht mit dem Kennwort \u00FCberein.";
+            errorDiv.textContent = _T("ERROR_MISMATCH_CONFIRM_PWD");
             return;
         }
         utils.fetch_api_call("api/pwdman/profile",
@@ -220,7 +219,7 @@ var pwdman = (() => {
                 userName = userNameInput.value.trim();
                 renderPage();
             },
-            (errMsg) => errorDiv.textContent = errMsg,
+            (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
         );
     };
@@ -249,7 +248,7 @@ var pwdman = (() => {
     const requestResetPassword = () => {
         let email = emailInput.value.trim();
         if (email.length == 0 || email.indexOf("@") <= 0) {
-            errorDiv.textContent = "Ung\u00FCltige E-Mail-Adresse";
+            errorDiv.textContent = _T("ERROR_INVALID_EMAIL");
             return;
         }
         utils.fetch_api_call("/api/pwdman/resetpwd",
@@ -265,7 +264,7 @@ var pwdman = (() => {
                 }
                 window.location.href = url;
             },
-            (errMsg) => errorDiv.textContent = errMsg,
+            (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
         );
     };
@@ -274,11 +273,11 @@ var pwdman = (() => {
         let email = userEmail.trim();
         let token = codeInput.value.trim();
         if (token.length == 0 || newPasswordPwd.value.length == 0 || email.length == 0) {
-            errorDiv.textContent = "Es fehlen Eingabewerte.";
+            errorDiv.textContent = _T("ERROR_MISSING_INPUT");
             return;
         }
         if (newPasswordPwd.value != confirmPasswordPwd.value) {
-            errorDiv.textContent = "Das best\u00E4tigte Kennwort passt nicht mit dem neuen Kennwort \u00FCberein.";
+            errorDiv.textContent = _T("ERROR_MISMATCH_NEW_PWD");
             return;
         }
         utils.fetch_api_call("/api/pwdman/resetpwd2",
@@ -297,7 +296,7 @@ var pwdman = (() => {
                 utils.set_menu_items(currentUser);
                 renderResetPwd2(parent, true);
             },
-            (errMsg) => errorDiv.textContent = errMsg,
+            (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
         );
     };
@@ -317,20 +316,20 @@ var pwdman = (() => {
                 let ok = utils.verify_password_strength(pwd.value);
                 if (ok) {
                     pwdimg.src = "/images/buttons/dialog-clean.png";
-                    pwdimg.title = "Kennwort ist stark genug";
+                    pwdimg.title = _T("INFO_PWD_STRONG_ENOUGH");
                 }
                 else {
                     pwdimg.src = "/images/buttons/dialog-error.png";
-                    pwdimg.title = "Kennwort ist nicht stark genug";
+                    pwdimg.title = _T("INFO_PWD_NOT_STRONG_ENOUGH");
                 }
                 ok = pwd.value == confirmpwd.value;
                 if (ok) {
                     confirmpwdimg.src = "/images/buttons/dialog-clean.png";
-                    confirmpwdimg.title = "Kennwort stimmt \u00FCberein";
+                    confirmpwdimg.title = _T("INFO_PWD_MATCH");
                 }
                 else {
                     confirmpwdimg.src = "/images/buttons/dialog-error.png";
-                    confirmpwdimg.title = "Kennwort stimmt nicht \u00FCberein";
+                    confirmpwdimg.title = _T("INFO_PWD_NOT_MATCH");
                 }
                 pwdimg.style.visibility = "visible";
                 confirmpwdimg.style.visibility = "visible";
@@ -357,7 +356,7 @@ var pwdman = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Anmelden ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_LOGIN")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -377,21 +376,21 @@ var pwdman = (() => {
 
     const renderAuthentication = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Anmelden");
-        controls.create(parent, "p", undefined, "Melde Dich mit Namen und Kennwort an.");
+        renderHeader(parent, _T("HEADER_LOGIN"));
+        controls.create(parent, "p", undefined, _T("INFO_LOGIN"));
         let loginDiv = controls.createDiv(parent);
-        let userNameLabel = controls.createLabel(loginDiv, undefined, "Name:");
+        let userNameLabel = controls.createLabel(loginDiv, undefined, _T("LABEL_NAME"));
         userNameLabel.htmlFor = "username-id";
-        userNameInput = controls.createInputField(loginDiv, "Name", () => userPasswordPwd.focus(), undefined, 16, 32);
+        userNameInput = controls.createInputField(loginDiv, _T("TEXT_NAME"), () => userPasswordPwd.focus(), undefined, 16, 32);
         userNameInput.id = "username-id";
         if (userName) {
             userNameInput.value = userName;
         }
         userNameInput.addEventListener("input", () => errorDiv.textContent = "");
         let passwordDiv = controls.createDiv(parent);
-        let userPasswordLabel = controls.createLabel(passwordDiv, undefined, "Kennwort:");
+        let userPasswordLabel = controls.createLabel(passwordDiv, undefined, _T("LABEL_PWD"));
         userPasswordLabel.htmlFor = "userpwd-id";
-        userPasswordPwd = controls.createPasswordField(passwordDiv, "Kennwort", () => authenticate(), undefined, 16, 100);
+        userPasswordPwd = controls.createPasswordField(passwordDiv, _T("TEXT_PWD"), () => authenticate(), undefined, 16, 100);
         userPasswordPwd.id = "userpwd-id";
         if (!utils.is_mobile()) {
             if (userName) {
@@ -403,36 +402,36 @@ var pwdman = (() => {
         }
         userPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
         let buttonDiv = controls.createDiv(parent);
-        controls.createButton(buttonDiv, "Anmelden", () => authenticate(), undefined, "button");
+        controls.createButton(buttonDiv, _T("BUTTON_LOGIN"), () => authenticate(), undefined, "button");
         if (nexturl) {
-            controls.createButton(buttonDiv, "Abbrechen", () => cancel(), undefined, "button");
+            controls.createButton(buttonDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         }
         renderError(parent);
-        controls.createA(controls.create(parent, "p"), "resetpwd-link", "/pwdman/resetpwd", "Kennwort vergessen?",
+        controls.createA(controls.create(parent, "p"), "resetpwd-link", "/pwdman/resetpwd", _T("INFO_PWD_LOST"),
             () => window.location.href = `/pwdman?resetpwd&nexturl=${encodeURI(window.location.href)}`);
-        let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du Dich registrieren. ");
-        controls.createButton(p, "Registrieren", () => window.location.href = `/pwdman?register&nexturl=${encodeURI(window.location.href)}`);
+        let p = controls.create(parent, "p", undefined, _T("INFO_REGISTER"));
+        controls.createButton(p, _T("BUTTON_REGISTER"), () => window.location.href = `/pwdman?register&nexturl=${encodeURI(window.location.href)}`);
         renderCopyright(parent);
 };
 
     const renderPass2 = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Anmelden");
+        renderHeader(parent, _T("HEADER_LOGIN"));
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             renderError(parent);
         }
-        controls.create(parent, "p", undefined, "Gib den Sicherheitsscode f\u00FCr die Zwei-Schritt-Verifizierung ein.");
+        controls.create(parent, "p", undefined, _T("INFO_ENTER_SEC_KEY"));
         const codeDiv = controls.createDiv(parent);
-        const codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitsscode:");
+        const codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_SEC_KEY"));
         codeLabel.htmlFor = "securitycode-id";
-        codeInput = controls.createInputField(codeDiv, "Sicherheitsscode", () => authenticatePass2(), undefined, 10, 10);
+        codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => authenticatePass2(), undefined, 10, 10);
         codeInput.id = "securitycode-id";
         if (!utils.is_mobile()) {
             codeInput.focus();
         }
         const buttonLoginDiv = controls.createDiv(parent);
-        controls.createButton(buttonLoginDiv, "Anmelden", () => authenticatePass2(), undefined, "button");
-        controls.createButton(buttonLoginDiv, "Abbrechen", () => {
+        controls.createButton(buttonLoginDiv, _T("BUTTON_LOGIN"), () => authenticatePass2(), undefined, "button");
+        controls.createButton(buttonLoginDiv, _T("BUTTON_CANCEL"), () => {
             setState();
             cancel();
         }, undefined, "button");
@@ -441,124 +440,116 @@ var pwdman = (() => {
 
     const renderChangePwd = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Kennwort \u00E4ndern");
+        renderHeader(parent, _T("HEADER_CHANGE_PWD"));
         if (actionOk === true) {
-            controls.create(parent, "p", undefined,
-                "Das Kennwort wurde erfolgreich ge\u00E4ndert! Du kannst Dich jetzt mit dem neuen Kennwort anmelden.");
+            controls.create(parent, "p", undefined, _T("INFO_NEW_PWD_SUCCESS"));
             let buttonOKDiv = controls.createDiv(parent);
             controls.createButton(buttonOKDiv, "OK", cancel, undefined, "button");
             return;
         }
-        controls.create(parent, "p", undefined, "Gib Dein altes und neues Kennwort ein." +
-            " Das Kennwort muss mindestens 8 Zeichen lang sein, mindestens einen Grossbuchstaben (A-Z)," +
-            " einen Kleinbuchstaben (a-z), eine Ziffer (0-9) und ein Sonderzeichen (!@$()=+-,:.) enthalten.");
+        controls.create(parent, "p", undefined, `${_T("INFO_CHANGE_PWD")} ${_T("INFO_PWD_STRENGTH")}`);
         let oldPwdDiv = controls.createDiv(parent);
-        let oldPwdLabel = controls.createLabel(oldPwdDiv, undefined, "Altes Kennwort:");
+        let oldPwdLabel = controls.createLabel(oldPwdDiv, undefined, _T("LABEL_OLD_PWD"));
         oldPwdLabel.htmlFor = "oldpwd-id";
-        oldPasswordPwd = controls.createPasswordField(oldPwdDiv, "Altes Kennwort", () => newPasswordPwd.focus(), undefined, 16, 100);
+        oldPasswordPwd = controls.createPasswordField(oldPwdDiv, _T("TEXT_OLD_PWD"), () => newPasswordPwd.focus(), undefined, 16, 100);
         oldPasswordPwd.id = "oldpwd-id";
         if (!utils.is_mobile()) {
             oldPasswordPwd.focus();
         }
         let newPwdDiv = controls.createDiv(parent);
-        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Neues Kennwort:");
+        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, _T("LABEL_NEW_PWD"));
         newPwdLabel.htmlFor = "newpwd-id";
-        newPasswordPwd = controls.createPasswordField(newPwdDiv, "Neues Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_NEW_PWD"), () => confirmPasswordPwd.focus(), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         let confirmPwdDiv = controls.createDiv(parent);
-        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, _T("LABEL_CONFIRM_PWD"));
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => changePassword(), undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => changePassword(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
 
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "OK", () => changePassword(), undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", cancel, undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_OK"), () => changePassword(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent);
     };
 
     const renderResetPwd = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Kennwort vergessen");
-        controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse ein." +
-            " Du bekommst einen Sicherheitscode per E-Mail zugesendet, mit dem Du Dein Kennwort neu vergeben kannst.");
+        renderHeader(parent, _T("HEADER_RESET_PWD"));
+        controls.create(parent, "p", undefined, _T("INFO_RESET_PWD"));
         emailDiv = controls.createDiv(parent);
-        let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
+        let emailLabel = controls.createLabel(emailDiv, undefined, _T("LABEL_EMAIL_ADDRESS"));
         emailLabel.htmlFor = "email-id";
-        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", () => requestResetPassword(), undefined, 30, 80);
+        emailInput = controls.createInputField(emailDiv, _T("TEXT_EMAIL_ADDRESS"), () => requestResetPassword(), undefined, 30, 80);
         emailInput.id = "email-id";
         emailInput.addEventListener("input", () => errorDiv.textContent = "");
         if (!utils.is_mobile()) {
             emailInput.focus();
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "Weiter", () => requestResetPassword(), undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestResetPassword(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
     };
 
     const renderResetPwd2 = (parent, success) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Kennwort neu vergeben");
+        renderHeader(parent, _T("HEADER_NEW_PWD"));
         if (success) {
-            controls.create(parent, "p", undefined, "Die Kennwort\u00E4nderung war erfolgreich! Du kannst Dich jetzt mit dem neuen Kennwort anmelden.");
+            controls.create(parent, "p", undefined, _T("INFO_NEW_PWD_SUCCESS"));
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
+            controls.createButton(buttonOKDiv, _T("BUTTON_OK"), () => cancel(), undefined, "button");
             return;
         }
-        controls.create(parent, "p", undefined,
-            "W\u00E4hle ein neues Kennwort." +
-            ` Verwende den Sicherheitscode, welcher Dir an die E-Mail-Adresse ${userEmail} geschickt wurde.` +
-            " Das neue Kennwort muss mindestens 8 Zeichen lang sein, mindestens einen Grossbuchstaben (A-Z)," +
-            " einen Kleinbuchstaben (a-z), eine Ziffer (0-9) und ein Sonderzeichen (!@$()=+-,:.) enthalten.");
+        controls.create(parent, "p", undefined, `${_T("INFO_NEW_PWD_1", userEmail)} ${_T("INFO_PWD_STRENGTH")}`);
         let newPwdDiv = controls.createDiv(parent);
-        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Neues Kennwort:");
+        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, _T("LABEL_NEW_PWD"));
         newPwdLabel.htmlFor = "newpwd-id";
-        newPasswordPwd = controls.createPasswordField(newPwdDiv, "Neues Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_NEW_PWD"), () => confirmPasswordPwd.focus(), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         if (!utils.is_mobile()) {
             newPasswordPwd.focus();
         }
         let confirmPwdDiv = controls.createDiv(parent);
-        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, _T("LABEL_CONFIRM_PWD"));
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
 
         let codeDiv = controls.createDiv(parent);
-        let codeLabel = controls.createLabel(codeDiv, undefined, "Sicherheitscode:");
+        let codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_SEC_KEY"));
         codeLabel.htmlFor = "code-id";
-        codeInput = controls.createInputField(codeDiv, "Sicherheitscode", () => resetPassword(parent), undefined, 16, 16);
+        codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => resetPassword(parent), undefined, 16, 16);
         codeInput.id = "code-id";
         codeInput.addEventListener("input", () => errorDiv.textContent = "");
         if (resetPwdCode) {
             codeInput.value = resetPwdCode;
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "Kennwort \u00E4ndern", () => resetPassword(parent), undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CHANGE_PWD"), () => resetPassword(parent), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
     };
 
     const renderRequestRegistration = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Registrieren");
+        renderHeader(parent, _T("HEADER_REGISTER"));
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
+            controls.createButton(buttonOKDiv, _T("BUTTON_OK"), () => cancel(), undefined, "button");
             return;
         }
-        controls.create(parent, "p", undefined, "Gib Deine E-Mail-Adresse an. Wenn Sie freigeschaltet wurde, kannst Du Dich registrieren.");
+        controls.create(parent, "p", undefined, _T("INFO_EMAIL_REGISTER"));
         emailDiv = controls.createDiv(parent);
-        let emailLabel = controls.createLabel(emailDiv, undefined, "E-Mail-Adresse:");
+        let emailLabel = controls.createLabel(emailDiv, undefined, _T("LABEL_EMAIL_ADDRESS"));
         emailLabel.htmlFor = "email-id";
-        emailInput = controls.createInputField(emailDiv, "E-Mail-Adresse", () => requestRegistration(), undefined, 30, 80);
+        emailInput = controls.createInputField(emailDiv, _T("TEXT_EMAIL_ADDRESS"), () => requestRegistration(), undefined, 30, 80);
         emailInput.id = "email-id";
         emailInput.addEventListener("input", () => {
             errorDiv.textContent = "";
@@ -567,26 +558,25 @@ var pwdman = (() => {
             emailInput.focus();
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "Weiter", () => requestRegistration(), undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestRegistration(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
     };
 
     const renderRegister = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
-        renderHeader(parent, "Registrieren");
+        renderHeader(parent, _T("HEADER_REGISTER"));
         if (lastErrorMessage && lastErrorMessage.length > 0) {
             controls.create(parent, "p", undefined, lastErrorMessage);
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
+            controls.createButton(buttonOKDiv, _T("BUTTON_OK"), () => cancel(), undefined, "button");
             return;
         }
         if (successRegister) {
-            controls.create(parent, "p", undefined,
-                `Die Registrierung war erfolgreich! Du kannst Dich jetzt mit dem Namen ${userName} anmelden.`);
+            controls.create(parent, "p", undefined, _T("INFO_REGISTER_SUCCESS_1", userName));
             let buttonOKDiv = controls.createDiv(parent);
-            controls.createButton(buttonOKDiv, "OK", () => cancel(), undefined, "button");
+            controls.createButton(buttonOKDiv, _T("BUTTON_OK"), () => cancel(), undefined, "button");
             if (userEmail) {
                 let user = { "email": userEmail.trim().toLowerCase() };
                 let encryptKey = utils.get_encryption_key(user);
@@ -596,41 +586,37 @@ var pwdman = (() => {
             }
             return;
         }
-        controls.create(parent, "p", undefined,
-            "W\u00E4hle einen Namen zum Anmelden und ein Kennwort." +
-            ` Verwende den Registrierungscode, welcher Dir per E-Mail an ${userEmail} zugestellt wurde.` +
-            " Das Kennwort muss mindestens 8 Zeichen lang sein, mindestens einen Grossbuchstaben (A-Z)," +
-            " einen Kleinbuchstaben (a-z), eine Ziffer (0-9) und ein Sonderzeichen (!@$()=+-,:.) enthalten.");
+        controls.create(parent, "p", undefined, `${_T("INFO_REGISTER_1", userEmail)} ${_T("INFO_PWD_STRENGTH")}`);
         let userNameDiv = controls.createDiv(parent);
-        const userNameLabel = controls.createLabel(userNameDiv, undefined, "Name:");
+        const userNameLabel = controls.createLabel(userNameDiv, undefined, _T("LABEL_NAME"));
         userNameLabel.htmlFor = "username-id";
-        userNameInput = controls.createInputField(userNameDiv, "Name", () => newPasswordPwd.focus(), undefined, 16, 32);
+        userNameInput = controls.createInputField(userNameDiv, _T("TEXT_NAME"), () => newPasswordPwd.focus(), undefined, 16, 32);
         userNameInput.id = "username-id";
         if (!utils.is_mobile()) {
             userNameInput.focus();
         }
         let newPwdDiv = controls.createDiv(parent);
-        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, "Kennwort:");
+        let newPwdLabel = controls.createLabel(newPwdDiv, undefined, _T("LABEL_PWD"));
         newPwdLabel.htmlFor = "newpwd-id";
-        newPasswordPwd = controls.createPasswordField(newPwdDiv, "Kennwort", () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_PWD"), () => confirmPasswordPwd.focus(), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         let confirmPwdDiv = controls.createDiv(parent);
-        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, "Kennwort-Best\u00E4tigung:");
+        let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, _T("LABEL_CONFIRM_PWD"));
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, "Kennwort-Best\u00E4tigung", () => codeInput.focus(), undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => codeInput.focus(), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
         let codeDiv = controls.createDiv(parent);
-        let codeLabel = controls.createLabel(codeDiv, undefined, "Registrierungscode:");
+        let codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_REG_CODE"));
         codeLabel.htmlFor = "code-id";
-        codeInput = controls.createInputField(codeDiv, "Registrierungscode", () => register(), undefined, 16, 16);
+        codeInput = controls.createInputField(codeDiv, _T("TEXT_REG_CODE"), () => register(), undefined, 16, 16);
         codeInput.id = "code-id";
         if (confirmRegistrationCode) {
             codeInput.value = confirmRegistrationCode;
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, "Registrieren", () => register(), undefined, "button");
-        controls.createButton(okCancelDiv, "Abbrechen", () => cancel(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_REGISTER"), () => register(), undefined, "button");
+        controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
     };
@@ -651,31 +637,31 @@ var pwdman = (() => {
             }
         }
         if (actionRequestRegistration) {
-            document.title = "Registrieren";
+            document.title = _T("HEADER_REGISTER");
             renderRequestRegistration(document.body);
         }
         else if (actionRegister) {
-            document.title = "Registrieren";
+            document.title = _T("HEADER_REGISTER");
             renderRegister(document.body);
         }
         else if (actionResetPwd) {
-            document.title = "Kennwort vergessen";
+            document.title = _T("HEADER_RESET_PWD");
             renderResetPwd(document.body);
         }
         else if (actionResetPwd2) {
-            document.title = "Kennwort vergessen";
+            document.title = _T("HEADER_RESET_PWD");
             renderResetPwd2(document.body);
         }
         else if (!authToken || authToken.length == 0) {
-            document.title = "Anmelden";
+            document.title = _T("HEADER_LOGIN");
             renderAuthentication(document.body);
         }
         else if (requiresPass2 == true) {
-            document.title = "Anmelden";
+            document.title = _T("HEADER_LOGIN");
             renderPass2(document.body);
         }
         else if (actionChangePwd) {
-            document.title = "Kennwort \u00E4ndern";
+            document.title = _T("HEADER_CHANGE_PWD");
             renderChangePwd(document.body);
         }
         else if (nexturl && nexturl.length > 0) {
@@ -744,4 +730,4 @@ var pwdman = (() => {
     };
 })();
 
-window.onload = () => utils.auth_lltoken(pwdman.render);
+window.onload = () => utils.auth_lltoken(() => utils.set_locale(pwdman.render));

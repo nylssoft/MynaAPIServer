@@ -22,7 +22,7 @@ namespace APIServer.PwdMan
     public class AccessDeniedPermissionException : APIException
     {
         public AccessDeniedPermissionException() :
-            base("Der Zugriff wurde verweigert.", 403)
+            base("ERROR_ACCESS_DENIED", 403)
         {
         }
     }
@@ -30,7 +30,7 @@ namespace APIServer.PwdMan
     public class InvalidUsernameException : APIException
     {
         public InvalidUsernameException() :
-            base("Ungültiger Benutzername.", 403)
+            base("ERROR_INVALID_USERNAME", 403)
         {
         }
     }
@@ -38,7 +38,7 @@ namespace APIServer.PwdMan
     public class UnauthorizedException : APIException
     {
         public UnauthorizedException() :
-            base("Ungültiges Kennwort.", 401)
+            base("ERROR_INVALID_PWD", 401)
         {
         }
     }
@@ -46,7 +46,7 @@ namespace APIServer.PwdMan
     public class UnauthorizedAndLockedException : APIException
     {
         public UnauthorizedAndLockedException() :
-            base("Ungültiges Kennwort. Das Konto ist jetzt vorrübergehend gesperrt.", 401)
+            base("ERROR_UNAUTHORIZED_AND_LOCKED", 401)
         {
         }
     }
@@ -54,7 +54,7 @@ namespace APIServer.PwdMan
     public class AccountLockedException : APIException
     {
         public AccountLockedException(int remain):
-            base($"Das Konto ist vorrübergehend gesperrt.Versuche es in {remain} Minute(n) erneuert.", 401)
+            base($"ERROR_ACCOUNT_LOCKED_1:{remain}", 401)
         {
         }
     }
@@ -62,7 +62,7 @@ namespace APIServer.PwdMan
     public class AccountLoginDisabledException : APIException
     {
         public AccountLoginDisabledException() :
-            base("Anmelden ist nicht erlaubt für dieses Konto.", 401)
+            base("ERROR_ACCOUNT_LOGIN_DISABLED", 401)
         {
         }
     }
@@ -70,7 +70,7 @@ namespace APIServer.PwdMan
     public class SelfUpdateLoginEnabledException : APIException
     {
         public SelfUpdateLoginEnabledException() :
-            base("Du kannst Dir das Anmelden nicht selber verbieten.", 400)
+            base("ERROR_SELF_UPDATE_LOGIN_ENABLED", 400)
         {
         }
     }
@@ -78,7 +78,7 @@ namespace APIServer.PwdMan
     public class Requires2FAException : APIException
     {
         public Requires2FAException() :
-            base("Die 2-Phasen-Überprüfung wurde noch nicht abgeschlossen.", 404)
+            base("ERROR_REQUIRES_2FA", 404)
         {
         }
     }
@@ -86,7 +86,7 @@ namespace APIServer.PwdMan
     public class InvalidTokenException : APIException
     {
         public InvalidTokenException() :
-            base("Die Sitzung ist abgelaufen. Melde Dich neu an.", 401)
+            base("ERROR_INVALID_TOKEN", 401)
         {
         }
     }
@@ -94,7 +94,7 @@ namespace APIServer.PwdMan
     public class InvalidSecurityCodeException : APIException
     {
         public InvalidSecurityCodeException() :
-            base("Der Sicherheitscode ist ungültig.", 401)
+            base("ERROR_INVALID_SEC_KEY", 401)
         {
         }
     }
@@ -102,7 +102,7 @@ namespace APIServer.PwdMan
     public class InvalidSecurityCodeAndLockedException : APIException
     {
         public InvalidSecurityCodeAndLockedException() :
-            base("Der Sicherheitscode ist ungültig. Das Konto ist jetzt vorrübergehend gesperrt.", 401)
+            base("ERROR_INVALID_SEC_KEY_AND_LOCKED", 401)
         {
         }
     }
@@ -110,7 +110,7 @@ namespace APIServer.PwdMan
     public class UserNotAllowedException : APIException
     {
         public UserNotAllowedException() :
-            base("Der Benutzer ist nicht zugelassen.", 400)
+            base("ERROR_USER_NOT_ALLOWED", 400)
         {
         }
     }
@@ -118,7 +118,7 @@ namespace APIServer.PwdMan
     public class ExpiredSecurityCodeException : APIException
     {
         public ExpiredSecurityCodeException() :
-            base("Der Sicherheitscode ist abgelaufen.", 400)
+            base("ERROR_SEC_KEY_EXPIRED", 400)
         {
 
         }
@@ -126,7 +126,7 @@ namespace APIServer.PwdMan
     public class InvalidOldPasswordException : APIException
     {
         public InvalidOldPasswordException() :
-            base("Das alte Kennwort ist ungültig.", 400)
+            base("ERROR_INVALID_OLD_PWD", 400)
         {
         }
     }
@@ -134,7 +134,7 @@ namespace APIServer.PwdMan
     public class ResetPasswordNotAllowedException : APIException
     {
         public ResetPasswordNotAllowedException() :
-            base("Kennwort zurücksetzen ist nicht erlaubt.", 400)
+            base("ERROR_RESET_PWD_NOT_ALLOWED", 400)
         {
         }
     }
@@ -142,7 +142,7 @@ namespace APIServer.PwdMan
     public class ResetPasswordLockedException : APIException
     {
         public ResetPasswordLockedException(int m) :
-            base($"Kennwort zurücksetzen ist z.Zt. nicht möglich. Versuche es in {m} Minute(n) noch einmal.", 400)
+            base($"ERROR_RESET_PWD_LOCKED_1:{m}", 400)
         {
         }
     }
@@ -150,7 +150,7 @@ namespace APIServer.PwdMan
     public class InvalidEmailAddressException : APIException
     {
         public InvalidEmailAddressException() :
-            base("Die E-Mail-Adresse ist ungültig.", 400)
+            base("ERROR_INVALID_EMAIL", 400)
         {
         }
     }
@@ -158,7 +158,7 @@ namespace APIServer.PwdMan
     public class EmailAddressAlreadyRegisteredException : APIException
     {
         public EmailAddressAlreadyRegisteredException() :
-            base("Die E-Mail-Adresse wurde bereits registriert.", 400)
+            base("ERROR_EMAIL_ALREADY_REGISTERED", 400)
         {
         }
     }
@@ -166,7 +166,7 @@ namespace APIServer.PwdMan
     public class EmailAddressNotConfirmedException : APIException
     {
         public EmailAddressNotConfirmedException() :
-            base("Die E-Mail-Adresse wurde bisher nicht bestätigt.", 400)
+            base("ERROR_EMAIL_NOT_CONFIRMED", 400)
         {
         }
     }
@@ -174,7 +174,7 @@ namespace APIServer.PwdMan
     public class EmailAddressRegistrationLockedException : APIException
     {
         public EmailAddressRegistrationLockedException(int m) :
-            base($"Registrieren ist z.Zt. nicht möglich. Versuche es in {m} Minute(n) noch einmal.", 400)
+            base($"ERROR_REG_LOCKED_1:{m}", 400)
         {
         }
     }
@@ -182,7 +182,7 @@ namespace APIServer.PwdMan
     public class NoRegistrationRequestForEmailAddressException : APIException
     {
         public NoRegistrationRequestForEmailAddressException() :
-            base("Es liegt keine Registrierungsanfrage für die E-Mail-Adresse vor.", 400)
+            base("ERROR_NO_REG_REQUEST_FOR_EMAIL", 400)
         {
         }
     }
@@ -190,7 +190,7 @@ namespace APIServer.PwdMan
     public class InvalidRegistrationCodeException : APIException
     {
         public InvalidRegistrationCodeException() :
-            base("Registrierungscode ist ungültig.", 400)
+            base("ERROR_INVALID_REG_CODE", 400)
         {
         }
     }
@@ -198,7 +198,7 @@ namespace APIServer.PwdMan
     public class UsernameAlreadyUsedException : APIException
     {
         public UsernameAlreadyUsedException() :
-            base("Der Benutzername wird schon verwendet.", 400)
+            base("ERROR_USERNAME_ALREADY_USED", 400)
         {
         }
     }
@@ -206,7 +206,7 @@ namespace APIServer.PwdMan
     public class UserManagerRequiredException : APIException
     {
         public UserManagerRequiredException() :
-            base("Es muss mindestens ein Benutzer mit der Rolle 'Administrator' vorhanden sein.", 400)
+            base("ERROR_USERMANAGER_REQUIRED", 400)
         {
         }
     }
@@ -214,15 +214,15 @@ namespace APIServer.PwdMan
     public class SelfRemoveUserManagerRoleException : APIException
     {
         public SelfRemoveUserManagerRoleException() :
-            base("Du kannst Dir selber nicht die Rolle 'Administrator' entziehen.", 400)
+            base("ERROR_SELF_REMOVE_USERMANAGER", 400)
         {
         }
     }
 
-    public class InvalidStorageQuoataException : APIException
+    public class InvalidStorageQuotaException : APIException
     {
-        public InvalidStorageQuoataException() :
-            base("Ungültige Quota. Die Quota muss zwischen 2 MB und 1000 MB liegen.", 400)
+        public InvalidStorageQuotaException() :
+            base("ERROR_INVALID_STORAGE_QUOTA", 400)
         {
         }
     }
@@ -230,7 +230,7 @@ namespace APIServer.PwdMan
     public class TwoFactorAuthenticationAlreadyActivated : APIException
     {
         public TwoFactorAuthenticationAlreadyActivated() :
-            base("Zwei-Schritt-Verifizierung ist bereits aktiviert.", 400)
+            base("ERROR_TWO_FACTOR_AUTH_ALREADY_ACTIVATED", 400)
         {
         }
     }
@@ -238,7 +238,7 @@ namespace APIServer.PwdMan
     public class PasswordNotStrongEnoughException : APIException
     {
         public PasswordNotStrongEnoughException() :
-            base("Das Kennwort ist nicht stark genug.", 400)
+            base("ERROR_PWD_NOT_STRONG_ENOUGH", 400)
         {
         }
     }
@@ -246,7 +246,7 @@ namespace APIServer.PwdMan
     public class ChangedPasswordNotStrongEnoughException : APIException
     {
         public ChangedPasswordNotStrongEnoughException() :
-            base("Das neue Kennwort ist nicht stark genug.", 400)
+            base("ERROR_CHANGE_PWD_NOT_STRONG_ENOUGH", 400)
         {
         }
     }
@@ -254,7 +254,7 @@ namespace APIServer.PwdMan
     public class PasswordSameAsOldException : APIException
     {
         public PasswordSameAsOldException() :
-            base("Das Kennwort ist identisch mit dem alten Kennwort.", 400)
+            base("ERROR_PWD_SAME_AS_OLD", 400)
         {
         }
     }
@@ -262,7 +262,7 @@ namespace APIServer.PwdMan
     public class SecretKeyNotStrongEnoughException : APIException
     {
         public SecretKeyNotStrongEnoughException() :
-            base("Der Schlüssel ist nicht stark genug.", 400)
+            base("ERROR_SEC_KEY_NOT_STRONG_ENOUGH", 400)
         {
         }
     }
@@ -270,7 +270,7 @@ namespace APIServer.PwdMan
     public class SecretKeySameAsPasswordException : APIException
     {
         public SecretKeySameAsPasswordException() :
-            base("Der Schlüssel muss sich vom Kennwort unterscheiden.", 400)
+            base("ERROR_SEC_KEY_SAME_AS_PWD", 400)
         {
         }
     }
@@ -278,7 +278,7 @@ namespace APIServer.PwdMan
     public class PasswordFileNotFoundException : APIException
     {
         public PasswordFileNotFoundException() :
-            base("Die Passwortdatei wurde bisher nicht hochgeladen.", 400)
+            base("ERROR_PWD_FILE_NOT_FOUND", 400)
         {
         }
     }
@@ -286,14 +286,87 @@ namespace APIServer.PwdMan
     public class MissingParameterException : APIException
     {
         public MissingParameterException()
-            : base("Fehlende Parameter.", 400)
+            : base("ERROR_MISSING_PARAMETERS", 400)
         {
         }
     }
 
-    public class PwdManInvalidArgumentException : APIException
+    public class InvalidParameterException : APIException
     {
-        public PwdManInvalidArgumentException(string msg) : base(msg, 400)
+        public InvalidParameterException()
+            : base("ERROR_INVALID_PARAMETERS", 400)
+        {
+        }
+    }
+
+    public class FileTooLargeException : APIException
+    {
+        public FileTooLargeException()
+            : base("ERROR_FILE_TOO_LARGE", 400)
+        {
+        }
+    }
+
+    public class StorageQuotaExceededException : APIException
+    {
+        public StorageQuotaExceededException()
+            : base("ERROR_QUOTA_EXCEEDED", 400)
+        {
+        }        
+    }
+
+    public class TableAlreadyReservedException : APIException
+    {
+        public TableAlreadyReservedException()
+            : base("ERROR_TABLE_ALREADY_RESERVED", 400)
+        {
+        }
+    }
+
+    public class InvalidReservationDateException : APIException
+    {
+        public InvalidReservationDateException()
+            : base("ERROR_INVALID_RESERVATION_DATE", 400)
+        {
+        }
+    }
+
+    public class InvalidReservationDurationException : APIException
+    {
+        public InvalidReservationDurationException()
+            : base("ERROR_INVALID_RESERVATION_DURATION", 400)
+        {
+        }
+    }
+
+    public class InvalidPlayerNamesException : APIException
+    {
+        public InvalidPlayerNamesException()
+            : base("ERROR_INVALID_PLAYER_NAMES", 400)
+        {
+        }
+    }
+
+    public class InvalidPlayerNameException : APIException
+    {
+        public InvalidPlayerNameException()
+            : base("ERROR_INVALID_PLAYER_NAME", 400)
+        {
+        }
+    }
+
+    public class ReservationRequirementException : APIException
+    {
+        public ReservationRequirementException()
+            : base("ERROR_RESERVATION_REQUIREMENT", 400)
+        {
+        }
+    }
+
+    public class ReservationAlreadyExistsException : APIException
+    {
+        public ReservationAlreadyExistsException()
+            : base("ERROR_RESERVATION_ALREADY_EXISTS", 400)
         {
         }
     }
