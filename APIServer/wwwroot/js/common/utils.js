@@ -511,10 +511,10 @@ var utils = (() => {
         return id;
     };
 
-    const format = (s, ...restArgs) => {
-        for (let i = 0; i < restArgs.length; i++) {
+    const format = (s, arr) => {
+        for (let i = 0; i < arr.length; i++) {
             const reg = new RegExp("\\{" + i + "\\}", "gm");
-            s = s.replace(reg, restArgs[i]);
+            s = s.replace(reg, arr[i]);
         }
         return s;
     };
