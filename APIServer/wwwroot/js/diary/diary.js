@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "1.1.11";
+    let version = "1.1.12";
 
     let changeDate;
     let inSaveDiary;
@@ -77,18 +77,18 @@ var diary = (() => {
 
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
-        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - Tagebuch`);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_DIARY")}`);
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Tagebuch ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_DIARY")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -102,30 +102,30 @@ var diary = (() => {
         let table = controls.create(calendarDiv, "table");
         let caption = controls.create(table, "caption");
         controls.createA(caption, undefined, "#summary",
-            date.toLocaleDateString("de-DE", { year: "numeric", month: "long" }),
+            date.toLocaleDateString(_T("LOCALE"), { year: "numeric", month: "long" }),
             () => onShowSummary(textDiv, new Date(Date.UTC(year, month))));
-        controls.createImageButton(caption, "Vorheriger Monat",
+        controls.createImageButton(caption, _T("BUTTON_PREV_MONTH"),
             () => onPrevButton(parent, calendarDiv, textDiv, year, month),
             "/images/buttons/arrow-left-2.png", 16, "transparent");
-        controls.createImageButton(caption, "N\u00E4chster Monat",
+        controls.createImageButton(caption, _T("BUTTON_NEXT_MONTH"),
             () => onNextButton(parent, calendarDiv, textDiv, year, month),
             "/images/buttons/arrow-right-2.png", 16, "transparent");
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
-        let th = controls.create(tr, "th", undefined, "Mon");
-        th.title = "Montag";
-        th = controls.create(tr, "th", undefined, "Die");
-        th.title = "Dienstag";
-        th = controls.create(tr, "th", undefined, "Mit");
-        th.title = "Mittwoch";
-        th = controls.create(tr, "th", undefined, "Don");
-        th.title = "Donnerstag";
-        th = controls.create(tr, "th", undefined, "Fre");
-        th.title = "Freitag";
-        th = controls.create(tr, "th", undefined, "Sam");
-        th.title = "Samstag";
-        th = controls.create(tr, "th", undefined, "Son");
-        th.title = "Sonntag";
+        let th = controls.create(tr, "th", undefined, _T("COLUMN_MON"));
+        th.title = _T("TEXT_MONDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_TUE"));
+        th.title = _T("TEXT_TUESDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_WED"));
+        th.title = _T("TEXT_WEDNESDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_THU"));
+        th.title = _T("TEXT_THURSDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_FRI"));
+        th.title = _T("TEXT_FRIDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_SAT"));
+        th.title = _T("TEXT_SATURDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_SON"));
+        th.title = _T("TEXT_SUNDAY");
         let tbody = controls.create(table, "tbody");        
         let day = 1;
         for (let i = 0; i < 6; i++) {
@@ -160,10 +160,10 @@ var diary = (() => {
         selectedISODate = undefined;
         if (dd && hasEncryptKey()) {
             selectedISODate = dd.toISOString();
-            let dt = dd.toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" });
+            let dt = dd.toLocaleDateString(_T("LOCALE"), { year: "numeric", month: "long", day: "numeric" });
             let caption = controls.createDiv(div, "caption");
-            caption.textContent = `Eintrag vom ${dt}`;
-            let imgStatus = controls.createImg(caption, "img-status", 24, 24, "/images/buttons/document-save-3.png", "\u00C4nderung wird gespeichert...");
+            caption.textContent = _T("INFO_ENTRY_FROM_1", dt);
+            let imgStatus = controls.createImg(caption, "img-status", 24, 24, "/images/buttons/document-save-3.png", _T("INFO_STATUS_SAVING"));
             imgStatus.id = "img-status-id";
             imgStatus.style.visibility = "hidden";
             let txt = controls.create(div, "textarea");
@@ -202,8 +202,8 @@ var diary = (() => {
     const renderSummary = (div, diaries, date) => {
         dayClicked = undefined;
         controls.removeAllChildren(div);
-        let dt = date.toLocaleDateString("de-DE", { month: "long" });
-        controls.createDiv(div, "caption").textContent = `Eintr\u00E4ge f\u00FCr ${dt}`;
+        let dt = date.toLocaleDateString(_T("LOCALE"), { month: "long" });
+        controls.createDiv(div, "caption").textContent = _T("INFO_ENTRIES_FOR_1", dt);
         let txt = controls.create(div, "textarea");
         txt.id = "textarea-entry-id";
         txt.rows = 11;
@@ -221,7 +221,7 @@ var diary = (() => {
                 const options = { year: 'numeric', month: 'long', day: 'numeric' };
                 decodedDiaries.forEach(diary => {
                     let d = new Date(diary.date);
-                    let dt = d.toLocaleDateString("de-DE", options);
+                    let dt = d.toLocaleDateString(_T("LOCALE"), options);
                     content += `${dt}\n`;
                     content += `${diary.entry}\n\n`;
                 });
@@ -235,7 +235,7 @@ var diary = (() => {
     };
 
     const renderError = (parent, errMsg) => {
-        controls.createDiv(parent, "error").textContent = errMsg;
+        controls.createDiv(parent, "error").textContent = _T(errMsg);
     };
 
     const renderDiary = (parent) => {
@@ -274,16 +274,11 @@ var diary = (() => {
         div.id = "div-encryptkey-id";
         let p = controls.create(div, "p");
         p.id = "p-encryptkey-notice-id";
-        controls.create(p, "p", "encryptkey-notice",
-            "Die Texte werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du die Texte lesen kannst." +
-            " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
-            " Notiere den Schl\u00FCssel." +
-            " Danach w\u00E4hle im Men\u00FC 'Schl\u00FCssel verbergen', um diesen Text auszublenden." +
-            " Wenn der Schl\u00FCssel verloren geht, sind auch alle Daten verloren.");
+        controls.create(p, "p", "encryptkey-notice", _T("INFO_ENCRYPTION_TEXT"));
         p = controls.create(div, "p");
-        let elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
+        let elem = controls.createLabel(p, undefined, _T("LABEL_KEY"));
         elem.htmlFor = "input-encryptkey-id";
-        elem = controls.createInputField(p, "Schl\u00FCssel", () => { }, undefined, 32, 32);
+        elem = controls.createInputField(p, _T("TEXT_KEY"), () => { }, undefined, 32, 32);
         elem.id = "input-encryptkey-id";
         elem.addEventListener("change", () => onChangeEncryptKey());
         if (encryptKey && encryptKey.length > 0) {
@@ -292,7 +287,7 @@ var diary = (() => {
         p = controls.create(div, "p");
         let show = encryptKey == undefined;
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
-            "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
+            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKey());
         utils.show_encrypt_key(currentUser, show);
         let today = new Date();
         let boxDiv = controls.createDiv(parent, "box");
@@ -314,7 +309,7 @@ var diary = (() => {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
                 utils.fetch_api_call("/api/pwdman/markdown/help-diary", undefined, (html) => mdDiv.innerHTML = html);
-                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
     };
@@ -468,7 +463,7 @@ var diary = (() => {
 
 window.onload = () => {
     window.setInterval(diary.onTimer, 1000);
-    utils.auth_lltoken(diary.render);
+    utils.auth_lltoken(() => utils.set_locale(diary.render));
 };
 
 window.onclick = (event) => utils.hide_menu(event);
