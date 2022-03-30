@@ -563,7 +563,7 @@ var utils = (() => {
 
 function _T(id, ...restArgs) {
     const arr = id.split(":");
-    if (arr.length > 0) {
+    if (arr.length > 1) {
         return utils.format(utils.translate(arr[0]), arr.slice(1));
     }
     return utils.format(utils.translate(id), restArgs);
