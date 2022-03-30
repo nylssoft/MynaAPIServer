@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "1.1.12";
+    let version = "1.1.13";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -117,12 +117,12 @@ var notes = (() => {
     const renderHeader = (parent, title) => {
         helpDiv = controls.createDiv(document.body);
         if (!title && currentUser) {
-            title = `${currentUser.name} - Notizen`;
+            title = `${currentUser.name} - ${_T("HEADER_NOTES")}`;
             const h1 = controls.create(parent, "h1", undefined, title);
-            const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+            const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
             helpImg.addEventListener("click", () => onUpdateHelp(true));
             if (currentUser && currentUser.photo) {
-                let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+                let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
                 imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
             }
         }
@@ -133,7 +133,7 @@ var notes = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Notizen ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_NOTES")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -141,13 +141,13 @@ var notes = (() => {
     const renderError = (errMsg) => {
         let elem = document.getElementById("error-id");
         if (elem) {
-            elem.textContent = errMsg;
+            elem.textContent = _T(errMsg);
         }
         else {
             let parent = document.body;
             controls.removeAllChildren(parent);
-            renderHeader(parent, "Es ist ein Fehler aufgetreten.");
-            controls.createDiv(parent, "error").textContent = errMsg;
+            renderHeader(parent, _T("INFO_ERROR_OCCURED"));
+            controls.createDiv(parent, "error").textContent = _T(errMsg);
             renderCopyright(parent);
         }
     };
@@ -160,16 +160,11 @@ var notes = (() => {
         div.id = "div-encryptkey-id";
         let p = controls.create(div, "p");
         p.id = "p-encryptkey-notice-id";
-        controls.create(p, "p", "encryptkey-notice",
-            "Die Notizen werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du die Notizen lesen kannst." +
-            " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
-            " Notiere den Schl\u00FCssel." +
-            " Danach w\u00E4hle im Men\u00FC 'Schl\u00FCssel verbergen', um diesen Text auszublenden." +
-            " Wenn der Schl\u00FCssel verloren geht, sind auch alle Daten verloren.");
+        controls.create(p, "p", "encryptkey-notice", _T("INFO_ENCRYPTION_NOTES"));
         p = controls.create(div, "p");
-        let elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
+        let elem = controls.createLabel(p, undefined, _T("LABEL_KEY"));
         elem.htmlFor = "input-encryptkey-id";
-        elem = controls.createInputField(p, "Schl\u00FCssel", () => onChangeEncryptKey(), undefined, 32, 32);
+        elem = controls.createInputField(p, _T("TEXT_KEY"), () => onChangeEncryptKey(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
         elem.addEventListener("change", () => onChangeEncryptKey());
         if (encryptKey) {
@@ -178,7 +173,7 @@ var notes = (() => {
         p = controls.create(div, "p");
         let show = encryptKey == undefined;
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
-            "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
+            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKey());
         utils.show_encrypt_key(currentUser, show);
         utils.set_menu_items(currentUser);
     };
@@ -188,14 +183,14 @@ var notes = (() => {
         let actionDiv = document.getElementById("action-id");
         controls.removeAllChildren(actionDiv);
         if (confirm == "delete") {
-            controls.create(actionDiv, "span", "confirmation", "Willst Du die Notiz wirklich l\u00F6schen? ");
-            controls.createButton(actionDiv, "Ja", () => onDeleteNote(selectedNoteId));
-            controls.createButton(actionDiv, "Nein", () => renderActions("selected"));
+            controls.create(actionDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_NOTE"));
+            controls.createButton(actionDiv, _T("BUTTEN_YES"), () => onDeleteNote(selectedNoteId));
+            controls.createButton(actionDiv, _T("BUTTON_NO"), () => renderActions("selected"));
         }
         else {
-            controls.createButton(actionDiv, "Neue Notiz anlegen", () => onNewNote());
+            controls.createButton(actionDiv, _T("BUTTON_CREATE_NEW_NOTE"), () => onNewNote());
             if (confirm == "selected") {
-                let deleteButton = controls.createButton(actionDiv, "Notiz l\u00F6schen", () => renderActions("delete"));
+                let deleteButton = controls.createButton(actionDiv, _T("BUTTON_DELETE_NOTE"), () => renderActions("delete"));
                 deleteButton.id = "action-delete-id";
             }
         }
@@ -219,9 +214,9 @@ var notes = (() => {
                 noteDiv.className += " note-selected";
             }
             if (hasEncryptKey()) {
-                let label = controls.createLabel(parent, undefined, "Titel:");
+                let label = controls.createLabel(parent, undefined, _T("LABEL_TITLE"));
                 label.htmlFor = "titel-id";
-                let titleInput = controls.createInputField(parent, "Titel", undefined, undefined, 32, 200);
+                let titleInput = controls.createInputField(parent, _T("TEXT_TITLE"), undefined, undefined, 32, 200);
                 titleInput.id = "title-id";
                 titleInput.addEventListener("input", () => {
                     noteDiv.textContent = titleInput.value;
@@ -231,9 +226,9 @@ var notes = (() => {
                 let d = new Date(note.lastModifiedUtc);
                 let caption = controls.createDiv(parent, "caption");
                 let captiontxt = controls.createSpan(caption, undefined);
-                captiontxt.textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
+                captiontxt.textContent = _T("INFO_NOTE_FROM_1_2", d.toLocaleDateString(_T("LOCALE")), d.toLocaleTimeString(_T("LOCALE")));
                 captiontxt.id = "captiontxt-id";
-                let imgStatus = controls.createImg(caption, "img-status", 24, 24, "/images/buttons/document-save-3.png", "\u00C4nderung wird gespeichert...");
+                let imgStatus = controls.createImg(caption, "img-status", 24, 24, "/images/buttons/document-save-3.png", _T("INFO_STATUS_SAVING"));
                 imgStatus.id = "img-status-id";
                 imgStatus.style.visibility = "hidden";
                 let txt = controls.create(parent, "textarea");
@@ -338,7 +333,7 @@ var notes = (() => {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
                 utils.fetch_api_call("/api/pwdman/markdown/help-notes", undefined, (html) => mdDiv.innerHTML = html);
-                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
     };
@@ -364,10 +359,10 @@ var notes = (() => {
 
     const onNewNote = () => {
         if (!hasEncryptKey()) {
-            renderError("Der Schl\u00FCssel fehlt.");
+            renderError(_T("ERROR_KEY_MISSING"));
             return;
         }
-        let note = { "title": "Neue Notiz" };
+        let note = { "title": _T("TEXT_NEW_NOTE") };
         encodeNote(note,
             (encodedNote) => {
                 let token = utils.get_authentication_token();
@@ -414,7 +409,7 @@ var notes = (() => {
                             let captiontxt = document.getElementById("captiontxt-id");
                             if (captiontxt && lastModifiedUtc) {
                                 let d = new Date(lastModifiedUtc);
-                                captiontxt.textContent = `Notiz vom ${d.toLocaleDateString("de-DE")} ${d.toLocaleTimeString("de-DE")}`;
+                                captiontxt.textContent = _T("INFO_NOTE_FROM_1_2", d.toLocaleDateString(_T("LOCALE")), d.toLocaleTimeString(_T("LOCALE")));
                             }
                             onUpdateStatus();
                         },
@@ -471,7 +466,7 @@ var notes = (() => {
 
 window.onload = () => {
     window.setInterval(notes.onTimer, 1000);
-    utils.auth_lltoken(notes.render);
+    utils.auth_lltoken(() => utils.set_locale(notes.render));
 };
 
 window.onclick = (event) => utils.hide_menu(event);
