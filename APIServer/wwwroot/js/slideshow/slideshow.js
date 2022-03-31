@@ -31,11 +31,11 @@ var slideshow = (() => {
     // --- rendering
 
     const renderHeader = (parent) => {
-        let title = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";
+        let title = currentUser ? `${currentUser.name} - ${_T("HEADER_SLIDESHOW")}` : _T("HEADER_SLIDESHOW");
         title += ` ${backgroundIndex}/${slideShowPictures.length}`;
         let header = controls.create(parent, "h1", "header", title);
         header.id = "header-id";
-        imgPauseSlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-pause-3.png", "Bildergalerie anhalten");
+        imgPauseSlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-pause-3.png", _T("BUTTON_PAUSE_SLIDESHOW"));
         imgPauseSlideShow.addEventListener("click", () => {
             isSlideshowPlaying = false;
             imgPauseSlideShow.style.visibility = "hidden";
@@ -44,7 +44,7 @@ var slideshow = (() => {
             imgRightArrow.classList.add("greyed-out");
         });
         imgPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
-        imgPlaySlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-start-3.png", "Bildergalerie abspielen");
+        imgPlaySlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-start-3.png", _T("BUTTON_PLAY_SLIDESHOW"));
         imgPlaySlideShow.addEventListener("click", () => {
             isSlideshowPlaying = true;
             imgPauseSlideShow.style.visibility = "visible";
@@ -53,17 +53,18 @@ var slideshow = (() => {
             imgRightArrow.classList.remove("greyed-out");
         });
         imgPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
-        imgShuffle = controls.createImg(parent, "header-shuffle-img header-img", 24, 24, "/images/buttons/media-seek-forward-3.png", "Zufallswiedergabe " + (shuffle ? "aus" : "ein"));
+        const shuffleTxt = shuffle ? _T("BUTTON_SLIDESHOW_RANDOM_ON") : _T("BUTTON_SLIDESHOW_RANDOM_OFF");
+        imgShuffle = controls.createImg(parent, "header-shuffle-img header-img", 24, 24, "/images/buttons/media-seek-forward-3.png", shuffleTxt);
         if (!shuffle) {
             imgShuffle.classList.add("greyed-out");
         }
         imgShuffle.addEventListener("click", () => window.location.replace(`/slideshow?shuffle=${!shuffle}`));
-        imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png", "Vorheriges Bild");
+        imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png", _T("BUTTON_PREV_PICTURE"));
         imgLeftArrow.addEventListener("click", onPictureLeft);
-        imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png", "N\u00E4chstes Bild");
+        imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png", _T("BUTTON_NEXT_PICTURE"));
         imgRightArrow.addEventListener("click", onPictureRight);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
@@ -222,7 +223,7 @@ var slideshow = (() => {
             document.body.style.backgroundRepeat = "no-repeat";
             const header = document.getElementById("header-id");
             if (header) {
-                header.textContent = currentUser ? `${currentUser.name} - Bildergalerie` : "Bildergalerie";                
+                header.textContent = currentUser ? `${currentUser.name} - ${_T("HEADER_SLIDESHOW")}` : _T("HEADER_SLIDESHOW");
                 header.textContent += ` ${backgroundIndex + 1}/${slideShowPictures.length}`;
             }
             backgroundIndex = (backgroundIndex + 1) % slideShowPictures.length;
@@ -284,15 +285,17 @@ var slideshow = (() => {
 
 window.onload = () => {
     utils.auth_lltoken(() => {
-        let token = utils.get_authentication_token();
-        utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
-            (model) => {
-                slideshow.initSlideShow(model.pictures, model.interval);
-                slideshow.render();
-            },
-            (errMsg) => {
-                console.error(errMsg);
-                slideshow.render();
-            });
+        utils.set_locale(() => {
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+                (model) => {
+                    slideshow.initSlideShow(model.pictures, model.interval);
+                    slideshow.render();
+                },
+                (errMsg) => {
+                    console.error(errMsg);
+                    slideshow.render();
+                });
+        });
     });
 };
