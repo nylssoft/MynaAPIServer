@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "1.1.8";
+    let version = "1.1.9";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -139,7 +139,7 @@ var documents = (() => {
                 body: formData
             },
             () => uploadFiles(curFiles, overwrite),
-            (errMsg) => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${errMsg}`));
+            (errMsg) => initItems(_T("ERROR_UPLOAD_DOCUMENT_1_2", curFile.name, _T(errMsg))));
     };
 
     const uploadEncrypted = (fileData, curFile, curFiles, overwrite) => {
@@ -164,9 +164,9 @@ var documents = (() => {
                             body: formData
                         },
                         () => uploadFiles(curFiles, overwrite),
-                        (errMsg) => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${errMsg}`));
+                        (errMsg) => initItems(_T("ERROR_UPLOAD_DOCUMENT_1_2", curFile.name, _T(errMsg))));
                 })
-                .catch(err => initItems(`Hochladen von ${curFile.name} ist fehlgeschlagen: ${err.message}`));
+                .catch(err => initItems(_T("ERROR_UPLOAD_DOCUMENT_1_2", curFile.name, err.message)));
         });
     };
 
@@ -185,15 +185,15 @@ var documents = (() => {
             controls.removeAllChildren(elem);
             let msg;
             if (existing.length == 1) {
-                msg = `Willst Du das vorhandene Dokument '${existing[0]}' \u00FCberscheiben?  `;
+                msg = _T("INFO_REALLY_OVERWRITE_DOC_1", existing[0]);
             }
             else {
-                msg = `Willst Du die vorhandenen Dokumente '${existing.join(", ")}' \u00FCberscheiben?  `;
+                msg = _T("INFO_REALLY_OVERWRITE_DOCS_1", existing.join(", "));
             }
             controls.createSpan(elem, undefined, msg);
-            controls.createButton(elem, "Ja", () => uploadFiles(curFiles, true));
-            controls.createButton(elem, "Nein", () => uploadFiles(curFiles, false));
-            controls.createButton(elem, "Abbrechen", () => initItems());
+            controls.createButton(elem, _T("BUTTON_YES"), () => uploadFiles(curFiles, true));
+            controls.createButton(elem, _T("BUTTON_NO"), () => uploadFiles(curFiles, false));
+            controls.createButton(elem, _T("BUTTON_CANCEL"), () => initItems());
             elem.scrollIntoView();
         }
         else {
@@ -216,7 +216,7 @@ var documents = (() => {
             fileReader.readAsArrayBuffer(curFile);
         }
         else {
-            initItems(`Datei '${curFile.name}' ist zu gross! Bis 10 MB sind erlaubt.`);
+            initItems(_T("INFO_UPLOAD_DOC_TOO_LARGE_1", curFile.name));
         }
     };
 
@@ -255,7 +255,7 @@ var documents = (() => {
                 });
                 const volume = getVolume();
                 if (volume === undefined) {
-                    createVolume("Dokumente");
+                    createVolume(_T("TEXT_DOCUMENTS"));
                 }
                 else {
                     volumeId = volume.id;
@@ -271,18 +271,18 @@ var documents = (() => {
 
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
-        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - Dokumente`);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_DOCUMENTS")}`);
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Dokumente ${version}. Copyright 2021-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_DOCUMENTS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2021-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -292,13 +292,13 @@ var documents = (() => {
         if (!errMsg) errMsg = "";
         const elem = document.getElementById("error-id");
         if (elem) {
-            elem.textContent = errMsg;
+            elem.textContent = _T(errMsg);
         }
         else {
             const parent = document.body;
             controls.removeAllChildren(parent);
-            renderHeader(parent, "Es ist ein Fehler aufgetreten.");
-            controls.createDiv(parent, "error").textContent = errMsg;
+            renderHeader(parent, _T("INFO_ERROR_OCCURED"));
+            controls.createDiv(parent, "error").textContent = _T(errMsg);
             renderCopyright(parent);
         }
     };
@@ -311,16 +311,11 @@ var documents = (() => {
         div.id = "div-encryptkey-id";
         let p = controls.create(div, "p");
         p.id = "p-encryptkey-notice-id";
-        controls.create(p, "p", "encryptkey-notice",
-            "Die Dokumente werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du sie lesen kannst." +
-            " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
-            " Notiere den Schl\u00FCssel." +
-            " Danach w\u00E4hle im Men\u00FC 'Schl\u00FCssel verbergen', um diesen Text auszublenden." +
-            " Wenn der Schl\u00FCssel verloren geht, sind auch alle Daten verloren.");
+        controls.create(p, "p", "encryptkey-notice", _T("INFO_ENCRYPTION_DOCS"));
         p = controls.create(div, "p");
-        let elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
+        let elem = controls.createLabel(p, undefined, _T("LABEL_KEY"));
         elem.htmlFor = "input-encryptkey-id";
-        elem = controls.createInputField(p, "Schl\u00FCssel", () => onChangeEncryptKey(), undefined, 32, 32);
+        elem = controls.createInputField(p, _T("TEXT_KEY"), () => onChangeEncryptKey(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
         elem.addEventListener("change", () => onChangeEncryptKey());
         if (encryptKey) {
@@ -329,7 +324,7 @@ var documents = (() => {
         p = controls.create(div, "p");
         const show = encryptKey == undefined;
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
-            "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
+            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKey());
         utils.show_encrypt_key(currentUser, show);
         utils.set_menu_items(currentUser);
     };
@@ -353,11 +348,11 @@ var documents = (() => {
         if (move) {
             controls.createSpan(elem, "path-item", "> ");
             if (currentId !== undefined) {
-                const a = controls.createA(elem, undefined, "#", "Start");
+                const a = controls.createA(elem, undefined, "#", _T("TEXT_START"));
                 a.addEventListener("click", onClickStart);
             }
             else {
-                controls.createSpan(elem, "", "Start");
+                controls.createSpan(elem, "", _T("TEXT_START"));
             }
         }
         const currentPath = getPath(currentId);
@@ -373,9 +368,9 @@ var documents = (() => {
         const cnt = move ? docItemsToMove.length : getSelected().length;
         let title;
         if (cnt > 0) {
-            title = `${cnt} Element(e) ausgew\u00E4hlt.`;
+            title = _T("INFO_ELEMENTS_SELECTED_1", cnt);
             if (move) {
-                title += " W\u00E4hle den Zielordner aus f\u00FCr das Verschieben.";
+                title += " " + _T("INFO_SELECT_DEST_FOLDER_MOVE");
             }
         }
         controls.createSpan(elem, undefined, title);
@@ -385,10 +380,10 @@ var documents = (() => {
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
         if (updateMarkdownItem) {
-            const saveButton = controls.createButton(elem, "Speichern", onUpdateMarkdown);
+            const saveButton = controls.createButton(elem, _T("BUTTON_SAVE"), onUpdateMarkdown);
             saveButton.id = "savebutton-id";
             saveButton.style.display = markdownItemModified ? "inline" : "none";
-            controls.createButton(elem, "Abbrechen", onCancelEditMarkdown);
+            controls.createButton(elem, _T("BUTTON_CANCEL"), onCancelEditMarkdown);
             return;
         }
         const toolbar = document.getElementById("toolbar-id");
@@ -397,49 +392,49 @@ var documents = (() => {
         const cnt = selected.length;
         if (move) {
             if (cnt == 1) {
-                controls.createButton(elem, "Verschieben", onMoveDocuments);
-                const btnPaste = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-paste-3.png", "Verschieben");
+                controls.createButton(elem, _T("BUTTON_MOVE"), onMoveDocuments);
+                const btnPaste = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-paste-3.png", _T("BUTTON_MOVE"));
                 btnPaste.addEventListener("click", onMoveDocuments);
             }
-            controls.createButton(elem, "Abbrechen", onCancelMoveDocuments);
+            controls.createButton(elem, _T("BUTTON_CANCEL"), onCancelMoveDocuments);
             if (currentId !== null) {
-                controls.createButton(elem, "Zur\u00FCck", onGotoUp);
-                const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", "Zur\u00FCck");
+                controls.createButton(elem, _T("BUTTON_BACK"), onGotoUp);
+                const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", _T("BUTTON_BACK"));
                 btnUp.addEventListener("click", onGotoUp);
             }
         }
         else {
             if (cnt == 1) {
                 const currentItem = selected[0];
-                controls.createButton(elem, "Umbenennen", onConfirmRename);
-                const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png", "Umbenennen");
+                controls.createButton(elem, _T("BUTTON_RENAME"), onConfirmRename);
+                const btnRename = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-rename.png", _T("BUTTON_RENAME"));
                 btnRename.addEventListener("click", onConfirmRename);                
                 if (currentUser.roles.includes("usermanager") && isContainer(currentItem)) {
-                    controls.createButton(elem, "Ver\u00F6ffentlichen", onConfirmPublish);
+                    controls.createButton(elem, _T("BUTTON_PUBLISH"), onConfirmPublish);
                 }
                 if (isDocument(currentItem) && currentItem.name.endsWith(".md") &&
                     currentItem.accessRole && currentItem.accessRole.length > 0) {
-                    controls.createButton(elem, "Bearbeiten", onEditMarkdown);
+                    controls.createButton(elem, _T("BUTTON_EDIT"), onEditMarkdown);
                 }
             }
             if (cnt > 0) {
-                controls.createButton(elem, "Verschieben", onSelectDestinationFolder);
-                const btnCut = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-cut-5.png", "Verschieben");
+                controls.createButton(elem, _T("BUTTON_MOVE"), onSelectDestinationFolder);
+                const btnCut = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-cut-5.png", _T("BUTTON_MOVE"));
                 btnCut.addEventListener("click", onSelectDestinationFolder);
-                controls.createButton(elem, "L\u00F6schen", onConfirmDeleteDocuments);
-                const btnDelete = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-delete-6.png", "L\u00F6schen");
+                controls.createButton(elem, _T("BUTTON_DELETE"), onConfirmDeleteDocuments);
+                const btnDelete = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/edit-delete-6.png", _T("BUTTON_DELETE"));
                 btnDelete.addEventListener("click", onConfirmDeleteDocuments);
             }
             else {
-                controls.createButton(elem, "Ordner anlegen", onConfirmAddFolder);
-                const btnAddFolder = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/folder-new-2.png", "Ordner anlegen");
+                controls.createButton(elem, _T("BUTTON_CREATE_FOLDER"), onConfirmAddFolder);
+                const btnAddFolder = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/folder-new-2.png", _T("BUTTON_CREATE_FOLDER"));
                 btnAddFolder.addEventListener("click", onConfirmAddFolder);
-                controls.createButton(elem, "Dokument hochladen", onSelectFile);
-                const btnUploadDocument = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/list-add-4.png", "Dokument hochladen");
+                controls.createButton(elem, _T("BUTTON_UPLOAD_DOCUMENT"), onSelectFile);
+                const btnUploadDocument = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/list-add-4.png", _T("BUTTON_UPLOAD_DOCUMENT"));
                 btnUploadDocument.addEventListener("click", onSelectFile);
                 if (currentId !== null && currentId !== volumeId) {
-                    controls.createButton(elem, "Zur\u00FCck", onGotoUp);
-                    const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", "Zur\u00FCck");
+                    controls.createButton(elem, _T("BUTTON_BACK"), onGotoUp);
+                    const btnUp = controls.createImg(toolbar, "toolbar-button", 32, 32, "/images/buttons/go-up-10.png", _T("BUTTON_BACK"));
                     btnUp.addEventListener("click", onGotoUp);
                 }
             }
@@ -452,9 +447,9 @@ var documents = (() => {
         if (updateMarkdownItem) {
             return;
         }
-        const searchLabel = controls.createLabel(elem, undefined, "Filter:  ");
+        const searchLabel = controls.createLabel(elem, undefined, _T("LABEL_FILTER") + "  ");
         searchLabel.htmlFor = "filter-input-id";
-        const filterInput = controls.createInputField(elem, "Filter", undefined, undefined, 32, 255);
+        const filterInput = controls.createInputField(elem, _T("TEXT_FILTER"), undefined, undefined, 32, 255);
         filterInput.id = "filter-input-id";
         filterInput.addEventListener("input", () => onFilterItems());
         const toolbar = controls.createDiv(elem, "toolbar");
@@ -470,11 +465,11 @@ var documents = (() => {
         }
         td = controls.create(tr, "td", "column2");
         const url = isContainer(item) ? "/images/buttons/folder.png" : "/images/buttons/applications-office-6.png";
-        const img = controls.createImg(td, undefined, 32, 32, url, isContainer(item) ? "Ordner" : "Dokument");
+        const img = controls.createImg(td, undefined, 32, 32, url, isContainer(item) ? _T("TEXT_FOLDER") : _T("TEXT_DOCUMENT"));
         img.id = `item-open-id-${item.id}`;
         if (item.accessRole && item.accessRole.length > 0) {
             const isEverbody = item.accessRole == "everbody";
-            controls.createImg(td, undefined, 32, 32, isEverbody ? "/images/buttons/homepage.png" : "/images/buttons/family.png", isEverbody ? "Jeder" : "Familie");
+            controls.createImg(td, undefined, 32, 32, isEverbody ? "/images/buttons/homepage.png" : "/images/buttons/family.png", isEverbody ? _T("TEXT_EVERYBODY") : _T("TEXT_FAMILY"));
             td.className = "column2-access";
         }
         td = controls.create(tr, "td");
@@ -617,7 +612,7 @@ var documents = (() => {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
                 utils.fetch_api_call("/api/pwdman/markdown/help-documents", undefined, (html) => mdDiv.innerHTML = html);
-                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
     };
@@ -824,13 +819,13 @@ var documents = (() => {
         controls.removeAllChildren(toolbar);
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
-        const label = controls.createLabel(elem, undefined, "Name:");
+        const label = controls.createLabel(elem, undefined, _T("LABEL_NAME"));
         label.htmlFor = "create-name-input-id";
-        const name = controls.createInputField(elem, "Name", onAddFolder, undefined, 32, 255);
+        const name = controls.createInputField(elem, _T("TEXT_NAME"), onAddFolder, undefined, 32, 255);
         name.id = "create-name-input-id";
         controls.createSpan(elem, undefined, "  ");
-        controls.createButton(elem, "Anlegen", onAddFolder);
-        controls.createButton(elem, "Abbrechen", () => renderState());
+        controls.createButton(elem, _T("BUTTON_CREATE"), onAddFolder);
+        controls.createButton(elem, _T("BUTTON_CANCEL"), () => renderState());
         elem.scrollIntoView();
         if (!utils.is_mobile()) {
             name.focus();
@@ -860,14 +855,14 @@ var documents = (() => {
             controls.removeAllChildren(toolbar);
             const elem = document.getElementById("action-id");
             controls.removeAllChildren(elem);
-            const label = controls.createLabel(elem, undefined, "Name:");
+            const label = controls.createLabel(elem, undefined, _T("LABEL_NAME"));
             label.htmlFor = "rename-name-input-id";
-            const name = controls.createInputField(elem, "Name", onRename, undefined, 32, 255);
+            const name = controls.createInputField(elem, _T("TEXT_NAME"), onRename, undefined, 32, 255);
             name.id = "rename-name-input-id";
             name.value = selected[0].name;
             controls.createSpan(elem, undefined, "  ");
-            controls.createButton(elem, "Umbenennen", onRename);
-            controls.createButton(elem, "Abbrechen", () => renderState());
+            controls.createButton(elem, _T("BUTTON_RENAME"), onRename);
+            controls.createButton(elem, _T("BUTTON_CANCEL"), () => renderState());
             elem.scrollIntoView();
             if (!utils.is_mobile()) {
                 name.focus();
@@ -882,13 +877,13 @@ var documents = (() => {
             controls.removeAllChildren(toolbar);
             const elem = document.getElementById("action-id");
             controls.removeAllChildren(elem);
-            controls.createSpan(elem, undefined, "Dokumente im Ordner ver\u00F6ffentlichen f\u00FCr: ");
+            controls.createSpan(elem, undefined, _T("INFO_PUBLISH_DOCS_IN_FOLDER_FOR"));
             let priv = !selected[0].accessRole || selected[0].accessRole.length === 0;
             let fam = selected[0].accessRole === "family";
             let pub = selected[0].accessRole === "everbody";
-            controls.createRadiobutton(elem, "role-private-id", "access-role", "", "Besitzer", priv, onPublish);
-            controls.createRadiobutton(elem, "role-family-id", "access-role", "family", "Familie", fam, onPublish);
-            controls.createRadiobutton(elem, "role-public-id", "access-role", "everbody", "Jeder", pub, onPublish);
+            controls.createRadiobutton(elem, "role-private-id", "access-role", "", _T("TEXT_OWNER"), priv, onPublish);
+            controls.createRadiobutton(elem, "role-family-id", "access-role", "family", _T("TEXT_FAMILY"), fam, onPublish);
+            controls.createRadiobutton(elem, "role-public-id", "access-role", "everbody", _T("TEXT_EVERYBODY"), pub, onPublish);
             elem.scrollIntoView();
         }
     };
@@ -966,9 +961,9 @@ var documents = (() => {
         controls.removeAllChildren(toolbar);
         const elem = document.getElementById("action-id");
         controls.removeAllChildren(elem);
-        controls.createSpan(elem, undefined, "Willst Du die ausgew\u00E4hlten Elemente wirklich l\u00F6schen?  ");
-        controls.createButton(elem, "Ja", onDeleteDocuments);
-        controls.createButton(elem, "Nein", () => initItems());
+        controls.createSpan(elem, undefined, _T("INFO_REALLY_DELETE_SELECTED_ELEMS"));
+        controls.createButton(elem, _T("BUTTON_YES"), onDeleteDocuments);
+        controls.createButton(elem, _T("BUTTON_NO"), () => initItems());
         elem.scrollIntoView();
     };
 
@@ -1010,6 +1005,6 @@ var documents = (() => {
     };
 })();
 
-window.onload = () => utils.auth_lltoken(documents.render);
+window.onload = () => utils.auth_lltoken(() => utils.set_locale(documents.render));
 
 window.onclick = (event) => utils.hide_menu(event);
