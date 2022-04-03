@@ -481,7 +481,7 @@ var utils = (() => {
             locale = navigator.language.split("-")[0];
         }
         locale = locale.toLowerCase();
-        fetch(`/locale/${locale}.json`)
+        fetch(`/locale/${locale}.json?v=1`)
             .then(resp => {
                 resp.json()
                     .then(json => {

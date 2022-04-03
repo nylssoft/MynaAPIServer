@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.25";
+    let version = "1.2.26";
 
     let block;
     let nextBlock;
@@ -476,7 +476,7 @@ var tetris = (() => {
 
     const increaseLevel = () => {
         level += 1;
-        levelDiv.textContent = `Stufe: ${level}`;
+        levelDiv.textContent = _T("INFO_LEVEL_1", level);
         setBackgroundPicture();
     }
 
@@ -601,8 +601,8 @@ var tetris = (() => {
                 increaseLevel();
             }
         }
-        scoreDiv.textContent = `Punkte: ${score}`;
-        linesDiv.textContent = `Linien: ${lines}`;
+        scoreDiv.textContent = _T("INFO_SCORE_1", score);
+        linesDiv.textContent = _T("INFO_LINES_1", lines);
         if (playground.hasDropRows()) {
             state = StateEnums.DROPONEROW;
         }
@@ -765,7 +765,7 @@ var tetris = (() => {
             blockMoveDownCount = 0;
         }
         else {
-            gameOverDiv.textContent = `GAME OVER`;
+            gameOverDiv.textContent = _T("INFO_GAME_OVER");
             gameOverDiv.style.visibility = "visible";
             newGameButton.style.visibility = "visible";
             state = StateEnums.GAMEOVER;
@@ -824,17 +824,17 @@ var tetris = (() => {
     }
 
     const renderHeader = (parent) => {
-        let title = currentUser ? `${currentUser.name} - Tetris` : "Tetris";
+        let title = currentUser ? `${currentUser.name} - ${_T("HEADER_TETRIS")}` : _T("HEADER_TETRIS");
         controls.create(parent, "h1", "header", title);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
-        controls.create(div, "span", undefined, `Tetris ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", undefined, `${_T("HEADER_TETRIS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
         controls.createA(div, undefined, "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", undefined, ".");
     };
@@ -850,10 +850,10 @@ var tetris = (() => {
                 highScores.forEach(hs => {
                     let e = controls.createDiv(highScoreDiv, "highscore");
                     e.textContent = `${pos}. ${hs.name} - ${hs.score}`;
-                    let lstr = "Linien";
-                    if (hs.lines == 1) lstr = "Linie";
-                    let dstr = new Date(hs.created).toLocaleString("de-DE");
-                    e.title = `${hs.score} Punkte. Level ${hs.level}. ${hs.lines} ${lstr}. Spiel vom ${dstr}.`;
+                    let lstr = _T("TEXT_LINES");
+                    if (hs.lines == 1) lstr = _T("TEXT_LINE");
+                    let dstr = new Date(hs.created).toLocaleString(_T("LOCALE"));
+                    e.title = _T("INFO_HIGHSCORE_1_2_3_4_5", hs.score, hs.level, hs.lines, lstr, dstr);
                     pos++;
                 });
                 if (highScores.length > 0 && (!utils.is_mobile() || state === StateEnums.GAMEOVER)) {
@@ -869,9 +869,9 @@ var tetris = (() => {
         addHighScoreDiv = controls.createDiv(parent, "addhighscore");
         addHighScoreDiv.style.visibility = "hidden";
         let msg = controls.createDiv(addHighScoreDiv, undefined);
-        msg.textContent = "Gl\u00FCckwunsch! Du darfst Dich in die Bestenliste eintragen!";
-        inputUserName = controls.createInputField(addHighScoreDiv, "Name", addHighScore, "username-input", 10, 10);
-        inputUserName.placeholder = "Name";
+        msg.textContent = _T("INFO_CONGRAT_HIGHSCORE");
+        inputUserName = controls.createInputField(addHighScoreDiv, _T("TEXT_NAME"), addHighScore, "username-input", 10, 10);
+        inputUserName.placeholder = _T("TEXT_NAME");
         renderHighScoreEntries();
     };
 
@@ -885,13 +885,13 @@ var tetris = (() => {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
                 utils.fetch_api_call("/api/pwdman/markdown/help-tetris", undefined, (html) => mdDiv.innerHTML = html);
-                controls.createButton(contentDiv, "Weiterspielen", () => onUpdateHelp(false), undefined, "help-continue").focus();
+                controls.createButton(contentDiv, _T("BUTTON_CONTINUE_PLAY"), () => onUpdateHelp(false), undefined, "help-continue").focus();
             }
         }
     };
 
     const renderHelp = (parent) => {
-        let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+        let helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         helpDiv = controls.createDiv(parent, "invisible-div");
     };
@@ -965,29 +965,29 @@ var tetris = (() => {
         renderHighScores(parent);
         let info = controls.createDiv(parent, "info");
         scoreDiv = controls.createDiv(info);
-        scoreDiv.textContent = `Punkte: ${score}`;
+        scoreDiv.textContent = _T("INFO_SCORE_1", score);
         levelDiv = controls.createDiv(info);
-        levelDiv.textContent = `Stufe: ${level}`;
+        levelDiv.textContent = _T("INFO_LEVEL_1", level);
         linesDiv = controls.createDiv(info);
-        linesDiv.textContent = `Linien: ${lines}`;
+        linesDiv.textContent = _T("INFO_LINES_1", lines);
         let nextDiv = controls.createDiv(info);
-        nextDiv.textContent = "N\u00E4chste Form:";
+        nextDiv.textContent = _T("INFO_NEXT_FORM");
 
         gameOverDiv = controls.createDiv(parent, "gameover");
         gameOverDiv.style.visibility = "hidden";
 
-        newGameButton = controls.createButton(parent, "Neues Spiel", () => { render(); }, "newgame", "newgame");
+        newGameButton = controls.createButton(parent, _T("BUTTON_NEW_GAME"), () => { render(); }, "newgame", "newgame");
         newGameButton.style.visibility = "hidden";
         
         controls.createDiv(parent, "arrow-div");
         let arrowDivLeft = controls.createDiv(parent, "arrow-left");
-        createImage(arrowDivLeft, "/images/buttons/arrow-left-3.png", 32, "ArrowLeft", "Links");
+        createImage(arrowDivLeft, "/images/buttons/arrow-left-3.png", 32, "ArrowLeft", _T("BUTTON_LEFT"));
         let arrowDivRight = controls.createDiv(parent, "arrow-right");
-        createImage(arrowDivRight, "/images/buttons/arrow-right-3.png", 32, "ArrowRight", "Rechts");
+        createImage(arrowDivRight, "/images/buttons/arrow-right-3.png", 32, "ArrowRight", _T("BUTTON_RIGHT"));
         let arrowDivUp = controls.createDiv(parent, "arrow-up");
-        createImage(arrowDivUp, "/images/buttons/arrow-up-3.png", 32, "ArrowUp", "Drehen");
+        createImage(arrowDivUp, "/images/buttons/arrow-up-3.png", 32, "ArrowUp", _T("BUTTON_ROTATE"));
         let arrowDivDown = controls.createDiv(parent, "arrow-down");
-        createImage(arrowDivDown, "/images/buttons/arrow-down-3.png", 32, "ArrowDown", "Fallen");
+        createImage(arrowDivDown, "/images/buttons/arrow-down-3.png", 32, "ArrowDown", _T("BUTTON_DROP"));
 
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = pixelPerField * (playground.width + 2);
@@ -1188,11 +1188,13 @@ var tetris = (() => {
 // --- window loaded event
 
 window.onload = () => {
-    utils.auth_lltoken(() => {
-        let token = utils.get_authentication_token();
-        utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
-            (model) => tetris.init(model),
-            (errMsg) => console.error(errMsg));
+    utils.set_locale(() => {
+        utils.auth_lltoken(() => {
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+                (model) => tetris.init(model),
+                (errMsg) => console.error(errMsg));
+        });
     });
 };
 
