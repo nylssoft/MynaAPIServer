@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "1.0.6";
+    let version = "1.0.7";
 
     // helper
 
@@ -446,35 +446,35 @@ var chess = (() => {
         if (isGameStarted()) {
             if (model.board.gameOver) {
                 if (model.board.checkMate) {
-                    msg = `Schach Matt! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                    msg = _T("INFO_CHECK_MATE_WINNER_1", model.board.winner);
                 }
                 else if (model.board.staleMate) {
-                    msg = "Patt! Das Spiel ist zu Ende.";
+                    msg = _T("INFO_STALE_MATE");
                 }
                 else if (model.board.timeOut) {
-                    msg = `Die Zeit ist abgelaufen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                    msg = _T("INFO_TIME_OUT_WINNER_1", model.board.winner);
                 }
                 else if (model.board.kingStrike) {
-                    msg = `Der K\u00F6nig wurde geschlagen! Das Spiel ist zu Ende. Gewinner ist ${model.board.winner}.`;
+                    msg = _T("INFO_KING_STRIKE_WINNER_1", model.board.winner);
                 }
                 else if (model.board.giveUp) {
-                    msg = `Das Spiel wurde aufgegeben. Gewinner ist ${model.board.winner}.`;
+                    msg = _T("INFO_GIVE_UP_WINNER_1", model.board.winner);
                 }
                 if (ticket) {
                     if (model.board.nextGameRequested) {
                         if (model.currentUser.startGameConfirmed) {
-                            controls.create(pConfirmNextGame, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
+                            controls.create(pConfirmNextGame, "p", undefined, _T("INFO_WAIT_CONFIRMATION"));
                             document.body.className = "inactive-background";
                         }
                         else {
-                            controls.create(pConfirmNextGame, "span", "confirmation", "N\u00E4chstes Spiel?");
-                            controls.createButton(pConfirmNextGame, "Ja", () => btnConfirmNextGame_click(true));
-                            controls.createButton(pConfirmNextGame, "Nein", () => btnConfirmNextGame_click(false));
+                            controls.create(pConfirmNextGame, "span", "confirmation", _T("INFO_QUESTION_NEXT_GAME"));
+                            controls.createButton(pConfirmNextGame, _T("BUTTON_YES"), () => btnConfirmNextGame_click(true));
+                            controls.createButton(pConfirmNextGame, _T("BUTTON_NO"), () => btnConfirmNextGame_click(false));
                             document.body.className = "active-background";
                         }
                     }
                     else {
-                        controls.createButton(pConfirmNextGame, "N\u00E4chstes Spiel", btnNextGame_click, "newgame").id = "newgame";
+                        controls.createButton(pConfirmNextGame, _T("BUTTON_NEXT_GAME"), btnNextGame_click, "newgame").id = "newgame";
                         document.body.className = "active-background";
                     }
                 }
@@ -482,10 +482,10 @@ var chess = (() => {
             else {
                 controls.removeAllChildren(pConfirmNextGame);
                 if (model.board.check) {
-                    msg = "Schach! ";
+                    msg = _T("INFO_CHECK");
                 }
                 if (isActivePlayer()) {
-                    msg += "Du bist am Zug!";
+                    msg += _T("INFO_YOUR_TURN");
                     document.body.className = "active-background";
                 }
                 else {
@@ -661,8 +661,8 @@ var chess = (() => {
 
     const renderBoardFull = (parent, ignoreToken) => {
         if (ignoreToken || !currentUser) {
-            controls.create(parent, "p", undefined, "Das Schachbrett ist leider schon belegt!");
-            controls.createButton(parent, "Zuschauen als Gast", () => window.open("/chess?guest", "_blank"));
+            controls.create(parent, "p", undefined, _T("INFO_CHESS_BOARD_FULL"));
+            controls.createButton(parent, _T("BUTTON_GUEST_VIEW"), () => window.open("/chess?guest", "_blank"));
             document.body.className = "inactive-background";
         }
         else {
@@ -680,12 +680,12 @@ var chess = (() => {
     const renderUserList = (parent) => {
         helpDiv = controls.createDiv(document.body);
         utils.create_menu(parent);
-        let title = currentUser ? `${currentUser.name} - Schach` : "Schach";
+        let title = currentUser ? `${currentUser.name} - ${_T("HEADER_CHESS")}` : _T("HEADER_CHESS");
         const h1 = controls.create(parent, "h1", undefined, title);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         // draw sample chessboard
@@ -697,7 +697,7 @@ var chess = (() => {
         // render content area        
         const divContent = controls.createDiv(parent, "content");
         if (model.allUsers.length > 0) {
-            controls.create(divContent, "p", undefined, "Es sind folgende Spieler angemeldet:");
+            controls.create(divContent, "p", undefined, _T("INFO_LOGGED_IN_PLAYERS"));
             const ul = controls.create(divContent, "ul");
             let idx = 1;
             model.allUsers.forEach((user) => {
@@ -731,33 +731,33 @@ var chess = (() => {
     const renderLogin = (parent) => {
         document.body.className = "active-background";
         if (!currentUser) {
-            controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
-            let label = controls.createLabel(parent, undefined, "Name:");
+            controls.create(parent, "p", undefined, _T("INFO_YOU_CAN_PLAY"));
+            let label = controls.createLabel(parent, undefined, _T("LABEL_NAME"));
             label.htmlFor = "username-id";
-            inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
-            inputUsername.placeholder = "Name";
+            inputUsername = controls.createInputField(parent, _T("TEXT_NAME"), btnLogin_click, "username-input", 20, 32);
+            inputUsername.placeholder = _T("TEXT_NAME");
             inputUsername.id = "username-id";
             if (!utils.is_mobile()) {
                 inputUsername.focus();
             }
-            controls.createButton(parent, "Anmelden", btnLogin_click);
+            controls.createButton(parent, _T("BUTTON_LOGIN"), btnLogin_click);
         }
         else {
             let parentdiv = controls.create(parent, "p");
-            controls.create(parentdiv, "p", undefined, `${currentUser.name}! Du kannst noch mitspielen!`);
-            inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
+            controls.create(parentdiv, "p", undefined, _T("INFO_YOU_CAN_PLAY_1", currentUser.name));
+            inputUsername = controls.createInputField(parentdiv, _T("TEXT_NAME"), btnLogin_click, "hide", 20, 32);
             inputUsername.value = currentUser.name;
-            controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
+            controls.createButton(parentdiv, _T("BUTTON_PLAY_WITH"), btnLogin_click);
         }
     };
 
     const renderWaitForUsers = (parent) => {
         if (model.canPlayAgainstComputer) {
-            controls.create(parent, "p", "activity", "Du kannst gegen den Computer spielen oder warten, bis sich ein weiterer Spieler anmeldet.");
-            controls.createButton(parent, "Computerspiel starten", btnPlayComputer_click);
+            controls.create(parent, "p", "activity", _T("INFO_PLAY_AGAINST_COMPUTER"));
+            controls.createButton(parent, _T("BUTTON_START_COMPUTER_GAME"), btnPlayComputer_click);
         }
         else {
-            controls.create(parent, "p", "activity", "Du musst warten, bis sich ein weiterer Spieler anmeldet.");
+            controls.create(parent, "p", "activity", _T("INFO_WAIT_FOR_OTHER_PLAYER"));
         }
         document.body.className = "inactive-background";
     };
@@ -765,8 +765,8 @@ var chess = (() => {
     const renderStartGame = (parent) => {
         const labelClassname = model.isComputerGame ? "optionslabel1" : "optionslabel2";
         const divColor = controls.createDiv(parent);
-        const colorOptions = [{ name: "Weiss", value: "W" }, { name: "Schwarz", value: "B" }];
-        const labelColor = controls.createLabel(divColor, labelClassname, "Farbe: ");
+        const colorOptions = [{ name: _T("OPTION_WHITE"), value: "W" }, { name: _T("OPTION_BLACK"), value: "B" }];
+        const labelColor = controls.createLabel(divColor, labelClassname, _T("LABEL_COLOR"));
         labelColor.htmlFor = "mycolor";
         const selectColor = controls.createSelect(divColor, "mycolor", "options", colorOptions);
         if (isBlackPlayer()) {
@@ -777,14 +777,14 @@ var chess = (() => {
         }
         const divGame = controls.createDiv(parent);
         const gameOptions = [
-            { name: "Schach 15 Minuten", value: "chess15" },
-            { name: "Schach 30 Minuten", value: "chess30" },
-            { name: "Schach 60 Minuten", value: "chess60" }
+            { name: _T("OPTION_CHESS_15MIN"), value: "chess15" },
+            { name: _T("OPTION_CHESS_30MIN"), value: "chess30" },
+            { name: _T("OPTION_CHESS_60MIN"), value: "chess60" }
         ];
         if (!model.isComputerGame) {
-            gameOptions.unshift({ name: "Blitzschach 5 Minuten", value: "fastchess" });
+            gameOptions.unshift({ name: _T("OPTION_CHESS_5MIN"), value: "fastchess" });
         }
-        const labelGame = controls.createLabel(divGame, labelClassname, "Spiel: ");
+        const labelGame = controls.createLabel(divGame, labelClassname, _T("LABEL_CHESS_GAME"));
         labelGame.htmlFor = "gameoption";
         const selectGame = controls.createSelect(divGame, "gameoption", "options", gameOptions);
         if (model.board) {
@@ -797,9 +797,9 @@ var chess = (() => {
             const divLevel = controls.createDiv(parent);
             const levelOptions = [];
             for (let lvl = 1; lvl < 10; lvl++) {
-                levelOptions.push({ name: `Stufe ${lvl}`, value: `${lvl}` });
+                levelOptions.push({ name: _T("OPTION_CHESS_LEVEL_1", lvl), value: `${lvl}` });
             };
-            const labelLevel = controls.createLabel(divLevel, labelClassname, "Spielst\u00E4rke: ");
+            const labelLevel = controls.createLabel(divLevel, labelClassname, _T("LABEL_CHESS_LEVEL"));
             labelLevel.htmlFor = "level";
             const selectLevel = controls.createSelect(divLevel, "level", "options", levelOptions);
             selectLevel.value = "1";
@@ -808,7 +808,7 @@ var chess = (() => {
             model.chessEngineNames.forEach((engineName) => {
                 engineOptions.push({ name: engineName, value: engineName });
             });
-            const labelEngine = controls.createLabel(divEngine, labelClassname, "Schach-Engine: ");
+            const labelEngine = controls.createLabel(divEngine, labelClassname, _T("LABEL_CHESS_ENGINE"));
             labelEngine.htmlFor = "engine";
             const selectEngine = controls.createSelect(divEngine, "engine", "options", engineOptions);
             selectEngine.value = model.chessEngineNames[0];
@@ -818,19 +818,19 @@ var chess = (() => {
             selectColor.disabled = true;
             selectGame.disabled = true;
             if (!model.currentUser.startGameConfirmed) {
-                controls.create(divActions, "span", "confirmation", "Spiel starten?");
-                controls.createButton(divActions, "Ja", () => btnConfirmStartGame_click(true));
-                controls.createButton(divActions, "Nein", () => btnConfirmStartGame_click(false));
+                controls.create(divActions, "span", "confirmation", _T("INFO_QUESTION_START_GAME"));
+                controls.createButton(divActions, _T("BUTTON_YES"), () => btnConfirmStartGame_click(true));
+                controls.createButton(divActions, _T("BUTTON_NO"), () => btnConfirmStartGame_click(false));
                 document.body.className = "active-background";
             }
             else {
-                controls.create(divActions, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
+                controls.create(divActions, "p", undefined, _T("INFO_WAIT_CONFIRMATION"));
                 document.body.className = "inactive-background";
             }
         }
         else {
-            const txt = model.isComputerGame ? "Computerspiel" : "Spiel"
-            controls.createButton(divActions, `${txt} starten`, btnStartGame_click);
+            const txt = model.isComputerGame ? _T("BUTTON_START_COMPUTER_GAME") : _T("BUTTON_START_GAME");
+            controls.createButton(divActions, txt, btnStartGame_click);
             document.body.className = "active-background";
         }
     };
@@ -839,35 +839,35 @@ var chess = (() => {
         controls.create(parent, "p", undefined, "").id = "message";
         controls.create(parent, "p", undefined, "").id = "confirmnextgame"
         if (endGameClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
-            controls.createButton(parent, "Ja", btnEndGame_click, "EndGameYes");
-            controls.createButton(parent, "Nein", btnEndGame_click, "EndGameNo");
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_LOGOUT"));
+            controls.createButton(parent, _T("BUTTON_YES"), btnEndGame_click, "EndGameYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnEndGame_click, "EndGameNo");
             document.body.className = "active-background";
             return true;
         }
         if (giveUpClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
-            controls.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
-            controls.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_GIVE_UP"));
+            controls.createButton(parent, _T("BUTTON_YES"), btnGiveUp_click, "GiveUpYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnGiveUp_click, "GiveUpNo");
             document.body.className = "active-background";
             return true;
         }
-        controls.createButton(parent, "Letzter Zug", btnLastMove_click, "lastmovedbutton").id = "lastmovedbutton";
+        controls.createButton(parent, _T("BUTTON_LAST_MOVE"), btnLastMove_click, "lastmovedbutton").id = "lastmovedbutton";
         updateLastMovedButton();
-        controls.createButton(parent, "Aufgeben", btnGiveUp_click, "giveupbutton").id = "giveupbutton";
+        controls.createButton(parent, _T("BUTTON_GIVE_UP"), btnGiveUp_click, "giveupbutton").id = "giveupbutton";
         updateGiveUpButton();
         return false;
     };
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Schach ${version}. Copyright 2021-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_CHESS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2021-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         if (ticket && (!model.board || !model.board.gameStarted)) {
-            controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
+            controls.createButton(div, _T("BUTTON_LOGOUT"), btnLogout_click, "Logout", "logout-button");
         }
         if (ticket && isGameStarted()) {
-            controls.createButton(div, "Abmelden", btnEndGame_click, "EndGame", "logout-button");
+            controls.createButton(div, _T("BUTTON_LOGOUT"), btnEndGame_click, "EndGame", "logout-button");
         }
     };
 
@@ -892,7 +892,7 @@ var chess = (() => {
             render();
             return;
         }
-        document.title = `Schach - ${model.currentUser.name}`;
+        document.title = `${_T("HEADER_CHESS")} - ${model.currentUser.name}`;
         if (model.board && model.board.gameStarted) {
             renderMainPage(parent);
         }
@@ -920,12 +920,12 @@ var chess = (() => {
         const divMain = controls.createDiv(document.body, "main");
         if (!ticket) {
             if (guestMode) {
-                document.title = "Schach - Gastansicht";
+                document.title = `${_T("HEADER_CHESS")} - ${_T("INFO_GUESTVIEW")}`;
                 if (model.board) {
                     renderMainPage(divMain);
                 }
                 else {
-                    controls.create(divMain, "p", undefined, "Es wird gerade nicht gespielt.");
+                    controls.create(divMain, "p", undefined, _T("INFO_NO_RUNNING_GAME"));
                     renderCopyright(divMain);
                 }
             }
@@ -1328,7 +1328,7 @@ var chess = (() => {
 window.onload = () => {
     window.setInterval(chess.onTimer, 1000);
     window.addEventListener("resize", chess.onResize);
-    utils.auth_lltoken(() => chess.loadFigureImages(chess.renderInit));
+    utils.auth_lltoken(() => utils.set_locale(() => chess.loadFigureImages(chess.renderInit)));
 };
 
 window.onclick = (event) => utils.hide_menu(event);
