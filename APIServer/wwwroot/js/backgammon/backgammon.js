@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.11";
+    let version = "1.0.12";
 
     let dirty;
 
@@ -246,34 +246,34 @@ var backgammon = (() => {
         if (model && model.board) {
             if (model.board.gameOver) {
                 if (model.currentUser && model.currentUser.name === model.board.winner) {
-                    msg = "Du hast gewonnen.";
+                    msg = _T("INFO_YOU_HAVE_WON");
                 }
                 else {
-                    msg = `${model.board.winner} hat gewonnen.`;                
+                    msg = _T("INFO_HAS_WON_1", model.board.winner);
                 }
                 if (model.board.backgammon) {
-                    msg += " Backgammon!";
+                    msg += " " + _T("INFO_BACKGAMMON");
                 }
                 else if (model.board.gammon) {
-                    msg += " Gammon!";
+                    msg += " " + _T("INFO_GAMMON");
                 }
                 if (model.board.giveUp) {
-                    msg += " Das Spiel wurde aufgegeben.";
+                    msg += " " + _T("INFO_GIVE_UP");
                 }
                 if (ticket && model.currentUser) {
                     if (model.board.nextGameRequested) {
                         if (model.currentUser.startGameConfirmed) {
-                            controls.create(pConfirmNextGame, "p", undefined, "Du wartest auf die Best\u00E4tigung.");
+                            controls.create(pConfirmNextGame, "p", undefined, _T("INFO_WAIT_CONFIRMATION"));
                         }
                         else {
-                            controls.create(pConfirmNextGame, "span", "confirmation", "N\u00E4chstes Spiel?");
-                            controls.createButton(pConfirmNextGame, "Ja", () => btnConfirmNextGame_click(true));
-                            controls.createButton(pConfirmNextGame, "Nein", () => btnConfirmNextGame_click(false));
+                            controls.create(pConfirmNextGame, "span", "confirmation", _T("INFO_QUESTION_NEXT_GAME"));
+                            controls.createButton(pConfirmNextGame, _T("BUTTON_YES"), () => btnConfirmNextGame_click(true));
+                            controls.createButton(pConfirmNextGame, _T("BUTTON_NO"), () => btnConfirmNextGame_click(false));
                             isActive = true;
                         }
                     }
                     else {
-                        controls.createButton(pConfirmNextGame, "N\u00E4chstes Spiel", btnNextGame_click, "newgame").id = "newgame";
+                        controls.createButton(pConfirmNextGame, _T("BUTTON_NEXT_GAME"), btnNextGame_click, "newgame").id = "newgame";
                         isActive = true;
                     }
                 }
@@ -283,50 +283,50 @@ var backgammon = (() => {
                 // roll to find out which player starts
                 if (!model.board.gameStarted) {
                     if (model.board.doubleRoll) {
-                        msg = "Pasch!";
+                        msg = _T("INFO_DOUBLE");
                         if (model.currentUser) {
-                            msg += " Du musst erneuert w\u00FCrfeln!";
+                            msg += " " +_T("INFO_ROLL_DICE_AGAIN");
                             isActive = true;
                         }
                     }
                     else if (model.board.currentRollNumbers.length == 0) {
-                        msg = "Wer f\u00E4ngt an?";
+                        msg = _T("INFO_QUESTION_WHO_STARTS");
                         if (model.currentUser) {
                             isActive = true;
                         }
                     }
                     else {
                         if (model.currentUser && !model.board.hasStartRoll) {
-                            msg = "Du bist am Zug.";
+                            msg = _T("INFO_YOUR_TURN");
                             isActive = true;
                         }
                         else {
-                            msg = `${getOpponentPlayer()} ist am Zug.`;
+                            msg = _T("INFO_TURN_1", getOpponentPlayer());
                         }
                     }
                 }
                 // game started
                 else {
                     if (isActivePlayer()) {                        
-                        msg = "Du bist dran.";
+                        msg = _T("INFO_ITS_YOUR_TURN");
                         if (model.board.currentRollNumbers.length > 0) {
                             if (model.board.moves.length == 0) {
-                                msg += " Es gibt keinen Zug mehr.";
+                                msg += " " + _T("INFO_NO_MOVE_AVAILABLE");
                             }
                             else {
-                                msg += ` Verbleibende Schritte: ${model.board.remainingRollNumbers.join(", ")}.`;
+                                msg += " " + _T("INFO_REMAINING_MOVES_1", model.board.remainingRollNumbers.join(", "));
                             }
                         }
                         isActive = true;
                     }
                     else {
-                        msg = `${getActivePlayer()} ist am Zug.`;
+                        msg = _T("INFO_TURN_1", getActivePlayer());
                         if (model.board.currentRollNumbers.length > 0) {
                             if (model.board.moves.length == 0) {
-                                msg += " Es gibt keinen Zug mehr.";
+                                msg += " " + _T("INFO_NO_MOVE_AVAILABLE");
                             }
                             else {
-                                msg += ` Verbleibende Schritte: ${model.board.remainingRollNumbers.join(", ")}.`;
+                                msg += " " + _T("INFO_REMAINING_MOVES_1", model.board.remainingRollNumbers.join(", "));
                             }
                         }
                     }
@@ -858,8 +858,8 @@ var backgammon = (() => {
 
     const renderBoardFull = (parent, ignoreToken) => {
         if (ignoreToken || !currentUser) {
-            controls.create(parent, "p", undefined, "Das Brett ist leider schon belegt!");
-            controls.createButton(parent, "Zuschauen als Gast", () => window.open("/backgammon?guest", "_blank"));
+            controls.create(parent, "p", undefined, _T("INFO_BOARD_FULL"));
+            controls.createButton(parent, _T("BUTTON_GUEST_VIEW"), () => window.open("/backgammon?guest", "_blank"));
             setActive(false);
         }
         else {
@@ -877,12 +877,12 @@ var backgammon = (() => {
     const renderUserList = (parent) => {
         helpDiv = controls.createDiv(document.body);
         utils.create_menu(parent);
-        let title = currentUser ? `${currentUser.name} - Backgammon` : "Backgammon";
+        let title = currentUser ? `${currentUser.name} - ${_T("HEADER_BACKGAMMON")}` : _T("HEADER_BACKGAMMON");
         const h1 = controls.create(parent, "h1", undefined, title);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         // draw sample board
@@ -894,7 +894,7 @@ var backgammon = (() => {
         // render content area        
         const divContent = controls.createDiv(parent, "content");
         if (model.allUsers.length > 0) {
-            controls.create(divContent, "p", undefined, "Es sind folgende Spieler angemeldet:");
+            controls.create(divContent, "p", undefined, _T("LABEL_LOGGED_IN_PLAYERS"));
             const ul = controls.create(divContent, "ul");
             let idx = 1;
             model.allUsers.forEach((user) => {
@@ -911,29 +911,29 @@ var backgammon = (() => {
     const renderLogin = (parent) => {
         setActive(true);
         if (!currentUser) {
-            controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
-            const label = controls.createLabel(parent, undefined, "Name:");
+            controls.create(parent, "p", undefined, _T("INFO_YOU_CAN_PLAY"));
+            const label = controls.createLabel(parent, undefined, _T("LABEL_NAME"));
             label.htmlFor = "username-id";
-            const inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
-            inputUsername.placeholder = "Name";
+            const inputUsername = controls.createInputField(parent, _T("TEXT_NAME"), btnLogin_click, "username-input", 20, 32);
+            inputUsername.placeholder = _T("TEXT_NAME");
             inputUsername.id = "username-id";
             if (!utils.is_mobile()) {
                 inputUsername.focus();
             }
-            controls.createButton(parent, "Anmelden", btnLogin_click);
+            controls.createButton(parent, _T("BUTTON_LOGIN"), btnLogin_click);
         }
         else {
             const parentdiv = controls.create(parent, "p");
-            controls.create(parentdiv, "p", undefined, `${currentUser.name}! Du kannst noch mitspielen!`);
-            const inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
+            controls.create(parentdiv, "p", undefined, _T("INFO_YOU_CAN_PLAY_1", currentUser.name));
+            const inputUsername = controls.createInputField(parentdiv, _T("TEXT_NAME"), btnLogin_click, "hide", 20, 32);
             inputUsername.value = currentUser.name;
             inputUsername.id = "username-id";
-            controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
+            controls.createButton(parentdiv, _T("BUTTON_PLAY_WITH"), btnLogin_click);
         }
     };
 
     const renderWaitForUsers = (parent) => {
-        controls.create(parent, "p", "activity", "Du musst warten, bis sich ein weiterer Spieler anmeldet.");
+        controls.create(parent, "p", "activity", _T("INFO_WAIT_FOR_OTHER_PLAYER"));
         setActive(false);
     };
 
@@ -942,7 +942,7 @@ var backgammon = (() => {
         if (model && model.board) {
         }
         else {
-            controls.createButton(divActions, "Spiel starten", btnStartGame_click);
+            controls.createButton(divActions, _T("BUTTON_START_GAME"), btnStartGame_click);
             setActive(true);
         }
     };
@@ -973,38 +973,38 @@ var backgammon = (() => {
         controls.create(parent, "p").id = "message-id";
         controls.create(parent, "p").id = "confirmnextgame"
         if (endGameClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du Dich wirklich abmelden?");
-            controls.createButton(parent, "Ja", btnEndGame_click, "EndGameYes");
-            controls.createButton(parent, "Nein", btnEndGame_click, "EndGameNo");
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_LOGOUT"));
+            controls.createButton(parent, _T("BUTTON_YES"), btnEndGame_click, "EndGameYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnEndGame_click, "EndGameNo");
             setActive(true);
             return true;
         }
         if (giveUpClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
-            controls.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
-            controls.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_GIVE_UP"));
+            controls.createButton(parent, _T("BUTTON_YES"), btnGiveUp_click, "GiveUpYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnGiveUp_click, "GiveUpNo");
             setActive(true);
             return true;
         }
-        controls.createButton(parent, "W\u00FCrfeln", btnRoll_click, "rollbutton").id = "rollbutton";
+        controls.createButton(parent, _T("BUTTON_ROLL_DICE"), btnRoll_click, "rollbutton").id = "rollbutton";
         updateRollButton();
-        controls.createButton(parent, "Weiter", btnSkip_click, "skipbutton").id = "skipbutton";
+        controls.createButton(parent, _T("BUTTON_CONTINUE"), btnSkip_click, "skipbutton").id = "skipbutton";
         updateSkipButton();
-        controls.createButton(parent, "Aufgeben", btnGiveUp_click, "giveupbutton").id = "giveupbutton";
+        controls.createButton(parent, _T("BUTTON_GIVE_UP"), btnGiveUp_click, "giveupbutton").id = "giveupbutton";
         updateGiveUpButton();
         return false;
     };
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Backgammon ${version}. Copyright 2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_BACKGAMMON")} ${version}. ${_T("TEXT_COPYRIGHT")} 2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         if (ticket) {
             if (!model.board) {
-                controls.createButton(div, "Abmelden", btnLogout_click, "Logout", "logout-button");
+                controls.createButton(div, _T("BUTTON_LOGOUT"), btnLogout_click, "Logout", "logout-button");
             }
             else {
-                controls.createButton(div, "Abmelden", btnEndGame_click, "EndGame", "logout-button");
+                controls.createButton(div, _T("BUTTON_LOGOUT"), btnEndGame_click, "EndGame", "logout-button");
             }
         }
     };
@@ -1069,7 +1069,7 @@ var backgammon = (() => {
             render();
             return;
         }
-        document.title = `Backgammon - ${model.currentUser.name}`;
+        document.title = `${_T("HEADER_BACKGAMMON")} - ${model.currentUser.name}`;
         if (model && model.board) {
             renderMainPage(parent);
         }
@@ -1096,12 +1096,12 @@ var backgammon = (() => {
         const divMain = controls.createDiv(document.body, "main");
         if (!ticket) {
             if (guestMode) {
-                document.title = "Backgammon - Gastansicht";
+                document.title = `${_T("HEADER_BACKGAMMON")} - ${_T("INFO_GUEST_VIEW")}`;
                 if (model.board) {
                     renderMainPage(divMain);
                 }
                 else {
-                    controls.create(divMain, "p", undefined, "Es wird gerade nicht gespielt.");
+                    controls.create(divMain, "p", undefined, _T("INFO_NO_RUNNING_GAME"));
                     renderCopyright(divMain);
                 }
             }
@@ -1277,7 +1277,7 @@ var backgammon = (() => {
                         mdDiv.innerHTML = html;
                     }
                 );
-                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
     };
@@ -1315,7 +1315,7 @@ var backgammon = (() => {
                     render();
                 },
                 (errMsg) => {
-                    document.getElementById("login-error-id").textContent = errMsg;
+                    document.getElementById("login-error-id").textContent = _T(errMsg);
                     enableTimer();
                 });
         }
@@ -1489,7 +1489,7 @@ var backgammon = (() => {
 window.onload = () => {
     window.setInterval(backgammon.onTimer, 1000);
     window.addEventListener("resize", backgammon.onResize);
-    utils.auth_lltoken(() => backgammon.renderInit());
+    utils.auth_lltoken(() => utils.set_locale(() => backgammon.renderInit()));
 };
 
 window.onclick = (event) => utils.hide_menu(event);
