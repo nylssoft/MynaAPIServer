@@ -482,7 +482,7 @@ var chess = (() => {
             else {
                 controls.removeAllChildren(pConfirmNextGame);
                 if (model.board.check) {
-                    msg = _T("INFO_CHECK");
+                    msg = _T("INFO_CHECK") + " ";
                 }
                 if (isActivePlayer()) {
                     msg += _T("INFO_YOUR_TURN");
@@ -697,7 +697,7 @@ var chess = (() => {
         // render content area        
         const divContent = controls.createDiv(parent, "content");
         if (model.allUsers.length > 0) {
-            controls.create(divContent, "p", undefined, _T("INFO_LOGGED_IN_PLAYERS"));
+            controls.create(divContent, "p", undefined, _T("LABEL_LOGGED_IN_PLAYERS"));
             const ul = controls.create(divContent, "ul");
             let idx = 1;
             model.allUsers.forEach((user) => {
@@ -766,7 +766,7 @@ var chess = (() => {
         const labelClassname = model.isComputerGame ? "optionslabel1" : "optionslabel2";
         const divColor = controls.createDiv(parent);
         const colorOptions = [{ name: _T("OPTION_WHITE"), value: "W" }, { name: _T("OPTION_BLACK"), value: "B" }];
-        const labelColor = controls.createLabel(divColor, labelClassname, _T("LABEL_COLOR"));
+        const labelColor = controls.createLabel(divColor, labelClassname, _T("LABEL_COLOR") + " ");
         labelColor.htmlFor = "mycolor";
         const selectColor = controls.createSelect(divColor, "mycolor", "options", colorOptions);
         if (isBlackPlayer()) {
@@ -777,14 +777,14 @@ var chess = (() => {
         }
         const divGame = controls.createDiv(parent);
         const gameOptions = [
-            { name: _T("OPTION_CHESS_15MIN"), value: "chess15" },
-            { name: _T("OPTION_CHESS_30MIN"), value: "chess30" },
-            { name: _T("OPTION_CHESS_60MIN"), value: "chess60" }
+            { name: _T("OPTION_CHESS_MIN_1", 15), value: "chess15" },
+            { name: _T("OPTION_CHESS_MIN_1", 30), value: "chess30" },
+            { name: _T("OPTION_CHESS_MIN_1", 60), value: "chess60" }
         ];
         if (!model.isComputerGame) {
-            gameOptions.unshift({ name: _T("OPTION_CHESS_5MIN"), value: "fastchess" });
+            gameOptions.unshift({ name: _T("OPTION_FAST_CHESS"), value: "fastchess" });
         }
-        const labelGame = controls.createLabel(divGame, labelClassname, _T("LABEL_CHESS_GAME"));
+        const labelGame = controls.createLabel(divGame, labelClassname, _T("LABEL_GAME") + " ");
         labelGame.htmlFor = "gameoption";
         const selectGame = controls.createSelect(divGame, "gameoption", "options", gameOptions);
         if (model.board) {
@@ -797,9 +797,9 @@ var chess = (() => {
             const divLevel = controls.createDiv(parent);
             const levelOptions = [];
             for (let lvl = 1; lvl < 10; lvl++) {
-                levelOptions.push({ name: _T("OPTION_CHESS_LEVEL_1", lvl), value: `${lvl}` });
+                levelOptions.push({ name: _T("OPTION_LEVEL_1", lvl), value: `${lvl}` });
             };
-            const labelLevel = controls.createLabel(divLevel, labelClassname, _T("LABEL_CHESS_LEVEL"));
+            const labelLevel = controls.createLabel(divLevel, labelClassname, _T("LABEL_LEVEL") + " ");
             labelLevel.htmlFor = "level";
             const selectLevel = controls.createSelect(divLevel, "level", "options", levelOptions);
             selectLevel.value = "1";
@@ -808,7 +808,7 @@ var chess = (() => {
             model.chessEngineNames.forEach((engineName) => {
                 engineOptions.push({ name: engineName, value: engineName });
             });
-            const labelEngine = controls.createLabel(divEngine, labelClassname, _T("LABEL_CHESS_ENGINE"));
+            const labelEngine = controls.createLabel(divEngine, labelClassname, _T("LABEL_CHESS_ENGINE") + " ");
             labelEngine.htmlFor = "engine";
             const selectEngine = controls.createSelect(divEngine, "engine", "options", engineOptions);
             selectEngine.value = model.chessEngineNames[0];
@@ -920,7 +920,7 @@ var chess = (() => {
         const divMain = controls.createDiv(document.body, "main");
         if (!ticket) {
             if (guestMode) {
-                document.title = `${_T("HEADER_CHESS")} - ${_T("INFO_GUESTVIEW")}`;
+                document.title = `${_T("HEADER_CHESS")} - ${_T("INFO_GUEST_VIEW")}`;
                 if (model.board) {
                     renderMainPage(divMain);
                 }
