@@ -1080,7 +1080,7 @@ var chess = (() => {
                         mdDiv.innerHTML = html;
                     }
                 );
-                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
     };
