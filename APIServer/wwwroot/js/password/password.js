@@ -4,7 +4,7 @@ var password = (() => {
 
     // state
 
-    let version = "1.0.4";
+    let version = "1.0.5";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -43,18 +43,18 @@ var password = (() => {
 
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
-        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - Passw\u00F6rter`);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_PASSWORDS")}`);
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
     };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Passw\u00F6rter ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_PASSWORDS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         controls.create(div, "span", "copyright", ".");
     };
@@ -62,13 +62,13 @@ var password = (() => {
     const renderError = (errMsg) => {
         let elem = document.getElementById("error-id");
         if (elem) {
-            elem.textContent = errMsg;
+            elem.textContent = _T(errMsg);
         }
         else {
             let parent = document.body;
             controls.removeAllChildren(parent);
-            renderHeader(parent, "Es ist ein Fehler aufgetreten.");
-            controls.createDiv(parent, "error").textContent = errMsg;
+            renderHeader(parent, _T("INFO_ERROR_OCCURED"));
+            controls.createDiv(parent, "error").textContent = _T(errMsg);
             renderCopyright(parent);
         }
     };
@@ -81,16 +81,11 @@ var password = (() => {
         div.id = "div-encryptkey-id";
         let p = controls.create(div, "p");
         p.id = "p-encryptkey-notice-id";
-        controls.create(p, "p", "encryptkey-notice",
-            "Die Passw\u00F6rter werden auf dem Server verschl\u00FCsselt gespeichert, sodass nur Du die Passw\u00F6rter lesen kannst." +
-            " Dazu ist ein Schl\u00FCssel erforderlich, der in Deinem Browser lokal gespeichert werden kann." +
-            " Notiere den Schl\u00FCssel." +
-            " Danach w\u00E4hle im Men\u00FC 'Schl\u00FCssel verbergen', um diesen Text auszublenden." +
-            " Wenn der Schl\u00FCssel verloren geht, sind auch alle Daten verloren.");
+        controls.create(p, "p", "encryptkey-notice", _T("INFO_ENCRYPTION_PASSWORDS"));
         p = controls.create(div, "p");
-        let elem = controls.createLabel(p, undefined, "Schl\u00FCssel:");
+        let elem = controls.createLabel(p, undefined, _T("LABEL_KEY"));
         elem.htmlFor = "input-encryptkey-id";
-        elem = controls.createInputField(p, "Schl\u00FCssel", () => onChangeEncryptKey(), undefined, 32, 32);
+        elem = controls.createInputField(p, _T("TEXT_KEY"), () => onChangeEncryptKey(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
         elem.addEventListener("change", () => onChangeEncryptKey());
         if (encryptKey) {
@@ -99,7 +94,7 @@ var password = (() => {
         p = controls.create(div, "p");
         let show = encryptKey == undefined;
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
-            "Schl\u00FCssel im Browser speichern", !show, () => onChangeEncryptKey());
+            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKey());
         utils.show_encrypt_key(currentUser, show);
         utils.set_menu_items(currentUser);
     };
@@ -110,9 +105,9 @@ var password = (() => {
             decodeText(txt, (decoded) => renderPasswordItem(parent, decoded, desc), renderError);
             return;
         }
-        let showButton = controls.createImageButton(parent, `${desc} anzeigen`, undefined,
+        let showButton = controls.createImageButton(parent, _T("BUTTON_SHOW_1", desc), undefined,
             "/images/buttons/document-decrypt-3.png", 32, "transparent");
-        controls.createImageButton(parent, `${desc} in die Zwischenablage kopieren`,
+        controls.createImageButton(parent, _T("BUTTON_COPY_TO_CLIPBOARD_1", desc),
             () => {
                 navigator.clipboard.writeText(txt);
             }, "/images/buttons/edit-copy-6.png", 32, "transparent");
@@ -121,13 +116,15 @@ var password = (() => {
             let hide = span.textContent.length > 0;
             if (hide) {
                 span.textContent = "";
-                showButton.title = `${desc} anzeigen`;
+                showButton.title = _T("BUTTON_SHOW_1", desc);
                 showButton.children[0].src = "/images/buttons/document-decrypt-3.png";
+                showButton.children[0].title = showButton.title;
             }
             else {
                 span.textContent = txt;
-                showButton.title = `${desc} verbergen`;
+                showButton.title = _T("BUTTON_HIDE_1", desc);
                 showButton.children[0].src = "/images/buttons/document-encrypt-3.png";
+                showButton.children[0].title = showButton.title;
             }
         });
     };
@@ -139,7 +136,7 @@ var password = (() => {
         content.style.display = "none";
         controls.removeAllChildren(parent);
         let detailsNameDiv = controls.createDiv(parent);
-        controls.createLabel(detailsNameDiv, "details-label", "Name:");
+        controls.createLabel(detailsNameDiv, "details-label", _T("LABEL_NAME"));
         if (pwdItem.Url.length > 0) {
             let host = getHostFromUrl(pwdItem.Url);
             controls.createImg(detailsNameDiv, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`, pwdItem.Name);
@@ -155,19 +152,19 @@ var password = (() => {
         }
         if (pwdItem.Login.length) {
             let detailsLoginDiv = controls.createDiv(parent);
-            controls.createLabel(detailsLoginDiv, "details-label", "Login:");
-            renderPasswordItem(detailsLoginDiv, pwdItem.Login, "Login");
+            controls.createLabel(detailsLoginDiv, "details-label", _T("LABEL_LOGIN"));
+            renderPasswordItem(detailsLoginDiv, pwdItem.Login, _T("TEXT_LOGIN"));
         }
         let detailsPasswordDiv = controls.createDiv(parent);
-        controls.createLabel(detailsPasswordDiv, "details-label", "Passwort:");
-        renderPasswordItem(detailsPasswordDiv, pwdItem.Password, "Passwort", true);
+        controls.createLabel(detailsPasswordDiv, "details-label", _T("LABEL_PASSWORD"));
+        renderPasswordItem(detailsPasswordDiv, pwdItem.Password, _T("TEXT_PASSWORD"), true);
         if (pwdItem.Description.length > 0) {
             let detailsDescriptionDiv = controls.createDiv(parent);
-            controls.createLabel(detailsDescriptionDiv, "details-label", "Beschreibung:");
-            renderPasswordItem(detailsDescriptionDiv, pwdItem.Description, "Beschreibung");
+            controls.createLabel(detailsDescriptionDiv, "details-label", _T("LABEL_DESCRIPTION"));
+            renderPasswordItem(detailsDescriptionDiv, pwdItem.Description, _T("TEXT_DESCRIPTION"));
         }
         const buttonBackDiv = controls.createDiv(parent);
-        controls.createButton(buttonBackDiv, "OK", () => {
+        controls.createButton(buttonBackDiv, _T("BUTTON_OK"), () => {
             controls.removeAllChildren(parent);
             parent.style.display = "none";
             content.style.display = "block";
@@ -196,9 +193,9 @@ var password = (() => {
         controls.removeAllChildren(parent);
         if (pwdItems.length > 0) {
             const filterDiv = controls.createDiv(parent);
-            const searchLabel = controls.createLabel(filterDiv, undefined, "Filter:");
+            const searchLabel = controls.createLabel(filterDiv, undefined, _T("LABEL_FILTER"));
             searchLabel.htmlFor = "filter-id";
-            filterInput = controls.createInputField(filterDiv, "Filter", undefined, undefined, 20, 32);
+            filterInput = controls.createInputField(filterDiv, _T("TEXT_FILTER"), undefined, undefined, 20, 32);
             filterInput.id = "filter-id";
             filterInput.addEventListener("input", () => onFilterItems(pwdItems));
             if (!utils.is_mobile()) {
@@ -213,11 +210,11 @@ var password = (() => {
         renderError("");
         renderPasswordItems([]);
         if (!currentUser.hasPasswordManagerFile) {
-            renderError("Es wurde keine Passwortdatei hochgeladen.");
+            renderError("ERROR_NO_PASSWORD_FILE_UPLOADED");
             showEncryptKey(true);
         }
         else if (!hasEncryptKey()) {
-            renderError("Es fehlt der Schl\u00FCssel zum Dekodieren der Passwortdatei.");
+            renderError("ERROR_MISSING_KEY_DECODE_PASSWORD_FILE");
             showEncryptKey(true);
         }
         else {
@@ -232,7 +229,7 @@ var password = (() => {
                         },
                         (errMsg) => {
                             console.log(errMsg);
-                            renderError("Der Schl\u00FCssel zum Dekodieren der Passwortdatei ist nicht richtig.");
+                            renderError("ERROR_WRONG_KEY_DECODE_PASSWORD_FILE");
                         });
                 },
                 renderError);
@@ -302,7 +299,7 @@ var password = (() => {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
                 utils.fetch_api_call("/api/pwdman/markdown/help-password", undefined, (html) => mdDiv.innerHTML = html);
-                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
     };
@@ -329,6 +326,6 @@ var password = (() => {
     };
 })();
 
-window.onload = () => utils.auth_lltoken(password.render);
+window.onload = () => utils.auth_lltoken(() => utils.set_locale(password.render));
 
 window.onclick = (event) => utils.hide_menu(event);
