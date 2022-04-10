@@ -1040,7 +1040,7 @@ var skat = (() => {
             }
         }
         if (showChat) {
-            imgMessage.title = _T("INFO_HIDE_CHAT");
+            imgMessage.title = _T("BUTTON_HIDE_CHAT");
             sessionStorage.setItem("chatstate", currentChatState);
             divChat.style.visibility = "visible";
             if (inputChatText && !utils.is_mobile()) {
@@ -1048,7 +1048,7 @@ var skat = (() => {
             }
         }
         else {
-            imgMessage.title = _T("INFO_SHOW_CHAT");
+            imgMessage.title = _T("BUTTON_SHOW_CHAT");
             if (currentChatState > chatState) {
                 imgMessage.src = "/images/buttons/mail-unread-new.png";
             }
