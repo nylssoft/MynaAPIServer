@@ -3,6 +3,7 @@
 var utils = (() => {
 
     let debug_mode = false;
+    let locale = "de-DE";
 
     let translationMap;
 
@@ -18,7 +19,7 @@ var utils = (() => {
         if (debug_mode === true) {
             if (typeof obj === "string") {
                 const dt = new Date();
-                const time = dt.toLocaleTimeString("de-DE");
+                const time = dt.toLocaleTimeString(locale);
                 const ms = dt.getMilliseconds().toString().padStart(3, 0);
                 console.log(`${time}:${ms} ${obj}`);
             }
@@ -45,7 +46,6 @@ var utils = (() => {
 
     const format_date = (dt) => {
         if (dt && dt.length > 0) {
-            let locale = "de-DE";
             let options = { year: "numeric", month: "short", day: "numeric" };
             return new Date(dt).toLocaleDateString(locale, options);
         }
@@ -111,7 +111,7 @@ var utils = (() => {
         if (token) {
             fetch_api_call("api/pwdman/logout", { headers: { "token": token } },
                 (done) => console.log(`User logout: ${done}.`),
-                (errMsg) => console.error(`User logout failed: ${errMsg}`));
+                (errMsg) => console.error(`User logout failed: ${_T(errMsg)}`));
         }
         logout_skat(resolve, reject);
     };
@@ -347,7 +347,7 @@ var utils = (() => {
         }        
         const dropdownDiv = controls.create(parent, "div", "dropdown");
         dropdownDiv.id = "div-dropdown-id";
-        const dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg", "Men\u00FC");
+        const dropdownButton = controls.createImg(dropdownDiv, "dropbtn", 24, 24, "/images/buttons/hamburger.svg", _T("BUTTON_MENU"));
         const dropdownContentDiv = controls.create(dropdownDiv, "div", "dropdown-content");
         dropdownContentDiv.id = "dropdown-id";
         dropdownButton.addEventListener("click", () => document.getElementById("dropdown-id").classList.toggle("show"));
@@ -358,38 +358,38 @@ var utils = (() => {
         if (!parent) return;
         const small_height = window.matchMedia('(max-height: 400px)').matches;
         controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown", "Start");
+        controls.createA(parent, undefined, "/markdown", _T("MENU_START"));
         if (!small_height) {
             controls.create(parent, "hr");
-            controls.createA(parent, undefined, "/documents", "Dokumente");
-            controls.createA(parent, undefined, "/notes", "Notizen");
-            controls.createA(parent, undefined, "/password", "Passw\u00F6rter");
-            controls.createA(parent, undefined, "/diary", "Tagebuch");
+            controls.createA(parent, undefined, "/documents", _T("MENU_DOCUMENTS"));
+            controls.createA(parent, undefined, "/notes", _T("MENU_NOTES"));
+            controls.createA(parent, undefined, "/password", _T("MENU_PASSWORDS"));
+            controls.createA(parent, undefined, "/diary", _T("MENU_DIARY"));
             controls.create(parent, "hr");
-            controls.createA(parent, undefined, "/backgammon", "Backgammon");
-            controls.createA(parent, undefined, "/chess", "Schach");
-            controls.createA(parent, undefined, "/skat", "Skat");
-            controls.createA(parent, undefined, "/tetris", "Tetris");
+            controls.createA(parent, undefined, "/backgammon", _T("MENU_BACKGAMMON"));
+            controls.createA(parent, undefined, "/chess", _T("MENU_CHESS"));
+            controls.createA(parent, undefined, "/skat", _T("MENU_SKAT"));
+            controls.createA(parent, undefined, "/tetris", _T("MENU_TETRIS"));
         }
         controls.create(parent, "hr");
         if (currentUser) {
-            controls.createA(parent, undefined, "/usermgmt", "Profil");
-            controls.createA(parent, undefined, "/usermgmt?logout", "Abmelden");
+            controls.createA(parent, undefined, "/usermgmt", _T("MENU_PROFILE"));
+            controls.createA(parent, undefined, "/usermgmt?logout", _T("MENU_LOGOUT"));
         }
         else {
-            controls.createA(parent, undefined, "/pwdman?nexturl=/markdown", "Anmelden");
+            controls.createA(parent, undefined, "/pwdman?nexturl=/markdown", _T("MENU_LOGIN"));
         }
         const encryptKeyElem = document.getElementById("div-encryptkey-id");
         if (encryptKeyElem) {
             if (encryptKeyElem.classList.contains("show")) {
-                controls.createA(parent, undefined, "/hidekey", "Schl\u00FCssel verbergen",
+                controls.createA(parent, undefined, "/hidekey", _T("MENU_HIDE_KEY"),
                     () => {
                         set_viewed_encryption_key(currentUser, true);
                         show_encrypt_key(currentUser, false);
                     });
             }
             else {
-                controls.createA(parent, undefined, "/showkey", "Schl\u00FCssel anzeigen",
+                controls.createA(parent, undefined, "/showkey", _T("MENU_SHOW_KEY"),
                     () => show_encrypt_key(currentUser, true));
             }
         }
@@ -462,11 +462,11 @@ var utils = (() => {
         if (!is_cookies_accepted()) {
             const cookieDiv = controls.createDiv(parent, "cookie-banner");
             const spanDiv = controls.createDiv(cookieDiv, "cookie-container");
-            controls.createSpan(spanDiv, undefined, "Diese Website verwendet Cookies.");
+            controls.createSpan(spanDiv, undefined, _T("INFO_WEBSITE_USE_COOKIES"));
             const linkDiv = controls.createDiv(cookieDiv, "cookie-container");
-            controls.createA(linkDiv, undefined, "/markdown?page=cookies&hidecookiebanner", "Mehr erfahren?");
+            controls.createA(linkDiv, undefined, "/markdown?page=cookies&hidecookiebanner", _T("INFO_QUESTION_MORE_INFO"));
             const btnDiv = controls.createDiv(cookieDiv, "cookie-container");
-            controls.createButton(btnDiv, "OK", () => {
+            controls.createButton(btnDiv, _T("BUTTON_OK"), () => {
                 set_cookies_accepted(true);
                 cookieDiv.style.display = "none";
             }, "", "button");
@@ -475,23 +475,25 @@ var utils = (() => {
 
     // --- locale
 
-    const set_locale = (resolve, locale) => {
+    const set_locale = (resolve, loc) => {
         translationMap = new Map();
-        if (!locale) {
-            locale = navigator.language.split("-")[0];
+        if (!loc) {
+            loc = navigator.language;
         }
-        locale = locale.toLowerCase();
-        fetch(`/locale/${locale}.json?v=1`)
+        let language = loc.split("-")[0];
+        language = language.toLowerCase();
+        fetch(`/locale/${language}.json?v=1`)
             .then(resp => {
                 resp.json()
                     .then(json => {
                         Object.entries(json).forEach(([key, value]) => translationMap.set(key, value));
+                        locale = loc;
                         resolve();
                     })
                     .catch(err => {
                         console.log(err);
-                        if (locale != "de") {
-                            set_locale(resolve, "de");
+                        if (loc != locale) {
+                            set_locale(resolve, locale);
                         }
                         else {
                             resolve();

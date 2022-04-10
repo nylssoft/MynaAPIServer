@@ -14,7 +14,7 @@ var markdown = (() => {
         }
         utils.create_menu(parent);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         let div = controls.createDiv(parent);
@@ -82,7 +82,7 @@ var markdown = (() => {
         }
         div.innerHTML = html;
         if (backButton && history.length > 1) {
-            controls.createButton(div, "Zur\u00FCck", () => history.back());
+            controls.createButton(div, _T("BUTTON_BACK"), () => history.back());
         }
     };
 
@@ -116,6 +116,6 @@ var markdown = (() => {
     };
 })();
 
-window.onload = () => utils.auth_lltoken(markdown.render);
+window.onload = () => utils.auth_lltoken(() => utils.set_locale(markdown.render));
 
 window.onclick = (event) => utils.hide_menu(event);
