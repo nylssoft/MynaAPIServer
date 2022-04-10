@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,37 +40,44 @@ namespace APIServer.Skat.Core
             Color = gameColor;
         }
 
-        public string GetGameText()
+        public string GetGameTextLabel()
         {
             if (Type == GameType.Null)
             {
-                return "Null";
+                return "TEXT_NULL";
             }
-            return Type == GameType.Grand ? "Grand" : Card.GetColorText(Color.Value);
+            if (Type == GameType.Grand)
+            {
+                return "TEXT_GRAND";
+            }
+            return $"TEXT_{Color.Value.ToString().ToUpper()}";
         }
 
-        public string GetGameAndOptionText()
+        public List<string> GetGameAndOptionTextLabels()
         {
-            string text = GetGameText();
+            var labels = new List<string>
+            {
+                GetGameTextLabel()
+            };
             if (Type == GameType.Grand || Type == GameType.Color)
             {
                 if (Option.HasFlag(GameOption.Ouvert))
                 {
-                    text += " Ouvert"; // schneider schwarz angesagt
+                    labels.Add("TEXT_OUVERT");
                 }
                 else
                 {
                     if (Option.HasFlag(GameOption.Hand))
                     {
-                        text += " Hand";
+                        labels.Add("TEXT_HAND");
                     }
                     if (Option.HasFlag(GameOption.Schneider))
                     {
-                        text += " Schneider Angesagt";
+                        labels.Add("TEXT_SCHNEIDER_SAID");
                     }
                     if (Option.HasFlag(GameOption.Schwarz))
                     {
-                        text += " Schwarz Angesagt";
+                        labels.Add("TEXT_SCHWARZ_SAID");
                     }
                 }
             }
@@ -78,14 +85,14 @@ namespace APIServer.Skat.Core
             {
                 if (Option.HasFlag(GameOption.Ouvert))
                 {
-                    text += " Ouvert";
+                    labels.Add("TEXT_OUVERT");
                 }
                 if (Option.HasFlag(GameOption.Hand))
                 {
-                    text += " Hand";
+                    labels.Add("TEXT_HAND");
                 }
             }
-            return text;
+            return labels;
         }
 
         public MatadorsJackStraight GetMatadorsJackStraight(List<Card> playerCards, List<Card> skat)
@@ -186,7 +193,9 @@ namespace APIServer.Skat.Core
                 gameValue.BidExceeded = true;
                 gameValue.IsWinner = false;
                 gameValue.Score *= -2;
-                gameValue.Description = $"Das Spiel wurde überreizt mit {bidValue}. {GetGameAndOptionText()} : {calc} x -2 = {gameValue.Score}.";
+                gameValue.DescriptionLabels.Add($"INFO_GAME_OVER_BID_1:{bidValue}");
+                gameValue.DescriptionLabels.AddRange(GetGameAndOptionTextLabels());
+                gameValue.DescriptionLabels.Add($"INFO_GAME_LOST_CALC_1_2:{calc}:{gameValue.Score}");
             }
             else
             {
@@ -197,59 +206,59 @@ namespace APIServer.Skat.Core
                     schwarz = false;
                 }
                 string calc;
-                string game;
+                var gameLabels = new List<string>();
                 int baseValue;
                 int factor = 1;
                 if (Type == GameType.Null)
                 {
                     baseValue = GetNullBaseValue();
                     gameValue.Score = baseValue;
-                    game = GetGameAndOptionText();
+                    gameLabels.AddRange(GetGameAndOptionTextLabels());
                 }
                 else
                 {
-                    var with = spitzen.With ? "Mit" : "Ohne";
-                    game = $"{with} {spitzen.Count} spielt {spitzen.Play} ";
+                    gameLabels.Add(spitzen.With ? "TEXT_WITH" : "TEXT_WITHOUT");
+                    gameLabels.Add($"INFO_PLAY_1_2:{spitzen.Count}:{spitzen.Play}");
                     factor = spitzen.Play;
                     if (Option.HasFlag(GameOption.Hand))
                     {
                         factor++;
-                        game += $"Hand {factor} ";
+                        gameLabels.Add($"INFO_HAND_FACTOR_1:{factor}");
                     }
                     if (Option.HasFlag(GameOption.Ouvert))
                     {
                         factor++;
-                        game += $"Ouvert {factor} ";
+                        gameLabels.Add($"INFO_OUVERT_FACTOR_1:{factor}");
                     }
                     if (schneider || gamePlayerSchneider)
                     {
                         factor++;
-                        game += $"Schneider {factor} ";
+                        gameLabels.Add($"INFO_SCHNEIDER_FACTOR_1:{factor}");
                     }
                     if (Option.HasFlag(GameOption.Schneider))
                     {
                         factor++;
                         if (!schneider && !gamePlayerSchneider)
                         {
-                            game += "Schneider ";
+                            gameLabels.Add($"TEXT_SCHNEIDER");
                         }
-                        game += $"Angesagt {factor} ";
+                        gameLabels.Add($"INFO_SAID_FACTOR_1:{factor}");
                     }
                     if (schwarz || gamePlayerSchwarz)
                     {
                         factor++;
-                        game += $"Schwarz {factor} ";
+                        gameLabels.Add($"INFO_SCHWARZ_FACTOR_1:{factor}");
                     }
                     if (Option.HasFlag(GameOption.Schwarz))
                     {
                         factor++;
                         if (!schwarz && !gamePlayerSchwarz)
                         {
-                            game += "Schwarz ";
+                            gameLabels.Add("TEXT_SCHWARZ");
                         }
-                        game += $"Angesagt {factor} ";
+                        gameLabels.Add($"INFO_SAID_FACTOR_1:{factor}");
                     }
-                    game += $"{GetGameText()} ";
+                    gameLabels.Add(GetGameTextLabel());
                     baseValue = GetGrandOrColorBaseValue();
                 }
                 gameValue.Score = factor * baseValue;
@@ -258,11 +267,13 @@ namespace APIServer.Skat.Core
                 {
                     gameValue.Score *= -2;
                     gameValue.IsWinner = false;
-                    gameValue.Description = $"{game}: {calc} x -2 = {gameValue.Score}.";
+                    gameValue.DescriptionLabels.AddRange(gameLabels);
+                    gameValue.DescriptionLabels.Add($"INFO_GAME_LOST_CALC_1_2:{calc}:{gameValue.Score}");
                 }
                 else
                 {
-                    gameValue.Description = $"{game}: {calc} = {gameValue.Score}.";
+                    gameValue.DescriptionLabels.AddRange(gameLabels);
+                    gameValue.DescriptionLabels.Add($"INFO_GAME_WON_CALC_1_2:{calc}:{gameValue.Score}");
                 }
             }
             return gameValue;
@@ -348,37 +359,41 @@ namespace APIServer.Skat.Core
             return 0;
         }
 
-        public string GetBidValueTooptip(MatadorsJackStraight jacks)
+        public List<string> GetBidValueTooptipLabels(MatadorsJackStraight jacks)
         {
+            var labels = new List<string>();
             if (Type == GameType.Null)
             {
-                return $"{GetGameAndOptionText()} : {GetNullBaseValue()}.";
+                labels.AddRange(GetGameAndOptionTextLabels());
+                labels.Add($"INFO_GAME_CALC_1:{GetNullBaseValue()}");
+                return labels;
             }
-            var with = jacks.With ? "Mit" : "Ohne";
+            labels.Add(jacks.With ? "TEXT_WITH" : "TEXT_WITHOUT");
+            labels.Add($"INFO_PLAY_1_2:{jacks.Count}:{jacks.Play}");
             var factor = jacks.Play;
-            string game = $"{with} {jacks.Count} spielt {jacks.Play} ";
             if (Option.HasFlag(GameOption.Hand))
             {
                 factor++;
-                game += $"Hand {factor} ";
+                labels.Add($"INFO_HAND_FACTOR_1:{factor}");
             }
             if (Option.HasFlag(GameOption.Ouvert))
             {
                 factor++;
-                game += $"Ouvert {factor} ";
+                labels.Add($"INFO_OUVERT_FACTOR_1:{factor}");
             }
             if (Option.HasFlag(GameOption.Schneider))
             {
                 factor++;
-                game += $"Schneider Angesagt {factor} ";
+                labels.Add($"INFO_SCHNEIDER_SAID_FACTOR_1:{factor}");
             }
             if (Option.HasFlag(GameOption.Schwarz))
             {
                 factor++;
-                game += $"Schwarz Angesagt {factor} ";
+                labels.Add($"INFO_SCHWARZ_SAID_FACTOR_1:{factor}");
             }
-            game += $"{GetGameText()} ";
-            return $"{game}: {factor} x {GetGrandOrColorBaseValue()} = {factor * GetGrandOrColorBaseValue()}.";
+            labels.Add(GetGameTextLabel());
+            labels.Add($"INFO_GAME_CALC_1_2_3:{factor}:{GetGrandOrColorBaseValue()}:{factor * GetGrandOrColorBaseValue()}");
+            return labels;
         }
 
         public override bool Equals(object obj)
@@ -400,11 +415,6 @@ namespace APIServer.Skat.Core
             }
             ret += (int)Option * 113;
             return ret;
-        }
-
-        public override string ToString()
-        {
-            return $"{GetGameAndOptionText()}";
         }
     }
 }

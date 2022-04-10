@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,13 +15,15 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System.Collections.Generic;
+
 namespace APIServer.Skat.Core
 {
     public class GameValue
     {
         public int Score { get; set; }
 
-        public string Description { get; set; } = "";
+        public List<string> DescriptionLabels { get; set; } = new List<string>();
 
         public bool BidExceeded { get; set; }
 

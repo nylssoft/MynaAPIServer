@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -967,11 +967,10 @@ namespace APIServer.Skat
             {
                 ret = new GameModel
                 {
-                    Name = game.GetGameText(),
-                    Description = game.GetGameAndOptionText(),
                     Type = game.Type.ToString(),
                     Color = game.Color.ToString(),
                 };
+                ret.DescriptionLabels.AddRange(game.GetGameAndOptionTextLabels());
                 ret.Option.Ouvert = game.Option.HasFlag(GameOption.Ouvert);
                 ret.Option.Hand = game.Option.HasFlag(GameOption.Hand);
                 ret.Option.Schneider = game.Option.HasFlag(GameOption.Schneider);
@@ -1001,7 +1000,7 @@ namespace APIServer.Skat
         private static GameHistoryModel GetGameHistoryModel(GameHistory gameHistory)
         {
             var ret = new GameHistoryModel();
-            ret.GameText = gameHistory.GameText;
+            ret.GameTextLabels.AddRange(gameHistory.GameTextLabels);
             ret.GamePlayerName = gameHistory.GamePlayerName;
             ret.GamePlayerScore = gameHistory.GamePlayerScore;
             ret.GameValue = gameHistory.GameValue;
@@ -1038,7 +1037,7 @@ namespace APIServer.Skat
                 ret = new PlayerModel {
                     Name = player.Name,
                     Game = game,
-                    Summary = summary,
+                    SummaryLabel = summary,
                     BidStatus = player.BidStatus };
             }
             return ret;
@@ -1052,26 +1051,27 @@ namespace APIServer.Skat
             {
                 var stat = skatTable.GetPlayerStatus(player);
                 model.Player = GetPlayerModel(player);
-                model.Player.Tooltip = stat.Tooltip;
-                model.Message = stat.Header;
+                model.Player.TooltipLabels = stat.TooltipLabels;
+                model.MessageLabels = stat.HeaderLabels;
                 for (int idx = 0; idx < stat.ActionTypes.Count; idx++)
                 {
-                    model.Actions.Add(new ActionModel { Name = stat.ActionTypes[idx].ToString(), Description = stat.ActionLabels[idx] });
+                    model.Actions.Add(new ActionModel { Name = stat.ActionTypes[idx].ToString(), DescriptionLabel = stat.ActionLabels[idx] });
                 }
             }
             if (skatTable.InactivePlayer != null)
             {
-                model.InactivePlayer = GetPlayerModel(skatTable.InactivePlayer, $"{skatTable.InactivePlayer.Name}, {skatTable.InactivePlayer.Score} Punkte");
+                model.InactivePlayer = GetPlayerModel(skatTable.InactivePlayer,
+                    $"INFO_PLAYER_SUMMARY_1_2:{skatTable.InactivePlayer.Name}:{skatTable.InactivePlayer.Score}");
                 if (skatTable.InactivePlayer.Name == ctx?.Name)
                 {
                     var stat = skatTable.GetPlayerStatus(skatTable.InactivePlayer);
-                    model.InactivePlayer.Tooltip = stat.Tooltip;
-                    model.Message = stat.Header;
+                    model.InactivePlayer.TooltipLabels = stat.TooltipLabels;
+                    model.MessageLabels = stat.HeaderLabels;
                 }
             }
             if (ctx == null)
             {
-                model.Message = skatTable.GetPlayerStatus(null).Header;
+                model.MessageLabels = skatTable.GetPlayerStatus(null).HeaderLabels;
             }
             model.GamePlayer = GetPlayerModel(skatTable.GamePlayer);
             var currentPlayer = skatTable.CurrentPlayer;
@@ -1182,7 +1182,7 @@ namespace APIServer.Skat
             model.GameCounter = skatTable.GameCounter;
             foreach (var p in skatTable.TablePlayers)
             {
-                model.Players.Add(GetPlayerModel(p, $"{p.Name}, {p.Score} Punkte"));
+                model.Players.Add(GetPlayerModel(p, $"INFO_PLAYER_SUMMARY_1_2:{p.Name}:{p.Score}"));
             }
             return model;
         }
@@ -1193,7 +1193,6 @@ namespace APIServer.Skat
             cardmodel.OrderNumber = card.InternalNumber;
             cardmodel.Color = $"{card.Color}";
             cardmodel.Value = $"{card.Value}";
-            cardmodel.Description = card.ToString();
             return cardmodel;
         }
 

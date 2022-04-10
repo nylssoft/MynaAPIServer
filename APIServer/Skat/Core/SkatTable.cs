@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,13 +26,13 @@ namespace APIServer.Skat.Core
 
     public class PlayerStatus
     {
-        public string Header { get; set; } = "";
+        public List<string> HeaderLabels { get; set; } = new List<string>();
 
         public List<string> ActionLabels { get; set; } = new List<string>();
 
         public List<ActionType> ActionTypes { get; set; } = new List<ActionType>();
 
-        public string Tooltip { get; set; } = "";
+        public List<string> TooltipLabels { get; set; } = new List<string>();
     };
 
     public class SkatTable
@@ -544,7 +544,7 @@ namespace APIServer.Skat.Core
             {
                 CurrentHistory.Back.AddRange(Skat);
             }
-            CurrentHistory.GameText = player.Game.GetGameAndOptionText();
+            CurrentHistory.GameTextLabels = player.Game.GetGameAndOptionTextLabels();
             CurrentHistory.GamePlayerName = player.Name;
             GameStarted = true;
             foreach (var p in Players)
@@ -609,29 +609,36 @@ namespace APIServer.Skat.Core
                 {
                     if (player.BidStatus == BidStatus.Accept && BidSaid)
                     {
-                        ret.ActionLabels.Add($"{CurrentBidValue} halten");
-                        ret.ActionLabels.Add("Weg");
+                        ret.ActionLabels.Add($"BUTTON_HOLD_1:{CurrentBidValue}");
+                        ret.ActionLabels.Add("BUTTON_PASS");
                         ret.ActionTypes.Add(ActionType.HoldBid);
                         ret.ActionTypes.Add(ActionType.PassHold);
                     }
                     else if (player.BidStatus == BidStatus.Bid && !BidSaid)
                     {
-                        ret.ActionLabels.Add($"{NextBidValue} sagen");
-                        ret.ActionLabels.Add("Weg");
+                        ret.ActionLabels.Add($"BUTTON_SAY_1:{NextBidValue}");
+                        ret.ActionLabels.Add("BUTTON_PASS");
                         ret.ActionTypes.Add(ActionType.Bid);
                         ret.ActionTypes.Add(ActionType.PassBid);
                     }
                     if (ret.ActionTypes.Count > 0 && player.Game != null)
                     {
                         var jacks = player.Game.GetMatadorsJackStraight(player.Cards, null);
-                        ret.Tooltip = player.Game.GetBidValueTooptip(jacks);
+                        ret.TooltipLabels = player.Game.GetBidValueTooptipLabels(jacks);
                     }
                 }
                 foreach (var p in Players)
                 {
                     if (p.Position == PlayerPosition.Forehand)
                     {
-                        ret.Header += p == player ? "Du kommst raus. " : $"{p.Name} kommt raus. ";
+                        if (p == player)
+                        {
+                            ret.HeaderLabels.Add("INFO_YOU_PLAY_FIRST_CARD");
+                        }
+                        else
+                        {
+                            ret.HeaderLabels.Add($"INFO_PLAY_FIRST_CARD_1:{p.Name}");
+                        }
                     }
                 }
             }
@@ -642,41 +649,50 @@ namespace APIServer.Skat.Core
                 {
                     if (Skat.Count < 2)
                     {
-                        ret.Header += "Drücken! ";
+                        ret.HeaderLabels.Add("INFO_PUT_BACK_CARDS");
                     }
                     else if (!SkatTaken && !player.Game.Option.HasFlag(GameOption.Hand))
                     {
-                        ret.ActionLabels.Add("Skat nehmen");
-                        ret.ActionLabels.Add("Hand spielen");
+                        ret.ActionLabels.Add("BUTTON_TAKE_SKAT");
+                        ret.ActionLabels.Add("BUTTON_PLAY_HAND");
                         ret.ActionTypes.Add(ActionType.TakeSkat);
                         ret.ActionTypes.Add(ActionType.PlayHand);
                     }
                     else
                     {
-                        ret.ActionLabels.Add("Los geht's!");
+                        ret.ActionLabels.Add("BUTTON_START_GAME_NOW");
                         ret.ActionTypes.Add(ActionType.StartGame);
                         if (player.Game.Option.HasFlag(GameOption.Hand))
                         {
-                            ret.ActionLabels.Add("Kein Handspiel!");
+                            ret.ActionLabels.Add("BUTTON_DO_NOT_PLAY_HAND");
                             ret.ActionTypes.Add(ActionType.DoNotPlayHand);
                         }
                     }
-                    ret.Header += $"Du wirst {player.Game.GetGameAndOptionText()} spielen mit {CurrentBidValue}. ";
+                    ret.HeaderLabels.Add("INFO_YOU_WILL_PLAY");
+                    ret.HeaderLabels.AddRange(player.Game.GetGameAndOptionTextLabels());
+                    ret.HeaderLabels.Add($"INFO_YOU_WILL_PLAY_WITH_1:{CurrentBidValue}");
                     if (ret.ActionTypes.Count > 0 && player.Game != null)
                     {
                         var jacks = player.Game.GetMatadorsJackStraight(player.Cards, null);
-                        ret.Tooltip = player.Game.GetBidValueTooptip(jacks);
+                        ret.TooltipLabels = player.Game.GetBidValueTooptipLabels(jacks);
                     }
                 }
                 else
                 {
-                    ret.Header += $"{GamePlayer.Name} spielt mit {CurrentBidValue}. ";
+                    ret.HeaderLabels.Add($"INFO_PLAYER_PLAYS_WITH_1_2:{GamePlayer.Name}:{CurrentBidValue}");
                 }
                 foreach (var p in Players)
                 {
                     if (p.Position == PlayerPosition.Forehand)
                     {
-                        ret.Header += p == player ? "Du kommst raus. " : $"{p.Name} kommt raus. ";
+                        if (p == player)
+                        {
+                            ret.HeaderLabels.Add("INFO_YOU_PLAY_FIRST_CARD");
+                        }
+                        else
+                        {
+                            ret.HeaderLabels.Add($"INFO_PLAY_FIRST_CARD_1:{p.Name}");
+                        }
                         break;
                     }
                 }
@@ -687,10 +703,10 @@ namespace APIServer.Skat.Core
                 // Game ended
                 if (GamePlayer.Cards.Count == 0 && Stitch.Count == 0)
                 {
-                    ret.Header += "Das Spiel ist beendet. ";
+                    ret.HeaderLabels.Add("INFO_GAME_IS_OVER");
                     if (GameValue.Score == 0)
                     {
-                        ret.Header += "Alle Spieler haben gepasst. ";
+                        ret.HeaderLabels.Add("INFO_ALL_PLAYER_PASS");
                     }
                     else
                     {
@@ -698,33 +714,33 @@ namespace APIServer.Skat.Core
                         if (player == null || player.Position == PlayerPosition.Inactive)
                         {
                             next0 = Players.Single((p) => p.Position == PlayerPosition.Forehand);
-                            ret.Header += $"{next0.Name} hat {GetScore(next0)} Augen. ";
+                            ret.HeaderLabels.Add($"INFO_PLAYER_CARD_PIPS_1_2:{next0.Name}:{GetScore(next0)}");
                         }
                         else
                         {
-                            ret.Header += $"Du hast {GetScore(player)} Augen. ";
+                            ret.HeaderLabels.Add($"INFO_YOU_CARD_PIPS_1:{GetScore(player)}");
                         }
                         var next1 = GetNextPlayer(next0);
                         var next2 = GetNextPlayer(next1);
-                        ret.Header += $"{next1.Name} hat {GetScore(next1)} Augen. ";
-                        ret.Header += $"{next2.Name} hat {GetScore(next2)} Augen. ";
+                        ret.HeaderLabels.Add($"INFO_PLAYER_CARD_PIPS_1_2:{next1.Name}:{GetScore(next1)}");
+                        ret.HeaderLabels.Add($"INFO_PLAYER_CARD_PIPS_1_2:{next2.Name}:{GetScore(next2)}");
                         if (player == GamePlayer)
                         {
-                            ret.Header += "Du hast gespielt und ";
+                            ret.HeaderLabels.Add("INFO_YOU_HAVE_PLAYED_AND");
                         }
                         else
                         {
-                            ret.Header += $"{GamePlayer.Name} hat gespielt und ";
+                            ret.HeaderLabels.Add($"INFO_HAS_PLAYED_AND_1:{GamePlayer.Name}");
                         }
                         if (GameValue.IsWinner)
                         {
-                            ret.Header += "gewonnen. ";
+                            ret.HeaderLabels.Add("INFO_HAS_WON");
                         }
                         else
                         {
-                            ret.Header += "verloren. ";
+                            ret.HeaderLabels.Add("INFO_HAS_LOST");
                         }
-                        ret.Header += $"{GameValue.Description} ";
+                        ret.HeaderLabels.AddRange(GameValue.DescriptionLabels);
                     }
                 }
                 // Game in progress
@@ -732,11 +748,15 @@ namespace APIServer.Skat.Core
                 {
                     if (player == GamePlayer)
                     {
-                        ret.Header += $"Du spielst {GamePlayer.Game.GetGameAndOptionText()} mit {CurrentBidValue}. ";
+                        ret.HeaderLabels.Add("INFO_YOU_PLAY");
+                        ret.HeaderLabels.AddRange(GamePlayer.Game.GetGameAndOptionTextLabels());
+                        ret.HeaderLabels.Add($"INFO_WITH_1:{CurrentBidValue}");
                     }
                     else
                     {
-                        ret.Header += $"{GamePlayer.Name} spielt {GamePlayer.Game.GetGameAndOptionText()} mit {CurrentBidValue}. ";
+                        ret.HeaderLabels.Add($"INFO_PLAYER_PLAYS_1:{GamePlayer.Name}");
+                        ret.HeaderLabels.AddRange(GamePlayer.Game.GetGameAndOptionTextLabels());
+                        ret.HeaderLabels.Add($"INFO_WITH_1:{CurrentBidValue}");
                     }
                 }
             }

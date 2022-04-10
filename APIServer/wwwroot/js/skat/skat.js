@@ -41,12 +41,12 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "1.3.28";
+    let version = "1.3.29";
 
     // helper
 
-    const handleError = (err) => {
-        console.error(err);
+    const handleError = (errMsg) => {
+        console.error(_T(errMsg));
         window.sessionStorage.removeItem("skatstate");
         enableTimer();
     }
@@ -93,12 +93,29 @@ var skat = (() => {
         }
     };
 
+    const translateLabels = (labels) => {
+        let txt = "";
+        if (labels && labels.length > 0) {
+            labels.forEach((label) => {
+                if (txt.length > 0) {
+                    txt += " ";
+                }
+                txt += _T(label);
+            });
+        }
+        return txt;
+    };
+
     const getCardImage = (card) => {
         let str = card.orderNumber.toString();
         if (str.length == 1) {
             str = "0" + str;
         }
         return `images/skat/${str}.gif`;
+    };
+
+    const getCardDescription = (card) => {
+        return _T(`TEXT_${card.color.toUpperCase()}`) + " " + _T(`TEXT_${card.value.toUpperCase()}`);
     };
 
     const getNextPlayer = (player) => {
@@ -284,8 +301,8 @@ var skat = (() => {
 
     const renderTableFull = (parent, ignoreToken) => {
         if (ignoreToken || !currentUser) {
-            controls.create(parent, "p", undefined, "Der Tisch ist leider schon voll!");
-            controls.createButton(parent, "Zuschauen als Gast", () => window.open("/skat?guest", "_blank"));
+            controls.create(parent, "p", undefined, _T("INFO_TABLE_FULL"));
+            controls.createButton(parent, _T("BUTTON_GUEST_VIEW"), () => window.open("/skat?guest", "_blank"));
             document.body.className = "inactive-background";
         }
         else {
@@ -303,21 +320,21 @@ var skat = (() => {
     const renderUserList = (parent) => {
         helpDiv = controls.createDiv(document.body);
         utils.create_menu(parent);
-        let title = currentUser ? `${currentUser.name} - Skat` : "Skat";
+        let title = currentUser ? `${currentUser.name} - ${_T("HEADER_SKAT")}` : _T("HEADER_SKAT");
         const h1 = controls.create(parent, "h1", undefined, title);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", "Hilfe");
+        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, "Profil");
+            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
         }
         let divInfoImages = controls.createDiv(parent, "infoimages");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/28.gif", "Kreuz Bube");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/20.gif", "Pik Bube");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/12.gif", "Herz Bube");
-        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/04.gif", "Karo Bube");
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/28.gif", `${_T("TEXT_CLUBS")} ${_T("TEXT_JACK")}`);
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/20.gif", `${_T("TEXT_SPADES")} ${_T("TEXT_JACK")}`);
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/12.gif", `${_T("TEXT_HEARTS")} ${_T("TEXT_JACK")}`);
+        controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/04.gif", `${_T("TEXT_DIAMONDS")} ${_T("TEXT_JACK")}`);
         if (model.allUsers.length > 0) {
-            controls.create(parent, "p", undefined, "Es sind folgende Spieler am Tisch:");
+            controls.create(parent, "p", undefined, _T("INFO_PLAYERS_AT_TABLE"));
             let ul = controls.create(parent, "ul");
             let idx = 1;
             model.allUsers.forEach((user) => {
@@ -336,7 +353,7 @@ var skat = (() => {
                                 img.src = p;
                             }
                         },
-                        (errMsg) => console.error(errMsg));
+                        (errMsg) => console.error(_T(errMsg)));
                 }
                 else {
                     img.src = photo;
@@ -353,19 +370,19 @@ var skat = (() => {
         let divReservations = controls.createDiv(parent, "layout-reservations");
         let divPage = controls.createDiv(divReservations);
         let divHeader = controls.createDiv(divPage, "reservation-header")
-        divHeader.textContent = "Tischreservierungen";
+        divHeader.textContent = _T("INFO_TABLE_RESERVATIONS");
         if (currentUser) {
-            let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/buttons/list-add-4.png", "Reservierung hinzuf\u00FCgen");
+            let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/buttons/list-add-4.png", _T("BUTTON_ADD_RESERVATION"));
             imgAdd.addEventListener("click", () => btnReserve_click(divReservations));
         }
         reservations.forEach(r => {
             let dd = new Date(r.reservedUtc);
-            let daystr = dd.toLocaleDateString("de-DE", { "month": "numeric", "day": "numeric" });
+            let daystr = dd.toLocaleDateString(_T("LOCALE"), { "month": "numeric", "day": "numeric" });
             let h = dd.getHours() + r.duration / 60;
             let txt = `${daystr} ${dd.getHours()}-${h} ${r.players.join(", ")}`;
             let divReservation = controls.create(divPage, "p", undefined, txt);
             if (currentUser && (currentUser.name == r.reservedBy || currentUser.roles.includes("skatadmin"))) {
-                let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/buttons/list-remove-4.png", "Reservierung entfernen");
+                let imgRemove = controls.createImg(divReservation, "reservation-img", 32, 32, "/images/buttons/list-remove-4.png", _T("BUTTON_CANCEL_RESERVATION"));
                 imgRemove.id = `imgremove-${r.id}`;
                 imgRemove.addEventListener("click", (elem) => {
                     const reservationId = elem.target.id.substring(10);
@@ -385,7 +402,7 @@ var skat = (() => {
                 });
             }
         });
-        controls.createButton(divPage, "OK", () => {
+        controls.createButton(divPage, _T("BUTTON_OK"), () => {
             showReservations = false;
             render();
         });
@@ -400,33 +417,33 @@ var skat = (() => {
         let table = controls.create(parent, "table");
         let caption = controls.create(table, "caption");
         controls.createSpan(caption, undefined,
-            date.toLocaleDateString("de-DE", { year: "numeric", month: "long" }));
+            date.toLocaleDateString(_T("LOCALE"), { year: "numeric", month: "long" }));
         if (today.getMonth() < month) {
-            controls.createImageButton(caption, "Vorheriger Monat",
+            controls.createImageButton(caption, _T("BUTTON_PREV_MONTH"),
                 () => btnPreviousMonth_click(parent, year, month),
                 "/images/buttons/arrow-left-2.png", 16, "reservation-transparent");
         }
         if (today.getMonth() == month) {
-            controls.createImageButton(caption, "N\u00E4chster Monat",
+            controls.createImageButton(caption, _T("BUTTON_NEXT_MONTH"),
                 () => btnNextMonth_click(parent, year, month),
                 "/images/buttons/arrow-right-2.png", 16, "reservation-transparent");
         }
         let theader = controls.create(table, "thead");
         let tr = controls.create(theader, "tr");
-        let th = controls.create(tr, "th", undefined, "Mo");
-        th.title = "Montag";
-        th = controls.create(tr, "th", undefined, "Di");
-        th.title = "Dienstag";
-        th = controls.create(tr, "th", undefined, "Mi");
-        th.title = "Mittwoch";
-        th = controls.create(tr, "th", undefined, "Do");
-        th.title = "Donnerstag";
-        th = controls.create(tr, "th", undefined, "Fr");
-        th.title = "Freitag";
-        th = controls.create(tr, "th", undefined, "Sa");
-        th.title = "Samstag";
-        th = controls.create(tr, "th", undefined, "So");
-        th.title = "Sonntag";
+        let th = controls.create(tr, "th", undefined, _T("COLUMN_MON"));
+        th.title = _T("TEXT_MONDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_TUE"));
+        th.title = _T("TEXT_TUESDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_WED"));
+        th.title = _T("TEXT_WEDNESDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_THU"));
+        th.title = _T("TEXT_THURSDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_FRI"));
+        th.title = _T("TEXT_FRIDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_SAT"));
+        th.title = _T("TEXT_SATURDAY");
+        th = controls.create(tr, "th", undefined, _T("COLUMN_SON"));
+        th.title = _T("TEXT_SUNDAY");
         let tbody = controls.create(table, "tbody");
         let day = 1;
         for (let i = 0; i < 6; i++) {
@@ -456,27 +473,27 @@ var skat = (() => {
                 }
             }
         }
-        controls.createButton(parent, "Zur\u00FCck", () => render());
+        controls.createButton(parent, _T("BUTTON_BACK"), () => render());
     };
 
     const renderAddReservation = (parent, day, month, year) => {
         controls.removeAllChildren(parent);
         let dd = new Date(Date.UTC(year, month, day));
-        let dt = dd.toLocaleDateString("de-DE", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        let dt = dd.toLocaleDateString(_T("LOCALE"), { weekday: "long", year: "numeric", month: "long", day: "numeric" });
         let captionDiv = controls.createDiv(parent, "reservation-calendar-caption");
         captionDiv.textContent = `${dt}`;
         let freeTimes = getFreeReservationTimes(dd);
         let options = [];
         Object.keys(freeTimes).forEach(h => {
-            options.push({ name: `${h} Uhr`, value: `${h}` });
+            options.push({ name: _T("OPTION_TIME_1", h), value: `${h}` });
         });
         let timeDiv = controls.createDiv(parent);
-        let timeLabel = controls.createLabel(timeDiv, "reservation-label", "Uhrzeit:");
+        let timeLabel = controls.createLabel(timeDiv, "reservation-label", _T("LABEL_TIME"));
         timeLabel.htmlFor = "reservation-hour-id";
         let selectHour = controls.createSelect(timeDiv, "reservation-hour-id", "reservation-select", options);
         selectHour.value = undefined;
         let durationDiv = controls.createDiv(parent);
-        let durationLabel = controls.createLabel(durationDiv, "reservation-label", "Dauer:");
+        let durationLabel = controls.createLabel(durationDiv, "reservation-label", _T("LABEL_DURATION"));
         durationLabel.htmlFor = "reservation-duration-id";
         let selectDuration = controls.createSelect(durationDiv, "reservation-duration-id", "reservation-select", []);
         selectHour.addEventListener("change", (elem) => {
@@ -485,10 +502,7 @@ var skat = (() => {
             if (durations) {
                 let option;
                 durations.forEach(duration => {
-                    let txt = `${duration} Stunde`;
-                    if (duration > 1) {
-                        txt += "n";
-                    }
+                    let txt = duration > 1 ? _T("OPTION_HOURS_1", duration) : _T("OPTION_HOUR_1", duration);
                     option = controls.create(selectDuration, "option", undefined, txt);
                     option.setAttribute("value", `${duration}`);
                 });
@@ -499,16 +513,16 @@ var skat = (() => {
         });
         for (let playerIdx = 1; playerIdx <= 4; playerIdx++) {
             let playerDiv = controls.createDiv(parent);
-            let playerLabel = controls.createLabel(playerDiv, "reservation-label", `Spieler ${playerIdx}:`);
+            let playerLabel = controls.createLabel(playerDiv, "reservation-label", _T("LABEL_PLAYER_1", playerIdx));
             playerLabel.htmlFor = `reservation-player${playerIdx}-id`;
-            let playerInput = controls.createInputField(playerDiv, `Spieler ${playerIdx}`, undefined, "reservation-input", 20, 32);
+            let playerInput = controls.createInputField(playerDiv, _T("TEXT_PLAYER_1", playerIdx), undefined, "reservation-input", 20, 32);
             playerInput.id = `reservation-player${playerIdx}-id`;
             if (playerIdx == 1) {
                 playerInput.value = currentUser.name;
                 playerInput.disabled = true;
             }
         }
-        controls.createButton(parent, "Reservieren", () => {
+        controls.createButton(parent, _T("BUTTON_RESERVE"), () => {
             let token = utils.get_authentication_token();
             let r = {};
             let hour = document.getElementById("reservation-hour-id").value;
@@ -534,60 +548,60 @@ var skat = (() => {
                     btnShowReservations_click();
                 },
                 (errMsg) => {
-                    document.getElementById("reserve-error-id").textContent = errMsg;
+                    document.getElementById("reserve-error-id").textContent = _T(errMsg);
                     enableTimer();
                 });
         });
-        controls.createButton(parent, "Zur\u00FCck", () => renderCalendar(parent, month, year));
+        controls.createButton(parent, _T("BUTTON_BACK"), () => renderCalendar(parent, month, year));
         controls.createDiv(parent, "error").id = "reserve-error-id";
     };
 
     const renderLogin = (parent) => {
         document.body.className = "active-background";
         if (!currentUser) {
-            controls.create(parent, "p", undefined, "Du kannst noch mitspielen! Wie ist Dein Name?");
-            let label = controls.createLabel(parent, undefined, "Name:");
+            controls.create(parent, "p", undefined, _T("INFO_YOU_CAN_PLAY"));
+            let label = controls.createLabel(parent, undefined, _T("LABEL_NAME"));
             label.htmlFor = "username-id";
-            inputUsername = controls.createInputField(parent, "Name", btnLogin_click, "username-input", 20, 32);
-            inputUsername.placeholder = "Name";
+            inputUsername = controls.createInputField(parent, _T("TEXT_NAME"), btnLogin_click, "username-input", 20, 32);
+            inputUsername.placeholder = _T("TEXT_NAME");
             inputUsername.id = "username-id";
             if (!utils.is_mobile()) {
                 inputUsername.focus();
             }
-            controls.createButton(parent, "Anmelden", btnLogin_click);
-            let p = controls.create(parent, "p", undefined, "Du hast noch kein Konto? Hier kannst Du dich registrieren. ");
-            controls.createButton(p, "Registrieren", () => {
+            controls.createButton(parent, _T("BUTTON_LOGIN"), btnLogin_click);
+            let p = controls.create(parent, "p", undefined, _T("INFO_REGISTER"));
+            controls.createButton(p, _T("BUTTON_REGISTER"), () => {
                 window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
             });
             if (!showReservations) {
-                controls.createButton(parent, "Reservierungen", () => btnShowReservations_click());
+                controls.createButton(parent, _T("BUTTON_RESERVATIONS"), () => btnShowReservations_click());
             }
         }
         else {
             let parentdiv = controls.create(parent, "p");
-            controls.create(parentdiv, "p", undefined, `${currentUser.name}! Du kannst noch mitspielen!`);
-            inputUsername = controls.createInputField(parentdiv, "Name", btnLogin_click, "hide", 20, 32);
+            controls.create(parentdiv, "p", undefined, _T("INFO_YOU_CAN_PLAY_1", currentUser.name));
+            inputUsername = controls.createInputField(parentdiv, _T("TEXT_NAME"), btnLogin_click, "hide", 20, 32);
             inputUsername.value = currentUser.name;
-            controls.createButton(parentdiv, "Mitspielen", btnLogin_click);
+            controls.createButton(parentdiv, _T("BUTTON_PLAY_WITH"), btnLogin_click);
             if (!showReservations) {
-                controls.createButton(parent, "Reservierungen", () => btnShowReservations_click());
+                controls.createButton(parent, _T("BUTTON_RESERVATIONS"), () => btnShowReservations_click());
             }
         }
     };
 
     const renderWaitForUsers = (parent) => {
-        controls.create(parent, "p", "activity", "Du musst warten, bis alle angemeldet sind.");
+        controls.create(parent, "p", "activity", _T("INFO_WAIT_FOR_ALL"));
         document.body.className = "inactive-background";
     };
 
     const renderStartGame = (parent) => {
         if (model.allUsers.length < 4) {
-            controls.create(parent, "p", undefined, "Warte auf einen vierten Spieler oder starte das Spiel zu dritt!");
+            controls.create(parent, "p", undefined, _T("INFO_WAIT_FOR_4_PLAYERS"));
         }
         else {
-            controls.create(parent, "p", undefined, "Alle sind angemeldet! Starte das Spiel!");
+            controls.create(parent, "p", undefined, _T("INFO_ALL_LOGGED_IN_START_GAME"));
         }
-        controls.createButton(parent, "Spiel starten", btnStartGame_click);
+        controls.createButton(parent, _T("BUTTON_START_GAME"), btnStartGame_click);
         document.body.className = "active-background";
     };
 
@@ -602,13 +616,13 @@ var skat = (() => {
             let gif = show ? getCardImage(card) : "/images/skat/back.gif";
             let img = controls.createImg(container, "card-img", imgWidth, imgHeight, `${gif}`);
             if (show) {
-                img.title = card.description;
+                img.title = getCardDescription(card);
                 if (action) {
                     img.addEventListener("click", () => action(card));
                 }
             }
             else {
-                img.title = "Skat";
+                img.title = _T("TEXT_SKAT");
             }
             if (cnt > 0 && overlap) {
                 if (addspace && (cnt % 3 == 0)) {
@@ -633,7 +647,7 @@ var skat = (() => {
             else {
                 if (model.skatTable.stitch.length == 0) {
                     if (!model.skatTable.gameEnded) {
-                        controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png", undefined, "Platzhalter");
+                        controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png", undefined, _T("TEXT_PLACEHOLDER"));
                     }
                 }
                 else {
@@ -658,7 +672,7 @@ var skat = (() => {
         else {
             if (model.skatTable.skat.length == 0) {
                 if (!model.skatTable.gameEnded) {
-                    controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png", undefined, "Platzhalter");
+                    controls.createImg(parent, "card-img", imgWidth, imgHeight, "/images/skat/empty.png", undefined, _T("TEXT_PLACEHOLDER"));
                 }
             }
             else {
@@ -690,41 +704,42 @@ var skat = (() => {
     const renderActions = (parent) => {
         let active = false;
         if (showLastStitch) {
-            controls.createButton(parent, "Letzten Stich zur\u00FCcklegen", btnLastStitchCard_click, "StopViewLastStitch");
+            controls.createButton(parent, _T("BUTTON_BACK_LAST_STITCH"), btnLastStitchCard_click, "StopViewLastStitch");
         }
         else if (giveUpClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du wirklich aufgeben?");
-            controls.createButton(parent, "Ja", btnGiveUp_click, "GiveUpYes");
-            controls.createButton(parent, "Nein", btnGiveUp_click, "GiveUpNo");
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_GIVE_UP"));
+            controls.createButton(parent, _T("BUTTON_YES"), btnGiveUp_click, "GiveUpYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnGiveUp_click, "GiveUpNo");
             active = true;
         }
         else if (speedUpClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du wirklich abk\u00FCrzen?");
-            controls.createButton(parent, "Ja", btnSpeedUp_click, "SpeedUpYes");
-            controls.createButton(parent, "Nein", btnSpeedUp_click, "SpeedUpNo");
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_SPEED_UP"));
+            controls.createButton(parent, _T("BUTTON_YES"), btnSpeedUp_click, "SpeedUpYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnSpeedUp_click, "SpeedUpNo");
             active = true;
         }
         else if (logoutClicked) {
-            controls.create(parent, "span", "confirmation", "Willst Du den Tisch wirklich verlassen?");
-            controls.createButton(parent, "Ja", btnLogout_click, "LogoutYes");
-            controls.createButton(parent, "Nein", btnLogout_click, "LogoutNo");
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_LEAVE_TABLE"));
+            controls.createButton(parent, _T("BUTTON_YES"), btnLogout_click, "LogoutYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnLogout_click, "LogoutNo");
             active = true;
         }
         else if (letsStartClicked && model.skatTable.player) {
-            controls.create(parent, "span", "confirmation", `Willst Du Dich wirklich ${model.skatTable.player.game.description} spielen?`);
-            controls.createButton(parent, "Ja", btnLetsStart_click, "LetsStartYes");
-            controls.createButton(parent, "Nein", btnLetsStart_click, "LetsStartNo");
+            const txt = translateLabels(model.skatTable.player.game.descriptionLabels);
+            controls.create(parent, "span", "confirmation", _T("INFO_REALLY_PLAY_1", txt));
+            controls.createButton(parent, _T("BUTTON_YES"), btnLetsStart_click, "LetsStartYes");
+            controls.createButton(parent, _T("BUTTON_NO"), btnLetsStart_click, "LetsStartNo");
             active = true;
         }
         else {
             if (model.skatTable.canStartNewGame && model.currentUser) {
                 if (!model.currentUser.startGameConfirmed) {
                     if (model.skatTable.player) {
-                        controls.createButton(parent, "OK", btnConfirmStartGame_click, "ConfirmStartGame");
+                        controls.createButton(parent, _T("BUTTON_OK"), btnConfirmStartGame_click, "ConfirmStartGame");
                     }
                     const sep = window.location.search.startsWith("?") ? "&" : "?";
-                    controls.createButton(parent, "Spielverlauf", () => window.open(`${window.location.href}${sep}gamehistory`, "_blank"));
-                    controls.createButton(parent, "Tabelle", () => window.open(`${window.location.href}${sep}result`, "_blank"));
+                    controls.createButton(parent, _T("BUTTON_GAME_HISTORY"), () => window.open(`${window.location.href}${sep}gamehistory`, "_blank"));
+                    controls.createButton(parent, _T("BUTTON_RESULT_TABLE"), () => window.open(`${window.location.href}${sep}result`, "_blank"));
                     active = true;
                 }
                 else if (model.skatTable.player) {
@@ -735,46 +750,46 @@ var skat = (() => {
                         }
                     });
                     if (!wait) {
-                        controls.createButton(parent, "Neues Spiel", btnStartGame_click, "StartGame");
+                        controls.createButton(parent, _T("BUTTON_NEW_GAME"), btnStartGame_click, "StartGame");
                         active = true;
                     }
                     else {
-                        controls.create(parent, "p", undefined, "Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                        controls.create(parent, "p", undefined, _T("INFO_WAIT_CONFIRMATION_OTHER"));
                         document.body.className = "inactive-background";
                     }
                 }
             }
             if (!model.skatTable.isSpeedUp) {
                 if (model.skatTable.canCollectStitch) {
-                    controls.createButton(parent, "Stich einsammeln", btnStitchCard_click, "CollectStitch");
+                    controls.createButton(parent, _T("BUTTON_COLLECT_STITCH"), btnStitchCard_click, "CollectStitch");
                     active = true;
                 }
                 if (model.skatTable.canViewLastStitch) {
-                    controls.createButton(parent, "Letzten Stich zeigen", btnLastStitchCard_click, "ViewLastStitch");
+                    controls.createButton(parent, _T("BUTTON_VIEW_LAST_STITCH"), btnLastStitchCard_click, "ViewLastStitch");
                 }
                 if (model.skatTable.canGiveUp) {
-                    controls.createButton(parent, "Aufgeben", btnGiveUp_click, "GiveUpQuestion");
+                    controls.createButton(parent, _T("BUTTON_GIVE_UP"), btnGiveUp_click, "GiveUpQuestion");
                 }
                 if (model.skatTable.canSpeedUp) {
-                    controls.createButton(parent, "Abk\u00FCrzen", btnSpeedUp_click, "SpeedUp");
+                    controls.createButton(parent, _T("BUTTON_SPEED_UP"), btnSpeedUp_click, "SpeedUp");
                 }
             }
             else {
                 if (model.skatTable.canConfirmSpeedUp) {
-                    controls.createButton(parent, "Spiel abk\u00FCrzen", btnSpeedUpConfirm_click, "ConfirmSpeedUp");
-                    controls.createButton(parent, "Weiterspielen", btnContinuePlay_click, "ContinuePlay");
+                    controls.createButton(parent, _T("BUTTON_CONFIRM_SPEED_UP"), btnSpeedUpConfirm_click, "ConfirmSpeedUp");
+                    controls.createButton(parent, _T("BUTTON_CONTINUE_PLAY"), btnContinuePlay_click, "ContinuePlay");
                     active = true;
                 }
                 else {
-                    controls.create(parent, "p", undefined, "Spiel abk\u00FCrzen. Du wartest auf die Best\u00E4tigung Deiner Mitspieler.");
+                    controls.create(parent, "p", undefined, _T("INFO_WAIT_CONFIRM_SPEED_UP"));
                 }
             }
             model.skatTable.actions.forEach((action) => {
-                controls.createButton(parent, action.description, btnAction_click, action.name);
+                controls.createButton(parent, _T(action.descriptionLabel), btnAction_click, action.name);
                 active = true;
             });
-            if (model.skatTable.player && model.skatTable.player.tooltip && model.skatTable.player.tooltip.length > 0) {
-                controls.create(parent, "span", "tooltip", model.skatTable.player.tooltip);
+            if (model.skatTable.player && model.skatTable.player.tooltipLabels && model.skatTable.player.tooltipLabels.length > 0) {
+                controls.create(parent, "span", "tooltip", translateLabels(model.skatTable.player.tooltipLabels));
             }
         }
         if (active) {
@@ -784,7 +799,7 @@ var skat = (() => {
 
     const renderSpecialSort = (parent) => {
         if (model.skatTable.player && model.skatTable.cards.length > 2) {
-            controls.createCheckbox(parent, "sortoption", "Sort", "Sortiere nach wechselnden Farben", specialSortOption, btnSpecialSortOption_click, false);
+            controls.createCheckbox(parent, "sortoption", "Sort", _T("OPTION_SORT_ALTERNATING_COLORS"), specialSortOption, btnSpecialSortOption_click, false);
         }
     };
 
@@ -793,21 +808,21 @@ var skat = (() => {
         let game = model.skatTable.player.game;
         let gameStarted = model.skatTable.gameStarted
         let divGameType = controls.create(parent, "div", "gametype");
-        controls.createRadiobutton(divGameType, "r1", "gametype", "Grand", "Grand", game.type == "Grand", btnGameType_click, gameStarted);
-        controls.createRadiobutton(divGameType, "r2", "gametype", "Null", "Null", game.type == "Null", btnGameType_click, gameStarted);
-        controls.createRadiobutton(divGameType, "r3", "gametype", "Clubs", "Kreuz", game.type == "Color" && game.color == "Clubs", btnGameType_click, gameStarted);
-        controls.createRadiobutton(divGameType, "r4", "gametype", "Spades", "Pik", game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
-        controls.createRadiobutton(divGameType, "r5", "gametype", "Hearts", "Herz", game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
-        controls.createRadiobutton(divGameType, "r6", "gametype", "Diamonds", "Karo", game.type == "Color" && game.color == "Diamonds", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r1", "gametype", "Grand", _T("TEXT_GRAND"), game.type == "Grand", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r2", "gametype", "Null", _T("TEXT_NULL"), game.type == "Null", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r3", "gametype", "Clubs", _T("TEXT_CLUBS"), game.type == "Color" && game.color == "Clubs", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r4", "gametype", "Spades", _T("TEXT_SPADES"), game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r5", "gametype", "Hearts", _T("TEXT_HEARTS"), game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
+        controls.createRadiobutton(divGameType, "r6", "gametype", "Diamonds", _T("TEXT_DIAMONDS"), game.type == "Color" && game.color == "Diamonds", btnGameType_click, gameStarted);
         let divGameOption = controls.create(parent, "div", "gameoption");
-        checkBoxOuvert = controls.createCheckbox(divGameOption, "c1", "Ouvert", "Ouvert", game.option.ouvert, btnGameOption_click, !model.skatTable.canSetOuvert);
-        checkBoxHand = controls.createCheckbox(divGameOption, "c2", "Hand", "Hand", game.option.hand, btnGameOption_click, !model.skatTable.canSetHand);
-        checkBoxSchneider = controls.createCheckbox(divGameOption, "c3", "Schneider", "Schneider", game.option.schneider, btnGameOption_click, !model.skatTable.canSetSchneider);
-        checkBoxSchwarz = controls.createCheckbox(divGameOption, "c4", "Schwarz", "Schwarz", game.option.schwarz, btnGameOption_click, !model.skatTable.canSetSchwarz);
+        checkBoxOuvert = controls.createCheckbox(divGameOption, "c1", "Ouvert", _T("TEXT_OUVERT"), game.option.ouvert, btnGameOption_click, !model.skatTable.canSetOuvert);
+        checkBoxHand = controls.createCheckbox(divGameOption, "c2", "Hand", _T("TEXT_HAND"), game.option.hand, btnGameOption_click, !model.skatTable.canSetHand);
+        checkBoxSchneider = controls.createCheckbox(divGameOption, "c3", "Schneider", _T("TEXT_SCHNEIDER"), game.option.schneider, btnGameOption_click, !model.skatTable.canSetSchneider);
+        checkBoxSchwarz = controls.createCheckbox(divGameOption, "c4", "Schwarz", _T("TEXT_SCHWARZ"), game.option.schwarz, btnGameOption_click, !model.skatTable.canSetSchwarz);
     };
 
     const renderHeader = (parent) => {
-        controls.create(parent, "p", undefined, model.skatTable.message);
+        controls.create(parent, "p", undefined, translateLabels(model.skatTable.messageLabels));
     };
 
     const renderSummaryPlayer = (elem, player) => {
@@ -835,7 +850,7 @@ var skat = (() => {
                         img.src = p;
                     }
                 },
-                (errMsg) => console.error(errMsg));
+                (errMsg) => console.error(_T(errMsg)));
         }
         else {
             img.src = photo;
@@ -848,19 +863,19 @@ var skat = (() => {
                 controls.createSpan(elem, undefined, `${model.skatTable.currentBidValue}`);
             }
             else if (!model.skatTable.bidSaid && player.bidStatus == 1 && model.skatTable.currentBidValue > 0) {
-                controls.createSpan(elem, undefined, "Ja!");
+                controls.createSpan(elem, undefined, _T("TEXT_ACCEPT_BID"));
             }
             else if (player.bidStatus == 2) {
-                controls.createSpan(elem, undefined, "Weg");
+                controls.createSpan(elem, undefined, _T("TEXT_DECLINE_BID"));
             }
         }
     };
 
     const renderSummary = (parent, left, right, bottom) => {
-        controls.create(parent, "div", "summary-currentplayer", `Spiel ${model.skatTable.gameCounter}`);
+        controls.create(parent, "div", "summary-currentplayer", _T("INFO_PLAY_1", model.skatTable.gameCounter));
         model.skatTable.players.forEach((p) => {
             let classname = p.name == getPlayerName() ? "summary-currentplayer" : "summary-otherplayer";
-            controls.create(parent, "div", classname, p.summary);
+            controls.create(parent, "div", classname, _T(p.summaryLabel));
         });
         if (!model.skatTable.gameEnded) {
             let leftPlayer
@@ -902,20 +917,20 @@ var skat = (() => {
                 let names = model.nextReservation.players.join(", ");
                 let txt;
                 if (sec <= 0) {
-                    txt = `Der Tisch ist jetzt reserviert f\u00FCr ${names}. Du wirst gleich abgemeldet.`;
+                    txt = _T("INFO_TABLE_RESERVED_FOR_1", names);
                 }
                 else {
                     let val;
                     let unit;
                     if (sec > 60) {
                         val = Math.ceil(sec / 60);
-                        unit = (val <= 1) ? "Minute" : "Minuten";
+                        unit = (val <= 1) ? _T("TEXT_MINUTE") : _T("TEXT_MINUTES");
                     }
                     else {
                         val = sec;
-                        unit = sec <= 1 ? "Sekunde" : "Sekunden";
+                        unit = sec <= 1 ? _T("TEXT_SECOND"): _T("TEXT_SECONDS");
                     }
-                    txt = `Der Tisch ist in ${val} ${unit} reserviert f\u00FCr ${names}. Du wirst dann automatisch abgemeldet.`;
+                    txt = _T("INFO_TABLE_RESERVED_IN_1_2_3", val, unit, names);
                 }
                 controls.createDiv(parent, "reservation-logout-alert").textContent = txt;
             }
@@ -924,10 +939,10 @@ var skat = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `Skat ${version}. Copyright 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_SKAT")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
         controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
         if (ticket) {
-            controls.createButton(div, "Tisch verlassen", btnLogout_click, "Logout", "logout-button");
+            controls.createButton(div, _T("BUTTON_LEAVE_TABLE"), btnLogout_click, "Logout", "logout-button");
         }
         renderLogoutAlert(parent);
     };
@@ -972,7 +987,7 @@ var skat = (() => {
             render();
             return;
         }
-        document.title = `Skat - ${model.currentUser.name}`;
+        document.title = `${_T("HEADER_SKAT")} - ${model.currentUser.name}`;
         if (model.skatTable) {
             renderMainPage(parent);
         }
@@ -997,7 +1012,7 @@ var skat = (() => {
         });
         let token = utils.get_authentication_token();
         if (token) {
-            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", "Spielergebnisse");
+            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
             imgResults.addEventListener("click", () => window.open("/skat?results", "_blank"));
         }
         divChat = controls.createDiv(parent, "layout-right");
@@ -1010,22 +1025,22 @@ var skat = (() => {
             chatModel.history.forEach((tm) => {
                 let divMsg = controls.createDiv(divChat, "chat-message");
                 divMsg.textContent = `${tm.username}: ${tm.message}`;
-                divMsg.title = `${new Date(tm.createdUtc).toLocaleString("de-DE")}`;
+                divMsg.title = `${new Date(tm.createdUtc).toLocaleString(_T("LOCALE"))}`;
                 if (tm.message.startsWith("https://")) {
-                    controls.createA(divMsg, "chat-link", tm.message, "\u00D6ffnen", () => window.open(tm.message, "_blank"));
+                    controls.createA(divMsg, "chat-link", tm.message, _T("BUTTON_OPEN"), () => window.open(tm.message, "_blank"));
                 }
             });
             currentChatState = chatModel.state;
         }
         if (token) {
-            inputChatText = controls.createInputField(divChat, "Nachricht", () => btnChat_click(), "chat-input", 36, 200);
-            inputChatText.placeholder = "Nachricht..."
+            inputChatText = controls.createInputField(divChat, _T("TEXT_MESSAGE"), () => btnChat_click(), "chat-input", 36, 200);
+            inputChatText.placeholder = _T("TEXT_MESSAGE");
             if (lastChatText) {
                 inputChatText.value = lastChatText;
             }
         }
         if (showChat) {
-            imgMessage.title = "Chat ausblenden";
+            imgMessage.title = _T("INFO_HIDE_CHAT");
             sessionStorage.setItem("chatstate", currentChatState);
             divChat.style.visibility = "visible";
             if (inputChatText && !utils.is_mobile()) {
@@ -1033,7 +1048,7 @@ var skat = (() => {
             }
         }
         else {
-            imgMessage.title = "Chat einblenden";
+            imgMessage.title = _T("INFO_SHOW_CHAT");
             if (currentChatState > chatState) {
                 imgMessage.src = "/images/buttons/mail-unread-new.png";
             }
@@ -1042,12 +1057,12 @@ var skat = (() => {
     };
 
     const renderResults = (results, skatadmin) => {
-        document.title = "Skat - Spielergebnisse";
+        document.title = `${_T("HEADER_SKAT")} - ${_T("INFO_GAME_RESULTS")}`;
         controls.removeAllChildren(document.body);
         document.body.className = "inactive-background";
         let parent = document.body;
         if (results.length == 0) {
-            controls.createLabel(parent, undefined, "Es liegen noch keine Spielergebnisse f\u00FCr Dich vor.");            
+            controls.createLabel(parent, undefined, _T("INFO_MISSING_GAME_RESULTS"));            
             return;
         }
         const p = controls.create(parent, "p");
@@ -1056,7 +1071,7 @@ var skat = (() => {
         let options = [];
         results.forEach((result,index) => {
             let started = new Date(result.startedUtc);
-            let txt = `${started.toLocaleDateString("de-DE")}`;;
+            let txt = `${started.toLocaleDateString(_T("LOCALE"))}`;;
             options.push({ name: `${txt}`, value: `${result.id}` });
             if (index === 0) {
                 let token = utils.get_authentication_token();
@@ -1071,7 +1086,7 @@ var skat = (() => {
                     handleError);                    
             }
         });
-        const label = controls.createLabel(p, undefined, "Spiele am ");
+        const label = controls.createLabel(p, undefined, _T("INFO_GAMES_AT") + " ");
         label.htmlFor = "result-select-id";
         const select = controls.createSelect(p, "result-select-id", "result-select", options);
         const span = controls.createSpan(p);
@@ -1080,7 +1095,7 @@ var skat = (() => {
             if (skatadmin) {
                 const padmin = document.querySelector("#result-admin-id");
                 controls.removeAllChildren(padmin);
-                controls.createButton(padmin, "L\u00F6schen", () => onDeleteSkatResult(true));
+                controls.createButton(padmin, _T("BUTTON_DELETE"), () => onDeleteSkatResult(true));
             }
             let token = utils.get_authentication_token();
             utils.fetch_api_call(`api/skat/resultbyid?id=${elem.target.value}`, { headers: { "token": token } },
@@ -1096,12 +1111,12 @@ var skat = (() => {
         if (skatadmin) {
             const padmin = controls.createDiv(p);
             padmin.id = "result-admin-id";
-            controls.createButton(padmin, "L\u00F6schen", () => onDeleteSkatResult(true));
+            controls.createButton(padmin, _T("BUTTON_DELETE"), () => onDeleteSkatResult(true));
         }
     };
 
     const renderResult = (result) => {
-        document.title = "Skat - Tabelle";
+        document.title = `${_T("HEADER_SKAT")} - ${_T("TEXT_TABLE")}`;
         document.body.className = "inactive-background";
         renderResultTable(document.body, result);
     };
@@ -1110,7 +1125,7 @@ var skat = (() => {
         controls.removeAllChildren(parent);
         currentSkatResultId = result ? result.id : undefined;
         if (!result || !result.endedUtc) {
-            controls.createLabel(parent, undefined, "Die Tabelle ist noch nicht verf\u00FCgbar.");
+            controls.createLabel(parent, undefined, _T("INFO_TABLE_NOT_AVAILABLE"));
             return;
         }
         let started = new Date(result.startedUtc);
@@ -1120,11 +1135,10 @@ var skat = (() => {
         let table = controls.create(parent, "table");
         const resultCaption = document.querySelector("#result-caption-id");
         if (resultCaption) {
-            resultCaption.textContent = ` von ${started.toLocaleTimeString("de-DE", topt)} bis ${ended.toLocaleTimeString("de-DE", topt)}`;
+            resultCaption.textContent = " " + _T("INFO_FROM_TO_1_2", started.toLocaleTimeString(_T("LOCALE"), topt), ended.toLocaleTimeString(_T("LOCALE"), topt));
         }
         else {
-            const caption = `Spiele am ${started.toLocaleDateString("de-DE")} von ` +
-                `${started.toLocaleTimeString("de-DE", topt)} bis ${ended.toLocaleTimeString("de-DE", topt)}.`;
+            const caption = _T("INFO_GAMES_AT_FROM_TO_1_2_3", started.toLocaleDateString(_T("LOCALE")), started.toLocaleTimeString(_T("LOCALE"), topt), ended.toLocaleTimeString(_T("LOCALE"), topt));
             controls.create(table, "caption", undefined, caption);
         }
         let theader = controls.create(table, "thead");
@@ -1136,7 +1150,7 @@ var skat = (() => {
         if (result.playerNames.length > 3) {
             controls.create(tr, "th", undefined, `${result.playerNames[3]}`);
         }
-        controls.create(tr, "th", undefined, "Spiel");
+        controls.create(tr, "th", undefined, _T("TEXT_GAME"));
         let tbody = controls.create(table, "tbody");
         let scores = [0, 0, 0, 0];
         let playerWins = [0, 0, 0, 0];
@@ -1183,7 +1197,7 @@ var skat = (() => {
             cnt++;
         });
         table = controls.create(parent, "table");
-        controls.create(table, "caption", undefined, "Turnierwertung");
+        controls.create(table, "caption", undefined, _T("TEXT_TOURNAMENT_SCORE"));
         theader = controls.create(table, "thead");
         tr = controls.create(theader, "tr");
         for (let idx = 0; idx < result.playerNames.length; idx++) {
@@ -1205,7 +1219,7 @@ var skat = (() => {
 
     const renderGameHistory = (parent, result, gameHistory) => {
         if (!result) {
-            document.title = "Skat - Spielverlauf";
+            document.title = `${_T("HEADER_SKAT")} - ${_T("TEXT_GAME_HISTORY")}`;
             document.body.className = "inactive-background";
         }
         const p = document.getElementById("results-overview-id");
@@ -1214,34 +1228,38 @@ var skat = (() => {
         }
         controls.removeAllChildren(parent);
         if (!gameHistory) {
-            controls.create(parent, "p", undefined, "Der Spielverlauf ist noch nicht verf\u00FCgbar.");
+            controls.create(parent, "p", undefined, _T("INFO_GAME_HISTORY_NOT_AVAILABLE"));
             return;
         }
         let gameP = controls.create(parent, "p");
         if (gameHistory.gameValue == 0) {
-            gameP.textContent = "Alle Spieler haben gepasst.";
+            gameP.textContent = _T("INFO_ALL_PLAYER_PASS");
         }
         else {
-            gameP.textContent = `${gameHistory.gamePlayerName} hat ${gameHistory.gameText} gespielt und ${gameHistory.gamePlayerScore} Augen bekommen. Das Spiel wurde mit ${gameHistory.gameValue} Punkten gewertet.`;
+            let txt = translateLabels(gameHistory.gameTextLabels);
+            if (txt.length === 0) {
+                txt = gameHistory.gameText;
+            }
+            gameP.textContent = _T("INFO_GAME_PLAYED_1_2_3_4", gameHistory.gamePlayerName, txt, gameHistory.gamePlayerScore, gameHistory.gameValue);
         }
         if (result) {
             let buttonDiv = controls.createDiv(parent);
-            controls.createButton(buttonDiv, "Zur\u00FCck", () => {
+            controls.createButton(buttonDiv, _T("BUTTON_BACK"), () => {
                 if (p) {
                     p.style.display = "block";
                 }
                 renderResultTable(parent, result);
             });
         }
-        controls.create(parent, "p", undefined, "Skat:");
+        controls.create(parent, "p", undefined, _T("LABEL_SKAT"));
         let divSkat = controls.createDiv(parent);
         renderCards(divSkat, true, gameHistory.skat, true, undefined, true);
         gameHistory.playerCards.forEach((pc) => {
-            controls.create(parent, "p", undefined, `Spielkarten von ${pc.playerName}:`);
+            controls.create(parent, "p", undefined, _T("LABEL_CARDS_OF_1", pc.playerName));
             let d = controls.createDiv(parent);
             renderCards(d, true, pc.cards, true, undefined, false);
         });
-        controls.create(parent, "p", undefined, "Gedr\u00FCckt:");
+        controls.create(parent, "p", undefined, _T("LABEL_PUT_BACK"));
         let divBack = controls.createDiv(parent);
         renderCards(divBack, true, gameHistory.back, true, undefined, true);
         let cnt = 1;
@@ -1249,7 +1267,7 @@ var skat = (() => {
             let p1 = gameHistory.played[idx];
             let p2 = gameHistory.played[idx+1];
             let p3 = gameHistory.played[idx+2];
-            controls.create(parent, "p", undefined, `Stich ${cnt}: ${p1.player}, ${p2.player}, ${p3.player}`);
+            controls.create(parent, "p", undefined, _T("LABEL_STITCH_1_2_3_4", cnt, p1.player, p2.player, p3.player));
             let divStitch = controls.createDiv(parent);
             renderCards(divStitch, true, [p1.card, p2.card, p3.card], true, undefined, true);
             cnt++;
@@ -1273,12 +1291,12 @@ var skat = (() => {
         renderChat(document.body);
         if (!ticket) {
             if (guestMode) {
-                document.title = "Skat - Gastansicht";
+                document.title = `${_T("HEADER_SKAT")} - ${_T("INFO_GUEST_VIEW")}`;
                 if (model.skatTable) {
                     renderMainPage(divMain);
                 }
                 else {
-                    controls.create(divMain, "p", undefined, "Es wird gerade nicht gespielt.");
+                    controls.create(divMain, "p", undefined, _T("INFO_NO_RUNNING_GAME"));
                     renderCopyright(divMain);
                 }
             }
@@ -1398,11 +1416,11 @@ var skat = (() => {
                 let parent = document.body;
                 parent.className = "inactive-background";
                 controls.removeAllChildren(parent);
-                controls.create(parent, "p", undefined, "Skat Administration");
+                controls.create(parent, "p", undefined, _T("INFO_SKAT_ADMINISTRATION"));
                 let p = controls.create(parent, "p");
-                controls.createButton(p, "Reset", () => onReset(p, true));
-                controls.createButton(p, "Tickets", () => onShowTickets(p));
-                controls.createButton(p, "Spielergebnisse", () => window.location.href = "/skat?results");
+                controls.createButton(p, _T("BUTTON_RESET"), () => onReset(p, true));
+                controls.createButton(p, _T("BUTTON_TICKETS"), () => onShowTickets(p));
+                controls.createButton(p, _T("BUTTON_GAME_RESULTS"), () => window.location.href = "/skat?results");
             }
             else {
                 window.location.replace("/skat");
@@ -1446,7 +1464,7 @@ var skat = (() => {
                 render();
             },
             (errmsg) => {
-                console.error(errmsg);
+                console.error(_T(errmsg));
                 utils.logout();
                 render();
             });
@@ -1467,7 +1485,7 @@ var skat = (() => {
                         mdDiv.innerHTML = html;
                     }
                 );
-                controls.createButton(contentDiv, "OK", () => onUpdateHelp(false)).focus();
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
     };
@@ -1546,7 +1564,7 @@ var skat = (() => {
                     render();
                 },
                 (errMsg) => {
-                    document.getElementById("login-error-id").textContent = errMsg;
+                    document.getElementById("login-error-id").textContent = _T(errMsg);
                     enableTimer();;
                 });
         }
@@ -1847,9 +1865,9 @@ var skat = (() => {
         if (!currentSkatResultId || !parent) return;
         if (confirm) {
             controls.removeAllChildren(parent);
-            controls.create(parent, "p", "confirmation", "Willst Du wirklich diese Tabelle l\u00F6schen?");
-            controls.createButton(parent, "Ja", () => onDeleteSkatResult(false));
-            controls.createButton(parent, "Nein", () => window.location.replace("/skat?results"));
+            controls.create(parent, "p", "confirmation", _T("INFO_REALLY_DELETE_TABLE"));
+            controls.createButton(parent, _T("BUTTON_YES"), () => onDeleteSkatResult(false));
+            controls.createButton(parent, _T("BUTTON_NO"), () => window.location.replace("/skat?results"));
             return;
         }
         let token = utils.get_authentication_token();
@@ -1869,9 +1887,9 @@ var skat = (() => {
     const onReset = (parent, confirm) => {
         if (confirm) {
             controls.removeAllChildren(parent);
-            controls.create(parent, "p", "confirmation", "Willst Du wirklich alles zur\u00FCcksetzen?");
-            controls.createButton(parent, "Ja", () => onReset(parent, false));
-            controls.createButton(parent, "Nein", () => window.location.replace("/skat?admin"));
+            controls.create(parent, "p", "confirmation", _T("INFO_REALLY_RESET"));
+            controls.createButton(parent, _T("BUTTON_YES"), () => onReset(parent, false));
+            controls.createButton(parent, _T("BUTTON_NO"), () => window.location.replace("/skat?admin"));
             return;
         }
         let token = utils.get_authentication_token();
@@ -1892,7 +1910,7 @@ var skat = (() => {
                     utils.debug(tickets);
                 }
                 controls.removeAllChildren(parent);
-                controls.create(parent, "p", undefined, "Tickets:");
+                controls.create(parent, "p", undefined, _T("LABEL_TICKETS"));
                 tickets.forEach(ticket => {
                     controls.create(parent, "p", undefined, ticket);
                 });
@@ -1925,7 +1943,7 @@ var skat = (() => {
 
 window.onload = () => {
     window.setInterval(skat.onTimer, 1000);
-    utils.auth_lltoken(skat.renderInit);
+    utils.auth_lltoken(() => utils.set_locale(skat.renderInit));
 };
 
 window.onclick = (event) => utils.hide_menu(event);

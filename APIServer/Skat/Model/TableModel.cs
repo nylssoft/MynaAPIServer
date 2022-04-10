@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ namespace APIServer.Skat.Model
 
         public PlayerModel InactivePlayer { get; set; } = null;
 
-        public string Message { get; set; } = "";
+        public List<string> MessageLabels { get; set; } = new List<string>();
 
         public List<CardModel> Cards { get; set; } = new List<CardModel>();
 
