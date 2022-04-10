@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -43,7 +43,7 @@ namespace APIServer.APIError
                     statusCode: statusCode);
             }
             logger.LogWarning("Server error occured: {message}.", context.Error.Message);
-            return Problem(title: "Es ist ein unerwarteter Fehler auf dem Server aufgetreten", statusCode: 500);
+            return Problem(title: "ERROR_UNEXPECTED", statusCode: 500);
         }
     }
 }

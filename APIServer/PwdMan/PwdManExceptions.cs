@@ -370,4 +370,28 @@ namespace APIServer.PwdMan
         {
         }
     }
+
+    public class InvalidMoveException : APIException
+    {
+        public InvalidMoveException()
+            : base("ERROR_INVALID_MOVE", 400)
+        {
+        }
+    }
+
+    public class SkipMoveNotAllowedException : APIException
+    {
+        public SkipMoveNotAllowedException()
+            : base("ERROR_SKIP_MOVE_NOT_ALLOWED", 400)
+        {
+        }
+    }
+
+    public class RollDiceNotAllowedException : APIException
+    {
+        public RollDiceNotAllowedException()
+            : base("ERROR_ROLL_DICE_NOT_ALLOWED", 400)
+        {
+        }
+    }
 }

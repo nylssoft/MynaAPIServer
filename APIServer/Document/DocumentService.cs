@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -420,7 +420,7 @@ namespace APIServer.Document
                 DbDocItemType.Volume => "Volume",
                 DbDocItemType.Folder => "Folder",
                 DbDocItemType.Item => "Document",
-                _ => throw new ArgumentException($"Invalid document type '{docType}'."),
+                _ => throw new ArgumentException($"Invalid document type '{docType}'.")
             };
         }
     }

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -518,7 +518,7 @@ namespace APIServer.Chess.Core
                 FigureType.Bishop => GetBishopMoves(f),
                 FigureType.Queen => GetQueenMoves(f),
                 FigureType.King => GetKingMoves(f),
-                _ => throw new ArgumentException("Invalid figure type"),
+                _ => throw new ArgumentException("Invalid figure type")
             };
             if (strikeOnly)
             {

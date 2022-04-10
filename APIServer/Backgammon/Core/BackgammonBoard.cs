@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.PwdMan;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -360,7 +361,7 @@ namespace APIServer.Backgammon.Core
         {
             if (GameStarted || GameOver || startRollNumbers.ContainsKey(color))
             {
-                throw new ArgumentException("Du kannst jetzt nicht würfeln.");
+                throw new RollDiceNotAllowedException();
             }
             var ret = RollDiceOnce();
             startRollNumbers[color] = ret;
@@ -385,7 +386,7 @@ namespace APIServer.Backgammon.Core
         {
             if (!GameStarted || GameOver || CurrentRoll != null)
             {
-                throw new ArgumentException("Du kannst jetzt nicht würfeln.");
+                throw new RollDiceNotAllowedException();
             }
             CurrentRoll = RollDiceTwice();
             remainingRollNumbers.Add(CurrentRoll.Number1);
@@ -405,7 +406,7 @@ namespace APIServer.Backgammon.Core
                 remainingRollNumbers.Count == 0 ||
                 GetAllMoves().Count > 0)
             {
-                throw new ArgumentException("Der Zug kann nicht übersprungen werden.");
+                throw new SkipMoveNotAllowedException();
             }
             CurrentColor = CurrentColor.Value == CheckerColor.White ? CheckerColor.Black : CheckerColor.White;
             LastRoll = CurrentRoll;
@@ -420,7 +421,7 @@ namespace APIServer.Backgammon.Core
                 remainingRollNumbers.Count == 0 ||
                 !GetAllMoves().Contains((from, to)))
             {
-                throw new ArgumentException("Der Zug ist nicht möglich.");
+                throw new InvalidMoveException();
             }
             MoveInternal(from, to);
         }
