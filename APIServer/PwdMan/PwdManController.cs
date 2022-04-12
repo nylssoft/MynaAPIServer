@@ -258,10 +258,10 @@ namespace APIServer.PwdMan
 
         [HttpGet]
         [Route("api/pwdman/markdown/{id}")]
-        public IActionResult GetMarkdown(string id)
+        public IActionResult GetMarkdown(string id, [FromQuery] string locale)
         {
             if (string.IsNullOrEmpty(id)) throw new MissingParameterException();
-            return new JsonResult(PwdManService.GetMarkdown(GetToken(), id));
+            return new JsonResult(PwdManService.GetMarkdown(GetToken(), id, locale));
         }
 
         [HttpGet]

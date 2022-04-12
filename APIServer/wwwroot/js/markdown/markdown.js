@@ -23,7 +23,7 @@ var markdown = (() => {
         if (token) {
             opt = { headers: { "token": token } };
         }
-        utils.fetch_api_call(`/api/pwdman/markdown/${page}`, opt,
+        utils.fetch_api_call(`/api/pwdman/markdown/${page}?locale=${utils.get_locale()}`, opt,
             (html) => {
                 setMarkdownHTML(div, html);
                 const h1 = document.querySelector("h1");
@@ -87,12 +87,6 @@ var markdown = (() => {
     };
 
     const render = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        page = urlParams.get("page");
-        if (!page) {
-            page = "startpage";
-        }
-        hideCookieBanner = urlParams.has("hidecookiebanner");
         currentUser = undefined;
         const token = utils.get_authentication_token();
         if (!token) {
@@ -111,11 +105,18 @@ var markdown = (() => {
             });
     };
 
+    const init = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        hideCookieBanner = urlParams.has("hidecookiebanner");
+        page = urlParams.get("page") || "startpage";
+        utils.set_locale(render, urlParams.get("locale"));
+    };
+
     return {
-        render: render
+        init: init
     };
 })();
 
-window.onload = () => utils.auth_lltoken(() => utils.set_locale(markdown.render));
+window.onload = () => utils.auth_lltoken(markdown.init);
 
 window.onclick = (event) => utils.hide_menu(event);

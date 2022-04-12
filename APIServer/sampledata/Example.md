@@ -1,10 +1,10 @@
-# Heading 1
+# Example
 ## Heading 2
 ### Heading 3
 
 $background(/images/skat/empty.png)
 
-Template for a home page with examples.
+Template for a page with examples.
 
 Images
 ![](/images/backgammon/roll.png)
@@ -99,21 +99,5 @@ The following data has to be provided either in the file or in user secrets:
 
 For development in Visual Studio 2019 User Secrets should be used for sensitve data like security configuration,
 hostname, SendGrid configuration and PostgreSQL database connection string.
-
-## Open Source
-
-The following source code and icon libraries are used for the project:
-
-- [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five){target="_blank" .external}
-- [Entity Framework Core 5](https://docs.microsoft.com/de-de/ef/core/what-is-new/ef-core-5.0/whatsnew){target="_blank" .external}
-- [ImageSharp](https://github.com/SixLabors/ImageSharp){target="_blank" .external}
-- [Markdig](https://github.com/xoofx/markdig){target="_blank" .external}
-- [Open Icon Library](https://sourceforge.net/projects/openiconlibrary){target="_blank" .external}
-- [PostgreSQL](https://www.nuget.org/packages/Npgsql){target="_blank" .external}
-- [qrcode.js](https://github.com/davidshimjs/qrcodejs){target="_blank" .external}
-- [SendGrid](https://github.com/sendgrid/sendgrid-csharp){target="_blank" .external}
-- [Sqlite](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Sqlite){target="_blank" .external}
-- [uuid](https://github.com/uuidjs/uuid){target="_blank" .external}
-- [XSkat](http://xskat.de/xskat-cards-de.html){target="_blank" .external}
 
 $backbutton

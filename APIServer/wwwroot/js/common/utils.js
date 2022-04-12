@@ -3,9 +3,9 @@
 var utils = (() => {
 
     let debug_mode = false;
-    let locale = "de-DE";
-
+    let default_locale = "en-US";
     let translationMap;
+    let locale;
 
     const is_debug = () => {
         return debug_mode === true;
@@ -19,7 +19,7 @@ var utils = (() => {
         if (debug_mode === true) {
             if (typeof obj === "string") {
                 const dt = new Date();
-                const time = dt.toLocaleTimeString(locale);
+                const time = dt.toLocaleTimeString(get_locale());
                 const ms = dt.getMilliseconds().toString().padStart(3, 0);
                 console.log(`${time}:${ms} ${obj}`);
             }
@@ -47,7 +47,7 @@ var utils = (() => {
     const format_date = (dt) => {
         if (dt && dt.length > 0) {
             let options = { year: "numeric", month: "short", day: "numeric" };
-            return new Date(dt).toLocaleDateString(locale, options);
+            return new Date(dt).toLocaleDateString(get_locale(), options);
         }
         return "";
     };
@@ -475,25 +475,41 @@ var utils = (() => {
 
     // --- locale
 
+    const get_locale = () => {
+        if (!locale) {
+            locale = window.localStorage.getItem("locale");
+            if (!locale) {
+                locale = window.sessionStorage.getItem("locale");
+                if (!locale) {
+                    locale = navigator.language;
+                    window.sessionStorage.setItem("locale", locale);
+                    window.localStorage.setItem("locale", locale);
+                }
+            }
+        }
+        return locale;
+    };
+
     const set_locale = (resolve, loc) => {
         translationMap = new Map();
         if (!loc) {
-            loc = navigator.language;
+            loc = get_locale();
         }
-        let language = loc.split("-")[0];
-        language = language.toLowerCase();
-        fetch(`/locale/${language}.json?v=1`)
+        const language = loc.split("-")[0].toLowerCase();
+        fetch(`/locale/${language}.json?v=2`)
             .then(resp => {
                 resp.json()
                     .then(json => {
                         Object.entries(json).forEach(([key, value]) => translationMap.set(key, value));
                         locale = loc;
+                        window.sessionStorage.setItem("locale", locale);
+                        window.localStorage.setItem("locale", locale);
                         resolve();
                     })
                     .catch(err => {
                         console.log(err);
-                        if (loc != locale) {
-                            set_locale(resolve, locale);
+                        if (loc != default_locale) {
+                            set_locale(resolve, default_locale);
                         }
                         else {
                             resolve();
@@ -558,6 +574,7 @@ var utils = (() => {
         enable_debug: enable_debug,
         debug: debug,
         set_locale: set_locale,
+        get_locale: get_locale,
         translate: translate,
         format: format
     };

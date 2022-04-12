@@ -3,8 +3,11 @@
 ## Welcome
 
 Template for a start page.
-*Note*: Games and applications are currently only provided in german language.
-See [Homepage](/markdown?page=homepage) how to setup and customize the portal.
+See [Example](/markdown?page=example) how to configure pages and the portal server.
+
+## Switch to another language
+
+[German](/markdown?page=welcome&locale=de-DE)
 
 ## Quick Links
 

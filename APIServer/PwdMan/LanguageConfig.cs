@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,18 +15,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
-
 namespace APIServer.PwdMan
 {
-    public class MarkdownConfig
+    public class LanguageConfig
     {
-        public string Id { get; set; }
+        public string Language { get; set; }
 
         public string Content { get; set; }
-
-        public string Role { get; set; }
-
-        public List<LanguageConfig> Languages { get; set; }
     }
 }

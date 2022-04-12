@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "1.0.12";
+    let version = "2.0.0";
 
     let dirty;
 
@@ -998,7 +998,7 @@ var backgammon = (() => {
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_BACKGAMMON")} ${version}. ${_T("TEXT_COPYRIGHT")} 2022 `);
-        controls.createA(div, "copyright", "/markdown?page=homepage", "Niels Stockfleth");
+        controls.createA(div, "copyright", "/markdown?page=copyright", _T("COPYRIGHT"));
         if (ticket) {
             if (!model.board) {
                 controls.createButton(div, _T("BUTTON_LOGOUT"), btnLogout_click, "Logout", "logout-button");

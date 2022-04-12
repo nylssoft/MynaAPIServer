@@ -1265,9 +1265,9 @@ namespace APIServer.PwdMan
 
         // --- markdown
 
-        public string GetMarkdown(string authenticationToken, string id)
+        public string GetMarkdown(string authenticationToken, string id, string locale)
         {
-            logger.LogDebug("Get markdown for id '{id}'...", id);
+            logger.LogDebug("Get markdown for id '{id}' and locale '{locale}'...", id, locale);
             var opt = GetOptions();
             if (id == "startpage")
             {
@@ -1277,19 +1277,44 @@ namespace APIServer.PwdMan
             {
                 return GetMarkdownByDocumentId(authenticationToken, documentId);
             }
+            string language = null;
             string content = null;
             string role = null;
+            if (locale != null)
+            {
+                var arr = locale.Split('-');
+                if (arr.Length > 0)
+                {
+                   language = arr[0].ToLower();
+                }
+            }
             if (opt.Markdown?.Count > 0)
             {
                 foreach (var mdc in opt.Markdown)
                 {
                     if (mdc.Id == id)
                     {
-                        if (int.TryParse(mdc.Content, out int docId))
+                        var pageContent = mdc.Content;
+                        if (mdc.Languages?.Count > 0)
+                        {
+                            foreach (var c in mdc.Languages)
+                            {
+                                if (string.IsNullOrEmpty(c.Language))
+                                {
+                                    pageContent = c.Content; // default
+                                }
+                                else if (c.Language == language)
+                                {
+                                    pageContent = c.Content;
+                                    break;
+                                }
+                            }
+                        }
+                        if (int.TryParse(pageContent, out int docId))
                         {
                             return GetMarkdownByDocumentId(authenticationToken, docId);
                         }
-                        content = mdc.Content;
+                        content = pageContent;
                         role = mdc.Role;
                         break;
                     }

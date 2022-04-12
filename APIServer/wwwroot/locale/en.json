@@ -1,5 +1,6 @@
 ﻿{
   "LOCALE": "en-US",
+  "COPYRIGHT": "Niels Stockfleth",
 
   "BUTTON_ACTIVATE_TWO_FACTOR": "Activate now!",
   "BUTTON_ADD_PROFILE_PHOTO": "Add profile picture",
@@ -150,7 +151,7 @@
   "ERROR_ROLL_DICE_NOT_ALLOWED": "You cannot roll the dice now.",
   "ERROR_SEC_KEY_EXPIRED": "Security code is expired.",
   "ERROR_SEC_KEY_NOT_STRONG_ENOUGH": "Security key is not strong enough.",
-  "ERROR_SEC_KEY_SAME_AS_PWD": "Security has to be different to the password.",
+  "ERROR_SEC_KEY_SAME_AS_PWD": "Security key and password are identical.",
   "ERROR_SELF_REMOVE_USERMANAGER": "You cannot remove yourself the administrator role.",
   "ERROR_SELF_UPDATE_LOGIN_ENABLED": "You cannot disallow the login for yourself.",
   "ERROR_SKIP_MOVE_NOT_ALLOWED": "Move cannot be skipped.",

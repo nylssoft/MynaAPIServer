@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "1.2.26";
+    let version = "2.0.0";
 
     let block;
     let nextBlock;
@@ -835,7 +835,7 @@ var tetris = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
         controls.create(div, "span", undefined, `${_T("HEADER_TETRIS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
-        controls.createA(div, undefined, "/markdown?page=homepage", "Niels Stockfleth");
+        controls.createA(div, undefined, "/markdown?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", undefined, ".");
     };
 
