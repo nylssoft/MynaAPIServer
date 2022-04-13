@@ -184,7 +184,7 @@ var notes = (() => {
         controls.removeAllChildren(actionDiv);
         if (confirm == "delete") {
             controls.create(actionDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_NOTE"));
-            controls.createButton(actionDiv, _T("BUTTEN_YES"), () => onDeleteNote(selectedNoteId));
+            controls.createButton(actionDiv, _T("BUTTON_YES"), () => onDeleteNote(selectedNoteId));
             controls.createButton(actionDiv, _T("BUTTON_NO"), () => renderActions("selected"));
         }
         else {
@@ -226,7 +226,7 @@ var notes = (() => {
                 let d = new Date(note.lastModifiedUtc);
                 let caption = controls.createDiv(parent, "caption");
                 let captiontxt = controls.createSpan(caption, undefined);
-                captiontxt.textContent = _T("INFO_NOTE_FROM_1_2", d.toLocaleDateString(_T("LOCALE")), d.toLocaleTimeString(_T("LOCALE")));
+                captiontxt.textContent = _T("INFO_NOTE_FROM_1_2", utils.format_date(d), utils.format_time(d));
                 captiontxt.id = "captiontxt-id";
                 let imgStatus = controls.createImg(caption, "img-status", 24, 24, "/images/buttons/document-save-3.png", _T("INFO_STATUS_SAVING"));
                 imgStatus.id = "img-status-id";
@@ -409,7 +409,7 @@ var notes = (() => {
                             let captiontxt = document.getElementById("captiontxt-id");
                             if (captiontxt && lastModifiedUtc) {
                                 let d = new Date(lastModifiedUtc);
-                                captiontxt.textContent = _T("INFO_NOTE_FROM_1_2", d.toLocaleDateString(_T("LOCALE")), d.toLocaleTimeString(_T("LOCALE")));
+                                captiontxt.textContent = _T("INFO_NOTE_FROM_1_2", utils.format_date(d), utils.format_time(d));
                             }
                             onUpdateStatus();
                         },

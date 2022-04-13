@@ -228,7 +228,7 @@ var slideshow = (() => {
             }
             backgroundIndex = (backgroundIndex + 1) % slideShowPictures.length;
             backgroundChanged = currentDate;
-            let txts = [pic.summary, pic.city, pic.country, utils.format_date(pic.date)];
+            let txts = [pic.summary, pic.city, pic.country, utils.format_date(pic.date, { year: "numeric", month: "short", day: "numeric" })];
             backgroundText = utils.concat_strings(txts, " // ");
             if (divSlideShowInfo) {
                 divSlideShowInfo.textContent = backgroundText;

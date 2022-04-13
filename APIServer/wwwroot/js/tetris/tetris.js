@@ -852,7 +852,7 @@ var tetris = (() => {
                     e.textContent = `${pos}. ${hs.name} - ${hs.score}`;
                     let lstr = _T("TEXT_LINES");
                     if (hs.lines == 1) lstr = _T("TEXT_LINE");
-                    let dstr = new Date(hs.created).toLocaleString(_T("LOCALE"));
+                    const dstr = utils.format_date_string(hs.created);
                     e.title = _T("INFO_HIGHSCORE_1_2_3_4_5", hs.score, hs.level, hs.lines, lstr, dstr);
                     pos++;
                 });

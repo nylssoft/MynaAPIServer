@@ -102,7 +102,7 @@ var diary = (() => {
         let table = controls.create(calendarDiv, "table");
         let caption = controls.create(table, "caption");
         controls.createA(caption, undefined, "#summary",
-            date.toLocaleDateString(_T("LOCALE"), { year: "numeric", month: "long" }),
+            utils.format_date(date, { year: "numeric", month: "long" }),
             () => onShowSummary(textDiv, new Date(Date.UTC(year, month))));
         controls.createImageButton(caption, _T("BUTTON_PREV_MONTH"),
             () => onPrevButton(parent, calendarDiv, textDiv, year, month),
@@ -160,7 +160,7 @@ var diary = (() => {
         selectedISODate = undefined;
         if (dd && hasEncryptKey()) {
             selectedISODate = dd.toISOString();
-            let dt = dd.toLocaleDateString(_T("LOCALE"), { year: "numeric", month: "long", day: "numeric" });
+            let dt = utils.format_date(dd, { year: "numeric", month: "long", day: "numeric" });
             let caption = controls.createDiv(div, "caption");
             caption.textContent = _T("INFO_ENTRY_FROM_1", dt);
             let imgStatus = controls.createImg(caption, "img-status", 24, 24, "/images/buttons/document-save-3.png", _T("INFO_STATUS_SAVING"));
@@ -202,7 +202,7 @@ var diary = (() => {
     const renderSummary = (div, diaries, date) => {
         dayClicked = undefined;
         controls.removeAllChildren(div);
-        let dt = date.toLocaleDateString(_T("LOCALE"), { month: "long" });
+        let dt = utils.format_date(date, { month: "long" });
         controls.createDiv(div, "caption").textContent = _T("INFO_ENTRIES_FOR_1", dt);
         let txt = controls.create(div, "textarea");
         txt.id = "textarea-entry-id";
@@ -221,7 +221,7 @@ var diary = (() => {
                 const options = { year: 'numeric', month: 'long', day: 'numeric' };
                 decodedDiaries.forEach(diary => {
                     let d = new Date(diary.date);
-                    let dt = d.toLocaleDateString(_T("LOCALE"), options);
+                    let dt = utils.format_date(d, options);
                     content += `${dt}\n`;
                     content += `${diary.entry}\n\n`;
                 });

@@ -377,7 +377,7 @@ var skat = (() => {
         }
         reservations.forEach(r => {
             let dd = new Date(r.reservedUtc);
-            let daystr = dd.toLocaleDateString(_T("LOCALE"), { "month": "numeric", "day": "numeric" });
+            let daystr = utils.format_date(dd, { "month": "numeric", "day": "numeric" });
             let h = dd.getHours() + r.duration / 60;
             let txt = `${daystr} ${dd.getHours()}-${h} ${r.players.join(", ")}`;
             let divReservation = controls.create(divPage, "p", undefined, txt);
@@ -416,8 +416,7 @@ var skat = (() => {
         let daysInMonth = 32 - new Date(year, month, 32).getDate();
         let table = controls.create(parent, "table");
         let caption = controls.create(table, "caption");
-        controls.createSpan(caption, undefined,
-            date.toLocaleDateString(_T("LOCALE"), { year: "numeric", month: "long" }));
+        controls.createSpan(caption, undefined, utils.format_date(date, { year: "numeric", month: "long" }));
         if (today.getMonth() < month) {
             controls.createImageButton(caption, _T("BUTTON_PREV_MONTH"),
                 () => btnPreviousMonth_click(parent, year, month),
@@ -479,7 +478,7 @@ var skat = (() => {
     const renderAddReservation = (parent, day, month, year) => {
         controls.removeAllChildren(parent);
         let dd = new Date(Date.UTC(year, month, day));
-        let dt = dd.toLocaleDateString(_T("LOCALE"), { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        let dt = utils.format_date(dd, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
         let captionDiv = controls.createDiv(parent, "reservation-calendar-caption");
         captionDiv.textContent = `${dt}`;
         let freeTimes = getFreeReservationTimes(dd);
@@ -1025,7 +1024,7 @@ var skat = (() => {
             chatModel.history.forEach((tm) => {
                 let divMsg = controls.createDiv(divChat, "chat-message");
                 divMsg.textContent = `${tm.username}: ${tm.message}`;
-                divMsg.title = `${new Date(tm.createdUtc).toLocaleString(_T("LOCALE"))}`;
+                divMsg.title = utils.format_date_string(tm.createdUtc);
                 if (tm.message.startsWith("https://")) {
                     controls.createA(divMsg, "chat-link", tm.message, _T("BUTTON_OPEN"), () => window.open(tm.message, "_blank"));
                 }
@@ -1071,8 +1070,7 @@ var skat = (() => {
         let options = [];
         results.forEach((result,index) => {
             let started = new Date(result.startedUtc);
-            let txt = `${started.toLocaleDateString(_T("LOCALE"))}`;;
-            options.push({ name: `${txt}`, value: `${result.id}` });
+            options.push({ name: utils.format_date(started), value: `${result.id}` });
             if (index === 0) {
                 let token = utils.get_authentication_token();
                 utils.fetch_api_call(`api/skat/resultbyid?id=${result.id}`, { headers: { "token": token } },
@@ -1135,10 +1133,11 @@ var skat = (() => {
         let table = controls.create(parent, "table");
         const resultCaption = document.querySelector("#result-caption-id");
         if (resultCaption) {
-            resultCaption.textContent = " " + _T("INFO_FROM_TO_1_2", started.toLocaleTimeString(_T("LOCALE"), topt), ended.toLocaleTimeString(_T("LOCALE"), topt));
+            resultCaption.textContent = " " + _T("INFO_FROM_TO_1_2", utils.format_time(started, topt), utils.format_time(ended, topt));
         }
         else {
-            const caption = _T("INFO_GAMES_AT_FROM_TO_1_2_3", started.toLocaleDateString(_T("LOCALE")), started.toLocaleTimeString(_T("LOCALE"), topt), ended.toLocaleTimeString(_T("LOCALE"), topt));
+            const caption = _T("INFO_GAMES_AT_FROM_TO_1_2_3",
+                utils.format_date(started), utils.format_time(started, topt), utils.format_time(ended, topt));
             controls.create(table, "caption", undefined, caption);
         }
         let theader = controls.create(table, "thead");

@@ -19,7 +19,7 @@ var utils = (() => {
         if (debug_mode === true) {
             if (typeof obj === "string") {
                 const dt = new Date();
-                const time = dt.toLocaleTimeString(get_locale());
+                const time = utils.format_time(dt);
                 const ms = dt.getMilliseconds().toString().padStart(3, 0);
                 console.log(`${time}:${ms} ${obj}`);
             }
@@ -44,12 +44,32 @@ var utils = (() => {
         return str;
     };
 
-    const format_date = (dt) => {
-        if (dt && dt.length > 0) {
-            let options = { year: "numeric", month: "short", day: "numeric" };
-            return new Date(dt).toLocaleDateString(get_locale(), options);
+    const format_date = (dt, options, mode) => {
+        let d = undefined;
+        if (typeof dt === "string" && dt.length > 0) {
+            d = new Date(dt);
+        }
+        else if (typeof dt === "object") {
+            d = dt;
+        }
+        if (d) {
+            if (mode === "time") {
+                return d.toLocaleTimeString(get_locale(), options);
+            }
+            if (mode === "string") {
+                return d.toLocaleString(get_locale(), options);
+            }
+            return d.toLocaleDateString(get_locale(), options);
         }
         return "";
+    };
+
+    const format_date_string = (dt, options) => {
+        return format_date(dt, options, "string");
+    };
+
+    const format_time = (dt, options) => {
+        return format_date(dt, options, "time");
     };
 
     const format_size = (cnt) => {
@@ -542,6 +562,8 @@ var utils = (() => {
     return {
         concat_strings: concat_strings,
         format_date: format_date,
+        format_date_string: format_date_string,
+        format_time: format_time,
         format_size: format_size,
         shuffle_array: shuffle_array,
         count_characters: count_characters,
