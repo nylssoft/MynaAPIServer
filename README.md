@@ -25,7 +25,7 @@ First the project has to be compiled with Visual Studio 2019.
 If you run the portal server you will see sample pages.
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
-Details are explained on the page [Homepage](/APIServer/sampledata/Homepage.md).
+Details are explained on the page [Example](/APIServer/sampledata/Example.md).
 
 ## History
 
