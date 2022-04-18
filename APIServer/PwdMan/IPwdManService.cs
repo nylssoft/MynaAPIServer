@@ -27,13 +27,13 @@ namespace APIServer.PwdMan
     {
         // --- reset password
 
-        Task RequestResetPasswordAsync(string email, string ipAddress);
+        Task RequestResetPasswordAsync(string email, string ipAddress, string locale);
 
         void ResetPassword(UserResetPasswordModel resetPasswordModel, string ipAddress);
 
         // --- registration
 
-        Task<bool> IsRegisterAllowedAsync(string email, string ipAddress);
+        Task<bool> RequestRegistrationAsync(string email, string ipAddress, string locale);
 
         List<OutstandingRegistrationModel> GetOutstandingRegistrations(string authenticationToken);
 
@@ -91,7 +91,7 @@ namespace APIServer.PwdMan
 
         // --- authentication
 
-        Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authenication, string ipAddress);
+        Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authenication, string ipAddress, string locale);
 
         AuthenticationResponseModel AuthenticateTOTP(string token, string totp, string ipAddress);
 

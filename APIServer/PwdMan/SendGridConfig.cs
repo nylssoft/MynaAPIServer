@@ -15,6 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using System.Collections.Generic;
+
 namespace APIServer.PwdMan
 {
     public class SendGridConfig
@@ -25,14 +27,6 @@ namespace APIServer.PwdMan
 
         public string SenderName { get; set; }
 
-        public string TemplateIdResetPassword { get; set; }
-
-        public string TemplateIdRegistrationRequest { get; set; }
-
-        public string TemplateIdRegistrationSuccess { get; set; }
-
-        public string TemplateIdRegistrationDenied { get; set; }
-
-        public string TemplateIdSecurityWarning { get; set; }
+        public List<ContentConfig> Templates { get; set; }
     }
 }

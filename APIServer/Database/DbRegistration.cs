@@ -38,5 +38,7 @@ namespace APIServer.Database
         public DbUser ConfirmedBy { get; set; }
 
         public string IpAddress { get; set; }
+
+        public string Locale { get; set; }
     }
 }

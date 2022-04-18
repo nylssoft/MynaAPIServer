@@ -216,6 +216,9 @@ namespace APIServer.Migrations.DbPostgres
                     b.Property<string>("IpAddress")
                         .HasColumnType("text");
 
+                    b.Property<string>("Locale")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("RequestedUtc")
                         .HasColumnType("timestamp without time zone");
 

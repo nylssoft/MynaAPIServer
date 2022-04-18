@@ -59,12 +59,12 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/resetpwd")]
-        public async Task<IActionResult> RequestResetPasswordAsync([FromBody] string email)
+        public async Task<IActionResult> RequestResetPasswordAsync([FromBody] string email, [FromQuery] string locale)
         {
             if (string.IsNullOrEmpty(email)) throw new MissingParameterException();
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            await PwdManService.RequestResetPasswordAsync(email, ipAddress);
+            await PwdManService.RequestResetPasswordAsync(email, ipAddress, locale);
             return new JsonResult(true);
         }
 
@@ -86,12 +86,12 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/register")]
-        public async Task<IActionResult> IsRegisterAllowedAsync([FromBody] string email)
+        public async Task<IActionResult> RequestRegistrationAsync([FromBody] string email, [FromQuery] string locale)
         {
             if (string.IsNullOrEmpty(email)) throw new MissingParameterException();
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            var ret = await PwdManService.IsRegisterAllowedAsync(email, ipAddress);
+            var ret = await PwdManService.RequestRegistrationAsync(email, ipAddress, locale);
             return new JsonResult(ret);
         }
 
@@ -273,7 +273,7 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/auth")]
-        public async Task<IActionResult> Login([FromBody] AuthenticationModel authentication)
+        public async Task<IActionResult> Login([FromBody] AuthenticationModel authentication, [FromQuery] string locale)
         {
             if (authentication == null ||
                 string.IsNullOrEmpty(authentication.Username) ||
@@ -281,7 +281,7 @@ namespace APIServer.PwdMan
             if (authentication?.Username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (authentication?.Password?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            var ret = await PwdManService.AuthenticateAsync(authentication, ipAddress);
+            var ret = await PwdManService.AuthenticateAsync(authentication, ipAddress, locale);
             return new JsonResult(ret);
         }
 

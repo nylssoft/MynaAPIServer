@@ -77,7 +77,7 @@ var pwdman = (() => {
     const authenticate = () => {
         lastErrorMessage = "";
         const clientInfo = getClientInfo();
-        utils.fetch_api_call("api/pwdman/auth",
+        utils.fetch_api_call(`api/pwdman/auth?locale=${utils.get_locale()}`,
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -162,7 +162,7 @@ var pwdman = (() => {
             errorDiv.textContent = _T("ERROR_INVALID_EMAIL");
             return;
         }
-        utils.fetch_api_call("api/pwdman/register",
+        utils.fetch_api_call(`api/pwdman/register?locale=${utils.get_locale()}`,
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -251,7 +251,7 @@ var pwdman = (() => {
             errorDiv.textContent = _T("ERROR_INVALID_EMAIL");
             return;
         }
-        utils.fetch_api_call("/api/pwdman/resetpwd",
+        utils.fetch_api_call(`/api/pwdman/resetpwd?locale=${utils.get_locale()}`,
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },

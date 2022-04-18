@@ -72,9 +72,9 @@ namespace APIServer.PwdMan
 
         // --- reset password
 
-        public async Task RequestResetPasswordAsync(string email, string ipAddress)
+        public async Task RequestResetPasswordAsync(string email, string ipAddress, string locale)
         {
-            logger.LogDebug("Request password reset for email addresss '{email}' from IP address {ipAddress}.", email, ipAddress);
+            logger.LogDebug("Request password reset for email addresss '{email}' and locale '{locale}' from IP address {ipAddress}.", email, locale, ipAddress);
             if (!IsValidEmailAddress(email))
             {
                 throw new InvalidEmailAddressException();
@@ -132,7 +132,7 @@ namespace APIServer.PwdMan
                 resetpwd.IpAddress = ipAddress;
             }
             dbContext.SaveChanges();
-            await SendResetPasswordEmailAsync(user, resetpwd.Token, email, opt);
+            await SendResetPasswordEmailAsync(user, resetpwd.Token, email, opt, locale);
         }
 
         public void ResetPassword(UserResetPasswordModel resetPasswordModel, string ipAddress)
@@ -181,9 +181,9 @@ namespace APIServer.PwdMan
 
         // --- registration
 
-        public async Task<bool> IsRegisterAllowedAsync(string email, string ipAddress)
+        public async Task<bool> RequestRegistrationAsync(string email, string ipAddress, string locale)
         {
-            logger.LogDebug("Check whether email addresss '{email}' is allowed to register from IP address {ipAddress}...", email, ipAddress);
+            logger.LogDebug("Request registration for email addresss '{email}' and locale '{locale}' from IP address {ipAddress}...", email, locale, ipAddress);
             if (!IsValidEmailAddress(email))
             {
                 throw new InvalidEmailAddressException();
@@ -220,7 +220,12 @@ namespace APIServer.PwdMan
                     throw new EmailAddressRegistrationLockedException(opt.ResetPasswordTokenExpireMinutes - min);
                 }
             }
-            dbContext.DbRegistrations.Add(new DbRegistration { Email = email, RequestedUtc = DateTime.UtcNow, IpAddress = ipAddress });
+            dbContext.DbRegistrations.Add(new DbRegistration {
+                Email = email,
+                RequestedUtc = DateTime.UtcNow,               
+                IpAddress = ipAddress,
+                Locale = locale
+            });
             dbContext.SaveChanges();
             await SendRegistrationRequestEmailAsync(email, opt);
             return false;
@@ -297,7 +302,7 @@ namespace APIServer.PwdMan
                 dbContext.SaveChanges();
             }
             var opt = GetOptions();
-            await SendConfirmationRegistrationEmailAsync(registration, confirmation.Reject, email, opt);
+            await SendConfirmationRegistrationEmailAsync(registration, confirmation.Reject, email, opt, registration.Locale);
             return registration.Token;
         }
 
@@ -941,9 +946,9 @@ namespace APIServer.PwdMan
 
         // --- authentication
 
-        public async Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authentication, string ipAddress)
+        public async Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authentication, string ipAddress, string locale)
         {
-            logger.LogDebug("Authenticate '{username}' with client IP address {ipAddress}...", authentication.Username, ipAddress);
+            logger.LogDebug("Authenticate '{username}', locale '{locale}' with client IP address {ipAddress}...", authentication.Username, locale, ipAddress);
             var opt = GetOptions();
             var user = GetDbUserByName(authentication.Username);
             if (user == null)
@@ -1019,7 +1024,7 @@ namespace APIServer.PwdMan
             // send security warning email if the an unknown client has been used to login
             if (sendLoginWarning)
             {
-                await SendSecurityWarningEmailAsync(user, ipAddress, opt);
+                await SendSecurityWarningEmailAsync(user, ipAddress, opt, locale);
             }
             return ret;
         }
@@ -1277,67 +1282,32 @@ namespace APIServer.PwdMan
             {
                 return GetMarkdownByDocumentId(authenticationToken, documentId);
             }
-            string language = null;
-            string content = null;
-            string role = null;
-            if (locale != null)
+            var contentConfig = GetContentById(id, locale, opt.Markdown);
+            if (contentConfig != null)
             {
-                var arr = locale.Split('-');
-                if (arr.Length > 0)
+                if (int.TryParse(contentConfig.Content, out int docId))
                 {
-                   language = arr[0].ToLower();
+                    return GetMarkdownByDocumentId(authenticationToken, docId);
                 }
-            }
-            if (opt.Markdown?.Count > 0)
-            {
-                foreach (var mdc in opt.Markdown)
+                if (contentConfig.Content != null && File.Exists(contentConfig.Content))
                 {
-                    if (mdc.Id == id)
+                    var render = string.IsNullOrEmpty(contentConfig.Role);
+                    if (!render && !string.IsNullOrEmpty(authenticationToken))
                     {
-                        var pageContent = mdc.Content;
-                        if (mdc.Languages?.Count > 0)
+                        try
                         {
-                            foreach (var c in mdc.Languages)
-                            {
-                                if (string.IsNullOrEmpty(c.Language))
-                                {
-                                    pageContent = c.Content; // default
-                                }
-                                else if (c.Language == language)
-                                {
-                                    pageContent = c.Content;
-                                    break;
-                                }
-                            }
+                            render = HasRole(GetUserFromToken(authenticationToken), contentConfig.Role);
                         }
-                        if (int.TryParse(pageContent, out int docId))
+                        catch
                         {
-                            return GetMarkdownByDocumentId(authenticationToken, docId);
                         }
-                        content = pageContent;
-                        role = mdc.Role;
-                        break;
                     }
-                }
-            }
-            if (content != null && File.Exists(content))
-            {
-                var render = string.IsNullOrEmpty(role);
-                if (!render && !string.IsNullOrEmpty(authenticationToken))
-                {
-                    try
+                    if (render)
                     {
-                        render = HasRole(GetUserFromToken(authenticationToken), role);
+                        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+                        var markdown = Markdown.ToHtml(File.ReadAllText(contentConfig.Content), pipeline);
+                        return markdown;
                     }
-                    catch
-                    {
-                    }
-                }
-                if (render)
-                {
-                    var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
-                    var markdown = Markdown.ToHtml(File.ReadAllText(content), pipeline);
-                    return markdown;
                 }
             }
             return "<p>Zugriff verweigert.</p>";
@@ -1488,16 +1458,65 @@ namespace APIServer.PwdMan
             return loginIpAddress;
         }
 
-        private async Task SendSecurityWarningEmailAsync(DbUser user, string ipAddress, PwdManOptions opt)
+        private ContentConfig GetContentById(string id, string locale, List<ContentConfig> contents)
         {
-            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdSecurityWarning))
+            string language = null;
+            if (locale != null)
+            {
+                var arr = locale.Split('-');
+                if (arr.Length > 0)
+                {
+                    language = arr[0].ToLower();
+                }
+            }
+            var contentConfig = contents.Find((c) => c.Id == id);
+            if (contentConfig == null)
+            {
+                return null;
+            }
+            var content = contentConfig.Content;
+            var role = contentConfig.Role;
+            if (contentConfig.Languages?.Count > 0)
+            {
+                foreach (var c in contentConfig.Languages)
+                {
+                    if (string.IsNullOrEmpty(c.Language))
+                    {
+                        content = c.Content; // default
+                    }
+                    else if (c.Language == language)
+                    {
+                        content = c.Content;
+                        break;
+                    }
+                }
+            }
+            return new ContentConfig { Id = id, Content = content, Role = role };
+        }
+
+        private string GetEmailTemplateId(string contentId, PwdManOptions opt, string locale = null)
+        {
+            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress))
+            {
+                var contentConfig = GetContentById(contentId, locale, opt.SendGridConfig.Templates);
+                if (!string.IsNullOrEmpty(contentConfig?.Content))
+                {
+                    return contentConfig.Content;
+                }
+            }
+            return "";
+        }
+
+        private async Task SendSecurityWarningEmailAsync(DbUser user, string ipAddress, PwdManOptions opt, string locale)
+        {
+            var templateId = GetEmailTemplateId("TemplateIdSecurityWarning", opt, locale);
+            if (templateId.Length > 0)
             {
                 var now = DateTime.UtcNow;
                 var msg = new SendGridMessage();
                 msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
                 msg.AddTo(user.Email, user.Name);
-                msg.SetTemplateId(opt.SendGridConfig.TemplateIdSecurityWarning);
+                msg.SetTemplateId(templateId);
                 msg.SetTemplateData(new SecurityWarningTemplateData
                 {
                     Name = user.Name,
@@ -1515,15 +1534,15 @@ namespace APIServer.PwdMan
             }
         }
 
-        private async Task SendResetPasswordEmailAsync(DbUser user, string code, string email, PwdManOptions opt)
+        private async Task SendResetPasswordEmailAsync(DbUser user, string code, string email, PwdManOptions opt, string locale)
         {
-            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdResetPassword))
+            var templateId = GetEmailTemplateId("TemplateIdResetPassword", opt, locale);
+            if (templateId.Length > 0)
             {
                 var msg = new SendGridMessage();
                 msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
                 msg.AddTo(user.Email, user.Name);
-                msg.SetTemplateId(opt.SendGridConfig.TemplateIdResetPassword);
+                msg.SetTemplateId(templateId);
                 msg.SetTemplateData(new ResetPasswordTemplateData
                 {
                     Name = user.Name,
@@ -1543,13 +1562,13 @@ namespace APIServer.PwdMan
 
         private async Task SendRegistrationRequestEmailAsync(string email, PwdManOptions opt)
         {
-            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationRequest))
+            var templateId = GetEmailTemplateId("TemplateIdRegistrationRequest", opt);
+            if (templateId.Length > 0)
             {
                 var msg = new SendGridMessage();
                 msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
                 msg.AddTo(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationRequest);
+                msg.SetTemplateId(templateId);
                 msg.SetTemplateData(new RequestRegistrationTemplateData { Email = email });
                 var response = await sendGridClient.SendEmailAsync(msg);
                 if (!response.IsSuccessStatusCode)
@@ -1559,22 +1578,22 @@ namespace APIServer.PwdMan
             }
         }
 
-        private async Task SendConfirmationRegistrationEmailAsync(DbRegistration registration, bool reject, string email, PwdManOptions opt)
+        private async Task SendConfirmationRegistrationEmailAsync(DbRegistration registration, bool reject, string email, PwdManOptions opt, string locale)
         {
-            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationDenied) &&
-                !string.IsNullOrEmpty(opt.SendGridConfig.TemplateIdRegistrationSuccess))
+            var templateDeniedId = GetEmailTemplateId("TemplateIdRegistrationDenied", opt, locale);
+            var templateSuccessId = GetEmailTemplateId("TemplateIdRegistrationSuccess", opt, locale);
+            if (templateDeniedId.Length > 0 && templateSuccessId.Length > 0)
             {
                 var msg = new SendGridMessage();
                 msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
                 msg.AddTo(new EmailAddress(email));
                 if (reject)
                 {
-                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationDenied);
+                    msg.SetTemplateId(templateDeniedId);
                 }
                 else
                 {
-                    msg.SetTemplateId(opt.SendGridConfig.TemplateIdRegistrationSuccess);
+                    msg.SetTemplateId(templateSuccessId);
                     msg.SetTemplateData(new ConfirmRegistrationTemplateData
                     {
                         Code = registration.Token,

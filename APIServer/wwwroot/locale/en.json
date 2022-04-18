@@ -106,7 +106,7 @@
   "ERROR_CONFIRM_REG_1_2": "Error for email address {0}: {1}",
   "ERROR_EMAIL_ALREADY_REGISTERED": "Email address is already registered.",
   "ERROR_EMAIL_NOT_CONFIRMED": "Email address has not yet been confirmed.",
-  "ERROR_EMAIL_NOT_VALIDATED_1": "Email address {0} has not yet been confirmed. You will receive an email as soon as your identify has been verified.",
+  "ERROR_EMAIL_NOT_VALIDATED_1": "Email address {0} has not yet been confirmed. You will receive an email as soon as your identity has been verified.",
   "ERROR_FILE_TOO_LARGE": "File is too large.",
   "ERROR_INVALID_EMAIL": "Invalid email address.",
   "ERROR_INVALID_MOVE": "Move is not possible.",
