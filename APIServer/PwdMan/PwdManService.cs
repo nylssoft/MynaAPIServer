@@ -1526,6 +1526,7 @@ namespace APIServer.PwdMan
                     Time = $"{now.ToString("T", ci)} UTC",
                     IPAddress = ipAddress,
                     Hostname = opt.Hostname,
+                    Locale = locale,
                     Next = WebUtility.UrlEncode("/index")
                 });
                 var response = await sendGridClient.SendEmailAsync(msg);
@@ -1552,6 +1553,7 @@ namespace APIServer.PwdMan
                     Valid = opt.ResetPasswordTokenExpireMinutes,
                     Hostname = opt.Hostname,
                     Email = WebUtility.UrlEncode(email),
+                    Locale = locale,
                     Next = WebUtility.UrlEncode("/index")
                 });
                 var response = await sendGridClient.SendEmailAsync(msg);
@@ -1601,6 +1603,7 @@ namespace APIServer.PwdMan
                         Code = registration.Token,
                         Hostname = opt.Hostname,
                         Email = WebUtility.UrlEncode(email),
+                        Locale = locale,
                         Next = WebUtility.UrlEncode("/index")
                     });
                 }

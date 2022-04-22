@@ -723,11 +723,16 @@ var pwdman = (() => {
         }
     };
 
+    const init = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        utils.set_locale(render, urlParams.get("locale"));
+    };
+
     // --- public API
 
     return {
-        render: render
+        init: init
     };
 })();
 
-window.onload = () => utils.auth_lltoken(() => utils.set_locale(pwdman.render));
+window.onload = () => utils.auth_lltoken(pwdman.init);

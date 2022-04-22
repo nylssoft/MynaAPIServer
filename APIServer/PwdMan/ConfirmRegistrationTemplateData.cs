@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,6 +29,9 @@ namespace APIServer.PwdMan
 
         [JsonProperty("Hostname")]
         public string Hostname { get; set; }
+
+        [JsonProperty("Locale")]
+        public string Locale { get; set; }
 
         [JsonProperty("Next")]
         public string Next { get; set; }

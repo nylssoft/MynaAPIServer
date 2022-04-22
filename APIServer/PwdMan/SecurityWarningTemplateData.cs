@@ -36,6 +36,9 @@ namespace APIServer.PwdMan
         [JsonProperty("Hostname")]
         public string Hostname { get; set; }
 
+        [JsonProperty("Locale")]
+        public string Locale { get; set; }
+
         [JsonProperty("Next")]
         public string Next { get; set; }
     }
