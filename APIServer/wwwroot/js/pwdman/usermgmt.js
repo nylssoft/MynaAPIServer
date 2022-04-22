@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.0";
+    let version = "2.0.1";
 
     // helper
 
@@ -101,7 +101,7 @@ var usermgmt = (() => {
                 let idx = 0;
                 confirmations.forEach((confirmation) => {
                     let div = controls.createDiv(parent);
-                    let dt = new Date(confirmation.requestedUtc).toLocaleString(_T("LOCALE"));
+                    let dt = utils.format_date_string(confirmation.requestedUtc);
                     controls.createCheckbox(div, `confirm-registration-${idx}`, undefined, undefined, false, () => onUpdateRegisterActions());
                     controls.create(div, "span", undefined, _T("INFO_EMAIL_OF_DATE_1_2", confirmation.email, dt));
                     idx++;
@@ -149,9 +149,9 @@ var usermgmt = (() => {
         controls.create(parent, "p", undefined, namePattern);
         controls.create(parent, "p", undefined, _T("LABEL_EMAIL_1", user.email));
         if (user.lastLoginUtc) {
-            controls.create(parent, "p", undefined, _T("INFO_LAST_LOGIN_1", new Date(user.lastLoginUtc).toLocaleString(_T("LOCALE"))));
+            controls.create(parent, "p", undefined, _T("INFO_LAST_LOGIN_1", utils.format_date_string(user.lastLoginUtc)));
         }
-        controls.create(parent, "p", undefined, _T("INFO_REGISTERED_SINCE_1", new Date(user.registeredUtc).toLocaleString(_T("LOCALE"))));
+        controls.create(parent, "p", undefined, _T("INFO_REGISTERED_SINCE_1", utils.format_date_string(user.registeredUtc)));
         const documentsP = controls.create(parent, "p", undefined, _T("LABEL_QUOTA_OCCUPIED_OF_1", utils.format_size(user.usedStorage)));
         const quotaInput = controls.createInputField(documentsP, "", undefined, undefined, 4, 4);
         quotaInput.id = "quota-input-id";
@@ -231,7 +231,7 @@ var usermgmt = (() => {
             });
             controls.create(tr, "td", undefined, roleNames.join(", "));
             if (!mobile) {
-                let dt = user.lastLoginUtc ? new Date(user.lastLoginUtc).toLocaleString(_T("LOCALE")) : " ";
+                let dt = user.lastLoginUtc ? utils.format_date_string(user.lastLoginUtc) : " ";
                 controls.create(tr, "td", undefined, dt);
             }
             idx++;
@@ -319,12 +319,12 @@ var usermgmt = (() => {
         }
         // last login
         const lastLoginP = controls.create(parent, "p");
-        const lastLoginDate = new Date(currentUser.lastLoginUtc).toLocaleString(_T("LOCALE"));
+        const lastLoginDate = utils.format_date_string(currentUser.lastLoginUtc);
         controls.createSpan(lastLoginP, undefined, _T("LABEL_LAST_LOGIN") + " ");
         controls.createSpan(lastLoginP, undefined, lastLoginDate);
         // register date
         const registeredP = controls.create(parent, "p");
-        const registerDate = new Date(currentUser.registeredUtc).toLocaleString(_T("LOCALE"));
+        const registerDate = utils.format_date_string(currentUser.registeredUtc);
         controls.createSpan(registeredP, undefined, _T("LABEL_REGISTERED_SINCE") + " ");
         controls.createSpan(registeredP, undefined, registerDate);
         // documents quota

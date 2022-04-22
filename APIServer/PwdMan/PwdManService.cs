@@ -32,6 +32,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
@@ -1513,6 +1514,7 @@ namespace APIServer.PwdMan
             if (templateId.Length > 0)
             {
                 var now = DateTime.UtcNow;
+                var ci = CultureInfo.CreateSpecificCulture(locale);
                 var msg = new SendGridMessage();
                 msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
                 msg.AddTo(user.Email, user.Name);
@@ -1520,8 +1522,8 @@ namespace APIServer.PwdMan
                 msg.SetTemplateData(new SecurityWarningTemplateData
                 {
                     Name = user.Name,
-                    Date = $"{now.Day}.{now.Month}.{now.Year}",
-                    Time = $"{now.Hour}:{now.Minute:00} UTC",
+                    Date = now.ToString("d", ci),
+                    Time = $"{now.ToString("T", ci)} UTC",
                     IPAddress = ipAddress,
                     Hostname = opt.Hostname,
                     Next = WebUtility.UrlEncode("/index")
