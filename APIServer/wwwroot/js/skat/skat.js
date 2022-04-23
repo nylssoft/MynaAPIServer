@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.0.0";
+    let version = "2.0.1";
 
     // helper
 
@@ -1478,7 +1478,7 @@ var skat = (() => {
             if (show) {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call("/api/pwdman/markdown/help-skat", undefined,
+                utils.fetch_api_call(`/api/pwdman/markdown/help-skat?locale=${utils.get_locale()}`, undefined,
                     (html) => {
                         if (utils.is_debug()) utils.debug("HELP RETRIEVED");
                         mdDiv.innerHTML = html;

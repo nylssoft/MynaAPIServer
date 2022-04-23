@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "2.0.0";
+    let version = "2.0.1";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -332,7 +332,7 @@ var notes = (() => {
             if (show) {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call("/api/pwdman/markdown/help-notes", undefined, (html) => mdDiv.innerHTML = html);
+                utils.fetch_api_call(`/api/pwdman/markdown/help-notes?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }

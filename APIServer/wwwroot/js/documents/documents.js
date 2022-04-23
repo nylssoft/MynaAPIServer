@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "2.0.0";
+    let version = "2.0.1";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -611,7 +611,7 @@ var documents = (() => {
             if (show) {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call("/api/pwdman/markdown/help-documents", undefined, (html) => mdDiv.innerHTML = html);
+                utils.fetch_api_call(`/api/pwdman/markdown/help-documents?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }

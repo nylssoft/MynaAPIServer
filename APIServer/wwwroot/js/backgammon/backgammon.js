@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.0.0";
+    let version = "2.0.1";
 
     let dirty;
 
@@ -1271,7 +1271,7 @@ var backgammon = (() => {
             if (show) {
                 const contentDiv = controls.createDiv(helpDiv, "help-content");
                 const mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call("/api/pwdman/markdown/help-backgammon", undefined,
+                utils.fetch_api_call(`/api/pwdman/markdown/help-backgammon?locale=${utils.get_locale()}`, undefined,
                     (html) => {
                         if (utils.is_debug()) utils.debug("HELP RETRIEVED");
                         mdDiv.innerHTML = html;

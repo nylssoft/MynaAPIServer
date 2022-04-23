@@ -516,7 +516,7 @@ var utils = (() => {
             loc = get_locale();
         }
         const language = loc.split("-")[0].toLowerCase();
-        fetch(`/locale/${language}.json?v=2`)
+        fetch(`/locale/${language}.json?v=3`)
             .then(resp => {
                 resp.json()
                     .then(json => {

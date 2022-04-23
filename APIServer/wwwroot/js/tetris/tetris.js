@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.0";
+    let version = "2.0.1";
 
     let block;
     let nextBlock;
@@ -884,7 +884,7 @@ var tetris = (() => {
             if (show) {                
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call("/api/pwdman/markdown/help-tetris", undefined, (html) => mdDiv.innerHTML = html);
+                utils.fetch_api_call(`/api/pwdman/markdown/help-tetris?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, _T("BUTTON_CONTINUE_PLAY"), () => onUpdateHelp(false), undefined, "help-continue").focus();
             }
         }

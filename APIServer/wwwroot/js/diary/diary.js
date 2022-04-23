@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "2.0.0";
+    let version = "2.0.1";
 
     let changeDate;
     let inSaveDiary;
@@ -308,7 +308,7 @@ var diary = (() => {
             if (show) {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call("/api/pwdman/markdown/help-diary", undefined, (html) => mdDiv.innerHTML = html);
+                utils.fetch_api_call(`/api/pwdman/markdown/help-diary?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
