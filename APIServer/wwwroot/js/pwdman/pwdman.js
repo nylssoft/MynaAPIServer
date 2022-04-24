@@ -34,13 +34,13 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.0";
+    let version = "2.0.1";
 
     // helper
 
     const getState = () => {
         let ret;
-        let str = window.sessionStorage.getItem("pwdman-state");
+        let str = utils.get_session_storage("pwdman-state");
         if (str && str.length > 0) {
             ret = JSON.parse(str);
         }
@@ -49,11 +49,11 @@ var pwdman = (() => {
 
     const setState = (state) => {
         if (state) {
-            window.sessionStorage.setItem("pwdman-state", JSON.stringify(state));
+            utils.set_session_storage("pwdman-state", JSON.stringify(state));
         }
         else {
-            window.sessionStorage.removeItem("pwdman-state");
-            window.localStorage.removeItem("pwdman-lltoken");
+            utils.remove_session_storage("pwdman-state");
+            utils.remove_local_storage("pwdman-lltoken");
         }
     };
 
@@ -65,12 +65,12 @@ var pwdman = (() => {
     };
 
     const getClientInfo = () => {
-        const ci = window.localStorage.getItem("clientinfo");
+        const ci = utils.get_local_storage("clientinfo");
         if (ci && ci.length > 0) {
             return JSON.parse(ci);
         }
         const clientInfo = { "uuid": uuid.v4(), "name": window.navigator.userAgent };
-        window.localStorage.setItem("clientinfo", JSON.stringify(clientInfo));
+        utils.set_local_storage("clientinfo", JSON.stringify(clientInfo));
         return clientInfo;
     }
 
@@ -94,7 +94,7 @@ var pwdman = (() => {
                 authToken = authResult.token;
                 requiresPass2 = authResult.requiresPass2;
                 if (authResult.longLivedToken) {
-                    window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
+                    utils.set_local_storage("pwdman-lltoken", authResult.longLivedToken);
                 }
                 setState({ "token": authToken, "userName": userName, "requiresPass2": requiresPass2 });
                 renderPage();
@@ -115,7 +115,7 @@ var pwdman = (() => {
             (authResult) => {
                 authToken = authResult.token;
                 if (authResult.longLivedToken) {
-                    window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
+                    utils.set_local_storage("pwdman-lltoken", authResult.longLivedToken);
                 }
                 requiresPass2 = false;
                 let state = getState();

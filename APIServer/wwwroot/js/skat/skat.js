@@ -41,42 +41,42 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.0.1";
+    let version = "2.0.2";
 
     // helper
 
     const handleError = (errMsg) => {
         console.error(_T(errMsg));
-        window.sessionStorage.removeItem("skatstate");
+        utils.remove_session_storage("skatstate");
         enableTimer();
     }
 
     const clearTicket = () => {
         ticket = undefined;
-        sessionStorage.removeItem("skatticket");
-        localStorage.removeItem("skatticket");
+        utils.remove_session_storage("skatticket");
+        utils.remove_local_storage("skatticket");
     };
 
     const setTicket = (t) => {
         ticket = t;
-        sessionStorage.setItem("skatticket", t);
-        localStorage.setItem("skatticket", t);
+        utils.set_session_storage("skatticket", t);
+        utils.set_local_storage("skatticket", t);
     };
 
     const getTicket = () => {
-        let t = sessionStorage.getItem("skatticket");
+        let t = utils.get_session_storage("skatticket");
         if (!t) {
-            t = localStorage.getItem("skatticket");
+            t = utils.get_local_storage("skatticket");
         }
         return t;
     }
 
     const getState = () => {
-        return window.sessionStorage.getItem("skatstate");
+        return utils.get_session_storage("skatstate");
     };
 
     const setState = (state) => {
-        window.sessionStorage.setItem("skatstate", state);
+        utils.set_session_storage("skatstate", state);
     };
 
     const enableTimer = () => {
@@ -1015,7 +1015,7 @@ var skat = (() => {
             imgResults.addEventListener("click", () => window.open("/skat?results", "_blank"));
         }
         divChat = controls.createDiv(parent, "layout-right");
-        let chatState = sessionStorage.getItem("chatstate");
+        let chatState = utils.get_session_storage("chatstate");
         if (!chatState) {
             chatState = 0;
         }
@@ -1040,7 +1040,7 @@ var skat = (() => {
         }
         if (showChat) {
             imgMessage.title = _T("BUTTON_HIDE_CHAT");
-            sessionStorage.setItem("chatstate", currentChatState);
+            utils.set_session_storage("chatstate", currentChatState);
             divChat.style.visibility = "visible";
             if (inputChatText && !utils.is_mobile()) {
                 inputChatText.focus();

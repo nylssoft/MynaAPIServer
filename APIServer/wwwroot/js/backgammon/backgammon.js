@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.0.1";
+    let version = "2.0.2";
 
     let dirty;
 
@@ -137,7 +137,7 @@ var backgammon = (() => {
 
     const handleError = (err) => {
         console.error(err);
-        window.sessionStorage.removeItem("backgammonstate");
+        utils.remove_session_storage("backgammonstate");
         endGameClicked = false;
         giveUpClicked = false;
         enableTimer();
@@ -145,33 +145,33 @@ var backgammon = (() => {
 
     const clearTicket = () => {
         ticket = undefined;
-        sessionStorage.removeItem("backgammonticket");
-        localStorage.removeItem("backgammonticket");
+        utils.remove_session_storage("backgammonticket");
+        utils.remove_local_storage("backgammonticket");
     };
 
     const setTicket = (t) => {
         ticket = t;
-        sessionStorage.setItem("backgammonticket", t);
-        localStorage.setItem("backgammonticket", t);
+        utils.set_session_storage("backgammonticket", t);
+        utils.set_local_storage("backgammonticket", t);
     };
 
     const getTicket = () => {
-        let t = sessionStorage.getItem("backgammonticket");
+        let t = utils.get_session_storage("backgammonticket");
         if (!t) {
-            t = localStorage.getItem("backgammonticket");
+            t = utils.get_local_storage("backgammonticket");
             if (t) {
-                sessionStorage.setItem("backgammonticket", t);
+                utils.set_session_storage("backgammonticket", t);
             }
         }
         return t;
     }
 
     const getState = () => {
-        return window.sessionStorage.getItem("backgammonstate");
+        return utils.get_session_storage("backgammonstate");
     };
 
     const setState = (state) => {
-        window.sessionStorage.setItem("backgammonstate", state);
+        utils.set_session_storage("backgammonstate", state);
     };
 
     const enableTimer = () => {
@@ -1438,8 +1438,8 @@ var backgammon = (() => {
                 if (utils.is_debug()) utils.debug(`LOGOUT (ticket): new state is ${state}.`);
                 setState(state);
                 ticket = undefined;
-                window.sessionStorage.removeItem("backgammonticket");
-                window.localStorage.removeItem("backgammonticket");
+                utils.remove_session_storage("backgammonticket");
+                utils.remove_local_storage("backgammonticket");
                 render();
             },
             handleError);

@@ -6,6 +6,7 @@ var utils = (() => {
     let default_locale = "en-US";
     let translationMap;
     let locale;
+    let memoryStorage = new Map();
 
     const is_debug = () => {
         return debug_mode === true;
@@ -112,9 +113,61 @@ var utils = (() => {
 
     // --- pwdman
 
+    const get_session_storage = (key) => {
+        try {
+            return window.sessionStorage.getItem(key);
+        }
+        catch (e) {
+            return memoryStorage.get(key);
+        }
+    };
+
+    const set_session_storage = (key, val) => {
+        try {
+            window.sessionStorage.setItem(key, val);
+        }
+        catch (e) {
+            memoryStorage.set(key, val);
+        }
+    };
+
+    const get_local_storage = (key) => {
+        try {
+            return window.localStorage.getItem(key);
+        }
+        catch (e) {
+            return undefined;
+        }
+    };
+
+    const set_local_storage = (key, val) => {
+        try {
+            window.localStorage.setItem(key, val);
+        }
+        catch (e) {
+        }
+    };
+
+    const remove_local_storage = (key) => {
+        try {
+            window.localStorage.removeItem(key);
+        }
+        catch (e) {
+        }
+    };
+
+    const remove_session_storage = (key) => {
+        try {
+            window.sessionStorage.removeItem(key);
+        }
+        catch (e) {
+            memoryStorage.delete(key);
+        }
+    };
+
     const get_authentication_token = () => {
         let pwdmanState;
-        let str = window.sessionStorage.getItem("pwdman-state");
+        let str = get_session_storage("pwdman-state");
         if (str && str.length > 0) {
             pwdmanState = JSON.parse(str);
             if (pwdmanState && !pwdmanState.requiresPass2 && pwdmanState.token.length > 0) {
@@ -126,8 +179,8 @@ var utils = (() => {
 
     const logout = (resolve, reject) => {
         const token = get_authentication_token();
-        window.sessionStorage.removeItem("pwdman-state");
-        window.localStorage.removeItem("pwdman-lltoken");
+        remove_session_storage("pwdman-state");
+        remove_local_storage("pwdman-lltoken");
         if (token) {
             fetch_api_call("api/pwdman/logout", { headers: { "token": token } },
                 (done) => console.log(`User logout: ${done}.`),
@@ -137,13 +190,13 @@ var utils = (() => {
     };
 
     const logout_skat = (resolve, reject) => {
-        let skatTicket = window.sessionStorage.getItem("skatticket");
+        let skatTicket = get_session_storage("skatticket");
         if (!skatTicket) {
-            skatTicket = window.localStorage.getItem("skatticket");
+            skatTicket = get_local_storage("skatticket");
         }
         if (skatTicket) {
-            window.sessionStorage.removeItem("skatticket");
-            window.localStorage.removeItem("skatticket");
+            remove_session_storage("skatticket");
+            remove_local_storage("skatticket");
             fetch_api_call("api/skat/logout", { method: "POST", headers: { "ticket": skatTicket } }, resolve, reject);
         }
         else {
@@ -166,7 +219,7 @@ var utils = (() => {
                             if (!retry && json.status == 401) {
                                 let token = get_authentication_token();
                                 if (token) {
-                                    window.sessionStorage.removeItem("pwdman-state");
+                                    remove_session_storage("pwdman-state");
                                     if (init && init.headers && init.headers.token) {
                                         auth_lltoken(() => {
                                             let newtoken = get_authentication_token();
@@ -203,7 +256,7 @@ var utils = (() => {
     const auth_lltoken = (resolve) => {
         let token = get_authentication_token();
         if (!token) {
-            let lltoken = window.localStorage.getItem("pwdman-lltoken");
+            let lltoken = get_local_storage("pwdman-lltoken");
             if (lltoken) {
                 fetch_api_call("api/pwdman/auth/lltoken", { headers: { "token": lltoken } },
                     (authResult) => {
@@ -212,13 +265,13 @@ var utils = (() => {
                             "userName": authResult.username,
                             "requiresPass2": authResult.requiresPass2
                         };
-                        window.sessionStorage.setItem("pwdman-state", JSON.stringify(state));
-                        window.localStorage.setItem("pwdman-lltoken", authResult.longLivedToken);
+                        set_session_storage("pwdman-state", JSON.stringify(state));
+                        set_local_storage("pwdman-lltoken", authResult.longLivedToken);
                         resolve();
                     },
                     (errmsg) => {
                         console.error(errmsg);
-                        window.localStorage.removeItem("pwdman-lltoken");
+                        remove_local_storage("pwdman-lltoken");
                         resolve();
                     });
                 return;
@@ -296,9 +349,9 @@ var utils = (() => {
     const get_encryption_key = (user) => {
         if (user) {
             let storageKey = `diary-${user.email}-encryptkey`;
-            let encryptKey = window.localStorage.getItem(storageKey);
+            let encryptKey = get_local_storage(storageKey);
             if (!encryptKey) {
-                encryptKey = window.sessionStorage.getItem(storageKey);
+                encryptKey = get_session_storage(storageKey);
             }
             if (encryptKey && encryptKey.length > 0) {
                 return encryptKey;
@@ -311,12 +364,12 @@ var utils = (() => {
         if (user) {
             let storageKey = `diary-${user.email}-encryptkey`;
             if (encryptKey && encryptKey.length > 0) {
-                window.localStorage.setItem(storageKey, encryptKey);
-                window.sessionStorage.setItem(storageKey, encryptKey);
+                set_local_storage(storageKey, encryptKey);
+                set_session_storage(storageKey, encryptKey);
             }
             else {
-                window.localStorage.removeItem(storageKey);
-                window.sessionStorage.removeItem(storageKey);
+                remove_local_storage(storageKey);
+                remove_session_storage(storageKey);
             }
         }
     };
@@ -324,9 +377,9 @@ var utils = (() => {
     const has_viewed_encryption_key = (user) => {
         if (user) {
             let storageKey = `diary-${user.email}-viewed-encryptkey`;
-            let viewed = window.localStorage.getItem(storageKey);
+            let viewed = get_local_storage(storageKey);
             if (!viewed) {
-                viewed = window.sessionStorage.getItem(storageKey);
+                viewed = get_session_storage(storageKey);
             }
             return viewed && viewed == "true";
         }
@@ -337,12 +390,12 @@ var utils = (() => {
         if (user) {
             let storageKey = `diary-${user.email}-viewed-encryptkey`;
             if (viewed) {
-                window.localStorage.setItem(storageKey, "true");
-                window.sessionStorage.setItem(storageKey, "true");
+                set_local_storage(storageKey, "true");
+                set_session_storage(storageKey, "true");
             }
             else {
-                window.localStorage.removeItem(storageKey);
-                window.sessionStorage.removeItem(storageKey);
+                remove_local_storage(storageKey);
+                remove_session_storage(storageKey);
             }
         }
     };
@@ -459,9 +512,9 @@ var utils = (() => {
 
     const is_cookies_accepted = () => {
         const key = "cookies-accepted";
-        let accepted = window.sessionStorage.getItem(key);
+        let accepted = get_session_storage(key);
         if (!accepted) {
-            accepted = window.localStorage.getItem(key);
+            accepted = get_local_storage(key);
         }
         return accepted && accepted == "true";
     };
@@ -469,12 +522,12 @@ var utils = (() => {
     const set_cookies_accepted = (accepted) => {
         const key = "cookies-accepted";
         if (accepted) {
-            window.sessionStorage.setItem(key, "true");
-            window.localStorage.setItem(key, "true");
+            set_session_storage(key, "true");
+            set_local_storage(key, "true");
         }
         else {
-            window.sessionStorage.removeItem(key);
-            window.localStorage.removeItem(key);
+            remove_session_storage(key);
+            remove_local_storage(key);
         }
     };
 
@@ -497,13 +550,13 @@ var utils = (() => {
 
     const get_locale = () => {
         if (!locale) {
-            locale = window.localStorage.getItem("locale");
+            locale = get_local_storage("locale");
             if (!locale) {
-                locale = window.sessionStorage.getItem("locale");
+                locale = get_session_storage("locale");
                 if (!locale) {
                     locale = navigator.language;
-                    window.sessionStorage.setItem("locale", locale);
-                    window.localStorage.setItem("locale", locale);
+                    set_session_storage("locale", locale);
+                    set_local_storage("locale", locale);
                 }
             }
         }
@@ -522,8 +575,8 @@ var utils = (() => {
                     .then(json => {
                         Object.entries(json).forEach(([key, value]) => translationMap.set(key, value));
                         locale = loc;
-                        window.sessionStorage.setItem("locale", locale);
-                        window.localStorage.setItem("locale", locale);
+                        set_session_storage("locale", locale);
+                        set_local_storage("locale", locale);
                         resolve();
                     })
                     .catch(err => {
@@ -598,7 +651,13 @@ var utils = (() => {
         set_locale: set_locale,
         get_locale: get_locale,
         translate: translate,
-        format: format
+        format: format,
+        get_session_storage: get_session_storage,
+        get_local_storage: get_local_storage,
+        set_session_storage: set_session_storage,
+        set_local_storage: set_local_storage,
+        remove_local_storage: remove_local_storage,
+        remove_session_storage: remove_session_storage
     };
 })();
 

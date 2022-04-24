@@ -30,7 +30,7 @@ var skatticket = (() => {
                 .then(response => response.json())
                 .then(model => {
                     if (model && model.currentUser) {
-                        sessionStorage.setItem("skatticket", t);
+                        utils.set_session_storage("skatticket", t);
                         location.pathname = "skat";
                     }
                     else {

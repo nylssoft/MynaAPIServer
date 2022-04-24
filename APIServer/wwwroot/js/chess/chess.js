@@ -47,13 +47,13 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.1";
+    let version = "2.0.2";
 
     // helper
 
     const handleError = (err) => {
         console.error(err);
-        window.sessionStorage.removeItem("chessstate");
+        utils.remove_session_storage("chessstate");
         endGameClicked = false;
         giveUpClicked = false;
         enableTimer();
@@ -61,33 +61,33 @@ var chess = (() => {
 
     const clearTicket = () => {
         ticket = undefined;
-        sessionStorage.removeItem("chessticket");
-        localStorage.removeItem("chessticket");
+        utils.remove_session_storage("chessticket");
+        utils.remove_local_storage("chessticket");
     };
 
     const setTicket = (t) => {
         ticket = t;
-        sessionStorage.setItem("chessticket", t);
-        localStorage.setItem("chessticket", t);
+        utils.set_session_storage("chessticket", t);
+        utils.set_local_storage("chessticket", t);
     };
 
     const getTicket = () => {
-        let t = sessionStorage.getItem("chessticket");
+        let t = utils.get_session_storage("chessticket");
         if (!t) {
-            t = localStorage.getItem("chessticket");
+            t = utils.get_local_storage("chessticket");
             if (t) {
-                sessionStorage.setItem("chessticket", t);
+                utils.set_session_storage("chessticket", t);
             }
         }
         return t;
     }
 
     const getState = () => {
-        return window.sessionStorage.getItem("chessstate");
+        return utils.get_session_storage("chessstate");
     };
 
     const setState = (state) => {
-        window.sessionStorage.setItem("chessstate", state);
+        utils.set_session_storage("chessstate", state);
     };
 
     const enableTimer = () => {
@@ -1268,8 +1268,8 @@ var chess = (() => {
                 if (utils.is_debug()) utils.debug(`LOGOUT (Button). New state is ${state}.`);
                 setState(state);
                 ticket = undefined;
-                window.sessionStorage.removeItem("chessticket");
-                window.localStorage.removeItem("chessticket");
+                utils.remove_session_storage("chessticket");
+                utils.remove_local_storage("chessticket");
                 render();
             },
             handleError);
