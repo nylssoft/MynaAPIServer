@@ -328,6 +328,7 @@
   "INFO_WAIT_FOR_OTHER_PLAYER": "You have to wait until a further player has logged in.",
   "INFO_WAIT_FOR_4_PLAYERS": "Wait for a fourth player or start the game for three players!",
   "INFO_WEBSITE_USE_COOKIES": "This website is using cookies.",
+  "INFO_WEBSITE_USE_COOKIES_BUT_CANNOT_READ_SAVE": "This website is using cookies but cookie data cannot be read or saved. The website only works to a limited extent.",
   "INFO_WITH_1": "with {0}.",
   "INFO_YOUR_TURN": "It's your turn!",
   "INFO_YOU_CARD_PIPS_1": "You have {0} pids.",

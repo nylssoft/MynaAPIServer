@@ -531,11 +531,30 @@ var utils = (() => {
         }
     };
 
+    const has_session_storage = () => {
+        try {
+            const key = "has_session_storage";
+            window.sessionStorage.setItem(key, "1");
+            if (window.sessionStorage.getItem(key) == "1") {
+                window.sessionStorage.removeItem(key);
+                return true;
+            }
+        }
+        catch (e) {
+        }
+        return false;
+    };
+
     const create_cookies_banner = (parent) => {
         if (!is_cookies_accepted()) {
             const cookieDiv = controls.createDiv(parent, "cookie-banner");
             const spanDiv = controls.createDiv(cookieDiv, "cookie-container");
-            controls.createSpan(spanDiv, undefined, _T("INFO_WEBSITE_USE_COOKIES"));
+            if (!has_session_storage()) {
+                controls.createSpan(spanDiv, undefined, _T("INFO_WEBSITE_USE_COOKIES_BUT_CANNOT_READ_SAVE"));
+            }
+            else {
+                controls.createSpan(spanDiv, undefined, _T("INFO_WEBSITE_USE_COOKIES"));
+            }
             const linkDiv = controls.createDiv(cookieDiv, "cookie-container");
             controls.createA(linkDiv, undefined, "/markdown?page=cookies&hidecookiebanner", _T("INFO_QUESTION_MORE_INFO"));
             const btnDiv = controls.createDiv(cookieDiv, "cookie-container");
@@ -569,7 +588,7 @@ var utils = (() => {
             loc = get_locale();
         }
         const language = loc.split("-")[0].toLowerCase();
-        fetch(`/locale/${language}.json?v=3`)
+        fetch(`/locale/${language}.json?v=4`)
             .then(resp => {
                 resp.json()
                     .then(json => {

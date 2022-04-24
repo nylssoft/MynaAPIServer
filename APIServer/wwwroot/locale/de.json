@@ -328,6 +328,7 @@
   "INFO_WAIT_FOR_OTHER_PLAYER": "Du musst warten, bis sich ein weiterer Spieler anmeldet.",
   "INFO_WAIT_FOR_4_PLAYERS": "Warte auf einen vierten Spieler oder starte das Spiel zu dritt!",
   "INFO_WEBSITE_USE_COOKIES": "Diese Website verwendet Cookies.",
+  "INFO_WEBSITE_USE_COOKIES_BUT_CANNOT_READ_SAVE": "Diese Website verwendet Cookies aber die Cookie-Daten können werden gelesen noch geschrieben werden. Die Website funktioniert nur eingeschränkt.",
   "INFO_WITH_1": "mit {0}.",
   "INFO_YOUR_TURN": "Du bist am Zug!",
   "INFO_YOU_CARD_PIPS_1": "Du hast {0} Augen.",
