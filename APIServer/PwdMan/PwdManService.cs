@@ -536,6 +536,7 @@ namespace APIServer.PwdMan
             var user = GetUserFromToken(authenticationToken);
             var userModel = new UserModel
             {
+                Id = user.Id,
                 Name = user.Name,
                 Email = user.Email,
                 LastLoginUtc = DbMynaContext.GetUtcDateTime(user.LastLoginTryUtc),

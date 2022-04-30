@@ -345,9 +345,24 @@ var utils = (() => {
             .catch(err => reject(err.message));
     };
 
+    const migrate_encryption_key = (user, storageKey) => {
+        const encryptKey = get_local_storage(`diary-${user.email}-encryptkey`);
+        if (encryptKey && encryptKey.length > 0) {
+            set_local_storage(storageKey, encryptKey);
+            const viewed = get_local_storage(`diary-${user.email}-viewed-encryptkey`);
+            if (viewed && viewed == "true") {
+                set_viewed_encryption_key(user, true);
+            }
+            remove_local_storage(`diary-${user.email}-encryptkey`);
+            remove_local_storage(`diary-${user.email}-viewed-encryptkey`);
+            return encryptKey;
+        }
+        return undefined;
+    };
+
     const get_encryption_key = (user) => {
         if (user) {
-            let storageKey = `diary-${user.email}-encryptkey`;
+            let storageKey = `encryptkey-${user.id}`;
             let encryptKey = get_local_storage(storageKey);
             if (!encryptKey) {
                 encryptKey = get_session_storage(storageKey);
@@ -355,13 +370,14 @@ var utils = (() => {
             if (encryptKey && encryptKey.length > 0) {
                 return encryptKey;
             }
+            return migrate_encryption_key(user, storageKey);
         }
         return undefined;
     };
 
     const set_encryption_key = (user, encryptKey) => {
         if (user) {
-            let storageKey = `diary-${user.email}-encryptkey`;
+            let storageKey = `encryptkey-${user.id}`;
             if (encryptKey && encryptKey.length > 0) {
                 set_local_storage(storageKey, encryptKey);
                 set_session_storage(storageKey, encryptKey);
@@ -375,7 +391,7 @@ var utils = (() => {
 
     const has_viewed_encryption_key = (user) => {
         if (user) {
-            let storageKey = `diary-${user.email}-viewed-encryptkey`;
+            let storageKey = `encryptkey-${user.id}-viewed`;
             let viewed = get_local_storage(storageKey);
             if (!viewed) {
                 viewed = get_session_storage(storageKey);
@@ -387,7 +403,7 @@ var utils = (() => {
 
     const set_viewed_encryption_key = (user, viewed) => {
         if (user) {
-            let storageKey = `diary-${user.email}-viewed-encryptkey`;
+            let storageKey = `encryptkey-${user.id}-viewed`;
             if (viewed) {
                 set_local_storage(storageKey, "true");
                 set_session_storage(storageKey, "true");
