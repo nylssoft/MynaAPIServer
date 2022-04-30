@@ -250,6 +250,13 @@ namespace APIServer.PwdMan
         }
 
         [HttpGet]
+        [Route("api/pwdman/locale/url/{locale}")]
+        public IActionResult GetLocaleUrl(string locale)
+        {
+            return new JsonResult(PwdManService.GetLocaleUrl(locale));
+        }
+
+        [HttpGet]
         [Route("api/pwdman/slideshow")]
         public IActionResult GetSlideShow()
         {

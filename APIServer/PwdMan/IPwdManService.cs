@@ -107,6 +107,10 @@ namespace APIServer.PwdMan
 
         string GetPasswordFile(string authenticationToken);
 
+        // --- locale
+
+        string GetLocaleUrl(string locale);
+
         // --- slideshow
 
         SlideShowModel GetSlideShow(string authenticationToken);

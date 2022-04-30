@@ -42,5 +42,7 @@ namespace APIServer.PwdMan
         public List<ContentConfig> Markdown { get; set; }
 
         public string StartPage { get; set; }
+
+        public List<string> Languages { get; set; } = new List<string>();
     }
 }

@@ -1227,6 +1227,38 @@ namespace APIServer.PwdMan
             return false;
         }
 
+        // --- locale
+
+        public string GetLocaleUrl(string locale)
+        {
+            logger.LogDebug("Get locale url for '{locale}'...", locale);
+            var languages = GetOptions().Languages;
+            if (languages.Count == 0)
+            {
+                throw new ArgumentException("No languages configured in appsettings.json.");
+            }
+            var language = locale.ToLowerInvariant();
+            var idx = language.IndexOf("-");
+            if (idx >= 0)
+            {
+                language = language.Substring(0, idx);
+            }
+            if (!languages.Contains(language))
+            {
+                language = languages[0];
+            }
+            var filename = $"wwwroot/locale/{language}.json";
+            if (!File.Exists(filename))
+            {
+                throw new ArgumentException($"Language file '{filename}' not found.");
+            }
+            using var md5 = MD5.Create();
+            using var stream = File.OpenRead(filename);
+            var hash = md5.ComputeHash(stream);
+            var v = BitConverter.ToString(hash).Replace("-", "");
+            return $"/locale/{language}.json?v={v}";
+        }
+
         // --- slideshow
 
         public SlideShowModel GetSlideShow(string authenticationToken)

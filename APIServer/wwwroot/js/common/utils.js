@@ -3,7 +3,6 @@
 var utils = (() => {
 
     let debug_mode = false;
-    let default_locale = "en-US";
     let translationMap;
     let locale;
     let memoryStorage = new Map();
@@ -582,13 +581,9 @@ var utils = (() => {
         return locale;
     };
 
-    const set_locale = (resolve, loc) => {
+    const init_locale = (resolve, url, loc) => {
         translationMap = new Map();
-        if (!loc) {
-            loc = get_locale();
-        }
-        const language = loc.split("-")[0].toLowerCase();
-        fetch(`/locale/${language}.json?v=4`)
+        fetch(url)
             .then(resp => {
                 resp.json()
                     .then(json => {
@@ -600,16 +595,23 @@ var utils = (() => {
                     })
                     .catch(err => {
                         console.log(err);
-                        if (loc != default_locale) {
-                            set_locale(resolve, default_locale);
-                        }
-                        else {
-                            resolve();
-                        }
+                        resolve();
                     });
             })
             .catch(err => {
                 console.log(err);
+                resolve();
+            });
+    };
+
+    const set_locale = (resolve, loc) => {
+        if (!loc) {
+            loc = get_locale();
+        }
+        fetch_api_call(`api/pwdman/locale/url/${loc}`, undefined,
+            (url) => init_locale(resolve, url, loc),
+            (errMsg) => {
+                console.error(errMsg);
                 resolve();
             });
     };
