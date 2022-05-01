@@ -465,7 +465,7 @@ var utils = (() => {
             controls.createA(parent, undefined, "/usermgmt?logout", _T("MENU_LOGOUT"));
         }
         else {
-            controls.createA(parent, undefined, "/pwdman?nexturl=/markdown", _T("MENU_LOGIN"));
+            controls.createA(parent, undefined, "/pwdman?nexturl=/view", _T("MENU_LOGIN"));
         }
         const encryptKeyElem = document.getElementById("div-encryptkey-id");
         if (encryptKeyElem) {
