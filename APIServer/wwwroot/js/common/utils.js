@@ -446,7 +446,7 @@ var utils = (() => {
         if (!parent) return;
         const small_height = window.matchMedia('(max-height: 400px)').matches;
         controls.removeAllChildren(parent);
-        controls.createA(parent, undefined, "/markdown", _T("MENU_START"));
+        controls.createA(parent, undefined, "/view", _T("MENU_START"));
         if (!small_height) {
             controls.create(parent, "hr");
             controls.createA(parent, undefined, "/documents", _T("MENU_DOCUMENTS"));
@@ -571,7 +571,7 @@ var utils = (() => {
                 controls.createSpan(spanDiv, undefined, _T("INFO_WEBSITE_USE_COOKIES"));
             }
             const linkDiv = controls.createDiv(cookieDiv, "cookie-container");
-            controls.createA(linkDiv, undefined, "/markdown?page=cookies&hidecookiebanner", _T("INFO_QUESTION_MORE_INFO"));
+            controls.createA(linkDiv, undefined, "/view?page=cookies&hidecookiebanner", _T("INFO_QUESTION_MORE_INFO"));
             const btnDiv = controls.createDiv(cookieDiv, "cookie-container");
             controls.createButton(btnDiv, _T("BUTTON_OK"), () => {
                 set_cookies_accepted(true);

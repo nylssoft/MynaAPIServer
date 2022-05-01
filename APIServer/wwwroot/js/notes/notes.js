@@ -4,7 +4,7 @@ var notes = (() => {
 
     // state
 
-    let version = "2.0.1";
+    let version = "2.0.2";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -134,7 +134,7 @@ var notes = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_NOTES")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
-        controls.createA(div, "copyright", "/markdown?page=copyright", _T("COPYRIGHT"));
+        controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
 

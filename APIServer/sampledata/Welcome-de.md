@@ -3,11 +3,11 @@
 ## Willkommen
 
 Dies ist eine Vorlage für eine Startseite.
-Die Seite [Beispiele](/markdown?page=example) beschreibt, wie Seiten und der Portal - Server konfiguriert werden können.
+Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal - Server konfiguriert werden können.
 
 ## Wähle eine andere Sprache
 
-[Englisch](/markdown?page=welcome&locale=en-US)
+[Englisch](/view?page=welcome&locale=en-US)
 
 ## Verweise
 

@@ -31,7 +31,7 @@ Add additional attributes or a CSS class to a link with \{ and \}.
 
 External Link: [Source Code](https://github.com/nylssoft){target="_blank" .external}
 
-Internal Link: [Start](/markdown?page=welcome)
+Internal Link: [Start](/view?page=welcome)
 
 ## Role based rendering
 

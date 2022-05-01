@@ -357,7 +357,7 @@ var pwdman = (() => {
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_LOGIN")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
-        controls.createA(div, "copyright", "/markdown?page=copyright", _T("COPYRIGHT"));
+        controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
 
