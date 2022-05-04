@@ -18,7 +18,7 @@ The following applications are provided:
 - Password, a secure online password reader for passwords published with [MynaPasswordManager](https://github.com/nylssoft/MynaPasswordManager)
 - Slideshow, an online picture galery
 
-Visit [stockfleh.eu](https://www.stockfleth.eu) to see the portal server in action.
+Visit [stockfleth.eu](https://www.stockfleth.eu) to see the portal server in action.
 
 ## Setup
 
