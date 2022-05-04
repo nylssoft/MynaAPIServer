@@ -1,7 +1,6 @@
 # MynaAPIServer
 
 Provides a portal server with games and applications that can be published using a web server. The portal server runs on Unix or Windows.
-Currently all provided services are only available in german.
 
 The following games are provided:
 - Skat, a german card game
@@ -19,6 +18,8 @@ The following applications are provided:
 - Password, a secure online password reader for passwords published with [MynaPasswordManager](https://github.com/nylssoft/MynaPasswordManager)
 - Slideshow, an online picture galery
 
+See [Portal Server](https://www.stockfleth.eu) for the current version of the portal server.
+
 ## Setup
 
 First the project has to be compiled with Visual Studio 2019.
@@ -35,9 +36,6 @@ This is the reason for the strange name of the repository.
 The project was and is still also a learning project. Learn how to use .NET and modern JavaScript
 with as few dependencies as possible.
 And last but not least programming is fun.
-
-Feedback is everything. It drives the development and improvement of the portal. Many thanks to
-everbody that has provided and will provide feedback in the future.
 
 ### Skat
 
