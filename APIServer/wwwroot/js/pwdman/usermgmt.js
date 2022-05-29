@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.2";
+    let version = "2.0.3";
 
     // helper
 
@@ -735,7 +735,7 @@ var usermgmt = (() => {
             window.location.href = nexturl;
         }
         else {
-            window.location.href = "/markdown";
+            window.location.href = "/view";
         }
     };
 

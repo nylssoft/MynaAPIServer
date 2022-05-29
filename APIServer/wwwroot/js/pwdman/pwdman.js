@@ -34,7 +34,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.1";
+    let version = "2.0.2";
 
     // helper
 
@@ -228,7 +228,7 @@ var pwdman = (() => {
         lastErrorMessage = "";
         if (nexturl && nexturl.length > 0) {
             if (nexturl == "/diary" || nexturl == "/notes" || nexturl == "/documents" || nexturl == "/password") {
-                nexturl = "/markdown";
+                nexturl = "/view";
             }
             window.location.replace(nexturl);
         }
@@ -668,7 +668,7 @@ var pwdman = (() => {
             window.location.replace(nexturl);
         }
         else {
-            window.location.replace("/markdown");
+            window.location.replace("/view");
         }
     };
 
