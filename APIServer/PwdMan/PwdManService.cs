@@ -133,7 +133,7 @@ namespace APIServer.PwdMan
                 resetpwd.IpAddress = ipAddress;
             }
             dbContext.SaveChanges();
-            await SendResetPasswordEmailAsync(user, resetpwd.Token, email, opt, locale);
+            await SendResetPasswordEmailAsync(user, resetpwd.Token, email, opt, GetValidLocale(locale, dbContext, email));
         }
 
         public void ResetPassword(UserResetPasswordModel resetPasswordModel, string ipAddress)
@@ -225,7 +225,7 @@ namespace APIServer.PwdMan
                 Email = email,
                 RequestedUtc = DateTime.UtcNow,               
                 IpAddress = ipAddress,
-                Locale = locale
+                Locale = GetValidLocale(locale)
             });
             dbContext.SaveChanges();
             await SendRegistrationRequestEmailAsync(email, opt);
@@ -303,7 +303,7 @@ namespace APIServer.PwdMan
                 dbContext.SaveChanges();
             }
             var opt = GetOptions();
-            await SendConfirmationRegistrationEmailAsync(registration, confirmation.Reject, email, opt, registration.Locale);
+            await SendConfirmationRegistrationEmailAsync(registration, confirmation.Reject, email, opt, GetValidLocale(registration.Locale));
             return registration.Token;
         }
 
@@ -1026,7 +1026,7 @@ namespace APIServer.PwdMan
             // send security warning email if the an unknown client has been used to login
             if (sendLoginWarning)
             {
-                await SendSecurityWarningEmailAsync(user, ipAddress, opt, locale);
+                await SendSecurityWarningEmailAsync(user, ipAddress, opt, GetValidLocale(locale, dbContext, user.Email));
             }
             return ret;
         }
@@ -1652,6 +1652,36 @@ namespace APIServer.PwdMan
         {
             var opt = Configuration.GetSection("PwdMan").Get<PwdManOptions>();
             return opt ?? new PwdManOptions();
+        }
+
+        private string GetValidLocale(string locale, DbMynaContext dbContext = null, string email = null)
+        {
+            if (locale == null && dbContext != null)
+            {
+                var registration = dbContext.DbRegistrations.SingleOrDefault((r) => r.Email == email);
+                locale = registration?.Locale;
+            }
+            if (locale != null)
+            {
+                try
+                {
+                    CultureInfo.CreateSpecificCulture(locale);
+                }
+                catch
+                {
+                    locale = null;
+                }
+            }
+            if (locale == null)
+            {
+                var languages = GetOptions().Languages;
+                if (languages.Count == 0)
+                {
+                    throw new ArgumentException("No languages configured in appsettings.json.");
+                }
+                locale = CultureInfo.CreateSpecificCulture(languages[0]).IetfLanguageTag;
+            }
+            return locale;
         }
 
         // --- private static
