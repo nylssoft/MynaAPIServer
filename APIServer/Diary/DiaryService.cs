@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2022 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@ namespace APIServer.Diary
             logger.LogDebug("Get diary entry for {date}...", date);
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            date = new DateTime(date.Year, date.Month, date.Day);
+            date = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
             var diary = dbContext.DbDiaries.SingleOrDefault((d) => d.DbUserId == user.Id && d.Date == date);
             if (diary != null)
             {
@@ -57,8 +57,8 @@ namespace APIServer.Diary
             logger.LogDebug("Get diary month entries for {date}...", date);
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var first = new DateTime(date.Year, date.Month, 1);
-            var last = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
+            var first = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var last = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month), 0, 0, 0, DateTimeKind.Utc);
             var diaries = dbContext.DbDiaries
                 .Where((d) => d.DbUserId == user.Id &&
                     d.Date >= first && d.Date <= last &&
@@ -77,8 +77,8 @@ namespace APIServer.Diary
             logger.LogDebug("Get days in month with diary entries for {date}...", date);
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var first = new DateTime(date.Year, date.Month, 1);
-            var last = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
+            var first = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var last = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month), 0, 0, 0, DateTimeKind.Utc);
             var diaries = dbContext.DbDiaries
                 .Where((d) => d.DbUserId == user.Id &&
                     d.Date >= first && d.Date <= last &&
@@ -97,7 +97,7 @@ namespace APIServer.Diary
             logger.LogDebug("Set diary entry  for {date}...", model.Date);
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var date = new DateTime(model.Date.Year, model.Date.Month, model.Date.Day);
+            var date = new DateTime(model.Date.Year, model.Date.Month, model.Date.Day, 0, 0, 0, DateTimeKind.Utc);
             var diary = dbContext.DbDiaries.SingleOrDefault((d) => d.DbUserId == user.Id && d.Date == date);
             if (diary == null)
             {

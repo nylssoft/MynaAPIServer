@@ -54,12 +54,12 @@ namespace APIServer.Skat.Core
             return deck;
         }
 
-        public static List<Card> Draw(RNGCryptoServiceProvider rng, List<Card> deck, int count)
+        public static List<Card> Draw(List<Card> deck, int count)
         {
             var ret = new List<Card>();
             for (; count > 0; count--)
             {
-                ret.Add(DrawOne(rng, deck));
+                ret.Add(DrawOne(deck));
             }
             return ret;
         }
@@ -138,15 +138,15 @@ namespace APIServer.Skat.Core
             return score;
         }
 
-        public static Card DrawOne(RNGCryptoServiceProvider rng, List<Card> deck)
+        public static Card DrawOne(List<Card> deck)
         {
-            var nr = Next(rng, deck.Count);
+            var nr = Next(deck.Count);
             var card = deck[nr];
             deck.RemoveAt(nr);
             return card;
         }
 
-        private static int Next(RNGCryptoServiceProvider rng, int limit)
+        private static int Next(int limit)
         {
             if (limit <= 0)
             {
@@ -156,13 +156,12 @@ namespace APIServer.Skat.Core
             {
                 return 0;
             }
-            return (int)(Next(rng) % (uint)limit);
+            return (int)(Next() % (uint)limit);
         }
 
-        private static uint Next(RNGCryptoServiceProvider rng)
+        private static uint Next()
         {
-            byte[] randomNumber = new byte[4];
-            rng.GetBytes(randomNumber);
+            var randomNumber = RandomNumberGenerator.GetBytes(4);
             return BitConverter.ToUInt32(randomNumber, 0);
         }
 

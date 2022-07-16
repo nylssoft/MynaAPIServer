@@ -127,18 +127,15 @@ namespace APIServer.Skat.Core
             }
             SkatResult = new SkatResult();
             CurrentHistory = new GameHistory();
-            using (var rng = new RNGCryptoServiceProvider())
+            var deck = Card.GenerateDeck();
+            foreach (var player in Players)
             {
-                var deck = Card.GenerateDeck();
-                foreach (var player in Players)
-                {
-                    player.Cards.AddRange(Card.Draw(rng, deck, 10));
-                    player.SortCards();
-                    CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
-                }
-                Skat.AddRange(Card.Draw(rng, deck, 2));
-                CurrentHistory.Skat.AddRange(Skat);
+                player.Cards.AddRange(Card.Draw(deck, 10));
+                player.SortCards();
+                CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
             }
+            Skat.AddRange(Card.Draw(deck, 2));
+            CurrentHistory.Skat.AddRange(Skat);
             var s = new HashSet<int>();
             // farbe
             for (int m = 2; m < 18; m++) // mit 10 spielt 11 hand 12 schneider 13 angesagt 14 schwarz 15 angesagt 16 ouvert 17
@@ -242,18 +239,15 @@ namespace APIServer.Skat.Core
             Skat.Clear();
             LastStitch.Clear();
             CurrentHistory = new GameHistory();
-            using (var rng = new RNGCryptoServiceProvider())
+            var deck = Card.GenerateDeck();
+            foreach (var player in Players)
             {
-                var deck = Card.GenerateDeck();
-                foreach (var player in Players)
-                {
-                    player.Cards.AddRange(Card.Draw(rng, deck, 10));
-                    player.SortCards();
-                    CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
-                }
-                Skat.AddRange(Card.Draw(rng, deck, 2));
-                CurrentHistory.Skat.AddRange(Skat);
+                player.Cards.AddRange(Card.Draw(deck, 10));
+                player.SortCards();
+                CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
             }
+            Skat.AddRange(Card.Draw(deck, 2));
+            CurrentHistory.Skat.AddRange(Skat);
             BidSaid = false;
             BidValueIndex = -1;
         }

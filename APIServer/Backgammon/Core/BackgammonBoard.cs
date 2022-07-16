@@ -696,17 +696,15 @@ namespace APIServer.Backgammon.Core
 
         private static int RollDiceOnce()
         {
-            using var rng = new RNGCryptoServiceProvider();
-            return NextRNG(rng, 6) + 1;
+            return NextRNG(6) + 1;
         }
 
         private static Roll RollDiceTwice()
         {
-            using var rng = new RNGCryptoServiceProvider();
-            return new Roll(NextRNG(rng, 6) + 1, NextRNG(rng, 6) + 1);
+            return new Roll(NextRNG(6) + 1, NextRNG(6) + 1);
         }
 
-        private static int NextRNG(RNGCryptoServiceProvider rng, int limit)
+        private static int NextRNG(int limit)
         {
             if (limit <= 0)
             {
@@ -716,13 +714,12 @@ namespace APIServer.Backgammon.Core
             {
                 return 0;
             }
-            return (int)(Next(rng) % (uint)limit);
+            return (int)(Next() % (uint)limit);
         }
 
-        private static uint Next(RNGCryptoServiceProvider rng)
+        private static uint Next()
         {
-            byte[] randomNumber = new byte[4];
-            rng.GetBytes(randomNumber);
+            var randomNumber = RandomNumberGenerator.GetBytes(4);
             return BitConverter.ToUInt32(randomNumber, 0);
         }
     }

@@ -662,11 +662,7 @@ namespace APIServer.PwdMan
             }
             if (forceNew || string.IsNullOrEmpty(user.TOTPKey))
             {
-                var sharedSecret = new byte[10];
-                using (var rng = new RNGCryptoServiceProvider())
-                {
-                    rng.GetBytes(sharedSecret);
-                }
+                var sharedSecret = RandomNumberGenerator.GetBytes(10);
                 var totpKey = ConvertExtension.ToBase32String(sharedSecret);
                 user.TOTPKey = totpKey;
                 var dbContext = GetDbContext();
