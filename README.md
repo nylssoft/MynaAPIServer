@@ -22,7 +22,7 @@ Visit [stockfleth.eu](https://www.stockfleth.eu) to see the portal server in act
 
 ## Setup
 
-First the project has to be compiled with Visual Studio 2019.
+First the project has to be compiled with Visual Studio 2022.
 If you run the portal server you will see sample pages.
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
