@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "2.0.2";
+    let version = "2.0.3";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -210,7 +210,7 @@ var documents = (() => {
         setWaitCursor(true);
         const curFile = curFiles[0];
         curFiles.shift();
-        if (curFile.size < 10 * 1024 * 1024) {
+        if (curFile.size < 20 * 1024 * 1024) {
             const fileReader = new FileReader();
             fileReader.onload = (e) => upload(e.target.result, curFile, curFiles, overwrite);
             fileReader.readAsArrayBuffer(curFile);
