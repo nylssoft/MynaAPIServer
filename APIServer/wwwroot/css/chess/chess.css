@@ -468,7 +468,7 @@ canvas {
         margin-left: 5pt;
     }
 
-    p, span, label, .confirmation {
+    p, span, label, li, .confirmation {
         font-size: 11pt;
     }
 

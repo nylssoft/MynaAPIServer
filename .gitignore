@@ -60,6 +60,8 @@ Temporary Items
 /APIServer/wwwroot/**/*.min.*
 /APIServer/data
 /APIServer/sampledata/apiserver.db
+/APIServer/sampledata/apiserver.db-shm
+/APIServer/sampledata/apiserver.db-wal
 
 # personal user files
 *.user
