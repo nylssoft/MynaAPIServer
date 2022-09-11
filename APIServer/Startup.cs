@@ -31,6 +31,7 @@ using APIServer.Skat;
 using APIServer.Tetris;
 using APIServer.Document;
 using SendGrid.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace APIServer
 {
@@ -85,7 +86,12 @@ namespace APIServer
 
             app.UseDefaultFiles();
 
-            app.UseStaticFiles();
+            var provider = new FileExtensionContentTypeProvider();
+            provider.Mappings[".apk"] = "application/vnd.android.package-archive";
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ContentTypeProvider = provider
+            });
 
             app.UseRouting();
 
