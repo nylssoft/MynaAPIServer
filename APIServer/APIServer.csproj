@@ -5,6 +5,38 @@
     <UserSecretsId>59559925-6314-4897-b314-9a1a2e10c10b</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="sampledata\Cookies-de.md" />
+    <None Remove="sampledata\Cookies.md" />
+    <None Remove="sampledata\Copyright.md" />
+    <None Remove="sampledata\Example.md" />
+    <None Remove="sampledata\Help.md" />
+    <None Remove="sampledata\Welcome-de.md" />
+    <None Remove="sampledata\Welcome.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="sampledata\Cookies-de.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sampledata\Cookies.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sampledata\Copyright.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sampledata\Example.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sampledata\Help.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sampledata\Welcome-de.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="sampledata\Welcome.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
     <PackageReference Include="Markdig" Version="0.30.2" />
     <PackageReference Include="Microsoft.AspNetCore.HttpOverrides" Version="2.2.0" />
