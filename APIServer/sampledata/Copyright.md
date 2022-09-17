@@ -10,8 +10,8 @@ Copyright 2020 - 2022 Niels Stockfleth. All rights reserved.
 
 The following source code and icon libraries are used for the project:
 
-- [.NET 5](https://docs.microsoft.com/en-us/dotnet/core/dotnet-five){target="_blank" .external}
-- [Entity Framework Core 5](https://docs.microsoft.com/de-de/ef/core/what-is-new/ef-core-5.0/whatsnew){target="_blank" .external}
+- [.NET 6](https://learn.microsoft.com/de-de/dotnet/core/whats-new/dotnet-6){target="_blank" .external}
+- [Entity Framework Core 5](https://learn.microsoft.com/de-de/ef/core/what-is-new/ef-core-6.0/whatsnew){target="_blank" .external}
 - [ImageSharp](https://github.com/SixLabors/ImageSharp){target="_blank" .external}
 - [Markdig](https://github.com/xoofx/markdig){target="_blank" .external}
 - [Open Icon Library](https://sourceforge.net/projects/openiconlibrary){target="_blank" .external}

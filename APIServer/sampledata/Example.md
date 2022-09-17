@@ -97,7 +97,7 @@ The following data has to be provided either in the file or in user secrets:
 - Issuer: issuer of the token, e.g. the website domain
 - Audience: audience of the token
 
-For development in Visual Studio 2019 User Secrets should be used for sensitve data like security configuration,
+For development in Visual Studio 2022 User Secrets should be used for sensitve data like security configuration,
 hostname, SendGrid configuration and PostgreSQL database connection string.
 
 $backbutton
