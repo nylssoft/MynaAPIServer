@@ -31,5 +31,7 @@ namespace APIServer.Diary
         List<int> GetDaysWithEntries(IPwdManService pwdManService, string authenticationToken, DateTime date);
 
         void SetEntry(IPwdManService pwdManService, string authenticationToken, DiaryEntryModel model);
+
+        List<DateTime> GetAllEntries(IPwdManService pwdManService, string authenticationToken);
     }
 }

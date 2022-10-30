@@ -65,6 +65,13 @@ namespace APIServer.Diary
             return new JsonResult(DiaryService.GetDaysWithEntries(PwdManService, GetToken(), date));
         }
 
+        [HttpGet]
+        [Route("api/diary/all")]
+        public IActionResult GetAllEntries()
+        {
+            return new JsonResult(DiaryService.GetAllEntries(PwdManService, GetToken()));
+        }
+
         // --- private
 
         private string GetToken()

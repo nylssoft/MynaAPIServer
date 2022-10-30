@@ -110,5 +110,21 @@ namespace APIServer.Diary
             }
             dbContext.SaveChanges();
         }
+
+        public List<DateTime> GetAllEntries(IPwdManService pwdManService, string authenticationToken)
+        {
+            logger.LogDebug("Get all entries");
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            var diaries = dbContext.DbDiaries
+                .Where((d) => d.DbUserId == user.Id && d.Entry.Trim().Length > 0)
+                .OrderBy((d) => d.Date);
+            var ret = new List<DateTime>();
+            foreach (var diary in diaries)
+            {
+                ret.Add(diary.Date);
+            }
+            return ret;
+        }
     }
 }
