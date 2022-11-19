@@ -154,15 +154,6 @@ namespace APIServer.PwdMan
         }
 
         [HttpDelete]
-        [Route("api/pwdman/user")]
-        public IActionResult DeleteUser([FromBody] string username)
-        {
-            if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
-            if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
-            return new JsonResult(PwdManService.DeleteUser(GetToken(), username));
-        }
-
-        [HttpDelete]
         [Route("api/pwdman/loginipaddress")]
         public IActionResult DeleteLoginIpAddresses()
         {
@@ -342,6 +333,36 @@ namespace APIServer.PwdMan
             return new JsonResult(true);
         }
 
+        [HttpGet]
+        [Route("api/pwdman/file")]
+        public IActionResult GetPasswordFile()
+        {
+            return new JsonResult(PwdManService.GetPasswordFile(GetToken()));
+        }
+
+        // --- data deletion
+
+        [HttpDelete]
+        [Route("api/pwdman/diary")]
+        public IActionResult DeleteDiary()
+        {
+            return new JsonResult(PwdManService.DeleteDiary(GetToken()));
+        }
+
+        [HttpDelete]
+        [Route("api/pwdman/documents")]
+        public IActionResult DeleteDocuments()
+        {
+            return new JsonResult(PwdManService.DeleteDocuments(GetToken()));
+        }
+
+        [HttpDelete]
+        [Route("api/pwdman/notes")]
+        public IActionResult DeleteNotes()
+        {
+            return new JsonResult(PwdManService.DeleteNotes(GetToken()));
+        }
+
         [HttpDelete]
         [Route("api/pwdman/file")]
         public IActionResult DeletePasswordFile()
@@ -349,11 +370,13 @@ namespace APIServer.PwdMan
             return new JsonResult(PwdManService.DeletePasswordFile(GetToken()));
         }
 
-        [HttpGet]
-        [Route("api/pwdman/file")]
-        public IActionResult GetPasswordFile()
+        [HttpDelete]
+        [Route("api/pwdman/user")]
+        public IActionResult DeleteUser([FromBody] string username)
         {
-            return new JsonResult(PwdManService.GetPasswordFile(GetToken()));
+            if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
+            if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            return new JsonResult(PwdManService.DeleteUser(GetToken(), username));
         }
 
         // --- private

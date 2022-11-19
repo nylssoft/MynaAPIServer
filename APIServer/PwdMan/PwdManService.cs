@@ -544,11 +544,14 @@ namespace APIServer.PwdMan
                 UseLongLivedToken = user.UseLongLivedToken,
                 AllowResetPassword = user.AllowResetPassword,
                 RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
-                HasPasswordManagerFile = user.PasswordFileId != null,
                 PasswordManagerSalt = user.Salt,
                 Photo = user.Photo,
                 StorageQuota = user.StorageQuota,
-                LoginEnabled = user.LoginEnabled
+                LoginEnabled = user.LoginEnabled,
+                HasDiary = false,
+                HasDocuments = false,
+                HasNotes = false,
+                HasPasswordManagerFile = user.PasswordFileId != null,
             };
             var dbContext = GetDbContext();
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
@@ -556,6 +559,9 @@ namespace APIServer.PwdMan
             {
                 var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
                 userModel.UsedStorage = sum;
+                userModel.HasDiary = dbContext.DbDiaries.Any(item => item.DbUserId == user.Id);
+                userModel.HasDocuments = dbContext.DbDocItems.Any(item => item.OwnerId == user.Id);
+                userModel.HasNotes = dbContext.DbNotes.Any(item => item.DbUserId == user.Id);
             }
             return userModel;
         }
@@ -587,69 +593,6 @@ namespace APIServer.PwdMan
                 return true;
             }
             return false;
-        }
-
-        public bool DeleteUser(string authenticationToken, string username)
-        {
-            logger.LogDebug("Delete username '{username}'...", username);
-            var user = GetUserFromToken(authenticationToken);
-            var dbContext = GetDbContext();
-            if (user.Name != username)
-            {
-                if (!HasRole(user, "usermanager"))
-                {
-                    throw new AccessDeniedPermissionException();
-                }
-                user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
-                if (user == null)
-                {
-                    throw new InvalidUsernameException();
-                }
-            }
-            var usermanagerRole = dbContext.DbRoles.SingleOrDefault((r) => r.DbUserId == user.Id && r.Name == "usermanager");
-            if (usermanagerRole != null)
-            {
-                var cntUserManagers = dbContext.DbRoles.Count((r) => r.Name == "usermanager");
-                if (cntUserManagers == 1)
-                {
-                    throw new UserManagerRequiredException();
-                }
-            }
-            var photoFile = user.Photo;
-            if (user.PasswordFileId.HasValue)
-            {
-                var delpwdfile = new DbPasswordFile { Id = user.PasswordFileId.Value };
-                dbContext.DbPasswordFiles.Attach(delpwdfile);
-                dbContext.DbPasswordFiles.Remove(delpwdfile);
-            }
-            var regs = dbContext.DbRegistrations
-                .Where(r => r.ConfirmedById == user.Id || r.Email == user.Email);
-            dbContext.DbRegistrations.RemoveRange(regs);
-            var delResetPasswords = dbContext.DbResetPasswords.Where(r => r.Email == user.Email);
-            dbContext.DbResetPasswords.RemoveRange(delResetPasswords);
-            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id);
-            var delDocContents = new List<DbDocContent>();
-            foreach (var item in delDocItems)
-            {
-                if (item.ContentId.HasValue)
-                {
-                    delDocContents.Add(new DbDocContent { Id = item.ContentId.Value });
-                }
-            }
-            dbContext.DbDocItems.RemoveRange(delDocItems);
-            dbContext.DbDocContents.RemoveRange(delDocContents);
-            dbContext.DbUsers.Remove(user);
-            dbContext.SaveChanges();
-            // try to delete photo file if user has been successfully deleted
-            if (!string.IsNullOrEmpty(photoFile))
-            {
-                var fname = $"wwwroot/{photoFile}";
-                if (File.Exists(fname))
-                {
-                    File.Delete(fname);
-                }
-            }
-            return true;
         }
 
         public User2FAKeyModel GenerateUser2FAKey(string authenticationToken, bool forceNew)
@@ -1209,21 +1152,6 @@ namespace APIServer.PwdMan
             return user.PasswordFile.Content;
         }
 
-        public bool DeletePasswordFile(string authenticationToken)
-        {
-            logger.LogDebug("Delete password file...");
-            var user = GetUserFromToken(authenticationToken);
-            if (user.PasswordFileId != null)
-            {
-                var dbContext = GetDbContext();
-                dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
-                dbContext.DbPasswordFiles.Remove(user.PasswordFile);
-                dbContext.SaveChanges();
-                return true;
-            }
-            return false;
-        }
-
         // --- locale
 
         public string GetLocaleUrl(string locale)
@@ -1341,6 +1269,140 @@ namespace APIServer.PwdMan
                 }
             }
             return "<p>Zugriff verweigert.</p>";
+        }
+
+        // --- data deletion
+
+        public bool DeleteDiary(string authenticationToken)
+        {
+            logger.LogDebug("Delete diary...");
+            var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
+            var delDiaryEntries = dbContext.DbDiaries.Where(item => item.DbUserId == user.Id);
+            if (delDiaryEntries.Any())
+            {
+                dbContext.DbDiaries.RemoveRange(delDiaryEntries);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public bool DeleteDocuments(string authenticationToken)
+        {
+            logger.LogDebug("Delete documents...");
+            var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
+            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id);
+            if (delDocItems.Any())
+            {
+                var delDocContents = new List<DbDocContent>();
+                foreach (var item in delDocItems)
+                {
+                    if (item.ContentId.HasValue)
+                    {
+                        delDocContents.Add(new DbDocContent { Id = item.ContentId.Value });
+                    }
+                }
+                dbContext.DbDocItems.RemoveRange(delDocItems);
+                dbContext.DbDocContents.RemoveRange(delDocContents);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public bool DeleteNotes(string authenticationToken)
+        {
+            logger.LogDebug("Delete notes...");
+            var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
+            var delNoteItems = dbContext.DbNotes.Where(item => item.DbUserId == user.Id);
+            if (delNoteItems.Any())
+            {
+                dbContext.DbNotes.RemoveRange(delNoteItems);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public bool DeletePasswordFile(string authenticationToken)
+        {
+            logger.LogDebug("Delete password file...");
+            var user = GetUserFromToken(authenticationToken);
+            if (user.PasswordFileId != null)
+            {
+                var dbContext = GetDbContext();
+                dbContext.Entry(user).Reference(f => f.PasswordFile).Load();
+                dbContext.DbPasswordFiles.Remove(user.PasswordFile);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
+        public bool DeleteUser(string authenticationToken, string username)
+        {
+            logger.LogDebug("Delete username '{username}'...", username);
+            var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
+            if (user.Name != username)
+            {
+                if (!HasRole(user, "usermanager"))
+                {
+                    throw new AccessDeniedPermissionException();
+                }
+                user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
+                if (user == null)
+                {
+                    throw new InvalidUsernameException();
+                }
+            }
+            var usermanagerRole = dbContext.DbRoles.SingleOrDefault((r) => r.DbUserId == user.Id && r.Name == "usermanager");
+            if (usermanagerRole != null)
+            {
+                var cntUserManagers = dbContext.DbRoles.Count((r) => r.Name == "usermanager");
+                if (cntUserManagers == 1)
+                {
+                    throw new UserManagerRequiredException();
+                }
+            }
+            var photoFile = user.Photo;
+            if (user.PasswordFileId.HasValue)
+            {
+                var delpwdfile = new DbPasswordFile { Id = user.PasswordFileId.Value };
+                dbContext.DbPasswordFiles.Attach(delpwdfile);
+                dbContext.DbPasswordFiles.Remove(delpwdfile);
+            }
+            var regs = dbContext.DbRegistrations
+                .Where(r => r.ConfirmedById == user.Id || r.Email == user.Email);
+            dbContext.DbRegistrations.RemoveRange(regs);
+            var delResetPasswords = dbContext.DbResetPasswords.Where(r => r.Email == user.Email);
+            dbContext.DbResetPasswords.RemoveRange(delResetPasswords);
+            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id);
+            var delDocContents = new List<DbDocContent>();
+            foreach (var item in delDocItems)
+            {
+                if (item.ContentId.HasValue)
+                {
+                    delDocContents.Add(new DbDocContent { Id = item.ContentId.Value });
+                }
+            }
+            dbContext.DbDocItems.RemoveRange(delDocItems);
+            dbContext.DbDocContents.RemoveRange(delDocContents);
+            dbContext.DbUsers.Remove(user);
+            dbContext.SaveChanges();
+            // try to delete photo file if user has been successfully deleted
+            if (!string.IsNullOrEmpty(photoFile))
+            {
+                var fname = $"wwwroot/{photoFile}";
+                if (File.Exists(fname))
+                {
+                    File.Delete(fname);
+                }
+            }
+            return true;
         }
 
         // --- database access

@@ -63,8 +63,6 @@ namespace APIServer.PwdMan
 
         bool UnlockUser(string authenticationToken, string username);
 
-        bool DeleteUser(string authenticationToken, string username);
-
         int DeleteLoginIpAddresses(string authenticiationToken);
 
         User2FAKeyModel GenerateUser2FAKey(string authenticationToken, bool forceNew);
@@ -103,8 +101,6 @@ namespace APIServer.PwdMan
 
         void SavePasswordFile(string authenticationToken, string encodedContent);
 
-        bool DeletePasswordFile(string authenticationToken);
-
         string GetPasswordFile(string authenticationToken);
 
         // --- locale
@@ -118,6 +114,18 @@ namespace APIServer.PwdMan
         // --- markdown
 
         string GetMarkdown(string authenticationToken, string id, string locale);
+
+        // --- data deletion
+
+        bool DeleteDiary(string authenticationToken);
+
+        bool DeleteDocuments(string authenticationToken);
+
+        bool DeleteNotes(string authenticationToken);
+
+        bool DeletePasswordFile(string authenticationToken);
+
+        bool DeleteUser(string authenticationToken, string username);
 
         // --- database access
 

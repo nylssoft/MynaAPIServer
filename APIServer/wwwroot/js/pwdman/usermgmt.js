@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.3";
+    let version = "2.0.4";
 
     // helper
 
@@ -341,32 +341,79 @@ var usermgmt = (() => {
         renderCopyright(parent);
     };
 
-    const renderAccountActions = (confirm) => {
-        let actionsDiv = document.getElementById("account-actions-id");
-        controls.removeAllChildren(actionsDiv);
+    const renderDeleteAccountActions = (confirm) => {
+        const parent = document.body;
+        controls.removeAllChildren(parent);
+        // wait screen
+        waitDiv = controls.createDiv(parent, "invisible-div");
+        // menu
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
+        // header
+        renderHeader(parent, _T("INFO_DELETE_DATA"), _T("HEADER_DELETE_DATA"));
+        const actionsDiv = parent;
         if (confirm == "deleteaccount") {
             controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_ACCOUNT"));
             controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteCurrentUser());
-            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderAccountActions());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteAccountActions());
         }
         else if (confirm == "deletepasswordfile") {
             controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_PASSWORDS"));
             controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeletePasswordFile());
-            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderAccountActions());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteAccountActions());
+        }
+        else if (confirm == "deletenotes") {
+            controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_NOTES"));
+            controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteNotes());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteAccountActions());
+        }
+        else if (confirm == "deletediary") {
+            controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_DIARY"));
+            controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteDiary());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteAccountActions());
+        }
+        else if (confirm == "deletedocuments") {
+            controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_DOCUMENTS"));
+            controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteDocuments());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteAccountActions());
         }
         else {
-            let div = controls.createDiv(actionsDiv);
-            controls.createButton(div, _T("BUTTON_CHANGE_PWD"), () => onChangePassword());
-            controls.createButton(div, _T("BUTTON_EDIT_ACCOUNT"), () => renderEditAccount());
-            controls.createButton(div, _T("BUTTON_DELETE_ACCOUNT"), () => renderAccountActions("deleteaccount"));
+            const div1 = controls.createDiv(actionsDiv);
+            controls.createButton(div1, _T("BUTTON_DELETE_ACCOUNT"), () => renderDeleteAccountActions("deleteaccount"));
+            if (currentUser.hasNotes) {
+                const div2 = controls.createDiv(actionsDiv);
+                controls.createButton(div2, _T("BUTTON_DELETE_NOTES"), () => renderDeleteAccountActions("deletenotes"));
+            }
+            if (currentUser.hasDiary) {
+                const div3 = controls.createDiv(actionsDiv);
+                controls.createButton(div3, _T("BUTTON_DELETE_DIARY"), () => renderDeleteAccountActions("deletediary"));
+            }
+            if (currentUser.hasDocuments) {
+                const div4 = controls.createDiv(actionsDiv);
+                controls.createButton(div4, _T("BUTTON_DELETE_DOCUMENTS"), () => renderDeleteAccountActions("deletedocuments"));
+            }
             if (currentUser.hasPasswordManagerFile) {
-                controls.createButton(div, _T("BUTTON_DELETE_PASSWORDS"), () => renderAccountActions("deletepasswordfile"));
+                const div5 = controls.createDiv(actionsDiv);
+                controls.createButton(div5, _T("BUTTON_DELETE_PASSWORDS"), () => renderDeleteAccountActions("deletepasswordfile"));
             }
-            if (currentUser.roles.includes("usermanager")) {
-                let adminDiv = controls.createDiv(actionsDiv);
-                controls.createButton(adminDiv, _T("BUTTON_EDIT_REQUESTS"), () => renderConfirmRegistrations());
-                controls.createButton(adminDiv, _T("BUTTON_EDIT_USERS"), () => renderEditUsers());
-            }
+            const backP = controls.create(actionsDiv, "p", undefined);
+            controls.createButton(backP, _T("BUTTON_BACK"), () => renderCurrentUser(), undefined, "button");
+        }
+        // copyright
+        renderCopyright(parent);
+    };
+
+    const renderAccountActions = () => {
+        const actionsDiv = document.getElementById("account-actions-id");
+        controls.removeAllChildren(actionsDiv);
+        const div = controls.createDiv(actionsDiv);
+        controls.createButton(div, _T("BUTTON_CHANGE_PWD"), () => onChangePassword());
+        controls.createButton(div, _T("BUTTON_EDIT_ACCOUNT"), () => renderEditAccount());
+        controls.createButton(div, _T("BUTTON_DELETE_DATA"), () => renderDeleteAccountActions());
+        if (currentUser.roles.includes("usermanager")) {
+            const adminDiv = controls.createDiv(actionsDiv);
+            controls.createButton(adminDiv, _T("BUTTON_EDIT_REQUESTS"), () => renderConfirmRegistrations());
+            controls.createButton(adminDiv, _T("BUTTON_EDIT_USERS"), () => renderEditUsers());
         }
     };
 
@@ -749,7 +796,7 @@ var usermgmt = (() => {
 
     const onDeleteCurrentUser = () => {
         clearErrors();
-        let token = utils.get_authentication_token();
+        const token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/user",
             {
                 method: "DELETE",
@@ -762,9 +809,60 @@ var usermgmt = (() => {
         );
     };
 
+    const onDeleteDiary = () => {
+        clearErrors();
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/diary",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            () => {
+                currentUser.hasDiary = false;
+                renderCurrentUser();
+            },
+            onRejectError,
+            setWaitCursor
+        );
+    };
+
+    const onDeleteDocuments = () => {
+        clearErrors();
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/documents",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            () => {
+                currentUser.hasDocuments = false;
+                renderCurrentUser();
+            },
+            onRejectError,
+            setWaitCursor
+        );
+    };
+
+    const onDeleteNotes = () => {
+        clearErrors();
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/notes",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            () => {
+                currentUser.hasNotes = false;
+                renderCurrentUser();
+            },
+            onRejectError,
+            setWaitCursor
+        );
+    };
+
     const onDeletePasswordFile = () => {
         clearErrors();
-        let token = utils.get_authentication_token();
+        const token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/file",
             {
                 method: "DELETE",

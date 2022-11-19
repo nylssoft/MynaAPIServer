@@ -40,8 +40,6 @@ namespace APIServer.PwdMan.Model
 
         public List<string> Roles { get; set; }
 
-        public bool HasPasswordManagerFile { get; set; }
-
         public string PasswordManagerSalt { get; set; }
 
         public bool AccountLocked { get; set; }
@@ -53,5 +51,13 @@ namespace APIServer.PwdMan.Model
         public long UsedStorage { get; set; }
 
         public bool LoginEnabled { get; set; }
+
+        public bool HasDiary { get; set; }
+
+        public bool HasDocuments { get; set; }
+
+        public bool HasNotes { get; set; }
+
+        public bool HasPasswordManagerFile { get; set; }
     }
 }
