@@ -137,7 +137,7 @@
   "ERROR_MISSING_PWD": "Das Kennwort fehlt.",
   "ERROR_MISSING_REG_CODE": "Der Registrierungscode fehlt.",
   "ERROR_NO_CONFIRMATIONS_SELECTED": "Es wurden keine Bestätigungen ausgewählt.",
-  "ERROR_NO_PASSWORD_FILE_UPLOADED": "Es wurde keine Kennwortdatei hochgeladen.",
+  "ERROR_NO_PASSWORD_FILE_UPLOADED": "Es wurde keine Kennwortdatei hochgeladen. Verwende das Programm 'Password Manager' oder die App 'Password Reader MAUI', um Kennwörter zu verwalten.",
   "ERROR_NO_REG_REQUEST_FOR_EMAIL": "Es liegt keine Registrierungsanfrage für die E-Mail-Adresse vor.",
   "ERROR_NO_USERS_SELECTED": "Es wurden keine Benutzer ausgewählt.",
   "ERROR_PWD_FILE_NOT_FOUND": "Die Kennwortdatei wurde bisher nicht hochgeladen.",

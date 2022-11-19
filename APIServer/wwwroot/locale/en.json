@@ -137,7 +137,7 @@
   "ERROR_MISSING_PWD": "Password is missing.",
   "ERROR_MISSING_REG_CODE": "Registration code is missing.",
   "ERROR_NO_CONFIRMATIONS_SELECTED": "No confirmations have been selected.",
-  "ERROR_NO_PASSWORD_FILE_UPLOADED": "No password file has been uploaded.",
+  "ERROR_NO_PASSWORD_FILE_UPLOADED": "No password file has been uploaded. Use the program 'Password Manager' or the app 'Password Reader MAUI' to manage passwords.",
   "ERROR_NO_REG_REQUEST_FOR_EMAIL": "No registration request is available for email address.",
   "ERROR_NO_USERS_SELECTED": "No users have been selected.",
   "ERROR_PWD_FILE_NOT_FOUND": "Password file has not been uploaded.",

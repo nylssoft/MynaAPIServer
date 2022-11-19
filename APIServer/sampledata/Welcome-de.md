@@ -23,7 +23,7 @@ Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal 
 - [Tagebuch](/diary)
 - [Dokumente](/documents)
 - [Notizen](/notes)
-- [Passwörter](/password)
+- [Kennwörter](/password)
 
 ### Weiteres
 
