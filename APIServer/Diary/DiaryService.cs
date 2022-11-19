@@ -106,7 +106,14 @@ namespace APIServer.Diary
             }
             else
             {
-                diary.Entry = model.Entry;
+                if (string.IsNullOrEmpty(model.Entry))
+                {
+                    dbContext.DbDiaries.Remove(diary);
+                }
+                else
+                {
+                    diary.Entry = model.Entry;
+                }
             }
             dbContext.SaveChanges();
         }
