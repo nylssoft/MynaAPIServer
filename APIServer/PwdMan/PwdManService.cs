@@ -560,7 +560,7 @@ namespace APIServer.PwdMan
                 var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
                 userModel.UsedStorage = sum;
                 userModel.HasDiary = dbContext.DbDiaries.Any(item => item.DbUserId == user.Id);
-                userModel.HasDocuments = dbContext.DbDocItems.Any(item => item.OwnerId == user.Id);
+                userModel.HasDocuments = dbContext.DbDocItems.Any(item => item.OwnerId == user.Id && item.Type != DbDocItemType.Volume);
                 userModel.HasNotes = dbContext.DbNotes.Any(item => item.DbUserId == user.Id);
             }
             return userModel;
