@@ -4,7 +4,7 @@ var password = (() => {
 
     // state
 
-    let version = "2.0.2";
+    let version = "2.0.3";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -280,7 +280,7 @@ var password = (() => {
         if (v.length > 0) {
             const filteredItems = [];
             pwdItems.forEach(pwdItem => {
-                if (pwdItem.Name.toLowerCase().startsWith(v)) {
+                if (pwdItem.Name.toLowerCase().includes(v)) {
                     filteredItems.push(pwdItem);
                 }
             });
