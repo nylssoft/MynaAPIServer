@@ -24,6 +24,10 @@
     "inputFiles": [ "wwwroot/css/password/password.css" ]
   },
   {
+    "outputFileName": "wwwroot/css/contacts/contacts.min.css",
+    "inputFiles": [ "wwwroot/css/contacts/contacts.css" ]
+  },
+  {
     "outputFileName": "wwwroot/css/pwdman/pwdman.min.css",
     "inputFiles": [ "wwwroot/css/pwdman/pwdman.css" ]
   },
@@ -118,6 +122,15 @@
   {
     "outputFileName": "wwwroot/js/password/password.min.js",
     "inputFiles": [ "wwwroot/js/password/password.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    },
+    "sourceMap": false
+  },
+  {
+    "outputFileName": "wwwroot/js/contacts/contacts.min.js",
+    "inputFiles": [ "wwwroot/js/contacts/contacts.js" ],
     "minify": {
       "enabled": true,
       "renameLocals": true

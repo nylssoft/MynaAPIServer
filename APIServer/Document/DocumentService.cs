@@ -210,7 +210,7 @@ namespace APIServer.Document
                 {
                     removeItems.Add(delItem);
                     parent.Children -= 1;
-                    // add all children of a folder is deleted
+                    // add all children if a folder is deleted
                     if (delItem.Type == DbDocItemType.Folder)
                     {
                         removeItems.AddRange(GetAllChildren(dbContext, user, delItem));
@@ -336,9 +336,73 @@ namespace APIServer.Document
             return moved;
         }
 
+        // --- contacts
+
+        public string GetContacts(IPwdManService pwdManService, string authenticationToken)
+        {
+            logger.LogDebug("Get contacts...");
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            var item = dbContext.DbDocItems.
+                Include(item => item.Content).
+                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);            
+            if (item == null)
+            {
+                return null;
+            }
+            return Encoding.UTF8.GetString(item.Content.Data);
+        }
+
+        public bool SetContacts(IPwdManService pwdManService, string authenticationToken, string encodedContent)
+        {
+            logger.LogDebug("Set contacts...");
+            var data = Encoding.UTF8.GetBytes(encodedContent);
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            var item = dbContext.DbDocItems.
+                Include(item => item.Content).
+                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
+            if (item == null)
+            {
+                item = new DbDocItem
+                {
+                    Name = "$$contacts$$",
+                    Type = DbDocItemType.Contacts,
+                    OwnerId = user.Id,
+                    Size = data.Length,
+                    Content = new DbDocContent { Data = data }
+                };
+                dbContext.DbDocItems.Add(item);
+            }
+            else
+            {
+                item.Size = data.Length;
+                item.Content.Data = data;
+            }
+            dbContext.SaveChanges();
+            return true;
+        }
+
+        public bool DeleteContacts(IPwdManService pwdManService, string authenticationToken)
+        {
+            logger.LogDebug("Delete contacts...");
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            var item = dbContext.DbDocItems.
+                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
+            if (item != null)
+            {
+                dbContext.DbDocContents.Remove(new DbDocContent { Id = item.ContentId.Value });
+                dbContext.DbDocItems.Remove(item);
+                dbContext.SaveChanges();
+                return true;
+            }
+            return false;
+        }
+
         // ---- private methods
 
-        private static bool IsContainer(DbDocItem item) => item.Type == DbDocItemType.Folder || item.Type == DbDocItemType.Folder;
+        private static bool IsContainer(DbDocItem item) => item.Type == DbDocItemType.Folder || item.Type == DbDocItemType.Volume;
 
         public static DbDocItem GetVolume(DbMynaContext dbContext, DbUser user)
         {
@@ -351,7 +415,7 @@ namespace APIServer.Document
             if (id.HasValue)
             {
                 return dbContext.DbDocItems.SingleOrDefault(
-                    item => item.OwnerId == user.Id && item.Id == id.Value);
+                    item => item.OwnerId == user.Id && item.Id == id.Value && item.Type != DbDocItemType.Contacts);
             }
             else
             {
@@ -420,6 +484,7 @@ namespace APIServer.Document
                 DbDocItemType.Volume => "Volume",
                 DbDocItemType.Folder => "Folder",
                 DbDocItemType.Item => "Document",
+                DbDocItemType.Contacts => "Contacts",
                 _ => throw new ArgumentException($"Invalid document type '{docType}'.")
             };
         }

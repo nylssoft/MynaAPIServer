@@ -44,5 +44,13 @@ namespace APIServer.Document
 
         bool SetFolderAccessRole(IPwdManService pwdManService, string authenticationToken, long id, string accessRole);
 
+        // --- contacts
+
+        string GetContacts(IPwdManService pwdManService, string authenticationToken);
+
+        bool SetContacts(IPwdManService pwdManService, string authenticationToken, string encodedContent);
+
+        bool DeleteContacts(IPwdManService pwdManService, string authenticationToken);
+
     }
 }

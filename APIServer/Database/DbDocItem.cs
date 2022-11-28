@@ -19,7 +19,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace APIServer.Database
 {
-    public enum DbDocItemType { Volume, Folder, Item };
+    public enum DbDocItemType { Volume = 0, Folder = 1, Item = 2, Contacts = 100 };
 
     [Table("DocItems")]
     public class DbDocItem

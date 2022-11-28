@@ -1293,7 +1293,7 @@ namespace APIServer.PwdMan
             logger.LogDebug("Delete documents...");
             var user = GetUserFromToken(authenticationToken);
             var dbContext = GetDbContext();
-            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id);
+            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id && item.Type != DbDocItemType.Contacts);
             if (delDocItems.Any())
             {
                 var delDocContents = new List<DbDocContent>();

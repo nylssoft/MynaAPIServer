@@ -128,6 +128,29 @@ namespace APIServer.Document
             return new JsonResult(DocumentService.AddFolder(PwdManService, GetToken(), id, name));
         }
 
+        [HttpPut]
+        [Route("api/contacts")]
+        public IActionResult SetContacts([FromBody] string encodedContent)
+        {
+            if (string.IsNullOrEmpty(encodedContent)) throw new MissingParameterException();
+            if (encodedContent?.Length > Limits.MAX_CONTACTS_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(DocumentService.SetContacts(PwdManService, GetToken(), encodedContent));
+        }
+
+        [HttpGet]
+        [Route("api/contacts")]
+        public IActionResult GetContacts()
+        {
+            return new JsonResult(DocumentService.GetContacts(PwdManService, GetToken()));
+        }
+
+        [HttpDelete]
+        [Route("api/contacts")]
+        public IActionResult DeleteContacts()
+        {
+            return new JsonResult(DocumentService.DeleteContacts(PwdManService, GetToken()));
+        }
+
         // --- private
 
         private string GetToken()
