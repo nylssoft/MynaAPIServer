@@ -4,7 +4,7 @@ var contacts = (() => {
 
     // state
 
-    let version = "1.0.0";
+    let version = "1.0.1";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -188,28 +188,35 @@ var contacts = (() => {
 
     const renderActions = (confirm) => {
         if (!currentItem) return;
-        const actionDiv = document.getElementById("action-id");
-        controls.removeAllChildren(actionDiv);
+        const actionContainer = document.getElementById("action-id");
+        controls.removeAllChildren(actionContainer);
         if (confirm === "delete") {
-            controls.create(actionDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_CONTACT"));
-            controls.createButton(actionDiv, _T("BUTTON_YES"), () => onDeleteContact(currentItem));
-            controls.createButton(actionDiv, _T("BUTTON_NO"), () => renderActions());
+            document.getElementById("item-id").style.display = "none";
+            const contactName = document.getElementById("name-id").value;
+            controls.create(actionContainer, "span", "confirmation", _T("INFO_REALLY_DELETE_CONTACT_1", contactName));
+            const buttonContainer = controls.create(actionContainer, "p");
+            controls.createButton(buttonContainer, _T("BUTTON_YES"), () => onDeleteContact(currentItem));
+            controls.createButton(buttonContainer, _T("BUTTON_NO"), () => renderActions());
         }
         else if (confirm === "back") {
             if (!isChanged) {
                 onBack();
             }
             else {
-                controls.create(actionDiv, "span", "confirmation", _T("INFO_REALLY_BACK_NOT_SAVED"));
-                controls.createButton(actionDiv, _T("BUTTON_YES"), () => onBack());
-                controls.createButton(actionDiv, _T("BUTTON_NO"), () => renderActions());
+                document.getElementById("item-id").style.display = "none";
+                const contactName = document.getElementById("name-id").value;
+                controls.create(actionContainer, "span", "confirmation", _T("INFO_REALLY_BACK_NOT_SAVED_1", contactName));
+                const buttonContainer = controls.create(actionContainer, "p");
+                controls.createButton(buttonContainer, _T("BUTTON_YES"), () => onBack());
+                controls.createButton(buttonContainer, _T("BUTTON_NO"), () => renderActions());
             }
         }
         else {
-            controls.createButton(actionDiv, _T("BUTTON_BACK"), () => renderActions("back"), undefined, "button");
-            controls.createButton(actionDiv, _T("BUTTON_DELETE"), () => renderActions("delete"), undefined, "button");
+            document.getElementById("item-id").style.display = "block";
+            controls.createButton(actionContainer, _T("BUTTON_BACK"), () => renderActions("back"), undefined, "button");
+            controls.createButton(actionContainer, _T("BUTTON_DELETE"), () => renderActions("delete"), undefined, "button");
             if (isChanged) {
-                controls.createButton(actionDiv, _T("BUTTON_SAVE"), () => onSaveContact(currentItem), undefined, "button");
+                controls.createButton(actionContainer, _T("BUTTON_SAVE"), () => onSaveContact(currentItem), undefined, "button");
             }
         }
     };
@@ -236,15 +243,16 @@ var contacts = (() => {
         parent.style.display = "block";
         content.style.display = "none";
         controls.removeAllChildren(parent);
-        const buttonDiv = controls.createDiv(parent);
-        buttonDiv.id = "action-id";
+        controls.create(parent, "p").id = "action-id";
+        const itemContainer = controls.createDiv(parent);
+        itemContainer.id = "item-id";
         renderActions();
-        renderTextField(parent, "name", "NAME", item.name, 40, 80);
-        renderTextField(parent, "address", "ADDRESS", item.address, 40, 80);
-        renderTextField(parent, "phone", "PHONE", item.phone, 40, 80);
-        renderTextField(parent, "birthday", "BIRTHDAY", item.birthday, 10, 10);
-        renderTextField(parent, "email", "EMAIL_ADDRESS", item.email, 40, 80);
-        const p = controls.create(parent, "p");
+        renderTextField(itemContainer, "name", "NAME", item.name, 40, 80);
+        renderTextField(itemContainer, "address", "ADDRESS", item.address, 40, 80);
+        renderTextField(itemContainer, "phone", "PHONE", item.phone, 40, 80);
+        renderTextField(itemContainer, "birthday", "BIRTHDAY", item.birthday, 10, 10);
+        renderTextField(itemContainer, "email", "EMAIL_ADDRESS", item.email, 40, 80);
+        const p = controls.create(itemContainer, "p");
         const l = controls.createLabel(p, undefined, _T("LABEL_NOTE"));
         l.htmlFor = "note-id";
         const txt = controls.create(p, "textarea", undefined, item.note);
@@ -263,9 +271,6 @@ var contacts = (() => {
                 renderActions();
             }
         });
-        if (!utils.is_mobile()) {
-            document.getElementById("name-id").focus();
-        }
     };
 
     const renderContactsTable = (parent, items, filteredItems) => {
@@ -287,28 +292,26 @@ var contacts = (() => {
     };
 
     const renderSortOptions = () => {
-        const sortDiv = document.getElementById("sortoptions-id");
-        controls.removeAllChildren(sortDiv);
-        controls.createRadiobutton(sortDiv, "sort-firstname-id", "sort-contacts", "firstname", _T("TEXT_FIRSTNAME"), sortAttribute === "firstname", onSortOptionChanged);
-        controls.createRadiobutton(sortDiv, "sort-lastname-id", "sort-contacts", "lastname", _T("TEXT_LASTNAME"), sortAttribute === "lastname", onSortOptionChanged);
-        controls.createRadiobutton(sortDiv, "sort-birthday-id", "sort-contacts", "birthday", _T("TEXT_BIRTHDAY"), sortAttribute === "birthday", onSortOptionChanged);
+        const sortContainer = document.getElementById("sortoptions-id");
+        controls.removeAllChildren(sortContainer);
+        controls.createRadiobutton(sortContainer, "sort-firstname-id", "sort-contacts", "firstname", _T("TEXT_FIRSTNAME"), sortAttribute === "firstname", onSortOptionChanged);
+        controls.createRadiobutton(sortContainer, "sort-lastname-id", "sort-contacts", "lastname", _T("TEXT_LASTNAME"), sortAttribute === "lastname", onSortOptionChanged);
+        controls.createRadiobutton(sortContainer, "sort-birthday-id", "sort-contacts", "birthday", _T("TEXT_BIRTHDAY"), sortAttribute === "birthday", onSortOptionChanged);
     }
 
     const renderContactItems = (items) => {
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
-        controls.createButton(parent, _T("BUTTON_CREATE_NEW_CONTACT"), () => onNewContact(), undefined, "button");
+        const buttonContainer = controls.create(parent, "p");
+        controls.createButton(buttonContainer, _T("BUTTON_CREATE_NEW_CONTACT"), () => onNewContact(), undefined, "button");
         if (items.length > 0) {
             const filterDiv = controls.create(parent, "p"); 
             const searchLabel = controls.createLabel(filterDiv, undefined, _T("LABEL_FILTER"));
             searchLabel.htmlFor = "filter-id";
-            filterInput = controls.createInputField(filterDiv, _T("TEXT_FILTER"), undefined, undefined, 20, 32);
+            filterInput = controls.createInputField(filterDiv, _T("TEXT_FILTER"), undefined, undefined, 27, 32);
             filterInput.id = "filter-id";
             filterInput.addEventListener("input", () => onFilterItems(items));
-            if (!utils.is_mobile()) {
-                filterInput.focus();
-            }
-            controls.createDiv(parent).id ="sortoptions-id";
+            controls.create(parent, "p").id ="sortoptions-id";
             renderSortOptions();
             contactItemsDiv = controls.createDiv(parent);
             renderContactsTable(contactItemsDiv, items);

@@ -217,6 +217,10 @@ td a {
     color: red;
 }
 
+.confirmation {
+    color: yellow;
+}
+
 .container-radiobutton {
     display: inline;
     position: relative;
@@ -236,6 +240,7 @@ td a {
     position: absolute;
     opacity: 0;
     cursor: pointer;
+    width: 0;
 }
 
 .checkmark-radiobutton {
@@ -389,8 +394,8 @@ h3 {
         margin: 10pt;
     }
 
-    input {
-        width: 200pt;
+    input, textarea {
+        width: 194pt;
     }
 
     textarea, input, .container-checkbox, .button {
