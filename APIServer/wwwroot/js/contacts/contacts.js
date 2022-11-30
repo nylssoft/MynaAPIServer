@@ -4,7 +4,7 @@ var contacts = (() => {
 
     // state
 
-    let version = "1.0.1";
+    let version = "1.0.2";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -236,7 +236,7 @@ var contacts = (() => {
         });
     };
 
-    const renderContactItemDetails = (item) => {
+    const renderContactItemDetails = (item, setFocus) => {
         currentItem = item;
         const parent = document.getElementById("details-id");
         const content = document.getElementById("content-id");
@@ -261,6 +261,9 @@ var contacts = (() => {
         txt.maxLength = 1000;
         if (!utils.is_mobile()) {
             txt.cols = 39;
+            if (setFocus) {
+                document.getElementById("name-id").focus();
+            }
         }
         else {
             txt.cols = 32;
@@ -407,7 +410,7 @@ var contacts = (() => {
                 contactsData = newdata;
                 sortItems(contactsData.items);
                 renderContactItems(contactsData.items);
-                renderContactItemDetails(newitem);
+                renderContactItemDetails(newitem, true);
             },
             renderError);
     };

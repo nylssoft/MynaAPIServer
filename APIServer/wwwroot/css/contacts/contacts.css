@@ -178,7 +178,8 @@ tbody tr:nth-child(even) {
 }
 
 td a {
-    color: white;
+    color: yellow;
+    text-decoration: none;
 }
 
 .help-button {
@@ -470,7 +471,7 @@ h3 {
     }
 }
 
-@media (max-height: 650px) {
+@media (max-height: 800px) {
     .dropdown-content {
         top: 30pt;
         max-width: 200px;

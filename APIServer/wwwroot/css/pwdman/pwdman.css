@@ -504,7 +504,7 @@ form {
     }
 }
 
-@media (max-height: 650px) {
+@media (max-height: 800px) {
     .dropdown-content {
         top: 30pt;
         max-width: 200px;
