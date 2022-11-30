@@ -20,6 +20,7 @@ See [Example](/view?page=example) how to configure pages and the portal server.
 
 ### Applications
 
+- [Contacts](/contacts)
 - [Diary](/diary)
 - [Documents](/documents)
 - [Notes](/notes)

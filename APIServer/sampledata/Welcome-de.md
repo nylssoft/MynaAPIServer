@@ -20,10 +20,11 @@ Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal 
 
 ### Anwendungen
 
-- [Tagebuch](/diary)
 - [Dokumente](/documents)
-- [Notizen](/notes)
 - [Kennwörter](/password)
+- [Kontakte](/contacts)
+- [Notizen](/notes)
+- [Tagebuch](/diary)
 
 ### Weiteres
 
