@@ -52,6 +52,8 @@ namespace APIServer.PwdMan.Model
 
         public bool LoginEnabled { get; set; }
 
+        public bool HasContacts { get; set; }
+
         public bool HasDiary { get; set; }
 
         public bool HasDocuments { get; set; }

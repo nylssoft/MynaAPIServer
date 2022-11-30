@@ -548,6 +548,7 @@ namespace APIServer.PwdMan
                 Photo = user.Photo,
                 StorageQuota = user.StorageQuota,
                 LoginEnabled = user.LoginEnabled,
+                HasContacts = false,
                 HasDiary = false,
                 HasDocuments = false,
                 HasNotes = false,
@@ -559,13 +560,14 @@ namespace APIServer.PwdMan
             {
                 var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
                 userModel.UsedStorage = sum;
+                userModel.HasContacts = dbContext.DbDocItems.Any(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
                 userModel.HasDiary = dbContext.DbDiaries.Any(item => item.DbUserId == user.Id);
-                userModel.HasDocuments = dbContext.DbDocItems.Any(item => item.OwnerId == user.Id && item.Type != DbDocItemType.Volume);
+                userModel.HasDocuments = dbContext.DbDocItems.Any(item => item.OwnerId == user.Id && (item.Type == DbDocItemType.Item || item.Type == DbDocItemType.Folder));
                 userModel.HasNotes = dbContext.DbNotes.Any(item => item.DbUserId == user.Id);
             }
             return userModel;
         }
-
+        
         public bool UnlockUser(string authenticationToken, string username)
         {
             logger.LogDebug("Unlock username '{username}'...", username);

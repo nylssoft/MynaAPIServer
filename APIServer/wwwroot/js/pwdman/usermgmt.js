@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.4";
+    let version = "2.0.5";
 
     // helper
 
@@ -377,6 +377,11 @@ var usermgmt = (() => {
             controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteDocuments());
             controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteAccountActions());
         }
+        else if (confirm == "deletecontacts") {
+            controls.create(actionsDiv, "span", "confirmation", _T("INFO_REALLY_DELETE_CONTACTS"));
+            controls.createButton(actionsDiv, _T("BUTTON_YES"), () => onDeleteContacts());
+            controls.createButton(actionsDiv, _T("BUTTON_NO"), () => renderDeleteAccountActions());
+        }
         else {
             const div1 = controls.createDiv(actionsDiv);
             controls.createButton(div1, _T("BUTTON_DELETE_ACCOUNT"), () => renderDeleteAccountActions("deleteaccount"));
@@ -395,6 +400,10 @@ var usermgmt = (() => {
             if (currentUser.hasPasswordManagerFile) {
                 const div5 = controls.createDiv(actionsDiv);
                 controls.createButton(div5, _T("BUTTON_DELETE_PASSWORDS"), () => renderDeleteAccountActions("deletepasswordfile"));
+            }
+            if (currentUser.hasContacts) {
+                const div5 = controls.createDiv(actionsDiv);
+                controls.createButton(div5, _T("BUTTON_DELETE_CONTACTS"), () => renderDeleteAccountActions("deletecontacts"));
             }
             const backP = controls.create(actionsDiv, "p", undefined);
             controls.createButton(backP, _T("BUTTON_BACK"), () => renderCurrentUser(), undefined, "button");
@@ -792,6 +801,23 @@ var usermgmt = (() => {
 
     const onChangePassword = () => {
         window.location.href = "/pwdman?changepwd&nexturl=" + encodeURI(window.location.href);
+    };
+
+    const onDeleteContacts = () => {
+        clearErrors();
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/contacts",
+            {
+                method: "DELETE",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token }
+            },
+            () => {
+                currentUser.hasContacts = false;
+                renderCurrentUser();
+            },
+            onRejectError,
+            setWaitCursor
+        );
     };
 
     const onDeleteCurrentUser = () => {

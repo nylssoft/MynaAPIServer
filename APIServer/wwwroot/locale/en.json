@@ -24,6 +24,7 @@
   "BUTTON_DELETE_DATA": "Delete data",
   "BUTTON_DELETE_DIARY": "Delete diary",
   "BUTTON_DELETE_DOCUMENTS": "Delete documents",
+  "BUTTON_DELETE_CONTACTS": "Delete contacts",
   "BUTTON_DELETE_NOTE": "Delete note",
   "BUTTON_DELETE_NOTES": "Delete notes",
   "BUTTON_DELETE_PASSWORDS": "Delete passwords",
@@ -289,6 +290,7 @@
   "INFO_REALLY_DEACTIVATE_TWO_FACTOR": "Do you really want to active the two factor authentication? ",
   "INFO_REALLY_DELETE_ACCOUNT": "Do you really want to delete your account? ",
   "INFO_REALLY_DELETE_CONTACT_1": "Do you really want to delete the contact '{0}'? ",
+  "INFO_REALLY_DELETE_CONTACTS": "Do you really want to delete all your contacts? ",
   "INFO_REALLY_DELETE_DIARY": "Do you really want to delete your diary? ",
   "INFO_REALLY_DELETE_DOCUMENTS": "Do you really want to delete all your documents? ",
   "INFO_REALLY_DELETE_NOTE": "Do you really want to delete the note? ",
@@ -403,6 +405,7 @@
 
   "MENU_BACKGAMMON": "Backgammon",
   "MENU_CHESS": "Chess",
+  "MENU_CONTACTS": "Contacts",
   "MENU_DIARY": "Diary",
   "MENU_DOCUMENTS": "Documents",
   "MENU_HIDE_KEY": "Hide Encryption Key",
