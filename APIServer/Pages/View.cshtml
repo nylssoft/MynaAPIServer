@@ -1,5 +1,8 @@
 ﻿@page
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    var nonce = HttpContext.Items["nonce"];
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -21,6 +24,6 @@
         <script src="~/js/markdown/markdown.min.js" asp-append-version="true"></script>
     </environment>
 </head>
-<body>
+<body markdown-nonce="@nonce">
 </body>
 </html>

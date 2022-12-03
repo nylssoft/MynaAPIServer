@@ -53,7 +53,8 @@ var markdown = (() => {
                 const url = html.substring(sidx + pattern.length + 1, eidx);
                 const prefix = html.substring(0, sidx);
                 const suffix = html.substring(eidx + 1);
-                html = `${prefix}<style>body { background-image: url(${url}) }</style>\n${suffix}`;
+                const nonce = document.body.getAttribute("markdown-nonce");
+                html = `${prefix}<style nonce="${nonce}">body { background-image: url(${url}) }</style>\n${suffix}`;
             }
         }
         while (true) {
