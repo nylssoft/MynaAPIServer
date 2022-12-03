@@ -56,7 +56,9 @@ namespace APIServer
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>();
+                    webBuilder
+                        .ConfigureKestrel(options => options.AddServerHeader = false)
+                        .UseStartup<Startup>();
                 });
 
         private static void MigrateDatabase(IHost host, MigrationMode migrationMode)
