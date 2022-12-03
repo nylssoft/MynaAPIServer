@@ -648,6 +648,44 @@ var utils = (() => {
         return s;
     };
 
+    // --- sanitize window location change
+
+    const sanitize_location = (url) => {
+        let idx = -1;
+        if (url && url.length > 0) {
+            if (url.charAt(0) != "/") {
+                idx = url.indexOf("//");
+                if (idx >= 0) {
+                    url = url.substr(idx + 2);
+                    idx = url.indexOf("/");
+                    if (idx > 0) {
+                        url = url.substr(idx);
+                    }
+                }
+            }
+            if (url.charAt(0) == "/") {
+                let testurl = url;
+                idx = testurl.indexOf("?");
+                if (idx > 0) {
+                    testurl = testurl.substr(0, idx);
+                }
+                const validurls = [
+                    "/backgammon", "/chess", "/contacts", "/diary", "/documents", "/notes", "/password",
+                    "/pwdman", "/skat", "/skatticket", "/slideshow", "/tetris", "/usermgmt", "/view"];
+                if (validurls.includes(testurl)) {
+                    return url;
+                }
+            }
+        }
+        return "/view";
+    };
+
+    const get_window_location = () => sanitize_location(window.location.href);
+
+    const set_window_location = (url) => window.location.href = sanitize_location(url);
+
+    const replace_window_location = (url) => window.location.replace(sanitize_location(url));
+
     // --- public API
 
     return {
@@ -695,7 +733,10 @@ var utils = (() => {
         set_session_storage: set_session_storage,
         set_local_storage: set_local_storage,
         remove_local_storage: remove_local_storage,
-        remove_session_storage: remove_session_storage
+        remove_session_storage: remove_session_storage,
+        get_window_location,
+        set_window_location,
+        replace_window_location
     };
 })();
 

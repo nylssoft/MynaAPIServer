@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.0.3";
+    let version = "2.0.4";
 
     // helper
 
@@ -309,7 +309,7 @@ var skat = (() => {
             let divParent = controls.createDiv(parent);
             model.allUsers.forEach((skatuser) => {
                 if (skatuser.name == currentUser.name) {
-                    window.location.href = `skat?login=${encodeURI(currentUser.name)}`;
+                    utils.set_window_location(`/skat?login=${encodeURI(currentUser.name)}`);
                     return;
                 }
             });
@@ -325,8 +325,8 @@ var skat = (() => {
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
         let divInfoImages = controls.createDiv(parent, "infoimages");
         controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/28.gif", `${_T("TEXT_CLUBS")} ${_T("TEXT_JACK")}`);
@@ -569,8 +569,9 @@ var skat = (() => {
             }
             controls.createButton(parent, _T("BUTTON_LOGIN"), btnLogin_click);
             let p = controls.create(parent, "p", undefined, _T("INFO_REGISTER"));
+            const currentUrl = utils.get_window_location();
             controls.createButton(p, _T("BUTTON_REGISTER"), () => {
-                window.location.href = "/pwdman?register&nexturl=" + encodeURI(window.location.href);
+                utils.set_window_location("/pwdman?register&nexturl=" + encodeURI(currentUrl));
             });
             if (!showReservations) {
                 controls.createButton(parent, _T("BUTTON_RESERVATIONS"), () => btnShowReservations_click());
@@ -736,9 +737,10 @@ var skat = (() => {
                     if (model.skatTable.player) {
                         controls.createButton(parent, _T("BUTTON_OK"), btnConfirmStartGame_click, "ConfirmStartGame");
                     }
+                    const currentUrl = utils.get_window_location();
                     const sep = window.location.search.startsWith("?") ? "&" : "?";
-                    controls.createButton(parent, _T("BUTTON_GAME_HISTORY"), () => window.open(`${window.location.href}${sep}gamehistory`, "_blank"));
-                    controls.createButton(parent, _T("BUTTON_RESULT_TABLE"), () => window.open(`${window.location.href}${sep}result`, "_blank"));
+                    controls.createButton(parent, _T("BUTTON_GAME_HISTORY"), () => window.open(`${currentUrl}${sep}gamehistory`, "_blank"));
+                    controls.createButton(parent, _T("BUTTON_RESULT_TABLE"), () => window.open(`${currentUrl}${sep}result`, "_blank"));
                     active = true;
                 }
                 else if (model.skatTable.player) {
@@ -1334,7 +1336,7 @@ var skat = (() => {
     const login = (name) => {
         let token = utils.get_authentication_token();
         if (!name || name.length == 0 || !token) {
-            window.location.replace("/skat");
+            utils.replace_window_location("/skat");
             return;
         }
         disableTimer();
@@ -1352,11 +1354,11 @@ var skat = (() => {
                 if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
-                window.location.replace("/skat");
+                utils.replace_window_location("/skat");
             },
             (errMsg) => {
                 handleError(errMsg);
-                window.location.replace("/skat");
+                utils.replace_window_location("/skat");
             });
     };
 
@@ -1419,10 +1421,10 @@ var skat = (() => {
                 let p = controls.create(parent, "p");
                 controls.createButton(p, _T("BUTTON_RESET"), () => onReset(p, true));
                 controls.createButton(p, _T("BUTTON_TICKETS"), () => onShowTickets(p));
-                controls.createButton(p, _T("BUTTON_GAME_RESULTS"), () => window.location.href = "/skat?results");
+                controls.createButton(p, _T("BUTTON_GAME_RESULTS"), () => utils.set_window_location("/skat?results"));
             }
             else {
-                window.location.replace("/skat");
+                utils.replace_window_location("/skat");
             }
             return;
         }
@@ -1551,9 +1553,8 @@ var skat = (() => {
                     }
                     if (loginModel) {
                         if (loginModel.isAuthenticationRequired) {
-                            let nexturl = `/skat?login=${name}`;
-                            window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
-                                + "&username=" + encodeURI(name);
+                            const nexturl = `/skat?login=${name}`;
+                            utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl) + "&username=" + encodeURI(name));
                             return;
                         }
                         else if (loginModel.ticket && loginModel.ticket.length > 0) {
@@ -1866,7 +1867,7 @@ var skat = (() => {
             controls.removeAllChildren(parent);
             controls.create(parent, "p", "confirmation", _T("INFO_REALLY_DELETE_TABLE"));
             controls.createButton(parent, _T("BUTTON_YES"), () => onDeleteSkatResult(false));
-            controls.createButton(parent, _T("BUTTON_NO"), () => window.location.replace("/skat?results"));
+            controls.createButton(parent, _T("BUTTON_NO"), () => utils.replace_window_location("/skat?results"));
             return;
         }
         let token = utils.get_authentication_token();
@@ -1878,7 +1879,7 @@ var skat = (() => {
             },
             () => {
                 if (utils.is_debug()) utils.debug("SKAT RESULT DELETED.");
-                window.location.replace("/skat?results");
+                utils.replace_window_location("/skat?results");
             },
             handleError);
     };
@@ -1888,14 +1889,14 @@ var skat = (() => {
             controls.removeAllChildren(parent);
             controls.create(parent, "p", "confirmation", _T("INFO_REALLY_RESET"));
             controls.createButton(parent, _T("BUTTON_YES"), () => onReset(parent, false));
-            controls.createButton(parent, _T("BUTTON_NO"), () => window.location.replace("/skat?admin"));
+            controls.createButton(parent, _T("BUTTON_NO"), () => utils.replace_window_location("/skat?admin"));
             return;
         }
         let token = utils.get_authentication_token();
         utils.fetch_api_call("api/skat/reset", { headers: { "token": token } },
             () => {
                 if (utils.is_debug()) utils.debug("SKAT RESET.");
-                window.location.replace("/skat?admin");
+                utils.replace_window_location("/skat?admin");
             },
             handleError);
     };
@@ -1913,7 +1914,7 @@ var skat = (() => {
                 tickets.forEach(ticket => {
                     controls.create(parent, "p", undefined, ticket);
                 });
-                controls.createButton(parent, "OK", () => window.location.replace("/skat?admin"));
+                controls.createButton(parent, "OK", () => utils.replace_window_location("/skat?admin"));
             },
             handleError);
     };

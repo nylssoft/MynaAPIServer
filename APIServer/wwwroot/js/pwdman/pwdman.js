@@ -34,7 +34,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.2";
+    let version = "2.0.3";
 
     // helper
 
@@ -142,14 +142,15 @@ var pwdman = (() => {
             return;
         }
         lastErrorMessage = "";
-        let token = utils.get_authentication_token();
+        const currentUrl = utils.get_window_location();
+        const token = utils.get_authentication_token();
         utils.fetch_api_call("api/pwdman/userpwd",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                 body: JSON.stringify({ "oldpassword": oldPasswordPwd.value, "newpassword": newPasswordPwd.value })
             },
-            () => window.location.replace(window.location.href + "&ok"),
+            () => utils.replace_window_location(currentUrl + "&ok"),
             (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
         )
@@ -227,10 +228,10 @@ var pwdman = (() => {
     const cancel = () => {
         lastErrorMessage = "";
         if (nexturl && nexturl.length > 0) {
-            if (nexturl == "/diary" || nexturl == "/notes" || nexturl == "/documents" || nexturl == "/password") {
+            if (nexturl == "/diary" || nexturl == "/notes" || nexturl == "/documents" || nexturl == "/password" || nexturl == "/contacts") {
                 nexturl = "/view";
             }
-            window.location.replace(nexturl);
+            utils.replace_window_location(nexturl);
         }
         else {
             actionRequestRegistration = false;
@@ -262,7 +263,7 @@ var pwdman = (() => {
                 if (nexturl && nexturl.length > 0) {
                     url += `&nexturl=${encodeURI(nexturl)}`
                 }
-                window.location.href = url;
+                utils.set_window_location(url);
             },
             (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
@@ -407,10 +408,11 @@ var pwdman = (() => {
             controls.createButton(buttonDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         }
         renderError(parent);
+        const currentUrl = utils.get_window_location();
         controls.createA(controls.create(parent, "p"), "resetpwd-link", "/pwdman/resetpwd", _T("INFO_PWD_LOST"),
-            () => window.location.href = `/pwdman?resetpwd&nexturl=${encodeURI(window.location.href)}`);
+            () => utils.set_window_location(`/pwdman?resetpwd&nexturl=${encodeURI(currentUrl)}`));
         let p = controls.create(parent, "p", undefined, _T("INFO_REGISTER"));
-        controls.createButton(p, _T("BUTTON_REGISTER"), () => window.location.href = `/pwdman?register&nexturl=${encodeURI(window.location.href)}`);
+        controls.createButton(p, _T("BUTTON_REGISTER"), () => utils.set_window_location(`/pwdman?register&nexturl=${encodeURI(currentUrl)}`));
         renderCopyright(parent);
 };
 
@@ -665,10 +667,10 @@ var pwdman = (() => {
             renderChangePwd(document.body);
         }
         else if (nexturl && nexturl.length > 0) {
-            window.location.replace(nexturl);
+            utils.replace_window_location(nexturl);
         }
         else {
-            window.location.replace("/view");
+            utils.replace_window_location("/view");
         }
     };
 

@@ -58,14 +58,14 @@ var slideshow = (() => {
         if (!shuffle) {
             imgShuffle.classList.add("greyed-out");
         }
-        imgShuffle.addEventListener("click", () => window.location.replace(`/slideshow?shuffle=${!shuffle}`));
+        imgShuffle.addEventListener("click", () => utils.replace_window_location(`/slideshow?shuffle=${!shuffle}`));
         imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png", _T("BUTTON_PREV_PICTURE"));
         imgLeftArrow.addEventListener("click", onPictureLeft);
         imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png", _T("BUTTON_NEXT_PICTURE"));
         imgRightArrow.addEventListener("click", onPictureRight);
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
     };
 

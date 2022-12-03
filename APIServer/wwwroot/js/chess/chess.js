@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.3";
+    let version = "2.0.4";
 
     // helper
 
@@ -615,7 +615,7 @@ var chess = (() => {
     const login = (name) => {
         const token = utils.get_authentication_token();
         if (!name || name.length == 0 || !token) {
-            window.location.replace("/chess");
+            utils.replace_window_location("/chess");
             return;
         }
         disableTimer();
@@ -634,11 +634,11 @@ var chess = (() => {
                 if (loginModel && loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
-                window.location.replace("/chess");
+                utils.replace_window_location("/chess");
             },
             (errMsg) => {
                 handleError(errMsg);
-                window.location.replace("/chess");
+                utils.replace_window_location("/chess");
             });
     };
 
@@ -669,7 +669,7 @@ var chess = (() => {
             let divParent = controls.createDiv(parent);
             model.allUsers.forEach((chessuser) => {
                 if (chessuser.name == currentUser.name) {
-                    window.location.href = `chess?login=${encodeURI(currentUser.name)}`;
+                    utils.set_window_location(`/chess?login=${encodeURI(currentUser.name)}`);
                     return;
                 }
             });
@@ -685,8 +685,8 @@ var chess = (() => {
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
         // draw sample chessboard
         let sampleBoard = controls.create(parent, "canvas", "playground");
@@ -1106,9 +1106,8 @@ var chess = (() => {
                     }
                     setState(loginModel.state);
                     if (loginModel.isAuthenticationRequired) {
-                        let nexturl = `/chess?login=${name}`;
-                        window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
-                            + "&username=" + encodeURI(name);
+                        const nexturl = `/chess?login=${name}`;
+                        utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl) + "&username=" + encodeURI(name));
                         return;
                     }
                     else if (loginModel.ticket && loginModel.ticket.length > 0) {

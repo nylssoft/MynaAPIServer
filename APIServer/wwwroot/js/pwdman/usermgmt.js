@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.5";
+    let version = "2.0.6";
 
     // helper
 
@@ -788,10 +788,10 @@ var usermgmt = (() => {
 
     const onOK = () => {
         if (nexturl) {
-            window.location.href = nexturl;
+            utils.set_window_location(nexturl);
         }
         else {
-            window.location.href = "/view";
+            utils.set_window_location("/view");
         }
     };
 
@@ -800,7 +800,8 @@ var usermgmt = (() => {
     }
 
     const onChangePassword = () => {
-        window.location.href = "/pwdman?changepwd&nexturl=" + encodeURI(window.location.href);
+        const currentUrl = utils.get_window_location();
+        utils.set_window_location("/pwdman?changepwd&nexturl=" + encodeURI(currentUrl));
     };
 
     const onDeleteContacts = () => {

@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.0.3";
+    let version = "2.0.4";
 
     let dirty;
 
@@ -748,7 +748,7 @@ var backgammon = (() => {
     const login = (name) => {
         const token = utils.get_authentication_token();
         if (!name || name.length == 0 || !token) {
-            window.location.replace("/backgammon");
+            utils.replace_window_location("/backgammon");
             return;
         }
         disableTimer();
@@ -767,11 +767,11 @@ var backgammon = (() => {
                 if (loginModel.ticket && loginModel.ticket.length > 0) {
                     setTicket(loginModel.ticket);
                 }
-                window.location.replace("/backgammon");
+                utils.replace_window_location("/backgammon");
             },
             (errMsg) => {
                 handleError(errMsg);
-                window.location.replace("/backgammon");
+                utils.replace_window_location("/backgammon");
             });
     };
 
@@ -866,7 +866,7 @@ var backgammon = (() => {
             let divParent = controls.createDiv(parent);
             model.allUsers.forEach((backgammonuser) => {
                 if (backgammonuser.name == currentUser.name) {
-                    window.location.href = `backgammon?login=${encodeURI(currentUser.name)}`;
+                    utils.set_window_location(`/backgammon?login=${encodeURI(currentUser.name)}`);
                     return;
                 }
             });
@@ -882,8 +882,8 @@ var backgammon = (() => {
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
         // draw sample board
         setPointWidth(utils.is_mobile() ? 330 : 400);
@@ -1304,9 +1304,8 @@ var backgammon = (() => {
                     }
                     setState(loginModel.state);
                     if (loginModel.isAuthenticationRequired) {
-                        let nexturl = `/backgammon?login=${name}`;
-                        window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl)
-                            + "&username=" + encodeURI(name);
+                        const nexturl = `/backgammon?login=${name}`;
+                        utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl) + "&username=" + encodeURI(name));
                         return;
                     }
                     else if (loginModel.ticket && loginModel.ticket.length > 0) {

@@ -4,7 +4,7 @@ var contacts = (() => {
 
     // state
 
-    let version = "1.0.2";
+    let version = "1.0.3";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -135,7 +135,7 @@ var contacts = (() => {
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
             const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
     };
 
@@ -355,7 +355,7 @@ var contacts = (() => {
         const token = utils.get_authentication_token();
         if (!token) {
             const nexturl = "/contacts";
-            window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl);
+            utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl));
             return;
         }
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },

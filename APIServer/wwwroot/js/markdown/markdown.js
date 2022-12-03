@@ -14,8 +14,8 @@ var markdown = (() => {
         }
         utils.create_menu(parent);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
         let div = controls.createDiv(parent);
         let opt = undefined;

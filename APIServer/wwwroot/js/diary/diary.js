@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "2.0.2";
+    let version = "2.0.3";
 
     let changeDate;
     let inSaveDiary;
@@ -82,7 +82,7 @@ var diary = (() => {
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
     };
 
@@ -242,8 +242,8 @@ var diary = (() => {
         controls.removeAllChildren(parent);
         let token = utils.get_authentication_token();
         if (!token) {
-            let nexturl = "/diary";
-            window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl);
+            const nexturl = "/diary";
+            utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl));
             return;
         }
         if (!currentUser) {

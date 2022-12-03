@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "2.0.3";
+    let version = "2.0.4";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -275,8 +275,8 @@ var documents = (() => {
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => window.location.href = "/usermgmt");
+            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
     };
 
@@ -590,7 +590,7 @@ var documents = (() => {
         const token = utils.get_authentication_token();
         if (!token) {
             const nexturl = "/documents";
-            window.location.href = "/pwdman?nexturl=" + encodeURI(nexturl);
+            utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl));
             return;
         }
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
