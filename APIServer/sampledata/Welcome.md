@@ -1,3 +1,5 @@
+$background(/images/sample/heimgartengrat-43.jpg)
+
 # Start page
 
 ## Welcome
