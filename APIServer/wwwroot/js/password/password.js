@@ -4,7 +4,7 @@ var password = (() => {
 
     // state
 
-    let version = "2.0.4";
+    let version = "2.0.5";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -211,11 +211,9 @@ var password = (() => {
         renderPasswordItems([]);
         if (!currentUser.hasPasswordManagerFile) {
             renderError("ERROR_NO_PASSWORD_FILE_UPLOADED");
-            showEncryptKey(true);
         }
         else if (!hasEncryptKey()) {
             renderError("ERROR_MISSING_KEY_DECODE_PASSWORD_FILE");
-            showEncryptKey(true);
         }
         else {
             const token = utils.get_authentication_token();

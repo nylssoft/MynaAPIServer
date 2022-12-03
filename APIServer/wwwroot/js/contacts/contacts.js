@@ -4,7 +4,7 @@ var contacts = (() => {
 
     // state
 
-    let version = "1.0.3";
+    let version = "1.0.4";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -104,7 +104,10 @@ var contacts = (() => {
                     resolve(JSON.stringify({ "nextId": 1, "version": 1, "items": [] }));
                 }
                 else {
-                    decodeText(data, resolve, reject);
+                    decodeText(data, resolve, (errMsg) => {
+                        console.log(errMsg);
+                        reject(_T("ERROR_WRONG_KEY_DECODE_CONTACTS"))
+                    });
                 }
             },
             reject);
@@ -326,7 +329,6 @@ var contacts = (() => {
         renderContactItems([]);
         if (!hasEncryptKey()) {
             renderError("ERROR_MISSING_KEY_DECODE_CONTACTS");
-            showEncryptKey(true);
         }
         else if (contactsData == undefined) {
             onLoadContacts();

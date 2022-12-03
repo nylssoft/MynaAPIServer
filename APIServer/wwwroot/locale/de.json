@@ -169,6 +169,7 @@
   "ERROR_USERNAME_ALREADY_USED": "Der Benutzername wird schon verwendet.",
   "ERROR_USERMANAGER_REQUIRED": "Es muss mindestens ein Benutzer mit der Rolle 'Administrator' vorhanden sein.",
   "ERROR_USER_NOT_ALLOWED": "Der Benutzer ist nicht zugelassen.",
+  "ERROR_WRONG_KEY_DECODE_CONTACTS": "Der Schlüssel zum Dekodieren der Kontakte ist nicht richtig.",
   "ERROR_WRONG_KEY_DECODE_PASSWORD_FILE": "Der Schlüssel zum Dekodieren der Kennwortdatei ist nicht richtig.",
   "ERROR_1_2": "Fehler für {0}: {1}",
 
