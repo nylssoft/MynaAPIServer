@@ -25,8 +25,5 @@ Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal 
 [![Kontakte](/images/buttons/user-new-3-48.png "Kontakte")](/contacts)
 [![Notizen](/images/buttons/notepad-48.png "Notizen")](/notes)
 [![Tagebuch](/images/buttons/gnome-blog-48.png "Tagebuch")](/diary)
-
-### Weiteres
-
-- Bildergalerie [chronologisch](/slideshow?shuffle=false), [zufällig](/slideshow?shuffle=true)
+[![Bildergalerie](/images/buttons/internet-mail-7-48.png "Bildergalerie")](/slideshow?shuffle=false)
 

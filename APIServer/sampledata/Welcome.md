@@ -27,7 +27,4 @@ See [Example](/view?page=example) how to configure pages and the portal server.
 [![Documents](/images/buttons/gftp-48.png "Documents")](/documents)
 [![Notes](/images/buttons/notepad-48.png "Notes")](/notes)
 [![Passwords](/images/buttons/document-decrypt-3-48.png "Passwords")](/password)
-
-### Others
-
-- Slideshow [chronological](/slideshow?shuffle=false), [random](/slideshow?shuffle=true)
+[![Slide show](/images/buttons/internet-mail-7-48.png "Slide Show")](/slideshow?shuffle=false)
