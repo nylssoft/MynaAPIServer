@@ -13,18 +13,18 @@ Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal 
 
 ### Spiele
 
-- [Backgammon](/backgammon)
-- [Schach](/chess)
-- [Skat](/skat)
-- [Tetris](/tetris)
+[![Backgammon](/images/buttons/gnubg-48.png "Backgammon")](/backgammon)
+[![Schach](/images/buttons/gnome-chess-48.png "Schach")](/chess)
+[![Skat](/images/buttons/games-card_game-48.png "Skat")](/skat)
+[![Tetris](/images/buttons/gpe-tetris-48.png "Tetris")](/tetris)
 
 ### Anwendungen
 
-- [Dokumente](/documents)
-- [Kennwörter](/password)
-- [Kontakte](/contacts)
-- [Notizen](/notes)
-- [Tagebuch](/diary)
+[![Dokumente](/images/buttons/gftp-48.png "Dokumente")](/documents)
+[![Kennwörter](/images/buttons/document-decrypt-3-48.png "Kennw&ouml;rter")](/password)
+[![Kontakte](/images/buttons/user-new-3-48.png "Kontakte")](/contacts)
+[![Notizen](/images/buttons/notepad-48.png "Notizen")](/notes)
+[![Tagebuch](/images/buttons/gnome-blog-48.png "Tagebuch")](/diary)
 
 ### Weiteres
 
