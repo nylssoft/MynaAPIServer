@@ -20,10 +20,11 @@ Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal 
 
 ### Anwendungen
 
+[![Bildergalerie](/images/buttons/internet-mail-7-48.png "Bildergalerie")](/slideshow?shuffle=false)
 [![Dokumente](/images/buttons/gftp-48.png "Dokumente")](/documents)
 [![Kennwörter](/images/buttons/document-decrypt-3-48.png "Kennw&ouml;rter")](/password)
 [![Kontakte](/images/buttons/user-new-3-48.png "Kontakte")](/contacts)
 [![Notizen](/images/buttons/notepad-48.png "Notizen")](/notes)
 [![Tagebuch](/images/buttons/gnome-blog-48.png "Tagebuch")](/diary)
-[![Bildergalerie](/images/buttons/internet-mail-7-48.png "Bildergalerie")](/slideshow?shuffle=false)
+
 
