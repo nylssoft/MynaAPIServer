@@ -20,7 +20,6 @@ using APIServer.Document.Model;
 using APIServer.PasswordGenerator;
 using APIServer.PwdMan.Model;
 using Markdig;
-using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -1240,14 +1239,14 @@ namespace APIServer.PwdMan
             }
             if (int.TryParse(id, out int documentId))
             {
-                return GetMarkdownByDocumentId(authenticationToken, documentId);
+                return GetMarkdownByDocumentId(authenticationToken, documentId, locale);
             }
             var contentConfig = GetContentById(id, locale, opt.Markdown);
             if (contentConfig != null)
             {
                 if (int.TryParse(contentConfig.Content, out int docId))
                 {
-                    return GetMarkdownByDocumentId(authenticationToken, docId);
+                    return GetMarkdownByDocumentId(authenticationToken, docId, locale);
                 }
                 if (contentConfig.Content != null && File.Exists(contentConfig.Content))
                 {
@@ -1270,7 +1269,7 @@ namespace APIServer.PwdMan
                     }
                 }
             }
-            return "<p>Zugriff verweigert.</p>";
+            return $"<p>{GetAccessDeniedMessage(locale)}.</p>";
         }
 
         // --- data deletion
@@ -1417,7 +1416,7 @@ namespace APIServer.PwdMan
 
         // --- private
 
-        private string GetMarkdownByDocumentId(string authenticationToken, int docItemId)
+        private string GetMarkdownByDocumentId(string authenticationToken, int docItemId, string locale)
         {
             var dbContext = GetDbContext();
             var docItem = dbContext.DbDocItems.SingleOrDefault(item => item.Type == DbDocItemType.Item && item.Id == docItemId);
@@ -1448,7 +1447,12 @@ namespace APIServer.PwdMan
                     }
                 }
             }
-            return "<p>Zugriff verweigert.</p>";
+            return $"<p>{GetAccessDeniedMessage(locale)}.</p>";
+        }
+
+        private string GetAccessDeniedMessage(string locale)
+        {
+            return locale != null && locale.StartsWith("de-") ? "Zugriff verweigert" : "Access denied";
         }
 
         private DbUser GetDbUserByName(string username)
@@ -1471,33 +1475,6 @@ namespace APIServer.PwdMan
                 return dbContext.DbUsers.SingleOrDefault(u => u.Email == username);
             }
             return null;
-        }
-
-        private T GetSetting<T>(string key)
-        {
-            var dbContext = GetDbContext();
-            var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == key);
-            if (setting != null)
-            {
-                return JsonSerializer.Deserialize<T>(setting.Value);
-            }
-            return default;
-        }
-
-        private void SetSetting<T>(string key, T value)
-        {
-            var dbContext = GetDbContext();
-            var setting = dbContext.DbSettings.SingleOrDefault((s) => s.Key == key);
-            var json = JsonSerializer.Serialize(value);
-            if (setting == null)
-            {
-                setting = new DbSetting { Key = key, Value = json };
-                dbContext.DbSettings.Add(setting);
-            }
-            else
-            {
-                setting.Value = json;
-            }
         }
 
         private bool ValidateToken(string token, PwdManOptions opt, bool useLongLived = false)
@@ -1778,27 +1755,6 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        private static byte[] EncodeSecret(byte[] salt, string password, byte[] secret)
-        {
-            var iv = new byte[12];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(iv);
-            }
-            var key = KeyDerivation.Pbkdf2(password, salt, KeyDerivationPrf.HMACSHA256, 1000, 256 / 8);
-            var encoded = new byte[secret.Length];
-            var tag = new byte[16];
-            using (var cipher = new AesGcm(key))
-            {
-                cipher.Encrypt(iv, secret, encoded, tag);
-            }
-            var ret = new byte[iv.Length + encoded.Length + tag.Length];
-            iv.CopyTo(ret, 0);
-            encoded.CopyTo(ret, iv.Length);
-            tag.CopyTo(ret, iv.Length + encoded.Length);
-            return ret;
-        }
-
         private static string GenerateToken(string username, PwdManOptions opt, bool requires2FA)
         {
             return GenerateTokenPerType(false, username, opt, requires2FA);
@@ -1886,16 +1842,6 @@ namespace APIServer.PwdMan
                 return false;
             }
             return true;
-        }
-
-        private static string ConvertToHexString(byte[] ba)
-        {
-            var hex = new StringBuilder(ba.Length * 2);
-            foreach (byte b in ba)
-            {
-                hex.AppendFormat("{0:x2}", b);
-            }
-            return hex.ToString();
         }
     }
 }
