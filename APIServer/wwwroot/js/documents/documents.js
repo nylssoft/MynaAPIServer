@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "2.0.4";
+    let version = "2.0.5";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -739,7 +739,10 @@ var documents = (() => {
                                 URL.revokeObjectURL(obj_url);
                                 setWaitCursor(false);
                             })
-                            .catch(err => renderError(err.message));
+                            .catch(err => {
+                                console.log(err.message);
+                                renderError(_T("ERROR_WRONG_KEY_DECODE_DOCUMENTS"));
+                            });
                     });
                     return;
                 }

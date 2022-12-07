@@ -170,6 +170,7 @@
   "ERROR_USERMANAGER_REQUIRED": "At least one user has to have the administrator role.",
   "ERROR_USER_NOT_ALLOWED": "User is not allowed.",
   "ERROR_WRONG_KEY_DECODE_CONTACTS": "The encryption key used to decode the contacts is invalid.",
+  "ERROR_WRONG_KEY_DECODE_DOCUMENTS": "The encryption key used to decode the documents is invalid.",
   "ERROR_WRONG_KEY_DECODE_PASSWORD_FILE": "The encryption key used to decode the password file is invalid.",
   "ERROR_1_2": "Error for {0}: {1}",
 
