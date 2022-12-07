@@ -692,7 +692,8 @@ namespace APIServer.PwdMan
             var dbContext = GetDbContext();
             if (username != user.Name)
             {
-                if (dbContext.DbUsers.Any((user) => user.Name == username))
+                var existingUser = GetDbUserByName(username);
+                if (existingUser != null && user.Id != existingUser.Id)
                 {
                     throw new UsernameAlreadyUsedException();
                 }
@@ -1450,7 +1451,7 @@ namespace APIServer.PwdMan
             return $"<p>{GetAccessDeniedMessage(locale)}.</p>";
         }
 
-        private string GetAccessDeniedMessage(string locale)
+        private static string GetAccessDeniedMessage(string locale)
         {
             return locale != null && locale.StartsWith("de-") ? "Zugriff verweigert" : "Access denied";
         }
