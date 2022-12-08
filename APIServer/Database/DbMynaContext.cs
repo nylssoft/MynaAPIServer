@@ -70,7 +70,7 @@ namespace APIServer.Database
             _ = builder.Entity<DbRegistration>()
                 .HasIndex(r => r.IpAddress);
             _ = builder.Entity<DbUser>()
-                .HasIndex(u => u.Name)
+                .HasIndex(u => u.LoginName)
                 .IsUnique();
             _ = builder.Entity<DbUser>()
                 .HasIndex(u => u.Email)

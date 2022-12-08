@@ -61,5 +61,7 @@ namespace APIServer.Database
         public long StorageQuota { get; set; }
 
         public bool LoginEnabled { get; set; }
+
+        public string LoginName { get; set; }
     }
 }

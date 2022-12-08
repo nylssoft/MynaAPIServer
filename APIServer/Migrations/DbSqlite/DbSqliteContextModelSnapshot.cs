@@ -425,6 +425,9 @@ namespace APIServer.Migrations.DbSqlite
                     b.Property<bool>("LoginEnabled")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("LoginName")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("LoginTries")
                         .HasColumnType("INTEGER");
 
@@ -466,7 +469,7 @@ namespace APIServer.Migrations.DbSqlite
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("Name")
+                    b.HasIndex("LoginName")
                         .IsUnique();
 
                     b.HasIndex("PasswordFileId");

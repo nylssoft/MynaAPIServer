@@ -322,6 +322,7 @@ namespace APIServer.PwdMan
                 throw new InvalidRegistrationCodeException();
             }
             var email = registrationProfile.Email.ToLowerInvariant();
+            var loginName = registrationProfile.Username.ToLowerInvariant();
             var opt = GetOptions();
             // first user can register without token
             var dbContext = GetDbContext();
@@ -354,6 +355,7 @@ namespace APIServer.PwdMan
             var user = new DbUser
             {
                 Name = registrationProfile.Username,
+                LoginName = loginName,
                 Salt = pwdgen.Generate(),
                 PasswordHash = hash,
                 Email = email,
@@ -483,7 +485,8 @@ namespace APIServer.PwdMan
                 throw new InvalidTokenException();
             }
             var dbContext = GetDbContext();
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+            var loginName = claim.Value.ToLowerInvariant();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
             if (user == null)
             {
                 logger.LogDebug("Invalid username in token.");
@@ -576,7 +579,8 @@ namespace APIServer.PwdMan
                 throw new AccessDeniedPermissionException();
             }
             var dbContext = GetDbContext();
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
+            var loginName = username.ToLowerInvariant();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
             if (user == null)
             {
                 throw new InvalidUsernameException();
@@ -698,6 +702,7 @@ namespace APIServer.PwdMan
                     throw new UsernameAlreadyUsedException();
                 }
                 user.Name = username;
+                user.LoginName = username.ToLowerInvariant();
                 dbContext.SaveChanges();
                 return true;
             }
@@ -737,9 +742,10 @@ namespace APIServer.PwdMan
             }
             var changed = false;
             var dbContext = GetDbContext();
+            var loginName = model.Username.ToLowerInvariant();
             var user = dbContext.DbUsers
                 .Include((u) => u.Roles)
-                .SingleOrDefault((u) => u.Name == model.Username);
+                .SingleOrDefault((u) => u.LoginName == loginName);
             if (user == null)
             {
                 throw new InvalidUsernameException();
@@ -990,7 +996,8 @@ namespace APIServer.PwdMan
                 throw new InvalidTokenException();
             }
             var dbContext = GetDbContext();
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+            var loginName = claim.Value.ToLowerInvariant();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
             if (user == null || string.IsNullOrEmpty(user.TOTPKey))
             {
                 logger.LogDebug("User from token not found or TOTP token not configured.");
@@ -1109,7 +1116,8 @@ namespace APIServer.PwdMan
                 if (claim != null)
                 {
                     var dbContext = GetDbContext();
-                    var user = dbContext.DbUsers.SingleOrDefault(u => u.Name == claim.Value);
+                    var loginName = claim.Value.ToLowerInvariant();
+                    var user = dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
                     if (user != null)
                     {
                         user.LogoutUtc = DateTime.UtcNow;
@@ -1349,13 +1357,14 @@ namespace APIServer.PwdMan
             logger.LogDebug("Delete username '{username}'...", username);
             var user = GetUserFromToken(authenticationToken);
             var dbContext = GetDbContext();
-            if (user.Name != username)
+            var loginName = username.ToLowerInvariant();
+            if (user.LoginName != loginName)
             {
                 if (!HasRole(user, "usermanager"))
                 {
                     throw new AccessDeniedPermissionException();
                 }
-                user = dbContext.DbUsers.SingleOrDefault(u => u.Name == username);
+                user = dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
                 if (user == null)
                 {
                     throw new InvalidUsernameException();
@@ -1458,24 +1467,14 @@ namespace APIServer.PwdMan
 
         private DbUser GetDbUserByName(string username)
         {
-            username = username.ToLowerInvariant();
-            // EF Core 5.0 supports Collate function
-            // var user = dbContext.DbUsers.SingleOrDefault(u => EF.Functions.Collate(u.Name, "SQL_Latin1_General_CP1_CI_AS") == username);
+            var loginName = username.ToLowerInvariant();
             var dbContext = GetDbContext();
-            var users = dbContext.DbUsers.ToList();
-            foreach (var user in users)
+            if (loginName.Contains("@"))
             {
-                if (user.Name.Equals(username, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return user;
-                }
+                // login by email address
+                return dbContext.DbUsers.SingleOrDefault(u => u.Email == loginName);
             }
-            // try login by email address
-            if (username.Contains("@"))
-            {
-                return dbContext.DbUsers.SingleOrDefault(u => u.Email == username);
-            }
-            return null;
+            return dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
         }
 
         private bool ValidateToken(string token, PwdManOptions opt, bool useLongLived = false)
