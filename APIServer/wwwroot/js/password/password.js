@@ -4,7 +4,7 @@ var password = (() => {
 
     // state
 
-    let version = "2.0.5";
+    let version = "2.0.6";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -73,10 +73,10 @@ var password = (() => {
         }
     };
 
-    const renderEncryptKey = (parent) => {
+    const renderEncryptKeyAsync = async (parent) => {
         utils.create_menu(parent);
         renderHeader(parent);
-        let encryptKey = utils.get_encryption_key(currentUser);
+        const encryptKey = await utils.get_encryption_key_async(currentUser);
         let div = controls.createDiv(parent, "hide");
         div.id = "div-encryptkey-id";
         let p = controls.create(div, "p");
@@ -85,16 +85,16 @@ var password = (() => {
         p = controls.create(div, "p");
         let elem = controls.createLabel(p, undefined, _T("LABEL_KEY"));
         elem.htmlFor = "input-encryptkey-id";
-        elem = controls.createInputField(p, _T("TEXT_KEY"), () => onChangeEncryptKey(), undefined, 32, 32);
+        elem = controls.createInputField(p, _T("TEXT_KEY"), () => onChangeEncryptKeyAsync(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
-        elem.addEventListener("change", () => onChangeEncryptKey());
+        elem.addEventListener("change", () => onChangeEncryptKeyAsync());
         if (encryptKey) {
             elem.value = encryptKey;
         }
         p = controls.create(div, "p");
         let show = encryptKey == undefined;
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
-            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKey());
+            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKeyAsync());
         utils.show_encrypt_key(currentUser, show);
         utils.set_menu_items(currentUser);
     };
@@ -234,8 +234,8 @@ var password = (() => {
         }
     };
 
-    const renderPage = (parent) => {
-        renderEncryptKey(parent);
+    const renderPageAsync = async (parent) => {
+        await renderEncryptKeyAsync(parent);
         controls.createDiv(parent, "details").id = "details-id";
         controls.createDiv(parent, "content").id = "content-id";
         controls.createDiv(parent, "error").id = "error-id";
@@ -256,7 +256,7 @@ var password = (() => {
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
-                renderPage(parent);
+                renderPageAsync(parent);
             },
             (errMsg) => console.error(errMsg));
     };
@@ -302,16 +302,16 @@ var password = (() => {
         }
     };
     
-    const onChangeEncryptKey = () => {
+    const onChangeEncryptKeyAsync = async () => {
         let elem = document.getElementById("checkbox-save-encryptkey-id");
         let saveInBrowser = elem.checked;
         elem = document.getElementById("input-encryptkey-id");
         let val = elem.value.trim();
         if (val.length == 0 || !saveInBrowser) {
-            utils.set_encryption_key(currentUser);
+            await utils.set_encryption_key_async(currentUser);
         }
         else {
-            utils.set_encryption_key(currentUser, val);
+            await utils.set_encryption_key_async(currentUser, val);
         }
         cryptoKey = undefined;
         renderPasswordFile();

@@ -177,9 +177,9 @@ var utils = (() => {
     };
 
     const logout = (resolve, reject) => {
-        const token = get_authentication_token();
-        remove_session_storage("pwdman-state");
+        window.sessionStorage.clear();
         remove_local_storage("pwdman-lltoken");
+        const token = get_authentication_token();
         if (token) {
             fetch_api_call("api/pwdman/logout", { headers: { "token": token } },
                 (done) => console.log(`User logout: ${done}.`),
@@ -308,17 +308,17 @@ var utils = (() => {
     }
 
     const create_crypto_key = (key, salt, resolve, reject) => {
-        let encoded = new TextEncoder().encode(key);
-        crypto.subtle.importKey("raw", encoded, "PBKDF2", false, ["deriveKey"])
-            .then(key => {
-                let algo = {
+        const encoded = new TextEncoder().encode(key);
+        window.crypto.subtle.importKey("raw", encoded, "PBKDF2", false, ["deriveKey"])
+            .then(pwdCryptoKey => {
+                const algo = {
                     "name": "PBKDF2",
                     "hash": "SHA-256",
                     "salt": new TextEncoder().encode(salt),
                     "iterations": 1000
                 };
-                crypto.subtle.deriveKey(algo, key, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])
-                    .then(c => resolve(c))
+                window.crypto.subtle.deriveKey(algo, pwdCryptoKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])
+                    .then(cryptoKey => resolve(cryptoKey))
                     .catch(err => reject(err.message));
             })
             .catch(err => reject(err.message));
@@ -331,21 +331,21 @@ var utils = (() => {
         let cipherbuffer = new ArrayBuffer(data.length);
         let cipherarr = new Uint8Array(cipherbuffer);
         cipherarr.set(data);
-        crypto.subtle.decrypt(options, cryptoKey, cipherbuffer)
+        window.crypto.subtle.decrypt(options, cryptoKey, cipherbuffer)
             .then(decrypted => resolve(new TextDecoder().decode(decrypted)))
             .catch(err => reject(err.message));
     };
 
     const encode_message = (cryptoKey, msg, resolve, reject) => {
         let arr = new TextEncoder().encode(msg);
-        let iv = crypto.getRandomValues(new Uint8Array(12));
+        let iv = window.crypto.getRandomValues(new Uint8Array(12));
         let options = { name: "AES-GCM", iv: iv };
         window.crypto.subtle.encrypt(options, cryptoKey, arr)
             .then(cipherText => resolve(buf2hex(iv) + buf2hex(cipherText)))
             .catch(err => reject(err.message));
     };
 
-    const migrate_encryption_key = (user, storageKey) => {
+    const migrate_diary_encryption_key = (user, storageKey) => {
         const encryptKey = get_local_storage(`diary-${user.email}-encryptkey`);
         if (encryptKey && encryptKey.length > 0) {
             set_local_storage(storageKey, encryptKey);
@@ -358,35 +358,6 @@ var utils = (() => {
             return encryptKey;
         }
         return undefined;
-    };
-
-    const get_encryption_key = (user) => {
-        if (user) {
-            let storageKey = `encryptkey-${user.id}`;
-            let encryptKey = get_local_storage(storageKey);
-            if (!encryptKey) {
-                encryptKey = get_session_storage(storageKey);
-            }
-            if (encryptKey && encryptKey.length > 0) {
-                return encryptKey;
-            }
-            return migrate_encryption_key(user, storageKey);
-        }
-        return undefined;
-    };
-
-    const set_encryption_key = (user, encryptKey) => {
-        if (user) {
-            let storageKey = `encryptkey-${user.id}`;
-            if (encryptKey && encryptKey.length > 0) {
-                set_local_storage(storageKey, encryptKey);
-                set_session_storage(storageKey, encryptKey);
-            }
-            else {
-                remove_local_storage(storageKey);
-                remove_session_storage(storageKey);
-            }
-        }
     };
 
     const has_viewed_encryption_key = (user) => {
@@ -686,6 +657,118 @@ var utils = (() => {
 
     const replace_window_location = (url) => window.location.replace(sanitize_location(url));
 
+    // --- async crypto and secure storage functions
+
+    const create_crypto_key_async = async (key, salt) => {
+        const pwdCryptoKey = await window.crypto.subtle.importKey("raw", new TextEncoder().encode(key), "PBKDF2", false, ["deriveKey"]);
+        const algo = {
+            "name": "PBKDF2",
+            "hash": "SHA-256",
+            "salt": new TextEncoder().encode(salt),
+            "iterations": 1000
+        };
+        return await window.crypto.subtle.deriveKey(algo, pwdCryptoKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    };
+
+    const decode_message_async = async (cryptoKey, msg) => {
+        const iv = hex2arr(msg.substr(0, 12 * 2));
+        const data = hex2arr(msg.substr(12 * 2));
+        const options = { name: "AES-GCM", iv: new Uint8Array(iv) };
+        const cipherbuffer = new ArrayBuffer(data.length);
+        const cipherarr = new Uint8Array(cipherbuffer);
+        cipherarr.set(data);
+        const decrypted = await window.crypto.subtle.decrypt(options, cryptoKey, cipherbuffer);
+        return new TextDecoder().decode(decrypted);
+    };
+
+    const encode_message_async = async (cryptoKey, msg) => {
+        const arr = new TextEncoder().encode(msg);
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const options = { name: "AES-GCM", iv: iv };
+        const cipherText = await window.crypto.subtle.encrypt(options, cryptoKey, arr);
+        return buf2hex(iv) + buf2hex(cipherText);
+    };
+
+    const get_secure_local_storage_key = (user, key) => `${key}-${user.id}-secure`;
+
+    const get_secure_local_storage_async = async (user, key) => {
+        const storageKey = get_secure_local_storage_key(user, key);
+        let secureValue = get_local_storage(storageKey);
+        if (secureValue) {
+            try {
+                const cryptoKey = await create_crypto_key_async(storageKey, user.passwordManagerSalt);
+                secureValue = await decode_message_async(cryptoKey, secureValue);
+            }
+            catch (e) {
+                secureValue = undefined;
+            }
+        }
+        return secureValue;
+    };
+
+    const set_secure_local_storage_async = async (user, key, val) => {
+        const storageKey = get_secure_local_storage_key(user, key);
+        try {
+            const cryptoKey = await create_crypto_key_async(storageKey, user.passwordManagerSalt);
+            const secureValue = await encode_message_async(cryptoKey, val);
+            set_local_storage(storageKey, secureValue);
+        }
+        catch (e) {
+            remove_local_storage(storageKey);
+        }
+    };
+
+    const remove_secure_local_storage = (user, key) => {        
+        remove_local_storage(get_secure_local_storage_key(user, key));
+    };
+
+    const get_encryption_key_async = async (user) => {
+        if (user) {
+            const storageKey = "encryptkey"
+            const sessionKey = `${storageKey}-${user.id}`;
+            let encryptKey = get_session_storage(sessionKey);
+            if (!encryptKey) {
+                encryptKey = await get_secure_local_storage_async(user, storageKey);
+                if (encryptKey) {
+                    set_session_storage(sessionKey, encryptKey);
+                }
+            }
+            if (encryptKey && encryptKey.length > 0) {
+                return encryptKey;
+            }
+            return await migrate_encryption_key_async(user);
+        }
+        return undefined;
+    };
+
+    const set_encryption_key_async = async (user, encryptKey) => {
+        if (user) {
+            const storageKey = "encryptkey";
+            const sessionKey = `${storageKey}-${user.id}`;
+            if (encryptKey && encryptKey.length > 0) {
+                set_session_storage(sessionKey, encryptKey);
+                await set_secure_local_storage_async(user, storageKey, encryptKey);
+            }
+            else {
+                remove_session_storage(sessionKey);
+                remove_secure_local_storage(user, storageKey);
+            }
+        }
+    };
+
+    const migrate_encryption_key_async = async (user) => {
+        const storageKey = "encryptkey";
+        const oldStorageKey = `encryptkey-${user.id}`;
+        migrate_diary_encryption_key(user, oldStorageKey);
+        const encryptKey = get_local_storage(oldStorageKey);
+        if (encryptKey && encryptKey.length > 0) {
+            remove_local_storage(oldStorageKey);
+            await set_secure_local_storage_async(user, storageKey, encryptKey);
+            return encryptKey;
+        }
+        return undefined;
+    };
+
     // --- public API
 
     return {
@@ -702,14 +785,12 @@ var utils = (() => {
         fetch_api_call: fetch_api_call,
         is_mobile: is_mobile,
         auth_lltoken: auth_lltoken,
-        verify_password_strength,
+        verify_password_strength: verify_password_strength,
         hex2arr: hex2arr,
         buf2hex: buf2hex,
         create_crypto_key: create_crypto_key,
         decode_message: decode_message,
         encode_message: encode_message,
-        get_encryption_key: get_encryption_key,
-        set_encryption_key: set_encryption_key,
         has_viewed_encryption_key: has_viewed_encryption_key,
         set_viewed_encryption_key: set_viewed_encryption_key,
         generate_encryption_key: generate_encryption_key,
@@ -734,9 +815,14 @@ var utils = (() => {
         set_local_storage: set_local_storage,
         remove_local_storage: remove_local_storage,
         remove_session_storage: remove_session_storage,
-        get_window_location,
-        set_window_location,
-        replace_window_location
+        get_window_location: get_window_location,
+        set_window_location: set_window_location,
+        replace_window_location: replace_window_location,
+        get_secure_local_storage_async: get_secure_local_storage_async,
+        set_secure_local_storage_async: set_secure_local_storage_async,
+        remove_secure_local_storage: remove_secure_local_storage,
+        get_encryption_key_async: get_encryption_key_async,
+        set_encryption_key_async: set_encryption_key_async
     };
 })();
 

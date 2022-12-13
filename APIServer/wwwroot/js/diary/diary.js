@@ -4,7 +4,7 @@ var diary = (() => {
 
     // state
 
-    let version = "2.0.3";
+    let version = "2.0.4";
 
     let changeDate;
     let inSaveDiary;
@@ -238,7 +238,7 @@ var diary = (() => {
         controls.createDiv(parent, "error").textContent = _T(errMsg);
     };
 
-    const renderDiary = (parent) => {
+    const renderDiaryAsync = async (parent) => {
         controls.removeAllChildren(parent);
         let token = utils.get_authentication_token();
         if (!token) {
@@ -250,7 +250,7 @@ var diary = (() => {
             utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
                 (user) => {
                     currentUser = user;
-                    renderDiary(parent);
+                    renderDiaryAsync(parent);
                 },
                 (errMsg) => renderError(parent, errMsg)
             );
@@ -261,7 +261,7 @@ var diary = (() => {
             utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
                 (days) => {
                     daySet = new Set(days);
-                    renderDiary(parent);
+                    renderDiaryAsync(parent);
                 },
                 (errMsg) => renderError(parent, errMsg)
             );
@@ -269,7 +269,7 @@ var diary = (() => {
         }
         utils.create_menu(parent);
         renderHeader(parent);
-        let encryptKey = utils.get_encryption_key(currentUser);
+        const encryptKey = await utils.get_encryption_key_async(currentUser);
         let div = controls.createDiv(parent, "hide");
         div.id = "div-encryptkey-id";
         let p = controls.create(div, "p");
@@ -278,16 +278,16 @@ var diary = (() => {
         p = controls.create(div, "p");
         let elem = controls.createLabel(p, undefined, _T("LABEL_KEY"));
         elem.htmlFor = "input-encryptkey-id";
-        elem = controls.createInputField(p, _T("TEXT_KEY"), () => { }, undefined, 32, 32);
+        elem = controls.createInputField(p, _T("TEXT_KEY"), () => onChangeEncryptKeyAsync(), undefined, 32, 32);
         elem.id = "input-encryptkey-id";
-        elem.addEventListener("change", () => onChangeEncryptKey());
+        elem.addEventListener("change", () => onChangeEncryptKeyAsync());
         if (encryptKey && encryptKey.length > 0) {
             elem.value = encryptKey;
         }
         p = controls.create(div, "p");
         let show = encryptKey == undefined;
         elem = controls.createCheckbox(p, "checkbox-save-encryptkey-id", undefined,
-            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKey());
+            _T("OPTION_SAVE_KEY_IN_BROWSER"), !show, () => onChangeEncryptKeyAsync());
         utils.show_encrypt_key(currentUser, show);
         let today = new Date();
         let boxDiv = controls.createDiv(parent, "box");
@@ -355,16 +355,16 @@ var diary = (() => {
         );
     };
 
-    const onChangeEncryptKey = () => {
+    const onChangeEncryptKeyAsync = async () => {
         let elem = document.getElementById("checkbox-save-encryptkey-id");
         let saveInBrowser = elem.checked;
         elem = document.getElementById("input-encryptkey-id");
         let val = elem.value.trim();
         if (val.length == 0 || !saveInBrowser) {
-            utils.set_encryption_key(currentUser);
+            await utils.set_encryption_key_async(currentUser);
         }
         else {
-            utils.set_encryption_key(currentUser, val);
+            await utils.set_encryption_key_async(currentUser, val);
         }
         cryptoKey = undefined;
         elem = document.getElementById("text-column-id");
@@ -450,7 +450,7 @@ var diary = (() => {
     // --- start rendering
 
     const render = () => {
-        renderDiary(document.body);
+        renderDiaryAsync(document.body);
     };
 
     // --- public API
