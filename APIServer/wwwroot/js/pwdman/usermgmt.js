@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.6";
+    let version = "2.0.7";
 
     // helper
 
@@ -454,6 +454,8 @@ var usermgmt = (() => {
 
     const renderCurrentUserDeleted = () => {
         let parent = document.body;
+        utils.set_viewed_encryption_key(currentUser, false);
+        utils.set_encryption_key_async(currentUser, undefined);
         utils.logout();
         controls.removeAllChildren(parent);
         utils.create_menu(parent);
