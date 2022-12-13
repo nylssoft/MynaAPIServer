@@ -39,7 +39,7 @@ namespace APIServer.PwdMan
 
         Task<string> ConfirmRegistrationAsync(string authenticationToken, OutstandingRegistrationModel registration);
 
-        void RegisterUser(UserRegistrationModel userRegistration);
+        UserModel RegisterUser(UserRegistrationModel userRegistration);
 
         // --- user management
 

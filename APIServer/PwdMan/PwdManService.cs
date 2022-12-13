@@ -302,11 +302,14 @@ namespace APIServer.PwdMan
                 dbContext.SaveChanges();
             }
             var opt = GetOptions();
-            await SendConfirmationRegistrationEmailAsync(registration, confirmation.Reject, email, opt, GetValidLocale(registration.Locale));
+            if (confirmation.Notification)
+            {
+                await SendConfirmationRegistrationEmailAsync(registration, confirmation.Reject, email, opt, GetValidLocale(registration.Locale));
+            }
             return registration.Token;
         }
 
-        public void RegisterUser(UserRegistrationModel registrationProfile)
+        public UserModel RegisterUser(UserRegistrationModel registrationProfile)
         {
             logger.LogDebug("Register user '{username}', email '{email}'...", registrationProfile.Username, registrationProfile.Email);
             if (!IsValidUsername(registrationProfile.Username))
@@ -367,10 +370,14 @@ namespace APIServer.PwdMan
                 LoginEnabled = true
             };
             // first user has the usermanager role
+            List<string> roleNames = new();
             if (firstUser)
             {
-                user.Roles = new List<DbRole>();
-                user.Roles.Add(new DbRole { Name = "usermanager" });
+                user.Roles = new List<DbRole>
+                {
+                    new DbRole { Name = "usermanager" }
+                };
+                roleNames.Add("usermanager");
             }
             dbContext.DbUsers.Add(user);
             dbContext.SaveChanges();
@@ -385,6 +392,28 @@ namespace APIServer.PwdMan
                 }
                 dbContext.SaveChanges();
             }
+            var userModel = new UserModel
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                LastLoginUtc = DbMynaContext.GetUtcDateTime(user.LastLoginTryUtc),
+                Requires2FA = user.Requires2FA,
+                UseLongLivedToken = user.UseLongLivedToken,
+                AllowResetPassword = user.AllowResetPassword,
+                RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
+                PasswordManagerSalt = user.Salt,
+                Photo = user.Photo,
+                StorageQuota = user.StorageQuota,
+                LoginEnabled = user.LoginEnabled,
+                HasContacts = false,
+                HasDiary = false,
+                HasDocuments = false,
+                HasNotes = false,
+                HasPasswordManagerFile = user.PasswordFileId != null,
+                Roles = roleNames                
+            };
+            return userModel;
         }
 
         // --- user management

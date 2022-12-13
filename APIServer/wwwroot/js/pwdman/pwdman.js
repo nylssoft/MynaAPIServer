@@ -34,7 +34,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.3";
+    let version = "2.0.4";
 
     // helper
 
@@ -214,10 +214,11 @@ var pwdman = (() => {
                     "Token": codeInput.value.trim()
                 })
             },
-            () => {
+            async (user) => {
                 successRegister = true;
                 confirmRegistrationCode = undefined;
                 userName = userNameInput.value.trim();
+                await utils.set_encryption_key_async(user, utils.generate_encryption_key(16));
                 renderPage();
             },
             (errMsg) => errorDiv.textContent = _T(errMsg),
@@ -577,15 +578,8 @@ var pwdman = (() => {
         }
         if (successRegister) {
             controls.create(parent, "p", undefined, _T("INFO_REGISTER_SUCCESS_1", userName));
-            let buttonOKDiv = controls.createDiv(parent);
+            const buttonOKDiv = controls.createDiv(parent);
             controls.createButton(buttonOKDiv, _T("BUTTON_OK"), () => cancel(), undefined, "button");
-            if (userEmail) {
-                let user = { "email": userEmail.trim().toLowerCase() };
-                let encryptKey = utils.get_encryption_key(user);
-                if (!encryptKey) {
-                    utils.set_encryption_key(user, utils.generate_encryption_key(16));
-                }
-            }
             return;
         }
         controls.create(parent, "p", undefined, `${_T("INFO_REGISTER_1", userEmail)} ${_T("INFO_PWD_STRENGTH")}`);

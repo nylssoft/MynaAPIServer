@@ -108,8 +108,7 @@ namespace APIServer.PwdMan
             if (userRegistration?.Username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (userRegistration?.Token?.Length > Limits.MAX_REGISTER_CODE) throw new InputValueTooLargeException();
             if (userRegistration?.Password?.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
-            PwdManService.RegisterUser(userRegistration);
-            return new JsonResult(true);
+            return new JsonResult(PwdManService.RegisterUser(userRegistration));
         }
 
         [HttpGet]
