@@ -1,6 +1,6 @@
-"use strict";
-
 var utils = (() => {
+
+    "use strict";
 
     let debug_mode = false;
     let translationMap;
@@ -45,7 +45,7 @@ var utils = (() => {
     };
 
     const format_date = (dt, options, mode) => {
-        let d = undefined;
+        let d;
         if (typeof dt === "string" && dt.length > 0) {
             d = new Date(dt);
         }
@@ -305,7 +305,7 @@ var utils = (() => {
     const buf2hex = (buffer) => {
         let arr = new Uint8Array(buffer);
         return Array.prototype.map.call(arr, x => ("00" + x.toString(16)).slice(-2)).join("");
-    }
+    };
 
     const create_crypto_key = (key, salt, resolve, reject) => {
         const encoded = new TextEncoder().encode(key);
@@ -724,7 +724,7 @@ var utils = (() => {
 
     const get_encryption_key_async = async (user) => {
         if (user) {
-            const storageKey = "encryptkey"
+            const storageKey = "encryptkey";
             const sessionKey = `${storageKey}-${user.id}`;
             let encryptKey = get_session_storage(sessionKey);
             if (!encryptKey) {
@@ -832,4 +832,4 @@ function _T(id, ...restArgs) {
         return utils.format(utils.translate(arr[0]), arr.slice(1));
     }
     return utils.format(utils.translate(id), restArgs);
-};
+}

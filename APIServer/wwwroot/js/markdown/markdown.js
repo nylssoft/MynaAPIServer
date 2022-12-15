@@ -1,6 +1,6 @@
-"use strict";
-
 var markdown = (() => {
+
+    "use strict";
 
     let currentUser;
     let page;
@@ -18,7 +18,7 @@ var markdown = (() => {
             imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
         let div = controls.createDiv(parent);
-        let opt = undefined;
+        let opt;
         const token = utils.get_authentication_token();
         if (token) {
             opt = { headers: { "token": token } };

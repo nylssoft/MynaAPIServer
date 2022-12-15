@@ -1,6 +1,6 @@
-"use strict";
-
 var pwdman = (() => {
+
+    "use strict";
 
     // UI elements
 
@@ -34,7 +34,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.4";
+    let version = "2.0.5";
 
     // helper
 
@@ -72,7 +72,7 @@ var pwdman = (() => {
         const clientInfo = { "uuid": uuid.v4(), "name": window.navigator.userAgent };
         utils.set_local_storage("clientinfo", JSON.stringify(clientInfo));
         return clientInfo;
-    }
+    };
 
     const authenticate = () => {
         lastErrorMessage = "";
@@ -153,7 +153,7 @@ var pwdman = (() => {
             () => utils.replace_window_location(currentUrl + "&ok"),
             (errMsg) => errorDiv.textContent = _T(errMsg),
             setWaitCursor
-        )
+        );
     };
 
     const requestRegistration = () => {
@@ -262,7 +262,7 @@ var pwdman = (() => {
             () => {
                 let url = `/pwdman?resetpwd2&email=${encodeURI(email)}`;
                 if (nexturl && nexturl.length > 0) {
-                    url += `&nexturl=${encodeURI(nexturl)}`
+                    url += `&nexturl=${encodeURI(nexturl)}`;
                 }
                 utils.set_window_location(url);
             },

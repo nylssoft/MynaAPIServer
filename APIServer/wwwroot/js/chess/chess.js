@@ -1,6 +1,6 @@
-"use strict";
-
 var chess = (() => {
+
+    "use strict";
 
     // UI elements
 
@@ -47,7 +47,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.4";
+    let version = "2.0.5";
 
     // helper
 
@@ -57,7 +57,7 @@ var chess = (() => {
         endGameClicked = false;
         giveUpClicked = false;
         enableTimer();
-    }
+    };
 
     const clearTicket = () => {
         ticket = undefined;
@@ -80,7 +80,7 @@ var chess = (() => {
             }
         }
         return t;
-    }
+    };
 
     const getState = () => {
         return utils.get_session_storage("chessstate");
@@ -431,7 +431,7 @@ var chess = (() => {
 
     const isBlackPlayer = () => {
         return model && model.currentUser && model.board && model.currentUser.name === model.board.blackPlayer;
-    }
+    };
 
     const getActivePlayer = () => {
         if (model.board.currentColor === "B") {
@@ -798,7 +798,7 @@ var chess = (() => {
             const levelOptions = [];
             for (let lvl = 1; lvl < 10; lvl++) {
                 levelOptions.push({ name: _T("OPTION_LEVEL_1", lvl), value: `${lvl}` });
-            };
+            }
             const labelLevel = controls.createLabel(divLevel, labelClassname, _T("LABEL_LEVEL") + " ");
             labelLevel.htmlFor = "level";
             const selectLevel = controls.createSelect(divLevel, "level", "options", levelOptions);
@@ -837,7 +837,7 @@ var chess = (() => {
 
     const renderActions = (parent) => {
         controls.create(parent, "p", undefined, "").id = "message";
-        controls.create(parent, "p", undefined, "").id = "confirmnextgame"
+        controls.create(parent, "p", undefined, "").id = "confirmnextgame";
         if (endGameClicked) {
             controls.create(parent, "span", "confirmation", _T("INFO_REALLY_LOGOUT"));
             controls.createButton(parent, _T("BUTTON_YES"), btnEndGame_click, "EndGameYes");
@@ -878,7 +878,7 @@ var chess = (() => {
         canvas.addEventListener("mousedown", onCanvasMouseDown);
         canvas.addEventListener("mousemove", onCanvasMouseMove);
         const divActions = controls.createDiv(parent, "actions-section");
-        divActions.id = "actions"
+        divActions.id = "actions";
         if (!renderActions(divActions)) {
             updateMessage();
         }
@@ -1178,7 +1178,7 @@ var chess = (() => {
                     }
                 }
                 settings.ChessEngineName = document.getElementById("engine").value;
-            };
+            }
             disableTimer();
             utils.fetch_api_call("api/chess/newgame",
                 {
@@ -1312,7 +1312,7 @@ var chess = (() => {
                 }
             },
             (errMsg) => console.error(errMsg));
-    }
+    };
 
     // --- public API
 

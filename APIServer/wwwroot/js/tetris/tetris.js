@@ -1,5 +1,3 @@
-"use strict";
-
 const ColorEnums = Object.freeze({
     "EMPTY": 0,
     "BORDER": 1,
@@ -408,6 +406,8 @@ class IBlock extends Block {
 
 var tetris = (() => {
 
+    "use strict";
+
     // --- UI elements
 
     let canvas;
@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.3";
+    let version = "2.0.4";
 
     let block;
     let nextBlock;
@@ -435,7 +435,7 @@ var tetris = (() => {
     let lines;
     let level;
     let state;
-    let blockTouchY = undefined;
+    let blockTouchY;
 
     let speed;
     let clearPoints;
@@ -467,18 +467,18 @@ var tetris = (() => {
             const wrapBody = document.getElementById("wrap-body-id");
             wrapBody.style.setProperty("--bgimg", `url('${pic.url}')`);
         }
-    }
+    };
 
     const initBackgroundPictures = (pictures) => {
         backgroundPictures = pictures;
         utils.shuffle_array(backgroundPictures);
-    }
+    };
 
     const increaseLevel = () => {
         level += 1;
         levelDiv.textContent = _T("INFO_LEVEL_1", level);
         setBackgroundPicture();
-    }
+    };
 
     // --- drawing canvas
 
@@ -741,7 +741,7 @@ var tetris = (() => {
             default:
                 return new OBlock();
         }
-    }
+    };
 
     const placeNewBlock = () => {
         block = undefined;
@@ -821,7 +821,7 @@ var tetris = (() => {
             e.preventDefault();
             keyPressed = undefined;
         });
-    }
+    };
 
     const renderHeader = (parent) => {
         let title = currentUser ? `${currentUser.name} - ${_T("HEADER_TETRIS")}` : _T("HEADER_TETRIS");
@@ -950,7 +950,7 @@ var tetris = (() => {
                 keyPressed = "ArrowUp";
             }
             else if (diff > 3 * pixelPerField) {
-                keyPressed = "ArrowDown"
+                keyPressed = "ArrowDown";
             }
             if (keyPressed) {
                 keyPressedMax = 100;
@@ -1006,31 +1006,31 @@ var tetris = (() => {
     const render = () => {
         playground = new Playground(10, 20);
 
-        colorMap = {}
+        colorMap = {};
         colorMap[ColorEnums.ORANGE] = {
             center: "#f0a000", leftright: "#d89000", top: "#fbe3b3", bottom: "#795000"
-        }
+        };
         colorMap[ColorEnums.CYAN] = {
             center: "#00f0f0", leftright: "#00d8d8", top: "#b3fbfb", bottom: "#007878"
-        }
+        };
         colorMap[ColorEnums.RED] = {
             center: "#f00000", leftright: "#d80000", top: "#fbb3b3", bottom: "#780000"
-        }
+        };
         colorMap[ColorEnums.GREEN] = {
             center: "#00f000", leftright: "#00d800", top: "#b3fbb3", bottom: "#007800"
-        }
+        };
         colorMap[ColorEnums.PURBLE] = {
             center: "#a000f0", leftright: "#9000d8", top: "#e3b3fb", bottom: "#500078"
-        }
+        };
         colorMap[ColorEnums.YELLOW] = {
             center: "#f0f000", leftright: "#d8d800", top: "#fbfbb3", bottom: "#787800"
-        }
+        };
         colorMap[ColorEnums.BLUE] = {
             center: "#0000f0", leftright: "#0000d8", top: "#b3b3fb", bottom: "#000078"
-        }
+        };
         colorMap[ColorEnums.BORDER] = {
             center: "#787878", leftright: "#a1a2a1", top: "#d7d7d7", bottom: "#373737"
-        }
+        };
 
         speed = [
             48, // level 0

@@ -1,6 +1,6 @@
-"use strict";
-
 var controls = (() => {
+
+    "use strict";
 
     // ---- create HTML elements
 

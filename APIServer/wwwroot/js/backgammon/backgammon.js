@@ -1,6 +1,4 @@
-﻿"use strict";
-
-class Sprite {
+﻿class Sprite {
     constructor(img, w, h) {
         this.image = img;
         this.w = w;
@@ -26,9 +24,11 @@ class Sprite {
         ctx.drawImage(this.image, -this.w / 2, -this.h / 2, this.w, this.h);
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
-};
+}
 
 var backgammon = (() => {
+
+    "use strict";
 
     // state
 
@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.0.4";
+    let version = "2.0.5";
 
     let dirty;
 
@@ -68,7 +68,7 @@ var backgammon = (() => {
     let borderWidth;
     let borderHeight;
     let checkerOverlay;
-    let gapPointHeight
+    let gapPointHeight;
     let gapCheckers;
 
     let lastPos;
@@ -141,7 +141,7 @@ var backgammon = (() => {
         endGameClicked = false;
         giveUpClicked = false;
         enableTimer();
-    }
+    };
 
     const clearTicket = () => {
         ticket = undefined;
@@ -164,7 +164,7 @@ var backgammon = (() => {
             }
         }
         return t;
-    }
+    };
 
     const getState = () => {
         return utils.get_session_storage("backgammonstate");
@@ -365,7 +365,7 @@ var backgammon = (() => {
             if (evt.offsetX > borderWidth && evt.offsetX < borderWidth + 13 * pointWidth) {
                 let x = Math.floor((evt.offsetX - borderWidth) / pointWidth);
                 let y = Math.floor((evt.offsetY - borderHeight) / pointHeight);
-                let pos = undefined;
+                let pos;
                 if (isBlackPlayer()) {
                     if (x >= 7 && x <= 12) {
                         if (y == 0) {
@@ -779,7 +779,7 @@ var backgammon = (() => {
         for (let idx = 1; idx < 7; idx++) {
             const image = new Image();
             image.src = `/images/backgammon/dice-${idx}.svg`;
-            imageMap.set(`dice${idx}`, image)
+            imageMap.set(`dice${idx}`, image);
         }
         const rollImage = new Image();
         rollImage.src = "/images/backgammon/roll.png";
@@ -793,7 +793,7 @@ var backgammon = (() => {
     };
 
     const getCurrentItem = (pos) => {
-        let posItem = undefined;
+        let posItem;
         model.board.items.forEach((item) => {
             if (item.position === pos && item.color == model.board.currentColor) {
                 posItem = item;
@@ -830,7 +830,7 @@ var backgammon = (() => {
 
     const move = (from, to) => {
         moveItem = undefined;
-        let toMove = undefined;
+        let toMove;
         model.board.moves.forEach((move) => {
             if (!toMove && move.from === from && move.to === to) {
                 toMove = move;
@@ -971,7 +971,7 @@ var backgammon = (() => {
             }
         }
         controls.create(parent, "p").id = "message-id";
-        controls.create(parent, "p").id = "confirmnextgame"
+        controls.create(parent, "p").id = "confirmnextgame";
         if (endGameClicked) {
             controls.create(parent, "span", "confirmation", _T("INFO_REALLY_LOGOUT"));
             controls.createButton(parent, _T("BUTTON_YES"), btnEndGame_click, "EndGameYes");
@@ -1055,7 +1055,7 @@ var backgammon = (() => {
         updatePhoto(bottomImg, playerBottom, playerTop === model.board.blackPlayer ? 2 : 1);
         controls.createSpan(playerBottomDiv).id = "current-player-id";
         const divActions = controls.createDiv(parent, "actions-section");
-        divActions.id = "actions"
+        divActions.id = "actions";
         if (!renderActions(divActions)) {
             updateMessage();
         }
@@ -1248,7 +1248,7 @@ var backgammon = (() => {
             if (utils.is_debug()) utils.debug(`DOUBLE CLICK: bear off item at position ${pos}.`);
             const posItem = getCurrentItem(pos);
             if (posItem) {
-                let toMove = undefined;
+                let toMove;
                 model.board.moves.forEach((move) => {
                     if (move.from == posItem.position && move.to == -2) {
                         toMove = move;
@@ -1473,7 +1473,7 @@ var backgammon = (() => {
                 }
             },
             (errMsg) => console.error(errMsg));
-    }
+    };
 
     // --- public API
 

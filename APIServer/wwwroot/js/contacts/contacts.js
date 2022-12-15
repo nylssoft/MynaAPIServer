@@ -1,10 +1,10 @@
-"use strict";
-
 var contacts = (() => {
 
+    "use strict";
+    
     // state
 
-    let version = "1.0.5";
+    let version = "1.0.6";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -12,7 +12,7 @@ var contacts = (() => {
     let contactItemsDiv;
     let contactsData;
     let isChanged = false;
-    let currentItem = undefined;
+    let currentItem;
     let sortAttribute = "firstname";
     let sortUp = true;
 
@@ -21,7 +21,7 @@ var contacts = (() => {
     const hasEncryptKey = () => {
         let elem = document.getElementById("input-encryptkey-id");
         return elem && elem.value.trim().length > 0;
-    }
+    };
 
     const initCryptoKey = (resolve, reject) => {
         if (!cryptoKey) {
@@ -106,7 +106,7 @@ var contacts = (() => {
                 else {
                     decodeText(data, resolve, (errMsg) => {
                         console.log(errMsg);
-                        reject(_T("ERROR_WRONG_KEY_DECODE_CONTACTS"))
+                        reject(_T("ERROR_WRONG_KEY_DECODE_CONTACTS"));
                     });
                 }
             },
@@ -303,7 +303,7 @@ var contacts = (() => {
         controls.createRadiobutton(sortContainer, "sort-firstname-id", "sort-contacts", "firstname", _T("TEXT_FIRSTNAME"), sortAttribute === "firstname", onSortOptionChanged);
         controls.createRadiobutton(sortContainer, "sort-lastname-id", "sort-contacts", "lastname", _T("TEXT_LASTNAME"), sortAttribute === "lastname", onSortOptionChanged);
         controls.createRadiobutton(sortContainer, "sort-birthday-id", "sort-contacts", "birthday", _T("TEXT_BIRTHDAY"), sortAttribute === "birthday", onSortOptionChanged);
-    }
+    };
 
     const renderContactItems = (items) => {
         const parent = document.getElementById("content-id");
@@ -437,7 +437,7 @@ var contacts = (() => {
             if (n.id === item.id) {
                 newitem = n;
             }
-        })
+        });
         newitem.name = document.getElementById("name-id").value;
         newitem.address = document.getElementById("address-id").value;
         newitem.phone = document.getElementById("phone-id").value;

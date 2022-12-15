@@ -1,6 +1,6 @@
-"use strict";
-
 var usermgmt = (() => {
+
+    "use strict";
 
     // UI elements
 
@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.7";
+    let version = "2.0.8";
 
     // helper
 
@@ -450,7 +450,7 @@ var usermgmt = (() => {
         let p = controls.create(parent, "p");
         controls.createButton(p, _T("BUTTON_OK"), () => onOK()).focus();
         renderCopyright(parent);
-    }
+    };
 
     const renderCurrentUserDeleted = () => {
         let parent = document.body;
@@ -799,7 +799,7 @@ var usermgmt = (() => {
 
     const onLogout = () => {
         utils.logout(renderLogout, onRejectError);
-    }
+    };
 
     const onChangePassword = () => {
         const currentUrl = utils.get_window_location();

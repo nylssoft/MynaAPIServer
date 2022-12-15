@@ -1,6 +1,6 @@
-"use strict";
-
 var slideshow = (() => {
+
+    "use strict";
 
     // --- UI elements
 
@@ -214,7 +214,7 @@ var slideshow = (() => {
         if (!slideShowPictures || slideShowPictures.length == 0 || !isSlideshowPlaying) return;
         let currentDate = new Date();
         if ((!backgroundChanged ||
-                ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval)) {
+            ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval)) {
             let pic = slideShowPictures[backgroundIndex];
             const ratio = window.innerWidth / window.innerHeight;
             const url = ratio < 1.7 && pic.url43 ? pic.url43 : pic.url;
@@ -232,9 +232,9 @@ var slideshow = (() => {
             backgroundText = utils.concat_strings(txts, " // ");
             if (divSlideShowInfo) {
                 divSlideShowInfo.textContent = backgroundText;
-            }            
+            }
         }
-    }
+    };
 
     const sortSlideShowPictures = () => {
         slideShowPictures.sort((a, b) => {

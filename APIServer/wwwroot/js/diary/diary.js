@@ -1,10 +1,10 @@
-"use strict";
-
 var diary = (() => {
 
+    "use strict";
+    
     // state
 
-    let version = "2.0.4";
+    let version = "2.0.5";
 
     let changeDate;
     let inSaveDiary;
@@ -23,7 +23,7 @@ var diary = (() => {
     const hasEncryptKey = () => {
         let elem = document.getElementById("input-encryptkey-id");
         return elem && elem.value.trim().length > 0;
-    }
+    };
 
     const initCryptoKey = (resolve, reject) => {
         if (!cryptoKey) {
@@ -138,16 +138,12 @@ var diary = (() => {
                     controls.create(tr, "td", undefined, "\u00A0");
                 }
                 else {
-                    let isToday = day == today.getDate() && year == today.getFullYear() && month == today.getMonth();
-                    let td = controls.create(tr, "td");
-                    let d = day;
-                    let cl = daySet && daySet.has(d) ? "filled" : undefined;
-                    let msg = `${day}`;
-                    if (isToday) {
-                        msg += "*";
-                    }
-                    let a = controls.createA(td, cl, "#open", msg,
-                        () => onClickCalendarDate(textDiv, a, year, month, d));
+                    const isToday = day == today.getDate() && year == today.getFullYear() && month == today.getMonth();
+                    const td = controls.create(tr, "td");
+                    const d = day;
+                    const cl = daySet && daySet.has(d) ? "filled" : undefined;
+                    const msg = isToday ? `${day}*` : `${day}`;
+                    const a = controls.createA(td, cl, "#open", msg, () => onClickCalendarDate(textDiv, a, year, month, d));
                     day++;
                 }
             }
@@ -445,7 +441,7 @@ var diary = (() => {
                 onSaveDiaryEntry();
             }
         }
-    }
+    };
 
     // --- start rendering
 

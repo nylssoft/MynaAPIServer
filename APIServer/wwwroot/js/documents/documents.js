@@ -1,10 +1,10 @@
-"use strict";
-
 var documents = (() => {
+
+    "use strict";
 
     // state
 
-    let version = "2.0.6";
+    let version = "2.0.7";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -14,7 +14,7 @@ var documents = (() => {
     let volumeId;
     let docItems = [];
     let docItemsToMove = [];
-    let currentIdBeforeMove = undefined;
+    let currentIdBeforeMove;
     let move = false;
 
     let updateMarkdownItem;
@@ -68,15 +68,15 @@ var documents = (() => {
             }
         });
         return sortItems(items);
-    }
+    };
 
     const getVolume = () => {
         return docItems.find(item => item.type == "Volume");
-    }
+    };
 
     const getItem = (id) => {
         return docItems.find(item => item.id === id);
-    }
+    };
 
     const getSelected = () => {
         const selected = [];
@@ -343,7 +343,7 @@ var documents = (() => {
         controls.removeAllChildren(elem);
         if (updateMarkdownItem) {
             controls.createSpan(elem, undefined, `${updateMarkdownItem.name} (${updateMarkdownItem.id})`);
-            return
+            return;
         }
         if (move) {
             controls.createSpan(elem, "path-item", "> ");
@@ -988,7 +988,7 @@ var documents = (() => {
     const onFilterItems = () => {
         const filterInput = document.getElementById("filter-input-id");
         const v = filterInput.value.toLowerCase();
-        let filteredItems = undefined;
+        let filteredItems;
         if (v.length > 0) {
             const items = getItems(currentId);
             filteredItems = [];

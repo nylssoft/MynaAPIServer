@@ -1,10 +1,10 @@
-"use strict";
-
 var password = (() => {
+
+    "use strict";
 
     // state
 
-    let version = "2.0.6";
+    let version = "2.0.7";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -16,7 +16,7 @@ var password = (() => {
     const hasEncryptKey = () => {
         let elem = document.getElementById("input-encryptkey-id");
         return elem && elem.value.trim().length > 0;
-    }
+    };
 
     const initCryptoKey = (resolve, reject) => {
         if (!cryptoKey) {

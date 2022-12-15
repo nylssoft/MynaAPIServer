@@ -1,10 +1,10 @@
-"use strict";
-
 var notes = (() => {
+
+    "use strict";
 
     // state
 
-    let version = "2.0.4";
+    let version = "2.0.5";
     let changeDate;
     let cryptoKey;
     let currentUser;
@@ -17,7 +17,7 @@ var notes = (() => {
     const hasEncryptKey = () => {
         let elem = document.getElementById("input-encryptkey-id");
         return elem && elem.value.trim().length > 0;
-    }
+    };
 
     const initCryptoKey = (resolve, reject) => {
         if (!cryptoKey) {
@@ -454,7 +454,7 @@ var notes = (() => {
                 onSaveNote();
             }
         }
-    }
+    };
 
     // --- public API
 

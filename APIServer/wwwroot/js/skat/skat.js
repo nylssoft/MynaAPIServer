@@ -1,6 +1,6 @@
-"use strict";
-
 var skat = (() => {
+
+    "use strict";
 
     // UI elements
 
@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.0.4";
+    let version = "2.0.5";
 
     // helper
 
@@ -49,7 +49,7 @@ var skat = (() => {
         console.error(_T(errMsg));
         utils.remove_session_storage("skatstate");
         enableTimer();
-    }
+    };
 
     const clearTicket = () => {
         ticket = undefined;
@@ -69,7 +69,7 @@ var skat = (() => {
             t = utils.get_local_storage("skatticket");
         }
         return t;
-    }
+    };
 
     const getState = () => {
         return utils.get_session_storage("skatstate");
@@ -210,7 +210,7 @@ var skat = (() => {
         let trumpCards = cards.slice(0, idx);
         let nonTrumpCards = cards.slice(idx);
         let colors = getColors(nonTrumpCards);
-        let trumpColor = undefined;
+        let trumpColor;
         if (game.type == "Color" &&
             trumpCards.length > 0 &&
             trumpCards[trumpCards.length - 1].value != "Jack") {
@@ -241,7 +241,7 @@ var skat = (() => {
             }
         }
         return "";
-    }
+    };
 
     const isPlaying = (user) => {
         if (model && model.skatTable) {
@@ -274,7 +274,7 @@ var skat = (() => {
                 let hour = rd.getHours();
                 let duration = (r.duration / 60) - 1;
                 while (duration >= 0) {
-                    availableHours.delete(hour + duration)
+                    availableHours.delete(hour + duration);
                     duration--;
                 }
             }
@@ -295,7 +295,7 @@ var skat = (() => {
             }
         });
         return freeTimes;
-    }
+    };
 
     // rendering
 
@@ -369,7 +369,7 @@ var skat = (() => {
         if (!showReservations || !reservations) return;
         let divReservations = controls.createDiv(parent, "layout-reservations");
         let divPage = controls.createDiv(divReservations);
-        let divHeader = controls.createDiv(divPage, "reservation-header")
+        let divHeader = controls.createDiv(divPage, "reservation-header");
         divHeader.textContent = _T("INFO_TABLE_RESERVATIONS");
         if (currentUser) {
             let imgAdd = controls.createImg(divHeader, "reservation-img", 32, 32, "/images/buttons/list-add-4.png", _T("BUTTON_ADD_RESERVATION"));
@@ -530,7 +530,7 @@ var skat = (() => {
             r.duration = document.getElementById("reservation-duration-id").value * 60;
             r.players = [];
             for (let idx = 1; idx <= 4; idx++) {
-                let val = document.getElementById(`reservation-player${idx}-id`).value
+                let val = document.getElementById(`reservation-player${idx}-id`).value;
                 if (val && val.length > 0) {
                     r.players.push(val);
                 }
@@ -655,14 +655,14 @@ var skat = (() => {
                 }
             }
         }
-    }
+    };
 
     const renderLastStitch = (parent) => {
         if (!model.skatTable.gameStarted || !model.skatTable.lastStitch || !showLastStitch) return;
         if (model.skatTable.lastStitch.length > 0) {
             renderCards(parent, true, model.skatTable.lastStitch, true, btnLastStitchCard_click);
         }
-    }
+    };
 
     const renderSkat = (parent) => {
         if (model.skatTable.gameStarted) return;
@@ -807,7 +807,7 @@ var skat = (() => {
     const renderGame = (parent) => {
         if (!model.skatTable.player || !model.skatTable.player.game) return;
         let game = model.skatTable.player.game;
-        let gameStarted = model.skatTable.gameStarted
+        let gameStarted = model.skatTable.gameStarted;
         let divGameType = controls.create(parent, "div", "gametype");
         controls.createRadiobutton(divGameType, "r1", "gametype", "Grand", _T("TEXT_GRAND"), game.type == "Grand", btnGameType_click, gameStarted);
         controls.createRadiobutton(divGameType, "r2", "gametype", "Null", _T("TEXT_NULL"), game.type == "Null", btnGameType_click, gameStarted);
@@ -879,7 +879,7 @@ var skat = (() => {
             controls.create(parent, "div", classname, _T(p.summaryLabel));
         });
         if (!model.skatTable.gameEnded) {
-            let leftPlayer
+            let leftPlayer;
             let middlePlayer;
             let rightPlayer;
             if (!model.skatTable.player) {
@@ -1565,7 +1565,7 @@ var skat = (() => {
                 },
                 (errMsg) => {
                     document.getElementById("login-error-id").textContent = _T(errMsg);
-                    enableTimer();;
+                    enableTimer();
                 });
         }
     };
@@ -1653,7 +1653,7 @@ var skat = (() => {
     };
 
     const btnGameType_click = (elem) => {
-        let gamecolor = undefined;
+        let gamecolor;
         let gametype = "Color";
         if (elem.value == "Grand") {
             gametype = "Grand";
@@ -1931,7 +1931,7 @@ var skat = (() => {
                 }
             },
             handleError);
-    }
+    };
 
     // --- public API
 
