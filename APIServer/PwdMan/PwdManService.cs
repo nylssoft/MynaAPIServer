@@ -1797,6 +1797,7 @@ namespace APIServer.PwdMan
         private static string GenerateTokenPerType(bool useLongLivedToken, string username, PwdManOptions opt, bool requires2FA = false)
         {
             var signKey = useLongLivedToken ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
+            if (string.IsNullOrEmpty(signKey)) throw new ArgumentException("Token signing key configuration is missing.");
             var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(signKey));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
