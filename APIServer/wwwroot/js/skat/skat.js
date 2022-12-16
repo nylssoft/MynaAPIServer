@@ -466,7 +466,9 @@ var skat = (() => {
                     }
                     else {
                         let d = day;
+                        /* jshint -W083 */
                         controls.createA(td, undefined, "#open", msg, () => renderAddReservation(parent, d, month, year));
+                        /* jshint +W083 */
                     }
                     day++;
                 }

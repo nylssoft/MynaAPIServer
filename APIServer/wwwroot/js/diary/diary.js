@@ -143,7 +143,9 @@ var diary = (() => {
                     const d = day;
                     const cl = daySet && daySet.has(d) ? "filled" : undefined;
                     const msg = isToday ? `${day}*` : `${day}`;
+                    /* jshint -W083 */
                     const a = controls.createA(td, cl, "#open", msg, () => onClickCalendarDate(textDiv, a, year, month, d));
+                    /* jshint +W083 */
                     day++;
                 }
             }

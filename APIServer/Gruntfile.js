@@ -72,8 +72,7 @@ module.exports = function (grunt) {
                 "temp/slideshow.js",
                 "temp/tetris.js"],
             options: {
-                "esversion": 9,
-                "force": true
+                "esversion": 9
             }
         },
         uglify: {
