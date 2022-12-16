@@ -19,6 +19,6 @@ namespace APIServer.Tetris
 {
     public class TetrisOptions
     {
-        public int KeepHighscores = 31;
+        public int KeepHighscores { get; set; } = 31;
     }
 }
