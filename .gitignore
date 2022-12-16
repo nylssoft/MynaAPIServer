@@ -63,6 +63,8 @@ Temporary Items
 /APIServer/sampledata/apiserver.db-shm
 /APIServer/sampledata/apiserver.db-wal
 /APIServer/appsettings.Development.json
+/APIServer/node_modules
+/APIServer/temp
 
 # personal user files
 *.user
