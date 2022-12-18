@@ -69,7 +69,7 @@ var pwdman = (() => {
         if (ci && ci.length > 0) {
             return JSON.parse(ci);
         }
-        const clientInfo = { "uuid": uuid.v4(), "name": window.navigator.userAgent };
+        const clientInfo = { "uuid": window.crypto.randomUUID(), "name": window.navigator.userAgent };
         utils.set_local_storage("clientinfo", JSON.stringify(clientInfo));
         return clientInfo;
     };
