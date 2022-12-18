@@ -34,7 +34,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.5";
+    let version = "2.0.6";
 
     // helper
 
