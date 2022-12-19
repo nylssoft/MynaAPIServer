@@ -177,9 +177,9 @@ var utils = (() => {
     };
 
     const logout = (resolve, reject) => {
+        const token = get_authentication_token();
         window.sessionStorage.clear();
         remove_local_storage("pwdman-lltoken");
-        const token = get_authentication_token();
         if (token) {
             fetch_api_call("api/pwdman/logout", { headers: { "token": token } },
                 (done) => console.log(`User logout: ${done}.`),
@@ -215,13 +215,13 @@ var utils = (() => {
                         }
                         else {
                             if (set_waitcursor) set_waitcursor(false);
-                            if (!retry && json.status == 401) {
-                                let token = get_authentication_token();
+                            if (!retry && json.status === 401) {
+                                const token = get_authentication_token();
                                 if (token) {
-                                    remove_session_storage("pwdman-state");
+                                    window.sessionStorage.clear();
                                     if (init && init.headers && init.headers.token) {
                                         auth_lltoken(() => {
-                                            let newtoken = get_authentication_token();
+                                            const newtoken = get_authentication_token();
                                             if (newtoken && token != newtoken) {
                                                 init.headers.token = newtoken;
                                                 fetch_api_call(apicall, init, resolve, reject, set_waitcursor, true);
