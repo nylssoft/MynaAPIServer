@@ -411,7 +411,8 @@ namespace APIServer.PwdMan
                 HasDocuments = false,
                 HasNotes = false,
                 HasPasswordManagerFile = user.PasswordFileId != null,
-                Roles = roleNames                
+                Roles = roleNames,
+                SecKey = GenerateSecKey()
             };
             return userModel;
         }
@@ -584,8 +585,16 @@ namespace APIServer.PwdMan
                 HasDocuments = false,
                 HasNotes = false,
                 HasPasswordManagerFile = user.PasswordFileId != null,
+                SecKey = user.SecKey
             };
             var dbContext = GetDbContext();
+            if (string.IsNullOrEmpty(userModel.SecKey))
+            {
+                // upgrade on the fly
+                user.SecKey = GenerateSecKey();
+                dbContext.SaveChanges();
+                userModel.SecKey = user.SecKey;
+            }
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
             if (details)
             {
@@ -1872,6 +1881,11 @@ namespace APIServer.PwdMan
                 return false;
             }
             return true;
+        }
+
+        private static string GenerateSecKey()
+        {
+            return Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
         }
     }
 }

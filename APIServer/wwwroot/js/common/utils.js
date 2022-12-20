@@ -689,32 +689,59 @@ var utils = (() => {
         return buf2hex(iv) + buf2hex(cipherText);
     };
 
+    const decode_seckey_async = async (secKey, msg) => {
+        const rawKey = new Uint8Array(hex2arr(secKey));
+        const cryptoKey = await window.crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+        return await decode_message_async(cryptoKey, msg);
+    };
+
+    const encode_seckey_async = async (secKey, msg) => {
+        const rawKey = new Uint8Array(hex2arr(secKey));
+        const cryptoKey = await window.crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+        return await encode_message_async(cryptoKey, msg);
+    };
+
     const get_secure_local_storage_key = (user, key) => `${key}-${user.id}-secure`;
 
     const get_secure_local_storage_async = async (user, key) => {
-        const storageKey = get_secure_local_storage_key(user, key);
-        let secureValue = get_local_storage(storageKey);
-        if (secureValue) {
-            try {
-                const cryptoKey = await create_crypto_key_async(storageKey, user.passwordManagerSalt);
-                secureValue = await decode_message_async(cryptoKey, secureValue);
-            }
-            catch (e) {
-                secureValue = undefined;
+        let secureValue;
+        if (user && key) {
+            const storageKey = get_secure_local_storage_key(user, key);
+            secureValue = get_local_storage(storageKey);
+            if (secureValue) {
+                try {
+                    secureValue = await decode_seckey_async(user.secKey, secureValue);
+                }
+                catch (e) {
+                    console.error(e);
+                    try {
+                        const cryptoKey = await create_crypto_key_async(storageKey, user.passwordManagerSalt);
+                        secureValue = await decode_message_async(cryptoKey, secureValue);
+                        await set_secure_local_storage_async(user, key, secureValue);
+                    }
+                    catch (e) {
+                        console.error(e);
+                        secureValue = undefined;
+                    }
+                }
             }
         }
         return secureValue;
     };
 
     const set_secure_local_storage_async = async (user, key, val) => {
-        const storageKey = get_secure_local_storage_key(user, key);
-        try {
-            const cryptoKey = await create_crypto_key_async(storageKey, user.passwordManagerSalt);
-            const secureValue = await encode_message_async(cryptoKey, val);
-            set_local_storage(storageKey, secureValue);
-        }
-        catch (e) {
-            remove_local_storage(storageKey);
+        if (user && user.secKey && key && val) {
+            const storageKey = get_secure_local_storage_key(user, key);
+            try {
+                const secureValue = await encode_seckey_async(user.secKey, val);
+                if (secureValue) {
+                    set_local_storage(storageKey, secureValue);
+                }
+            }
+            catch (e) {
+                console.error(e);
+                remove_local_storage(storageKey);
+            }
         }
     };
 

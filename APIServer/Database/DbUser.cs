@@ -63,5 +63,7 @@ namespace APIServer.Database
         public bool LoginEnabled { get; set; }
 
         public string LoginName { get; set; }
+
+        public string SecKey { get; set; }
     }
 }

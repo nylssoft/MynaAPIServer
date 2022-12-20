@@ -61,5 +61,7 @@ namespace APIServer.PwdMan.Model
         public bool HasNotes { get; set; }
 
         public bool HasPasswordManagerFile { get; set; }
+
+        public string SecKey { get; set; }
     }
 }
