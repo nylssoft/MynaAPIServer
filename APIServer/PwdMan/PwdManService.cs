@@ -423,14 +423,18 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Get photo for username '{username}'...", username);
             var user = GetDbUserByName(username);
-            return user?.Photo;
+            if (user != null && user.AllowResetPassword && user.Photo != null)
+            {
+                return user.Photo;
+            }
+            return null;
         }
 
         public bool IsRegisteredUsername(string username)
         {
             logger.LogDebug("Check whether username '{username}' is registered...", username);
             var user = GetDbUserByName(username);
-            return user != null;
+            return user != null && user.AllowResetPassword;
         }
 
         public string UploadPhoto(string authenticationToken, string contentType, Stream contentStream)
@@ -1507,12 +1511,21 @@ namespace APIServer.PwdMan
         {
             var loginName = username.ToLowerInvariant();
             var dbContext = GetDbContext();
-            if (loginName.Contains("@"))
+            DbUser ret = null;
+            if (loginName.Contains('@'))
             {
-                // login by email address
-                return dbContext.DbUsers.SingleOrDefault(u => u.Email == loginName);
+                // login by email address restricted
+                var user = dbContext.DbUsers.SingleOrDefault(u => u.Email == loginName);
+                if (user != null && user.AllowResetPassword)
+                {
+                    ret = user;
+                }
             }
-            return dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
+            else
+            {
+                ret = dbContext.DbUsers.SingleOrDefault(u => u.LoginName == loginName);
+            }
+            return ret;
         }
 
         private bool ValidateToken(string token, PwdManOptions opt, bool useLongLived = false)
