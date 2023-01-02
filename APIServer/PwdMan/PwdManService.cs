@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -364,6 +364,7 @@ namespace APIServer.PwdMan
                 Email = email,
                 Requires2FA = false,
                 UseLongLivedToken = true,
+                PinHash = null,
                 AllowResetPassword = true,
                 RegisteredUtc = DateTime.UtcNow,
                 StorageQuota = 100 * 1024 * 1024, // 100 MB default storage
@@ -400,6 +401,7 @@ namespace APIServer.PwdMan
                 LastLoginUtc = DbMynaContext.GetUtcDateTime(user.LastLoginTryUtc),
                 Requires2FA = user.Requires2FA,
                 UseLongLivedToken = user.UseLongLivedToken,
+                UsePin = !string.IsNullOrEmpty(user.PinHash),
                 AllowResetPassword = user.AllowResetPassword,
                 RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
                 PasswordManagerSalt = user.Salt,
@@ -578,6 +580,7 @@ namespace APIServer.PwdMan
                 LastLoginUtc = DbMynaContext.GetUtcDateTime(user.LastLoginTryUtc),
                 Requires2FA = user.Requires2FA,
                 UseLongLivedToken = user.UseLongLivedToken,
+                UsePin = !string.IsNullOrEmpty(user.PinHash),
                 AllowResetPassword = user.AllowResetPassword,
                 RegisteredUtc = DbMynaContext.GetUtcDateTime(user.RegisteredUtc),
                 PasswordManagerSalt = user.Salt,
@@ -699,14 +702,43 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken)
+        public string UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken)
         {
             logger.LogDebug("Update user long-lived token usage to {useLongLivedToken}...", useLongLivedToken);
             var user = GetUserFromToken(authenticationToken);
             if (user.UseLongLivedToken != useLongLivedToken)
             {
+                user.PinHash = null;
                 user.UseLongLivedToken = useLongLivedToken;
                 var dbContext = GetDbContext();
+                dbContext.SaveChanges();
+                if (user.UseLongLivedToken)
+                {
+                    return GenerateLongLivedToken(user.Name, GetOptions());
+                }
+            }
+            return "";
+        }
+
+        public bool UpdateUserPin(string authenticationToken, string pin)
+        {
+            logger.LogDebug("Update user pin...");
+            var user = GetUserFromToken(authenticationToken);
+            if (!user.UseLongLivedToken)
+            {
+                logger.LogDebug("User not configured for long lived token usage.");
+                throw new InvalidTokenException();
+            }
+            var dbContext = GetDbContext();
+            string pinHash = null;
+            if (!string.IsNullOrEmpty(pin))
+            {
+                var hasher = new PasswordHasher<string>();
+                pinHash = hasher.HashPassword(user.Name, pin);
+            }
+            if (pinHash != user.PinHash)
+            {
+                user.PinHash = pinHash;
                 dbContext.SaveChanges();
                 return true;
             }
@@ -1092,6 +1124,10 @@ namespace APIServer.PwdMan
                 logger.LogDebug("User not configured for long lived token usage.");
                 throw new InvalidTokenException();
             }
+            if (!string.IsNullOrEmpty(user.PinHash))
+            {
+                return new AuthenticationResponseModel { RequiresPin = true };
+            }
             var dbContext = GetDbContext();
             var loginIpAddress = dbContext.DbLoginIpAddresses
                 .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
@@ -1108,6 +1144,60 @@ namespace APIServer.PwdMan
             loginIpAddress.Succeeded += 1;
             dbContext.SaveChanges();
             var opt = GetOptions();
+            var ret = new AuthenticationResponseModel
+            {
+                Token = GenerateToken(user.Name, opt, false),
+                LongLivedToken = GenerateLongLivedToken(user.Name, opt),
+                RequiresPass2 = false,
+                Username = user.Name
+            };
+            return ret;
+        }
+
+        public AuthenticationResponseModel AuthenticatePin(string longLivedToken, string pin, string ipAddress)
+        {
+            logger.LogDebug("Authenticate with PIN for IP address {ipAddress}...", ipAddress);
+            var user = GetUserFromToken(longLivedToken, true);
+            if (!user.UseLongLivedToken)
+            {
+                logger.LogDebug("User not configured for long lived token usage.");
+                throw new InvalidTokenException();
+            }
+            var hasher = new PasswordHasher<string>();
+            var dbContext = GetDbContext();
+            var loginIpAddress = dbContext.DbLoginIpAddresses
+                .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
+            if (loginIpAddress == null)
+            {
+                CleanupLoginIpAddress(dbContext, user.Id);
+                loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
+                dbContext.DbLoginIpAddresses.Add(loginIpAddress);
+            }
+            var opt = GetOptions();
+            if (hasher.VerifyHashedPassword(user.Name, user.PinHash, pin) != PasswordVerificationResult.Success)
+            {
+                bool logout = false;
+                loginIpAddress.Failed += 1;
+                if (loginIpAddress.Failed >= opt.MaxLoginTryCount)
+                {
+                    // invalidate all tokens => logout on all devices
+                    user.LogoutUtc = DateTime.UtcNow;
+                    loginIpAddress.Failed = 0;
+                    logout = true;
+                }
+                dbContext.SaveChanges();
+                if (logout)
+                {
+                    throw new InvalidPinLogoutException();
+                }
+                throw new InvalidPinException();
+            }
+            loginIpAddress.LastUsedUtc = DateTime.UtcNow;
+            user.LastLoginTryUtc = loginIpAddress.LastUsedUtc;
+            user.LoginTries += 1;
+            loginIpAddress.Failed = 0;
+            loginIpAddress.Succeeded += 1;
+            dbContext.SaveChanges();
             var ret = new AuthenticationResponseModel
             {
                 Token = GenerateToken(user.Name, opt, false),

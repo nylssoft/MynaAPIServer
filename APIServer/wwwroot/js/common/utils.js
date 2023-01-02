@@ -176,6 +176,19 @@ var utils = (() => {
         return undefined;
     };
 
+    const is_pin_required = () => {
+        return get_session_storage("pin-required") === "true";
+    };
+
+    const set_pin_required = (required) => {
+        if (!required) {
+            remove_session_storage("pin-required");
+        }
+        else {
+            set_session_storage("pin-required", "true");
+        }
+    };
+
     const logout = (resolve, reject) => {
         const token = get_authentication_token();
         window.sessionStorage.clear();
@@ -254,19 +267,25 @@ var utils = (() => {
 
     const auth_lltoken = (resolve) => {
         let token = get_authentication_token();
-        if (!token) {
+        if (!token && !is_pin_required()) {
             let lltoken = get_local_storage("pwdman-lltoken");
             if (lltoken) {
                 fetch_api_call("api/pwdman/auth/lltoken", { headers: { "token": lltoken } },
                     (authResult) => {
-                        let state = {
-                            "token": authResult.token,
-                            "userName": authResult.username,
-                            "requiresPass2": authResult.requiresPass2
-                        };
-                        set_session_storage("pwdman-state", JSON.stringify(state));
-                        set_local_storage("pwdman-lltoken", authResult.longLivedToken);
-                        resolve();
+                        if (!authResult.requiresPin) {
+                            const state = {
+                                "token": authResult.token,
+                                "userName": authResult.username,
+                                "requiresPass2": authResult.requiresPass2
+                            };
+                            set_session_storage("pwdman-state", JSON.stringify(state));
+                            set_local_storage("pwdman-lltoken", authResult.longLivedToken);
+                            resolve();
+                        }
+                        else {
+                            set_pin_required(true);
+                            set_window_location("/pwdman?nexturl=" + encodeURI(get_window_location()));
+                        }
                     },
                     (errmsg) => {
                         console.error(errmsg);
@@ -849,7 +868,9 @@ var utils = (() => {
         set_secure_local_storage_async: set_secure_local_storage_async,
         remove_secure_local_storage: remove_secure_local_storage,
         get_encryption_key_async: get_encryption_key_async,
-        set_encryption_key_async: set_encryption_key_async
+        set_encryption_key_async: set_encryption_key_async,
+        is_pin_required: is_pin_required,
+        set_pin_required: set_pin_required
     };
 })();
 

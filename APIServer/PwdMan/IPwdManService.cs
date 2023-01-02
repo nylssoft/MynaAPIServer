@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -71,7 +71,7 @@ namespace APIServer.PwdMan
 
         bool DisableUser2FA(string authenticationToken);
 
-        bool UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken);
+        string UpdateUserUseLongLivedToken(string authenticationToken, bool useLongLivedToken);
 
         bool UpdateUserAllowResetPassword(string authenticationToken, bool allowResetPassword);
 
@@ -85,6 +85,8 @@ namespace APIServer.PwdMan
 
         bool UpdateUserLoginEnabled(string authenticationToken, long userId, bool loginEnabled);
 
+        bool UpdateUserPin(string authenticationToken, string pin);
+
         void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange);
 
         // --- authentication
@@ -94,6 +96,8 @@ namespace APIServer.PwdMan
         AuthenticationResponseModel AuthenticateTOTP(string token, string totp, string ipAddress);
 
         AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress);
+
+        AuthenticationResponseModel AuthenticatePin(string longLivedToken, string pin, string ipAddress);
 
         bool Logout(string token);
 

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -189,6 +189,15 @@ namespace APIServer.PwdMan
         }
 
         [HttpPut]
+        [Route("api/pwdman/user/pin")]
+        public IActionResult UpdateUserPin([FromBody] string pin)
+        {
+            if (pin == null) throw new MissingParameterException();
+            if (pin.Length > 0 && (pin.Length < 4 || pin.Length > 6 || !int.TryParse(pin, out _))) throw new InvalidParameterException();
+            return new JsonResult(PwdManService.UpdateUserPin(GetToken(), pin));
+        }
+
+        [HttpPut]
         [Route("api/pwdman/user/allowresetpwd")]
         public IActionResult UpdateUserAllowResetPassword([FromBody] bool allowResetPassword)
         {
@@ -298,6 +307,16 @@ namespace APIServer.PwdMan
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
             return new JsonResult(PwdManService.AuthenticateLongLivedToken(GetToken(), ipAddress));
+        }
+
+        [HttpPost]
+        [Route("api/pwdman/auth/pin")]
+        public IActionResult LoginPin([FromBody] string pin)
+        {
+            if (pin == null) throw new MissingParameterException();
+            if (pin.Length < 4 || pin.Length > 6 || !int.TryParse(pin, out _)) throw new InvalidParameterException();
+            var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
+            return new JsonResult(PwdManService.AuthenticatePin(GetToken(), pin, ipAddress));
         }
 
         [HttpGet]

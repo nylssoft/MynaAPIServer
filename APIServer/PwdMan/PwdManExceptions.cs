@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -103,6 +103,22 @@ namespace APIServer.PwdMan
     {
         public InvalidSecurityCodeAndLockedException() :
             base("ERROR_INVALID_SEC_KEY_AND_LOCKED", 401)
+        {
+        }
+    }
+
+    public class InvalidPinException : APIException
+    {
+        public InvalidPinException() :
+            base("ERROR_INVALID_PIN", 401)
+        {
+        }
+    }
+
+    public class InvalidPinLogoutException : APIException
+    {
+        public InvalidPinLogoutException() :
+            base("ERROR_INVALID_PIN_LOGOUT", 401)
         {
         }
     }

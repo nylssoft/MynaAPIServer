@@ -7,6 +7,7 @@ var pwdman = (() => {
     let userPasswordPwd;
     let userNameInput;
     let codeInput;
+    let pinPassword;
     let oldPasswordPwd;
     let newPasswordPwd;
     let confirmPasswordPwd;
@@ -34,7 +35,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.6";
+    let version = "2.0.7";
 
     // helper
 
@@ -52,6 +53,7 @@ var pwdman = (() => {
             utils.set_session_storage("pwdman-state", JSON.stringify(state));
         }
         else {
+            utils.set_pin_required(false);
             utils.remove_session_storage("pwdman-state");
             utils.remove_local_storage("pwdman-lltoken");
         }
@@ -122,6 +124,34 @@ var pwdman = (() => {
                 state.token = authToken;
                 state.requiresPass2 = requiresPass2;
                 setState(state);
+                renderPage();
+            },
+            (errMsg) => {
+                lastErrorMessage = _T(errMsg);
+                renderPage();
+            },
+            setWaitCursor
+        );
+    };
+
+    const authenticatePin = () => {
+        lastErrorMessage = "";
+        const lltoken = utils.get_local_storage("pwdman-lltoken");
+        utils.fetch_api_call("api/pwdman/auth/pin",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": lltoken },
+                body: JSON.stringify(pinPassword.value.trim())
+            },
+            (authResult) => {
+                utils.set_pin_required(false);
+                const state = {
+                    "token": authResult.token,
+                    "userName": authResult.username,
+                    "requiresPass2": authResult.requiresPass2
+                };
+                utils.set_session_storage("pwdman-state", JSON.stringify(state));
+                utils.set_local_storage("pwdman-lltoken", authResult.longLivedToken);
                 renderPage();
             },
             (errMsg) => {
@@ -358,7 +388,7 @@ var pwdman = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_LOGIN")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_LOGIN")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2023 `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
@@ -434,6 +464,30 @@ var pwdman = (() => {
         }
         const buttonLoginDiv = controls.createDiv(parent);
         controls.createButton(buttonLoginDiv, _T("BUTTON_LOGIN"), () => authenticatePass2(), undefined, "button");
+        controls.createButton(buttonLoginDiv, _T("BUTTON_CANCEL"), () => {
+            setState();
+            cancel();
+        }, undefined, "button");
+        renderCopyright(parent);
+    };
+
+    const renderPin = (parent) => {
+        waitDiv = controls.createDiv(parent, "invisible-div");
+        renderHeader(parent, _T("HEADER_LOGIN"));
+        if (lastErrorMessage && lastErrorMessage.length > 0) {
+            renderError(parent);
+        }
+        controls.create(parent, "p", undefined, _T("INFO_ENTER_PIN"));
+        const codeDiv = controls.createDiv(parent);
+        const codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_PIN"));
+        codeLabel.htmlFor = "pin-id";
+        pinPassword = controls.createPasswordField(codeDiv, _T("TEXT_PIN"), () => authenticatePin(), undefined, 10, 10);
+        pinPassword.id = "pin-id";
+        if (!utils.is_mobile()) {
+            pinPassword.focus();
+        }
+        const buttonLoginDiv = controls.createDiv(parent);
+        controls.createButton(buttonLoginDiv, _T("BUTTON_LOGIN"), () => authenticatePin(), undefined, "button");
         controls.createButton(buttonLoginDiv, _T("BUTTON_CANCEL"), () => {
             setState();
             cancel();
@@ -650,7 +704,12 @@ var pwdman = (() => {
         }
         else if (!authToken || authToken.length == 0) {
             document.title = _T("HEADER_LOGIN");
-            renderAuthentication(document.body);
+            if (!utils.is_pin_required()) {
+                renderAuthentication(document.body);
+            }
+            else {
+                renderPin(document.body);
+            }
         }
         else if (requiresPass2 == true) {
             document.title = _T("HEADER_LOGIN");

@@ -446,6 +446,9 @@ namespace APIServer.Migrations.DbSqlite
                     b.Property<string>("Photo")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PinHash")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("RegisteredUtc")
                         .HasColumnType("TEXT");
 

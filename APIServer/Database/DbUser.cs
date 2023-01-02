@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -65,5 +65,7 @@ namespace APIServer.Database
         public string LoginName { get; set; }
 
         public string SecKey { get; set; }
+
+        public string PinHash { get; set; }
     }
 }

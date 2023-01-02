@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.8";
+    let version = "2.0.9";
 
     // helper
 
@@ -61,7 +61,7 @@ var usermgmt = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_PROFILE")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_PROFILE")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2023 `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
@@ -562,6 +562,14 @@ var usermgmt = (() => {
             () => onUpdateKeepLogin());
         const errorKeepLoginDiv = controls.createDiv(section, "error");
         errorKeepLoginDiv.id = "error-keeplogin-id";
+        if (currentUser.useLongLivedToken) {
+            // option login with PIN
+            const pinDiv = controls.createDiv(optionsP, "checkbox-div");
+            controls.createCheckbox(pinDiv, "account-pin-id", undefined, _T("OPTION_PIN"), currentUser.usePin, () => onUpdatePin());
+            controls.createDiv(pinDiv).id = "account-pin-div-id";
+            const errorPinDiv = controls.createDiv(section, "error");
+            errorPinDiv.id = "error-pin-id";
+        }
         // option allow reset password
         const allowResetPwdDiv = controls.createDiv(optionsP, "checkbox-div");
         controls.createCheckbox(allowResetPwdDiv, "account-allowresetpwd-id", undefined, _T("OPTION_ALLOW_RESET_PWD"),
@@ -945,8 +953,7 @@ var usermgmt = (() => {
                 (errMsg) => {
                     document.getElementById("error-2fa-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
-                },
-                setWaitCursor
+                }
             );
         }
         else if (!checkbox.checked && currentUser.requires2FA) {
@@ -1024,19 +1031,73 @@ var usermgmt = (() => {
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
                     body: JSON.stringify(checkbox.checked)
                 },
-                (changed) => {
-                    if (changed) {
-                        currentUser.useLongLivedToken = checkbox.checked;
+                (lltoken) => {
+                    currentUser.useLongLivedToken = checkbox.checked;
+                    currentUser.usePin = false;
+                    if (lltoken && lltoken.length > 0) {
+                        utils.set_local_storage("pwdman-lltoken", lltoken);
+                    }
+                    else {
+                        utils.remove_local_storage("pwdman-lltoken");
                     }
                     renderEditAccount();
                 },
                 (errMsg) => {
                     document.getElementById("error-keeplogin-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
-                },
-                setWaitCursor
+                }
             );
         }
+    };
+
+    const onUpdatePin = () => {
+        clearErrors();
+        const checkbox = document.getElementById("account-pin-id");
+        const div = document.getElementById("account-pin-div-id");
+        controls.removeAllChildren(div);
+        if (checkbox.checked && !currentUser.usePin) {
+            const input = controls.createPasswordField(div, _T("TEXT_PIN"), undefined, undefined, 6, 6);
+            const imgPin = controls.createImg(div, "img-pwd-status", 24, 24, "/images/buttons/dialog-error.png", _T("INFO_PIN_NOK"));
+            imgPin.id = "img-pin-id";
+            input.id = "input-pin-id";
+            input.addEventListener("input", onUpdatePin2);
+        }
+        else if (!checkbox.checked && currentUser.usePin) {
+            onUpdatePin2();
+        }
+    };
+
+    const onUpdatePin2 = () => {
+        let pin = "";
+        const checkbox = document.getElementById("account-pin-id");
+        if (checkbox.checked) {
+            pin = document.getElementById("input-pin-id").value.trim();
+            const imgPin = document.getElementById("img-pin-id");
+            if (pin.length < 4 || pin.length > 6 || isNaN(parseInt(pin))) {
+                imgPin.src = "/images/buttons/dialog-error.png";
+                imgPin.title = _T("INFO_PIN_NOK");
+                return;
+            }
+            imgPin.src = "/images/buttons/dialog-clean.png";
+            imgPin.title = _T("INFO_PIN_OK");
+        }
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/pwdman/user/pin",
+            {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify(pin)
+            },
+            (changed) => {
+                if (changed) {
+                    currentUser.usePin = pin && pin.length > 0;
+                }
+            },
+            (errMsg) => {
+                document.getElementById("error-pin-id").textContent = _T(errMsg);
+                checkbox.checked = !checkbox.checked;
+            }
+        );
     };
 
     const onUpdateAllowResetPwd = () => {
@@ -1059,8 +1120,7 @@ var usermgmt = (() => {
                 (errMsg) => {
                     document.getElementById("error-allowresetpwd-id").textContent = _T(errMsg);
                     checkbox.checked = !checkbox.checked;
-                },
-                setWaitCursor
+                }
             );
         }
     };
