@@ -121,7 +121,7 @@
   "ERROR_INVALID_PLAYER_NAME": "Ungültiger Spielername.",
   "ERROR_INVALID_PLAYER_NAMES": "Spielernamen sind ungültig.",
   "ERROR_INVALID_PIN": "PIN ist ungültig.",
-  "ERROR_INVALID_PIN_LOGOUT": "PIN ist ungültig. Du bist jetzt abgemeldet. Klicke 'Abbrechen'.",
+  "ERROR_INVALID_PIN_LOGOUT": "PIN ist ungültig. Du bist jetzt abgemeldet.",
   "ERROR_INVALID_PROFILE_PHOTO": "Ungültige Datei. Erlaubt sind JPG und PNG bis 10 MB.",
   "ERROR_INVALID_PWD": "Ungültiges Kennwort.",
   "ERROR_INVALID_REG_CODE": "Registrierungscode ist ungültig.",

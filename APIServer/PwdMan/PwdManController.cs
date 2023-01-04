@@ -313,8 +313,8 @@ namespace APIServer.PwdMan
         [Route("api/pwdman/auth/pin")]
         public IActionResult LoginPin([FromBody] string pin)
         {
-            if (pin == null) throw new MissingParameterException();
-            if (pin.Length < 4 || pin.Length > 6 || !int.TryParse(pin, out _)) throw new InvalidParameterException();
+            if (string.IsNullOrEmpty(pin)) throw new MissingParameterException();
+            if (pin.Length > Limits.MAX_PASSWORD) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
             return new JsonResult(PwdManService.AuthenticatePin(GetToken(), pin, ipAddress));
         }

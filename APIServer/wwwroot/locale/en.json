@@ -121,7 +121,7 @@
   "ERROR_INVALID_PLAYER_NAME": "Invalid player name.",
   "ERROR_INVALID_PLAYER_NAMES": "Player names are invalid.",
   "ERROR_INVALID_PIN": "PIN is invalid.",
-  "ERROR_INVALID_PIN_LOGOUT": "PIN is invalid. You are logged out. Click 'Cancel'.",
+  "ERROR_INVALID_PIN_LOGOUT": "PIN is invalid. You are logged out.",
   "ERROR_INVALID_PROFILE_PHOTO": "Invalid picture file. Allowed are JPG and PNG files up to 10 MB.",
   "ERROR_INVALID_PWD": "Invalid password.",
   "ERROR_INVALID_REG_CODE": "Registration code is invalid.",
