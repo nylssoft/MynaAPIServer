@@ -35,7 +35,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.8";
+    let version = "2.0.9";
 
     // helper
 
@@ -501,6 +501,7 @@ var pwdman = (() => {
         codeLabel.htmlFor = "securitycode-id";
         codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => click("button-login-id"), undefined, 10, 10);
         codeInput.id = "securitycode-id";
+        codeInput.setAttribute("autocomplete", "off");
         codeInput.addEventListener("input", () => {
             clearError();
             enableIfNotEmpty("button-login-id", "securitycode-id");
@@ -647,6 +648,7 @@ var pwdman = (() => {
         codeLabel.htmlFor = "code-id";
         codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => click("button-change-id"), undefined, 16, 16);
         codeInput.id = "code-id";
+        codeInput.setAttribute("autocomplete", "off");
         const onInput = () => {
             clearError();
             enableIfNotEmpty("button-change-id", "newpwd-id", "confirmpwd-id", "code-id");
@@ -737,6 +739,7 @@ var pwdman = (() => {
         codeLabel.htmlFor = "code-id";
         codeInput = controls.createInputField(codeDiv, _T("TEXT_REG_CODE"), () => click("button-register-id"), undefined, 16, 16);
         codeInput.id = "code-id";
+        codeInput.setAttribute("autocomplete", "off");
         if (confirmRegistrationCode) {
             codeInput.value = confirmRegistrationCode;
         }
