@@ -38,7 +38,7 @@ The user's data stored in the cloud can be downloaded using the tool [Cloud Expo
 
 Currently, the encryption key cannot be changed. Use the Cloud Export tool to copy the data to a newly registered user account
 with the changed encryption key and afterwards delete the previously used account. Change the login name and email address to the
-previously used email address if required.
+previously used values if required.
 
 An Android app is provided to access and manage the data on an Android device. This app is named Password Reader but it
 also allows to add, update or delete passwords, manage notes, the diary and download documents
