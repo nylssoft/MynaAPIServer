@@ -155,6 +155,12 @@ form {
     color: darkblue;
 }
 
+.button:disabled {
+    background-color: blue;
+    border-color: blue;
+    color: darkgrey;
+}
+
 .favicon {
     margin-right: 10pt;
 }

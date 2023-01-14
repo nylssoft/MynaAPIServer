@@ -35,7 +35,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.7";
+    let version = "2.0.8";
 
     // helper
 
@@ -309,7 +309,7 @@ var pwdman = (() => {
             return;
         }
         if (newPasswordPwd.value != confirmPasswordPwd.value) {
-            errorDiv.textContent = _T("ERROR_MISMATCH_NEW_PWD");
+            errorDiv.textContent = _T("ERROR_MISMATCH_CONFIRM_PWD");
             return;
         }
         utils.fetch_api_call("/api/pwdman/resetpwd2",
@@ -369,6 +369,45 @@ var pwdman = (() => {
         }
     };
 
+    const clearError = () => {
+        if (errorDiv && errorDiv.textContent && errorDiv.textContent.length > 0) {
+            errorDiv.textContent = "";
+        }
+    };
+
+    const isNotEmpty = (elem) => elem && elem.value && elem.value.length > 0;
+
+    const enableIfNotEmpty = (buttonid, ...elemIds) => {
+        if (buttonid && elemIds && elemIds.length > 0) {
+            const button = document.getElementById(buttonid);
+            if (button) {
+                const enabled = elemIds.every((id) => isNotEmpty(document.getElementById(id)));
+                if (button.disabled && enabled) {
+                    button.disabled = false;
+                }
+                else if (!button.disabled && !enabled) {
+                    button.disabled = true;
+                }
+            }
+        }
+    };
+
+    const setFocusIfNotEmpty = (focusId, elemId) => {
+        if (isNotEmpty(document.getElementById(elemId))) {
+            const focusElem = document.getElementById(focusId);
+            if (focusElem) {
+                focusElem.focus();
+            }
+        }
+    };
+
+    const click = (buttonId) => {
+        const buttonElem = document.getElementById(buttonId);
+        if (buttonElem && !buttonElem.disabled) {
+            buttonElem.click();
+        }
+    };
+
     // rendering
 
     const renderHeader = (parent, title) => {
@@ -388,7 +427,7 @@ var pwdman = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_LOGIN")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2023 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_LOGIN")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
@@ -413,17 +452,22 @@ var pwdman = (() => {
         let loginDiv = controls.createDiv(parent);
         let userNameLabel = controls.createLabel(loginDiv, undefined, _T("LABEL_NAME"));
         userNameLabel.htmlFor = "username-id";
-        userNameInput = controls.createInputField(loginDiv, _T("TEXT_NAME"), () => userPasswordPwd.focus(), undefined, 16, 32);
+        userNameInput = controls.createInputField(loginDiv, _T("TEXT_NAME"), () => setFocusIfNotEmpty("userpwd-id", "username-id"), undefined, 16, 32);
         userNameInput.id = "username-id";
         if (userName) {
             userNameInput.value = userName;
         }
-        userNameInput.addEventListener("input", () => errorDiv.textContent = "");
         let passwordDiv = controls.createDiv(parent);
         let userPasswordLabel = controls.createLabel(passwordDiv, undefined, _T("LABEL_PWD"));
         userPasswordLabel.htmlFor = "userpwd-id";
-        userPasswordPwd = controls.createPasswordField(passwordDiv, _T("TEXT_PWD"), () => authenticate(), undefined, 16, 100);
+        userPasswordPwd = controls.createPasswordField(passwordDiv, _T("TEXT_PWD"), () => click("button-login-id"), undefined, 16, 100);
         userPasswordPwd.id = "userpwd-id";
+        const onInput = () => {
+            clearError();
+            enableIfNotEmpty("button-login-id", "userpwd-id", "username-id");
+        };
+        userNameInput.addEventListener("input", onInput);
+        userPasswordPwd.addEventListener("input", onInput);
         if (!utils.is_mobile()) {
             if (userName) {
                 userPasswordPwd.focus();
@@ -432,9 +476,10 @@ var pwdman = (() => {
                 userNameInput.focus();
             }
         }
-        userPasswordPwd.addEventListener("input", () => errorDiv.textContent = "");
         let buttonDiv = controls.createDiv(parent);
-        controls.createButton(buttonDiv, _T("BUTTON_LOGIN"), () => authenticate(), undefined, "button");
+        const loginButton = controls.createButton(buttonDiv, _T("BUTTON_LOGIN"), () => authenticate(), undefined, "button");
+        loginButton.id = "button-login-id";
+        loginButton.disabled = true;
         if (nexturl) {
             controls.createButton(buttonDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         }
@@ -450,48 +495,56 @@ var pwdman = (() => {
     const renderPass2 = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent, _T("HEADER_LOGIN"));
-        if (lastErrorMessage && lastErrorMessage.length > 0) {
-            renderError(parent);
-        }
         controls.create(parent, "p", undefined, _T("INFO_ENTER_SEC_KEY"));
         const codeDiv = controls.createDiv(parent);
         const codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_SEC_KEY"));
         codeLabel.htmlFor = "securitycode-id";
-        codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => authenticatePass2(), undefined, 10, 10);
+        codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => click("button-login-id"), undefined, 10, 10);
         codeInput.id = "securitycode-id";
+        codeInput.addEventListener("input", () => {
+            clearError();
+            enableIfNotEmpty("button-login-id", "securitycode-id");
+        });
         if (!utils.is_mobile()) {
             codeInput.focus();
         }
         const buttonLoginDiv = controls.createDiv(parent);
-        controls.createButton(buttonLoginDiv, _T("BUTTON_LOGIN"), () => authenticatePass2(), undefined, "button");
+        const loginButton = controls.createButton(buttonLoginDiv, _T("BUTTON_LOGIN"), () => authenticatePass2(), undefined, "button");
+        loginButton.id = "button-login-id";
+        loginButton.disabled = true;
         controls.createButton(buttonLoginDiv, _T("BUTTON_CANCEL"), () => {
             setState();
             cancel();
         }, undefined, "button");
+        renderError(parent);
         renderCopyright(parent);
     };
 
     const renderPin = (parent) => {
         waitDiv = controls.createDiv(parent, "invisible-div");
         renderHeader(parent, _T("HEADER_LOGIN"));
-        if (lastErrorMessage && lastErrorMessage.length > 0) {
-            renderError(parent);
-        }
         controls.create(parent, "p", undefined, _T("INFO_ENTER_PIN"));
         const codeDiv = controls.createDiv(parent);
         const codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_PIN"));
         codeLabel.htmlFor = "pin-id";
-        pinPassword = controls.createPasswordField(codeDiv, _T("TEXT_PIN"), () => authenticatePin(), undefined, 10, 10);
+        pinPassword = controls.createPasswordField(codeDiv, _T("TEXT_PIN"), () => click("button-login-id"), undefined, 10, 10);
         pinPassword.id = "pin-id";
+        pinPassword.addEventListener("input", () => {
+            clearError();
+            enableIfNotEmpty("button-login-id", "pin-id");
+        });
         if (!utils.is_mobile()) {
             pinPassword.focus();
         }
         const buttonLoginDiv = controls.createDiv(parent);
-        controls.createButton(buttonLoginDiv, _T("BUTTON_LOGIN"), () => authenticatePin(), undefined, "button");
+        const loginButton = controls.createButton(buttonLoginDiv, _T("BUTTON_LOGIN"), () => authenticatePin(), undefined, "button");
+        loginButton.id = "button-login-id";
+        loginButton.disabled = true;
         controls.createButton(buttonLoginDiv, _T("BUTTON_CANCEL"), () => {
             setState();
             cancel();
         }, undefined, "button");
+        renderError(parent);
         renderCopyright(parent);
     };
 
@@ -508,7 +561,7 @@ var pwdman = (() => {
         let oldPwdDiv = controls.createDiv(parent);
         let oldPwdLabel = controls.createLabel(oldPwdDiv, undefined, _T("LABEL_OLD_PWD"));
         oldPwdLabel.htmlFor = "oldpwd-id";
-        oldPasswordPwd = controls.createPasswordField(oldPwdDiv, _T("TEXT_OLD_PWD"), () => newPasswordPwd.focus(), undefined, 16, 100);
+        oldPasswordPwd = controls.createPasswordField(oldPwdDiv, _T("TEXT_OLD_PWD"), () => setFocusIfNotEmpty("newpwd-id", "oldpwd-id"), undefined, 16, 100);
         oldPasswordPwd.id = "oldpwd-id";
         if (!utils.is_mobile()) {
             oldPasswordPwd.focus();
@@ -516,17 +569,25 @@ var pwdman = (() => {
         let newPwdDiv = controls.createDiv(parent);
         let newPwdLabel = controls.createLabel(newPwdDiv, undefined, _T("LABEL_NEW_PWD"));
         newPwdLabel.htmlFor = "newpwd-id";
-        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_NEW_PWD"), () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_NEW_PWD"), () => setFocusIfNotEmpty("confirmpwd-id", "newpwd-id"), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         let confirmPwdDiv = controls.createDiv(parent);
         let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, _T("LABEL_CONFIRM_PWD"));
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => changePassword(), undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => click("button-ok-id"), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
-
+        const onInput = () => {
+            clearError();
+            enableIfNotEmpty("button-ok-id", "oldpwd-id", "newpwd-id", "confirmpwd-id");
+        };
+        oldPasswordPwd.addEventListener("input", onInput);
+        newPasswordPwd.addEventListener("input", onInput);
+        confirmPasswordPwd.addEventListener("input", onInput);
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, _T("BUTTON_OK"), () => changePassword(), undefined, "button");
+        const okButton = controls.createButton(okCancelDiv, _T("BUTTON_OK"), () => changePassword(), undefined, "button");
+        okButton.id = "button-ok-id";
+        okButton.disabled = true;
         controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), cancel, undefined, "button");
         renderError(parent);
         renderCopyright(parent);
@@ -539,14 +600,19 @@ var pwdman = (() => {
         emailDiv = controls.createDiv(parent);
         let emailLabel = controls.createLabel(emailDiv, undefined, _T("LABEL_EMAIL_ADDRESS"));
         emailLabel.htmlFor = "email-id";
-        emailInput = controls.createInputField(emailDiv, _T("TEXT_EMAIL_ADDRESS"), () => requestResetPassword(), undefined, 30, 80);
+        emailInput = controls.createInputField(emailDiv, _T("TEXT_EMAIL_ADDRESS"), () => click("button-continue-id"), undefined, 30, 80);
         emailInput.id = "email-id";
-        emailInput.addEventListener("input", () => errorDiv.textContent = "");
+        emailInput.addEventListener("input", () => {
+            clearError();
+            enableIfNotEmpty("button-continue-id", "email-id");
+        });
         if (!utils.is_mobile()) {
             emailInput.focus();
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestResetPassword(), undefined, "button");
+        const continueButton = controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestResetPassword(), undefined, "button");
+        continueButton.id = "button-continue-id";
+        continueButton.disabled = true;
         controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
@@ -565,7 +631,7 @@ var pwdman = (() => {
         let newPwdDiv = controls.createDiv(parent);
         let newPwdLabel = controls.createLabel(newPwdDiv, undefined, _T("LABEL_NEW_PWD"));
         newPwdLabel.htmlFor = "newpwd-id";
-        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_NEW_PWD"), () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_NEW_PWD"), () => setFocusIfNotEmpty("confirmpwd-id", "newpwd-id"), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         if (!utils.is_mobile()) {
             newPasswordPwd.focus();
@@ -573,21 +639,28 @@ var pwdman = (() => {
         let confirmPwdDiv = controls.createDiv(parent);
         let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, _T("LABEL_CONFIRM_PWD"));
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => codeInput.focus(), undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => setFocusIfNotEmpty("code-id", "confirmpwd-id"), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
-
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_SEC_KEY"));
         codeLabel.htmlFor = "code-id";
-        codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => resetPassword(parent), undefined, 16, 16);
+        codeInput = controls.createInputField(codeDiv, _T("TEXT_SEC_KEY"), () => click("button-change-id"), undefined, 16, 16);
         codeInput.id = "code-id";
-        codeInput.addEventListener("input", () => errorDiv.textContent = "");
+        const onInput = () => {
+            clearError();
+            enableIfNotEmpty("button-change-id", "newpwd-id", "confirmpwd-id", "code-id");
+        };
+        codeInput.addEventListener("input", onInput);
+        confirmPasswordPwd.addEventListener("input", onInput);
+        newPasswordPwd.addEventListener("input", onInput);
         if (resetPwdCode) {
             codeInput.value = resetPwdCode;
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, _T("BUTTON_CHANGE_PWD"), () => resetPassword(parent), undefined, "button");
+        const changeButton = controls.createButton(okCancelDiv, _T("BUTTON_CHANGE_PWD"), () => resetPassword(parent), undefined, "button");
+        changeButton.id = "button-change-id";
+        changeButton.disabled = true;
         controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
@@ -606,16 +679,19 @@ var pwdman = (() => {
         emailDiv = controls.createDiv(parent);
         let emailLabel = controls.createLabel(emailDiv, undefined, _T("LABEL_EMAIL_ADDRESS"));
         emailLabel.htmlFor = "email-id";
-        emailInput = controls.createInputField(emailDiv, _T("TEXT_EMAIL_ADDRESS"), () => requestRegistration(), undefined, 30, 80);
+        emailInput = controls.createInputField(emailDiv, _T("TEXT_EMAIL_ADDRESS"), () => click("button-continue-id"), undefined, 30, 80);
         emailInput.id = "email-id";
         emailInput.addEventListener("input", () => {
-            errorDiv.textContent = "";
+            clearError();
+            enableIfNotEmpty("button-continue-id", "email-id");
         });
         if (!utils.is_mobile()) {
             emailInput.focus();
         }
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestRegistration(), undefined, "button");
+        const continueButton = controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestRegistration(), undefined, "button");
+        continueButton.id = "button-continue-id";
+        continueButton.disabled = true;
         controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
@@ -640,7 +716,7 @@ var pwdman = (() => {
         let userNameDiv = controls.createDiv(parent);
         const userNameLabel = controls.createLabel(userNameDiv, undefined, _T("LABEL_NAME"));
         userNameLabel.htmlFor = "username-id";
-        userNameInput = controls.createInputField(userNameDiv, _T("TEXT_NAME"), () => newPasswordPwd.focus(), undefined, 16, 32);
+        userNameInput = controls.createInputField(userNameDiv, _T("TEXT_NAME"), () => setFocusIfNotEmpty("newpwd-id", "username-id"), undefined, 16, 32);
         userNameInput.id = "username-id";
         if (!utils.is_mobile()) {
             userNameInput.focus();
@@ -648,24 +724,34 @@ var pwdman = (() => {
         let newPwdDiv = controls.createDiv(parent);
         let newPwdLabel = controls.createLabel(newPwdDiv, undefined, _T("LABEL_PWD"));
         newPwdLabel.htmlFor = "newpwd-id";
-        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_PWD"), () => confirmPasswordPwd.focus(), undefined, 16, 100);
+        newPasswordPwd = controls.createPasswordField(newPwdDiv, _T("TEXT_PWD"), () => setFocusIfNotEmpty("confirmpwd-id", "newpwd-id"), undefined, 16, 100);
         newPasswordPwd.id = "newpwd-id";
         let confirmPwdDiv = controls.createDiv(parent);
         let confirmPwdLabel = controls.createLabel(confirmPwdDiv, undefined, _T("LABEL_CONFIRM_PWD"));
         confirmPwdLabel.htmlFor = "confirmpwd-id";
-        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => codeInput.focus(), undefined, 16, 100);
+        confirmPasswordPwd = controls.createPasswordField(confirmPwdDiv, _T("TEXT_CONFIRM_PWD"), () => setFocusIfNotEmpty("code-id", "confirmpwd-id"), undefined, 16, 100);
         confirmPasswordPwd.id = "confirmpwd-id";
         renderUpdatePasswordStatus(newPwdDiv, newPasswordPwd.id, confirmPwdDiv, confirmPasswordPwd.id);
         let codeDiv = controls.createDiv(parent);
         let codeLabel = controls.createLabel(codeDiv, undefined, _T("LABEL_REG_CODE"));
         codeLabel.htmlFor = "code-id";
-        codeInput = controls.createInputField(codeDiv, _T("TEXT_REG_CODE"), () => register(), undefined, 16, 16);
+        codeInput = controls.createInputField(codeDiv, _T("TEXT_REG_CODE"), () => click("button-register-id"), undefined, 16, 16);
         codeInput.id = "code-id";
         if (confirmRegistrationCode) {
             codeInput.value = confirmRegistrationCode;
         }
+        const onInput = () => {
+            clearError();
+            enableIfNotEmpty("button-register-id", "username-id", "newpwd-id", "confirmpwd-id", "code-id");
+        };
+        userNameInput.addEventListener("input", onInput);
+        newPasswordPwd.addEventListener("input", onInput);
+        confirmPasswordPwd.addEventListener("input", onInput);
+        codeInput.addEventListener("input", onInput);
         let okCancelDiv = controls.createDiv(parent);
-        controls.createButton(okCancelDiv, _T("BUTTON_REGISTER"), () => register(), undefined, "button");
+        const registerButton = controls.createButton(okCancelDiv, _T("BUTTON_REGISTER"), () => register(), undefined, "button");
+        registerButton.id = "button-register-id";
+        registerButton.disabled = true;
         controls.createButton(okCancelDiv, _T("BUTTON_CANCEL"), () => cancel(), undefined, "button");
         renderError(parent);
         renderCopyright(parent);
