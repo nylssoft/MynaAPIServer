@@ -470,7 +470,14 @@ form {
         width: 200pt;
     }
 
+    p {
+        margin-top: 10pt;
+        margin-bottom: 10pt;
+    }
+
     input {
+        margin-top: 7pt;
+        margin-bottom: 7pt;
         font-size: 11pt;
         width: 200pt;
     }
