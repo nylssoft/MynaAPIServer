@@ -276,7 +276,7 @@ form {
 /* Create a custom checkbox */
 .checkmark-checkbox {
     position: absolute;
-    top: 0;
+    top: 3px;
     left: 0;
     height: 20px;
     width: 20px;
@@ -484,6 +484,23 @@ form {
 
     .container-checkbox {
         font-size: 11pt;
+        padding-left: 15pt;
+    }
+
+    .checkmark-checkbox {
+        position: absolute;
+        top: 0;
+        height: 15px;
+        width: 15px;
+    }
+
+    .container-checkbox .checkmark-checkbox:after {
+        left: 6px;
+        top: 2px;
+        width: 3px;
+        height: 8px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
     }
 
     .button {

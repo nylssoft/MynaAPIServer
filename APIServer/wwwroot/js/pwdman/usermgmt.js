@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.9";
+    let version = "2.0.10";
 
     // helper
 
@@ -61,7 +61,7 @@ var usermgmt = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_PROFILE")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2023 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_PROFILE")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
