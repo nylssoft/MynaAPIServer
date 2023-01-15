@@ -12,6 +12,7 @@ Skat requires 3 or 4 players, Backgammon and Chess 2 players. Tetris is a single
 Chess can be used as a single player game if a chess engine is configured, e.g. Zappa or Stockfish.
 
 The following applications are provided:
+- Contacts, a tool to manage contacts securely
 - Diary, a secure online diary
 - Documents, a simple and secure online document management system
 - Notes, a secure online system to manage simple notes
@@ -19,6 +20,29 @@ The following applications are provided:
 - Slideshow, an online picture galery
 
 Visit [stockfleth.eu](https://www.stockfleth.eu) to see the portal server in action.
+
+The main goal of the applications is data protection. Nobody except the logged in user can access, read and manage the content.
+
+The appliations store any content encrypted on the server.
+The encryption key is stored locally in the client application, i.e. in the locale storage of the web browser.
+The key value itself is also encrypted in the browser storage and can only be decrypted after successfull login.
+The server cannot decrypt the content, all decryption is done in the browser using the locally stored encryption key.
+
+Each user must store or print the encryption key and place it securely, e.g. in a local password manager.
+The data cannot be restored if the encryption key is lost.
+
+Use a secure random encryption key, do not use any password as encryption key. After user registration the browser
+generates a secure random encryption key as a suggestion.
+ 
+The user's data stored in the cloud can be downloaded using the tool [Cloud Export](https://github.com/nylssoft/MynaCloudExport).
+
+Currently, the encryption key cannot be changed. Use the Cloud Export tool to copy the data to a newly registered user account
+with the changed encryption key and afterwards delete the previously used account. Change the login name and email address to the
+previously used values if required.
+
+An Android app is provided to access and manage the data on an Android device. This app is named Password Reader but it
+also allows to add, update or delete passwords, manage notes, the diary and download documents
+([Password Reader](https://github.com/nylssoft/MynaPasswordReaderMAUI)).
 
 ## Setup
 
@@ -139,8 +163,13 @@ the configuration of a chess engine, e.g. Zappa or Stockfish. If configured you 
 
 ### Backgammon
 
-This game is the last project I provided for now, also a game I loved to play in my childhood. It's quite nice for a break during work to play
+Backgammon is the last game I provided for now, also a game I loved to play in my childhood. It's quite nice for a break during work to play
 against a colleque as it usually takes only a few minutes.
 It is also the first project where I tried to use sprites in JavaScript in the sense of the old C64 days, i.e.
 drawing of a figure that is smartly hovering over the playground.
 The animation sequence for the winner and looser is based on sprites.
+
+### Contacts
+
+This application allows to manage basic contact information. All data is encrypted, therefore the contacts are never shared with anybody, nobody except the logged in user can decrypt and read the contacts. It allows to sort the contacts after birthday to provide a simple birthday calendar.
+
