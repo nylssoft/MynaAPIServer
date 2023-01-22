@@ -35,7 +35,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.9";
+    let version = "2.0.10";
 
     // helper
 
@@ -791,7 +791,7 @@ var pwdman = (() => {
             document.title = _T("HEADER_RESET_PWD");
             renderResetPwd2(document.body);
         }
-        else if (!authToken || authToken.length == 0) {
+        else if ((!authToken || authToken.length == 0) && (!actionChangePwd || !actionOk)) {
             document.title = _T("HEADER_LOGIN");
             if (!utils.is_pin_required()) {
                 renderAuthentication(document.body);
