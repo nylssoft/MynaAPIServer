@@ -17,6 +17,7 @@
 */
 using APIServer.Database;
 using APIServer.PwdMan.Model;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -62,8 +63,6 @@ namespace APIServer.PwdMan
         long GetUsedStorage(string authenticationToken, long userId);
 
         bool UnlockUser(string authenticationToken, string username);
-
-        int DeleteLoginIpAddresses(string authenticiationToken);
 
         User2FAKeyModel GenerateUser2FAKey(string authenticationToken, bool forceNew);
 
@@ -130,6 +129,10 @@ namespace APIServer.PwdMan
         bool DeletePasswordFile(string authenticationToken);
 
         bool DeleteUser(string authenticationToken, string username);
+
+        // --- audit
+
+        List<AuditModel> GetAudit(string authenticationToken, int maxResults, DateTime? beforeUtc);
 
         // --- database access
 

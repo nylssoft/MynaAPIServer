@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.10";
+    let version = "2.0.11";
 
     // helper
 
@@ -277,6 +277,38 @@ var usermgmt = (() => {
         );
     };
 
+    const renderAudit = (max, auditItems) => {
+        const parent = document.body;
+        controls.removeAllChildren(parent);
+        // wait screen
+        waitDiv = controls.createDiv(parent, "invisible-div");
+        // menu
+        utils.create_menu(parent);
+        utils.set_menu_items(currentUser);
+        // header
+        renderHeader(parent, undefined, _T("HEADER_AUDIT"));
+        const auditDiv = controls.createDiv(parent);
+        let hasNext = false;
+        if (auditItems.length > max) {
+            auditItems.pop();
+            hasNext = true;
+        }
+        auditItems.forEach(auditItem => {
+            const performedDate = utils.format_date_string(auditItem.performedUtc);
+            const itemDiv = controls.createDiv(auditDiv);
+            controls.createSpan(itemDiv, undefined, performedDate + ": " + _T(auditItem.action));
+        });
+        // buttons
+        const buttonsDiv = controls.createDiv(parent);
+        const buttonsP = controls.create(buttonsDiv, "p", undefined);
+        controls.createButton(buttonsP, _T("BUTTON_BACK"), () => renderCurrentUser(), undefined, "button");
+        if (hasNext) {
+            controls.createButton(buttonsP, _T("BUTTON_VIEW_AUDIT_MORE"), () => onViewAudit(auditItems[auditItems.length - 1].performedUtc), undefined, "button");
+        }
+        // copyright
+        renderCopyright(parent);
+    };
+
     const renderDeleteUsersActions = (users, confirm) => {
         let actionsDiv = document.getElementById("deleteusers-actions-id");
         controls.removeAllChildren(actionsDiv);
@@ -322,6 +354,8 @@ var usermgmt = (() => {
         const lastLoginDate = utils.format_date_string(currentUser.lastLoginUtc);
         controls.createSpan(lastLoginP, undefined, _T("LABEL_LAST_LOGIN") + " ");
         controls.createSpan(lastLoginP, undefined, lastLoginDate);
+        const viewAuditImg = controls.createImg(lastLoginP, "profile-view-audit", 32, 32, "/images/buttons/gnome-blog.png", _T("BUTTON_VIEW_AUDIT"));
+        viewAuditImg.addEventListener("click", () => onViewAudit());
         // register date
         const registeredP = controls.create(parent, "p");
         const registerDate = utils.format_date_string(currentUser.registeredUtc);
@@ -1268,6 +1302,16 @@ var usermgmt = (() => {
                 setWaitCursor
             );
         }
+    };
+
+    const onViewAudit = (before) => {
+        const token = utils.get_authentication_token();
+        const max = 20;
+        let url = `api/pwdman/user/audit?max=${max+1}`;
+        if (before) {
+            url += `&before=${before}`;
+        }
+        utils.fetch_api_call(url, { headers: { "token": token } }, (auditItems) => renderAudit(max, auditItems), onRejectError);
     };
 
     const onResolveCurrentUser = (user) => {

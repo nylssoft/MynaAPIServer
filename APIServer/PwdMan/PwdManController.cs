@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using APIServer.PwdMan.Model;
 using System.Threading.Tasks;
+using System;
 
 namespace APIServer.PwdMan
 {
@@ -150,13 +151,6 @@ namespace APIServer.PwdMan
             if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
             if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             return new JsonResult(PwdManService.UnlockUser(GetToken(), username));
-        }
-
-        [HttpDelete]
-        [Route("api/pwdman/loginipaddress")]
-        public IActionResult DeleteLoginIpAddresses()
-        {
-            return new JsonResult(PwdManService.DeleteLoginIpAddresses(GetToken()));
         }
 
         [HttpPut]
@@ -395,6 +389,15 @@ namespace APIServer.PwdMan
             if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
             if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             return new JsonResult(PwdManService.DeleteUser(GetToken(), username));
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/user/audit")]
+        public IActionResult GetAudit([FromQuery] int? max, [FromQuery] DateTime? before)
+        {
+            int maxResults = max ?? 25;
+            if (maxResults <= 0 || maxResults > 1000) throw new InvalidParameterException();
+            return new JsonResult(PwdManService.GetAudit(GetToken(), maxResults, before));
         }
 
         // --- private

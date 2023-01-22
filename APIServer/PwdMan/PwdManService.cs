@@ -260,8 +260,8 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Confirm registration for email addresss '{email}'...", confirmation.Email);
             var email = confirmation.Email.ToLowerInvariant();
-            var user = GetUserFromToken(authenticationToken);
-            if (!HasRole(user, "usermanager"))
+            var adminuser = GetUserFromToken(authenticationToken);
+            if (!HasRole(adminuser, "usermanager"))
             {
                 throw new AccessDeniedPermissionException();
             }
@@ -298,7 +298,7 @@ namespace APIServer.PwdMan
                 };
                 registration.Token = pwdgen.Generate();
                 registration.ConfirmedUtc = DateTime.UtcNow;
-                registration.ConfirmedById = user.Id;
+                registration.ConfirmedById = adminuser.Id;
                 dbContext.SaveChanges();
             }
             var opt = GetOptions();
@@ -900,19 +900,6 @@ namespace APIServer.PwdMan
             return false;
         }
 
-        public int DeleteLoginIpAddresses(string authenticationToken)
-        {
-            logger.LogDebug("Delete login IP addresses...");
-            var user = GetUserFromToken(authenticationToken);
-            var dbContext = GetDbContext();
-            var loginIpAddresses = dbContext.DbLoginIpAddresses
-                .Where(ip => ip.DbUserId == user.Id);
-            var ret = loginIpAddresses.Count();
-            dbContext.DbLoginIpAddresses.RemoveRange(loginIpAddresses);
-            dbContext.SaveChanges();
-            return ret;
-        }
-
         public long GetUsedStorage(string authenticationToken, long userId)
         {
             logger.LogDebug("Get used storage for user ID {userId}...", userId);
@@ -1010,11 +997,18 @@ namespace APIServer.PwdMan
             {
                 loginIpAddress.Failed = 0;
             }
+            string auditAction;
             if (!user.Requires2FA)
             {
                 user.LoginTries += 1;
                 user.LastLoginTryUtc = DateTime.UtcNow;
+                auditAction = "AUDIT_LOGIN_BASIC_1";
             }
+            else
+            {
+                auditAction = "AUDIT_LOGIN_BASIC_2FA_1";
+            }
+            string auditParam = ipAddress;
             var sendLoginWarning = true;
             if (!string.IsNullOrEmpty(authentication.ClientUUID))
             {
@@ -1037,7 +1031,9 @@ namespace APIServer.PwdMan
                 }
                 userClient.LastLoginIPAddress = ipAddress;
                 userClient.LastLoginUTC = DateTime.UtcNow;
-            }
+                auditParam += $" [{userClient.ClientName},{userClient.ClientUUID}]";
+            }            
+            Audit(dbContext, user, auditAction, auditParam);
             dbContext.SaveChanges();
             var ret = new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
             if (!user.Requires2FA && user.UseLongLivedToken)
@@ -1111,6 +1107,7 @@ namespace APIServer.PwdMan
             loginIpAddress.Failed = 0;
             user.LoginTries += 1;
             user.LastLoginTryUtc = DateTime.UtcNow;
+            Audit(dbContext, user, "AUDIT_LOGIN_2FA_1", loginIpAddress.IpAddress);
             dbContext.SaveChanges();
             return ret;
         }
@@ -1124,10 +1121,6 @@ namespace APIServer.PwdMan
                 logger.LogDebug("User not configured for long lived token usage.");
                 throw new InvalidTokenException();
             }
-            if (!string.IsNullOrEmpty(user.PinHash))
-            {
-                return new AuthenticationResponseModel { RequiresPin = true };
-            }
             var dbContext = GetDbContext();
             var loginIpAddress = dbContext.DbLoginIpAddresses
                 .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
@@ -1137,11 +1130,18 @@ namespace APIServer.PwdMan
                 loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
                 dbContext.DbLoginIpAddresses.Add(loginIpAddress);
             }
+            if (!string.IsNullOrEmpty(user.PinHash))
+            {
+                Audit(dbContext, user, "AUDIT_LOGIN_LLTOKEN_PIN_1", loginIpAddress.IpAddress);
+                dbContext.SaveChanges();
+                return new AuthenticationResponseModel { RequiresPin = true };
+            }
             loginIpAddress.LastUsedUtc = DateTime.UtcNow;
             user.LastLoginTryUtc = loginIpAddress.LastUsedUtc;
             user.LoginTries += 1;
             loginIpAddress.Failed = 0;
             loginIpAddress.Succeeded += 1;
+            Audit(dbContext, user, "AUDIT_LOGIN_LLTOKEN_1", loginIpAddress.IpAddress);
             dbContext.SaveChanges();
             var opt = GetOptions();
             var ret = new AuthenticationResponseModel
@@ -1197,6 +1197,7 @@ namespace APIServer.PwdMan
             user.LoginTries += 1;
             loginIpAddress.Failed = 0;
             loginIpAddress.Succeeded += 1;
+            Audit(dbContext, user, "AUDIT_LOGIN_PIN_1", loginIpAddress.IpAddress);
             dbContext.SaveChanges();
             var ret = new AuthenticationResponseModel
             {
@@ -1253,6 +1254,7 @@ namespace APIServer.PwdMan
                     if (user != null)
                     {
                         user.LogoutUtc = DateTime.UtcNow;
+                        Audit(dbContext, user, "AUDIT_LOGOUT");
                         dbContext.SaveChanges();
                         return true;
                     }
@@ -1546,6 +1548,35 @@ namespace APIServer.PwdMan
                 }
             }
             return true;
+        }
+
+        // --- audit
+
+        public List<AuditModel> GetAudit(string authenticationToken, int maxResults, DateTime? beforeUtc)
+        {
+            logger.LogDebug("Get {maxResults} audit items before {beforeUtc}...", maxResults, beforeUtc);
+            var ret = new List<AuditModel>();
+            var user = GetUserFromToken(authenticationToken);
+            var dbContext = GetDbContext();
+            Func<DbAudit, bool> where;
+            if (!beforeUtc.HasValue)
+            {
+                where = a => a.DbUserId == user.Id;
+            }
+            else
+            {
+                where = a => a.DbUserId == user.Id && a.PerformedUtc < beforeUtc;
+            }
+            var auditItems = dbContext.DbAuditItems
+                .Where(where)
+                .OrderByDescending(a => a.PerformedUtc)
+                .ThenByDescending(a => a.Id)
+                .Take(maxResults);
+            foreach (var auditItem in auditItems)
+            {
+                ret.Add(new AuditModel { PerformedUtc = auditItem.PerformedUtc, Action = auditItem.Action });
+            }
+            return ret;
         }
 
         // --- database access
@@ -1863,6 +1894,19 @@ namespace APIServer.PwdMan
         }
 
         // --- private static
+
+        private static void Audit(DbMynaContext dbContext, DbUser user, string action, params string[] actionParams)
+        {
+            if (actionParams.Any())
+            {
+                foreach (var param in actionParams)
+                {
+                    var p = param.Replace(@"\", @"\\").Replace(":", @"\;");
+                    action += $":{p}";
+                }
+            }
+            dbContext.DbAuditItems.Add(new DbAudit { DbUserId = user.Id, PerformedUtc = DateTime.UtcNow, Action = action });
+        }
 
         private static void CleanupLoginIpAddress(DbMynaContext dbContext, long userId)
         {

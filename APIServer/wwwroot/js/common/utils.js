@@ -877,7 +877,13 @@ var utils = (() => {
 function _T(id, ...restArgs) {
     const arr = id.split(":");
     if (arr.length > 1) {
-        return utils.format(utils.translate(arr[0]), arr.slice(1));
+        const params = arr.slice(1).map(p => {
+            if (typeof p == "string" && p.includes("\\")) {
+                return p.replaceAll("\\\\", "\\").replaceAll("\\;", ":");
+            }
+            return p;
+        });        
+        return utils.format(utils.translate(arr[0]), params);
     }
     return utils.format(utils.translate(id), restArgs);
 }

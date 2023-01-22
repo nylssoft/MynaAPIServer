@@ -245,6 +245,12 @@ form {
     background-color: darkgray;
 }
 
+.profile-view-audit {
+    position: relative;
+    left: 5pt;
+    top: 5pt;
+}
+
 #file-input-id {
     display: none;
 }
@@ -531,6 +537,12 @@ form {
 
     .dropdown-content a {
         padding: 6px 8px;
+    }
+
+    .profile-view-audit {
+        left: 3pt;
+        top: 8pt;
+        transform: scale(0.8);
     }
 }
 

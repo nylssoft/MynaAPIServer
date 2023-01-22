@@ -17,6 +17,28 @@ namespace APIServer.Migrations.DbSqlite
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.7");
 
+            modelBuilder.Entity("APIServer.Database.DbAudit", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Action")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("DbUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("PerformedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbUserId", "PerformedUtc");
+
+                    b.ToTable("Audit");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbChat", b =>
                 {
                     b.Property<long>("Id")
@@ -531,6 +553,17 @@ namespace APIServer.Migrations.DbSqlite
                     b.HasIndex("DbUserId");
 
                     b.ToTable("UserSkatResults");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbAudit", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "DbUser")
+                        .WithMany()
+                        .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DbUser");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbChat", b =>
