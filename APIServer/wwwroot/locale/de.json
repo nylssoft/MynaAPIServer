@@ -2,8 +2,8 @@
   "COPYRIGHT": "Niels Stockfleth",
 
   "AUDIT_LOGIN_BASIC_1": "Angemeldet mit Benutzernamen und Kennwort für IP-Adresse {0}.",
-  "AUDIT_LOGIN_BASIC_2FA_1": "Erste Anmeldung für Zwei-Faktor-Authentisierung mit Benutzernamen und Kennwort für IP-Adresse {0}.",
-  "AUDIT_LOGIN_LLTOKEN_PIN_1": "Erste Anmeldung für PIN-Authentisierung mit Langzeittoken für IP-Adresse {0}.",
+  "AUDIT_LOGIN_BASIC_2FA_1": "Anmeldung für Zwei-Faktor-Authentisierung mit Benutzernamen und Kennwort für IP-Adresse {0}.",
+  "AUDIT_LOGIN_LLTOKEN_PIN_1": "Anmeldung für PIN-Authentisierung mit Langzeittoken für IP-Adresse {0}.",
   "AUDIT_LOGIN_LLTOKEN_1": "Angemeldet mit Langzeittoken für IP-Adresse {0}.",
   "AUDIT_LOGIN_PIN_1": "Angemeldet mit PIN für IP-Adresse {0}.",
   "AUDIT_LOGIN_2FA_1": "Angemeldet mit Zwei-Faktor-Authentisierung für IP-Adresse {0}.",

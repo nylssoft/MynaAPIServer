@@ -2,8 +2,8 @@
   "COPYRIGHT": "Niels Stockfleth",
 
   "AUDIT_LOGIN_BASIC_1": "Logged in with username and password for IP address {0}.",
-  "AUDIT_LOGIN_BASIC_2FA_1": "First login for two factor authentication with username and password for IP address {0}.",
-  "AUDIT_LOGIN_LLTOKEN_PIN_1": "First login for PIN authentication with long-lived token for IP address {0}.",
+  "AUDIT_LOGIN_BASIC_2FA_1": "Login for two factor authentication with username and password for IP address {0}.",
+  "AUDIT_LOGIN_LLTOKEN_PIN_1": "Login for PIN authentication with long-lived token for IP address {0}.",
   "AUDIT_LOGIN_LLTOKEN_1": "Logged in with long-lived token for IP address {0}.",
   "AUDIT_LOGIN_PIN_1": "Logged in with PIN for IP address {0}.",
   "AUDIT_LOGIN_2FA_1": "Logged in with two factor authentication for IP address {0}.",
