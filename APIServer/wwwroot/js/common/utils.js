@@ -265,12 +265,17 @@ var utils = (() => {
             });
     };
 
+    const get_client_uuid = () => {
+        const ci = get_local_storage("clientinfo");
+        return ci && ci.length > 0 ? JSON.parse(ci).uuid : "";
+    };
+
     const auth_lltoken = (resolve) => {
-        let token = get_authentication_token();
+        const token = get_authentication_token();
         if (!token && !is_pin_required()) {
-            let lltoken = get_local_storage("pwdman-lltoken");
+            const lltoken = get_local_storage("pwdman-lltoken");
             if (lltoken) {
-                fetch_api_call("api/pwdman/auth/lltoken", { headers: { "token": lltoken } },
+                fetch_api_call("api/pwdman/auth/lltoken", { headers: { "token": lltoken, "uuid": get_client_uuid() } },
                     (authResult) => {
                         if (!authResult.requiresPin) {
                             const state = {

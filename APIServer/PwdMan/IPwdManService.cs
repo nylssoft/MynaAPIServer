@@ -90,11 +90,11 @@ namespace APIServer.PwdMan
 
         // --- authentication
 
-        Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authenication, string ipAddress, string locale);
+        Task<AuthenticationResponseModel> AuthenticateAsync(AuthenticationModel authentication, string ipAddress, string locale);
 
         AuthenticationResponseModel AuthenticateTOTP(string token, string totp, string ipAddress);
 
-        AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress);
+        AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string clientUUID, string ipAddress);
 
         AuthenticationResponseModel AuthenticatePin(string longLivedToken, string pin, string ipAddress);
 

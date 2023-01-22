@@ -1112,7 +1112,7 @@ namespace APIServer.PwdMan
             return ret;
         }
 
-        public AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string ipAddress)
+        public AuthenticationResponseModel AuthenticateLongLivedToken(string longLivedToken, string clientUUID, string ipAddress)
         {
             logger.LogDebug("Authenticate long lived token for IP address {ipAddress}...", ipAddress);
             var user = GetUserFromToken(longLivedToken, true);
@@ -1121,29 +1121,30 @@ namespace APIServer.PwdMan
                 logger.LogDebug("User not configured for long lived token usage.");
                 throw new InvalidTokenException();
             }
+            var opt = GetOptions();
             var dbContext = GetDbContext();
-            var loginIpAddress = dbContext.DbLoginIpAddresses
-                .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
-            if (loginIpAddress == null)
+            var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
+            var auditParam = $"{loginIpAddress.IpAddress}";
+            if (!string.IsNullOrEmpty(clientUUID))
             {
-                CleanupLoginIpAddress(dbContext, user.Id);
-                loginIpAddress = new DbLoginIpAddress { DbUserId = user.Id, IpAddress = ipAddress };
-                dbContext.DbLoginIpAddresses.Add(loginIpAddress);
+                var userClient = dbContext.DbUserClients.SingleOrDefault(client => client.DbUserId == user.Id && client.ClientUUID == clientUUID);
+                if (userClient != null)
+                {
+                    auditParam += $" [{userClient.ClientName},{userClient.ClientUUID}]";
+                }
             }
             if (!string.IsNullOrEmpty(user.PinHash))
             {
-                Audit(dbContext, user, "AUDIT_LOGIN_LLTOKEN_PIN_1", loginIpAddress.IpAddress);
+                Audit(dbContext, user, "AUDIT_LOGIN_LLTOKEN_PIN_1", auditParam);
                 dbContext.SaveChanges();
                 return new AuthenticationResponseModel { RequiresPin = true };
             }
-            loginIpAddress.LastUsedUtc = DateTime.UtcNow;
             user.LastLoginTryUtc = loginIpAddress.LastUsedUtc;
             user.LoginTries += 1;
             loginIpAddress.Failed = 0;
             loginIpAddress.Succeeded += 1;
-            Audit(dbContext, user, "AUDIT_LOGIN_LLTOKEN_1", loginIpAddress.IpAddress);
+            Audit(dbContext, user, "AUDIT_LOGIN_LLTOKEN_1", auditParam);
             dbContext.SaveChanges();
-            var opt = GetOptions();
             var ret = new AuthenticationResponseModel
             {
                 Token = GenerateToken(user.Name, opt, false),

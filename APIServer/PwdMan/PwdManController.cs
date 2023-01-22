@@ -300,7 +300,8 @@ namespace APIServer.PwdMan
         public IActionResult LoginWithLongLivedToken()
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            return new JsonResult(PwdManService.AuthenticateLongLivedToken(GetToken(), ipAddress));
+            var clientUUID = HttpContext.Request.Headers["uuid"];
+            return new JsonResult(PwdManService.AuthenticateLongLivedToken(GetToken(), clientUUID, ipAddress));
         }
 
         [HttpPost]
