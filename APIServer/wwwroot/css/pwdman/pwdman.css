@@ -251,6 +251,10 @@ form {
     top: 5pt;
 }
 
+.profile-audit-date {
+    color:lightgreen;
+}
+
 #file-input-id {
     display: none;
 }

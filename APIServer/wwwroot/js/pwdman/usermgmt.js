@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.11";
+    let version = "2.0.12";
 
     // helper
 
@@ -296,7 +296,8 @@ var usermgmt = (() => {
         auditItems.forEach(auditItem => {
             const performedDate = utils.format_date_string(auditItem.performedUtc);
             const itemDiv = controls.createDiv(auditDiv);
-            controls.createSpan(itemDiv, undefined, performedDate + ": " + _T(auditItem.action));
+            controls.createSpan(itemDiv, "profile-audit-date", performedDate + ": ");
+            controls.createSpan(itemDiv, undefined, _T(auditItem.action));
         });
         // buttons
         const buttonsDiv = controls.createDiv(parent);
