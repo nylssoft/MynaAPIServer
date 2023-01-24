@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.0.5";
+    let version = "2.0.6";
 
     // helper
 
@@ -942,7 +942,7 @@ var skat = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_SKAT")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_SKAT")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         if (ticket) {
             controls.createButton(div, _T("BUTTON_LEAVE_TABLE"), btnLogout_click, "Logout", "logout-button");

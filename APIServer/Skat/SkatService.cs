@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1061,7 +1061,7 @@ namespace APIServer.Skat
             if (skatTable.InactivePlayer != null)
             {
                 model.InactivePlayer = GetPlayerModel(skatTable.InactivePlayer,
-                    $"INFO_PLAYER_SUMMARY_1_2:{skatTable.InactivePlayer.Name}:{skatTable.InactivePlayer.Score}");
+                    $"INFO_PLAYER_SUMMARY_1_2:{skatTable.InactivePlayer.Name}:{skatTable.InactivePlayer.TournamentScore}");
                 if (skatTable.InactivePlayer.Name == ctx?.Name)
                 {
                     var stat = skatTable.GetPlayerStatus(skatTable.InactivePlayer);
@@ -1182,7 +1182,7 @@ namespace APIServer.Skat
             model.GameCounter = skatTable.GameCounter;
             foreach (var p in skatTable.TablePlayers)
             {
-                model.Players.Add(GetPlayerModel(p, $"INFO_PLAYER_SUMMARY_1_2:{p.Name}:{p.Score}"));
+                model.Players.Add(GetPlayerModel(p, $"INFO_PLAYER_SUMMARY_1_2:{p.Name}:{p.TournamentScore}"));
             }
             return model;
         }

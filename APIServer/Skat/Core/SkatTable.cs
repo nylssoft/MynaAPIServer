@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -398,6 +398,7 @@ namespace APIServer.Skat.Core
             }
             GameValue = game.GetGameValue(MatadorsJackStraight, GamePlayer.Stitches, Skat, CurrentBidValue, true);
             GamePlayer.Score += GameValue.Score;
+            UpdateTournamentScore(GameValue.Score);
             CurrentHistory.GamePlayerScore = GetScore(GamePlayer);
             CurrentHistory.GameValue = GameValue.Score;
             SkatResult.History.Add(CurrentHistory);
@@ -414,33 +415,55 @@ namespace APIServer.Skat.Core
 
         public void GiveUp()
         {
-            // add all cards on the game player's hand to the stitch of one opponent player
-            Player opponentPlayer = null;
-            foreach (var p in Players)
+            if (GamePlayer.Game.Type != GameType.Null)
             {
-                if (p != GamePlayer && opponentPlayer == null)
+                // add all cards on the game player's hand to the stitch of one opponent player
+                Player opponentPlayer = null;
+                foreach (var p in Players)
                 {
-                    opponentPlayer = p;
-                    p.Stitches.AddRange(GamePlayer.Cards);
-                    p.Stitches.AddRange(GamePlayer.Stitches);
-                    p.Stitches.AddRange(p.Cards);
-                    p.Stitches.AddRange(Skat);
-                    p.Stitches.AddRange(Stitch);
-                    p.Cards.Clear();
-                    GamePlayer.Cards.Clear();
-                    GamePlayer.Stitches.Clear();
-                    Skat.Clear();
-                    Stitch.Clear();
+                    if (p != GamePlayer && opponentPlayer == null)
+                    {
+                        opponentPlayer = p;
+                        p.Stitches.AddRange(GamePlayer.Cards);
+                        p.Stitches.AddRange(GamePlayer.Stitches);
+                        p.Stitches.AddRange(p.Cards);
+                        p.Stitches.AddRange(Skat);
+                        p.Stitches.AddRange(Stitch);
+                        p.Cards.Clear();
+                        GamePlayer.Cards.Clear();
+                        GamePlayer.Stitches.Clear();
+                        Skat.Clear();
+                        Stitch.Clear();
+                    }
+                    else if (p != GamePlayer && opponentPlayer != null)
+                    {
+                        opponentPlayer.Stitches.AddRange(p.Cards);
+                        p.Cards.Clear();
+                    }
                 }
-                else if (p != GamePlayer && opponentPlayer != null)
+            }
+            else
+            {
+                // Null game: add all game player, stitch, skat and opponents cards to game player stitch
+                GamePlayer.Stitches.AddRange(GamePlayer.Cards);
+                GamePlayer.Stitches.AddRange(Stitch);
+                GamePlayer.Stitches.AddRange(Skat);
+                GamePlayer.Cards.Clear();
+                Stitch.Clear();
+                Skat.Clear();
+                foreach (var p in Players)
                 {
-                    opponentPlayer.Stitches.AddRange(p.Cards);
-                    p.Cards.Clear();
+                    if (p != GamePlayer)
+                    {
+                        GamePlayer.Stitches.AddRange(p.Cards);
+                        p.Cards.Clear();
+                    }
                 }
             }
             var game = GamePlayer.Game;
             GameValue = game.GetGameValue(MatadorsJackStraight, GamePlayer.Stitches, Skat, CurrentBidValue, true);
             GamePlayer.Score += GameValue.Score;
+            UpdateTournamentScore(GameValue.Score);
             CurrentHistory.GamePlayerScore = GetScore(GamePlayer);
             CurrentHistory.GameValue = GameValue.Score;
             SkatResult.History.Add(CurrentHistory);
@@ -900,6 +923,7 @@ namespace APIServer.Skat.Core
                 var game = GamePlayer.Game;
                 GameValue = game.GetGameValue(MatadorsJackStraight, GamePlayer.Stitches, Skat, CurrentBidValue, false);
                 GamePlayer.Score += GameValue.Score;
+                UpdateTournamentScore(GameValue.Score);
                 CurrentHistory.GamePlayerScore = GetScore(GamePlayer);
                 CurrentHistory.GameValue = GameValue.Score;
                 SkatResult.History.Add(CurrentHistory);
@@ -966,6 +990,19 @@ namespace APIServer.Skat.Core
         {
             Skat.Remove(card);
             player.Cards.Add(card);
+        }
+
+        private void UpdateTournamentScore(int gameScore)
+        {
+            if (gameScore != 0)
+            {
+                GamePlayer.TournamentScore += gameScore;
+                GamePlayer.TournamentScore += (gameScore < 0) ? -50 : 50;
+                if (gameScore < 0)
+                {
+                    Players.Where(p => p != GamePlayer).ToList().ForEach(p => p.TournamentScore += 40);
+                }
+            }
         }
     }
 }

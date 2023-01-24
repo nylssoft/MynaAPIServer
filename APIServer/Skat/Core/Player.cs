@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ namespace APIServer.Skat.Core
         public BidStatus BidStatus { get; set; } = BidStatus.Wait;
 
         public int Score { get; set; }
+
+        public int TournamentScore { get; set; }
 
         public void SortCards()
         {
