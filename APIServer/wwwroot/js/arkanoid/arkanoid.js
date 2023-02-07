@@ -1,0 +1,997 @@
+﻿
+const LineEnums = Object.freeze({
+    "RACKETLEFT": 0,
+    "RACKETRIGHT": 1,
+    "RACKETTOP": 2,
+    "BORDERLEFT": 3,
+    "BORDERRIGHT": 4,
+    "BORDERTOP": 5,
+    "BORDERBUTTOM": 6,
+    "BLOCKLEFT": 7,
+    "BLOCKRIGHT": 8,
+    "BLOCKTOP": 9,
+    "BLOCKBUTTOM": 10
+});
+
+const BrickEnums = Object.freeze({
+    "WHITE": 0,
+    "ORANGE": 1,
+    "CYAN": 2,
+    "GREEN": 3,
+    "RED": 4,
+    "BLUE": 5,
+    "PURBLE": 6,
+    "YELLOW": 7,
+    "SILVER": 8,
+    "GOLD": 9
+});
+
+const PowerUpEnums = Object.freeze({
+    "LASER": 0,
+    "ENLARGE": 1,
+    "CATCH": 2,
+    "SLOW": 3,
+    "DISRUPTION": 4,
+    "BREAK": 5,
+    "PLAYER": 6
+});
+
+var arkanoid = (() => {
+
+    "use strict";
+
+    // -- UI elements
+
+    let canvas;
+
+    // --- state
+
+    let stage = 1;
+    let score = 0;
+    let ballSpeedIncrease = 0.025;
+    let powerUpMaxRandom = 5;
+
+    let balls = [];
+    let laserShots = [];
+    let borderLines = [];
+    let brickLines = [];
+
+    let gameOver = false;
+    let gameWon = false;
+    let gameStarted = false;
+
+    let keyPreferLeft = false;
+    let keyLeftPressed = false;
+    let keyRightPressed = false;
+    let keySpeed1Pressed = false;
+    let keySpeed2Pressed = false;
+
+    let powerUp;
+    let pointOfIntersection;
+
+    let racket;
+    let racketWidth;
+    let racketGrayWidth;
+
+    // --- constants
+
+    const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
+
+    const brickWidth = 45;
+    const brickHeight = 25;
+    const bricksPerRow = 13;
+    const bricksMaxRows = 25;
+    const innerWidth = brickWidth * bricksPerRow;
+    const innerHeight = brickHeight * bricksMaxRows;
+
+    const borderWidth = 25;
+    const borderHeight = 22;
+
+    const racketNormalGrayWidth = 50;
+    const racketEnlargeGrayWidth = 100;
+    const racketRedWidth = 16;
+    const racketBlueWidth = 5;
+    const racketNormalWidth = 2 * racketBlueWidth + 2 * racketRedWidth + racketNormalGrayWidth;
+    const racketHeight = 27;
+    const racketYGap = 38;
+    const ballRadius = 5;
+
+    let backgroundPictures;
+    let currentBackgroundPicture = 0;
+
+    // --- background
+
+    const setBackgroundPicture = () => {
+        if (backgroundPictures && currentBackgroundPicture < backgroundPictures.length) {
+            const pic = backgroundPictures[currentBackgroundPicture];
+            const wrapBody = document.getElementById("wrap-body-id");
+            wrapBody.style.setProperty("--bgimg", `url('${pic.url}')`);
+            currentBackgroundPicture = (currentBackgroundPicture + 1) % backgroundPictures.length;
+        }
+    };
+
+    const initBackgroundPictures = (pictures) => {
+        backgroundPictures = pictures;
+        utils.shuffle_array(backgroundPictures);
+    };
+
+    // --- utility
+
+    const getRandom = (min, max) => {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
+    // --- create structures
+
+    const createPoint = (x, y) => {
+        return { x: Math.max(0, Math.round(x)), y: Math.max(0, Math.round(y)) };
+    };
+
+    const createLine = (x1, y1, x2, y2, lineType, state) => {
+        return [createPoint(x1, y1), createPoint(x2, y2), lineType, state];
+    };
+
+    const createBrickLines = (row, column, brickType) => {
+        const w = brickWidth;
+        const h = brickHeight;
+        const gap = 0;
+        const x = column * w + borderWidth;
+        const y = row * h + borderWidth;
+        const lines = [];
+        let hit;
+        if (brickType === BrickEnums.SILVER) {
+            hit = Math.floor(stage / 8) + 2;
+        }
+        else if (brickType === BrickEnums.GOLD) {
+            hit = Number.MAX_SAFE_INTEGER;
+        }
+        else {
+            hit = 1;
+        }
+        const state = { hit: hit, type: brickType };
+        lines.push(createLine(x, y + h - gap, x + w - gap, y + h - gap, LineEnums.BLOCKBUTTOM, state));
+        lines.push(createLine(x, y, x + w - gap, y, LineEnums.BLOCKTOP, state));
+        lines.push(createLine(x, y, x, y + h - gap, LineEnums.BLOCKLEFT, state));
+        lines.push(createLine(x + w - gap, y, x + w - gap, y + h - gap, LineEnums.BLOCKRIGHT, state));
+        return lines;
+    };
+
+    const initBorderLines = () => {
+        borderLines = [];
+        borderLines.push(createLine(borderWidth, borderHeight, borderWidth + innerWidth, borderHeight, LineEnums.BORDERTOP));
+        borderLines.push(createLine(borderWidth + innerWidth, borderHeight, borderWidth + innerWidth, innerHeight, LineEnums.BORDERRIGHT));
+        borderLines.push(createLine(borderWidth + innerWidth, innerHeight, borderWidth, innerHeight, LineEnums.BORDERBUTTOM));
+        borderLines.push(createLine(borderWidth, innerHeight, borderWidth, borderHeight, LineEnums.BORDERLEFT));
+    };
+
+    const addBorderLines = (lines) => {
+        borderLines.forEach(line => lines.push(line));
+    };
+
+    const addBrickLines = (lines) => {
+        const filtered = brickLines.filter(line => line[3].hit > 0);
+        filtered.forEach(line => lines.push(line));
+        if (!filtered.some(line => line[3].type != BrickEnums.GOLD)) {
+            gameWon = true;
+        }
+    };
+
+    const addRacketLines = (lines) => {
+        lines.push(createLine(racket.x, racket.y, racket.x + racketWidth, racket.y, LineEnums.RACKETTOP));
+        lines.push(createLine(racket.x, racket.y, racket.x, racket.y + racketHeight, LineEnums.RACKETLEFT));
+        lines.push(createLine(racket.x + racketWidth, racket.y, racket.x + racketWidth, racket.y + racketHeight, LineEnums.RACKETRIGHT));
+    };
+
+    const filterLines = (lines, p1, p2) => {
+        const minx = Math.min(p1.x, p2.x);
+        const maxx = Math.max(p1.x, p2.x);
+        const miny = Math.min(p1.y, p2.y);
+        const maxy = Math.max(p1.y, p2.y);
+        return lines.filter(line => {
+            const lminx = Math.min(line[0].x, line[1].x);
+            const lmaxx = Math.max(line[0].x, line[1].x);
+            const lminy = Math.min(line[0].y, line[1].y);
+            const lmaxy = Math.max(line[0].y, line[1].y);
+            return !(lmaxx < minx || lmaxy < miny || lminx > maxx || lminy > maxy);
+        });
+    };
+
+    const createBall = (v) => {
+        const x = racket.x + racketWidth / 2 - ballRadius / 2;
+        const y = racket.y - ballRadius;
+        const ball = {
+            x: x,
+            y: y,
+            dirX: 1,
+            dirY: -1,
+            v: v
+        };
+        const angle = getRandom(30, 170);
+        const rad = (Math.PI / 360) * angle;
+        const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
+        const dx = Math.cos(rad) * c;
+        const dy = Math.sin(rad) * c;
+        ball.dirX = Math.abs(dx) * Math.sign(ball.dirX);
+        ball.dirY = Math.abs(dy) * Math.sign(ball.dirY);
+        if (angle % 2 === 0) {
+            ball.dirX *= -1;
+        }
+        return ball;
+    };
+
+    const createPowerUp = (x, y, w, h, type) => {
+        return {
+            x: x,
+            y: y,
+            w: w,
+            h: h,
+            type: type
+        };
+    };
+
+    const createRacket = () => {
+        return {
+            x: innerWidth / 2 - racketWidth / 2,
+            y: innerHeight - racketHeight - racketYGap,
+            powerUp: undefined
+        };
+    };
+
+    const createShot = () => {
+        const diff = racketBlueWidth + racketRedWidth + Math.floor(racketGrayWidth / 4);
+        const shot = {
+            x1: racket.x + diff,
+            x2: racket.x + racketWidth - diff,
+            y: racket.y + 1,
+            w: 5,
+            h: 30,
+        };
+        return shot;
+    };
+
+    // --- math
+
+    const geradenGleichung = (p1, p2) => {
+        // Geradengleichung in Normalform y = m * x + n
+        const x1 = p1.x;
+        const y1 = p1.y;
+        const x2 = p2.x;
+        const y2 = p2.y;
+        if (x2 == x1) return undefined; // kann nicht als Funktion dargestellt werden
+        // Steigung
+        const m = (y2 - y1) / (x2 - x1);
+        // Y-Achsenabschnitt
+        const n = (y1 * x2 - y2 * x1) / (x2 - x1);
+        return { m: m, n: n };
+    };
+
+    const schnittpunkt = (g1, g2) => {
+        // Schnittpunkt zweier Geraden in Normalform
+        const m1 = g1.m;
+        const n1 = g1.n;
+        const m2 = g2.m;
+        const n2 = g2.n;
+        // y = n1 + x * m1;
+        // y = n2 + x * m2;
+        // => n1 + x * m1 = n2 + x * m2
+        // => x * (m1 - m2) = n2 - n1
+        // => x = (n2 - n1) / (m1 - m2);
+        if (m1 == m2) return undefined; // parallel
+        return (n2 - n1) / (m1 - m2);
+    };
+
+    const streckeSchneidetStrecke = (p1, p2, q1, q2) => {
+        // Schnittpunkt
+        let xs;
+        let ys;
+        // Strecke P1P2 kann als Gerade in Normalform dargestelt werden
+        if (p1.x != p2.x) {
+            const gp = geradenGleichung(p1, p2);
+            // Strecke Q1Q2 kann als Gerade in Normalform dargestellt werden
+            if (q1.x != q2.x) {
+                const gq = geradenGleichung(q1, q2);
+                // Berechne Schnittpunkt beider Geraden. Wenn die Steigung gleich ist, sind sie parallel und
+                // es gibt keinen Schnittpunkt 
+                xs = schnittpunkt(gp, gq);
+                if (xs) {
+                    ys = gp.n + gp.m * xs;
+                }
+            }
+            // q1.x == q2.x
+            // Q1Q2 bildet eine Gerade auf der X - Achse
+            else {
+                xs = q1.x;
+                ys = gp.n + gp.m * xs;
+            }
+        }
+        // Strecke Q1Q2 kann als Gerade in Normalform dargestellt werden
+        else if (q1.x != q2.x) {
+            const gq = geradenGleichung(q1, q2);
+            xs = p1.x;
+            ys = gq.n + gq.m * xs;
+        }
+        // beiden Strecke sind Geraden auf der X - Achse
+        else if (p1.x == q1.x) {
+            /* ignoriert, hat unendlich viele oder keinen Schnittpunkt */
+            return undefined;
+        }
+        if (xs && ys) {
+            xs = Math.round(xs);
+            ys = Math.round(ys);
+            // liegt der X-Schnittpunkt auf der Strecke P1P2 bzw. P2P1?
+            if (p1.x <= p2.x && (xs < p1.x || xs > p2.x) ||
+                p1.x > p2.x && (xs < p2.x || xs > p1.x)) {
+                xs = undefined; // X ausserhalb P1P2 bzw. P2P1
+            }
+            // liegt der Y-Schnittpunkt auf der Strecke P1P2 bzw. P2P1?
+            if (xs && ys) {
+                if (p1.y <= p2.y && (ys < p1.y || ys > p2.y) ||
+                    p1.y > p2.y && (ys < p2.y || ys > p1.y)) {
+                    ys = undefined; // Y ausserhalb P1P2 bzw. P2P1
+                }
+            }
+            if (xs && ys) {
+                // liegt der X-Schnittpunkt auf der Strecke Q1Q2 bzw. Q2Q1?
+                if (q1.x <= q2.x && (xs < q1.x || xs > q2.x) ||
+                    q1.x > q2.x && (xs < q2.x || xs > q1.x)) {
+                    xs = undefined; // X ausserhalb Q1Q2 bzw. Q2Q1
+                }
+            }
+            if (xs && ys) {
+                // liegt der Y-Schnittpunkt auf der Strecke Q1Q2 bzw. Q2Q1?
+                if (q1.y <= q2.y && (ys < q1.y || ys > q2.y) ||
+                    q1.y > q2.y && (ys < q2.y || ys > q1.y)) {
+                    ys = undefined; // Y ausserhalb Q1Q2 bzw. Q2Q1
+                }
+            }
+            if (xs && ys) {
+                return { x: xs, y: ys };
+            }
+        }
+        return undefined;
+    };
+
+    // --- ball handling, border, brick and racket reflection, powerup collection
+
+    const handleBalls = (lines) => {
+        if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) return;
+        const removeBalls = [];
+        balls.forEach(ball => {
+            ball.hasHits = false;
+            const hit = handleBallHits(lines, ball);
+            if (hit.removeBall) {
+                removeBalls.push(ball);
+            }
+            else if (hit.hasHits) {
+                ball.hasHits = true;
+            }
+        });
+        if (removeBalls.length > 0) {
+            balls = balls.filter(ball => !removeBalls.includes(ball));
+        }
+    };
+
+    const handleBallHits = (lines, ball) => {
+        let hasHits = false;
+        let removeBall = false;
+        const p1 = createPoint(ball.x, ball.y);
+        const p2 = createPoint(ball.x + ball.dirX * ball.v, ball.y + ball.dirY * ball.v);
+        const filtered = filterLines(lines, p1, p2);
+        for (let idx = 0; idx < filtered.length; idx++) {
+            const line = filtered[idx];
+            const pi = streckeSchneidetStrecke(p1, p2, line[0], line[1]);
+            if (pi) {
+                pointOfIntersection = pi;
+                hasHits = handleBallRacketHit(line, pi, ball);
+                if (!hasHits) {
+                    const borderHit = handleBallBorderHit(line, ball);
+                    hasHits = borderHit.hasHits;
+                    removeBall = borderHit.removeBall;
+                }
+                if (!hasHits) {
+                    hasHits = handleBallBricketHit(line, ball);
+                }
+                break; // only one hit per evaluation
+            }
+        }
+        return { hasHits: hasHits, removeBall: removeBall };
+    };
+
+    const handleBallRacketHit = (line, pi, ball) => {
+        if (ball.dirY < 0) return false;
+        const figureType = line[2];
+        if (figureType != LineEnums.RACKETLEFT && figureType != LineEnums.RACKETRIGHT && figureType != LineEnums.RACKETTOP) return false;
+        if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH) {
+            racket.powerUp.catched = true;
+            racket.powerUp.ballRelX = Math.floor(ball.x) - racket.x;
+            racket.powerUp.hold = 100;
+            ball.y = racket.y;
+        }
+        ball.dirY = -1 * Math.abs(ball.dirY); // always up
+        const w2 = Math.floor(racketWidth / 2);
+        const midpoint = racket.x + w2;
+        // difference to midpoint, smaller means greater angle
+        const delta = (pi.x > midpoint) ? pi.x - midpoint : midpoint - pi.x;
+        // reflection angle depends on hit position and returns between 30 and 170 degree
+        const angle = ((w2 - delta) / w2) * 140 + 30;
+        const rad = (Math.PI / 360) * angle;
+        const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
+        const dx = Math.cos(rad) * c;
+        const dy = Math.sin(rad) * c;
+        ball.dirX = Math.abs(dx) * Math.sign(ball.dirX);
+        ball.dirY = Math.abs(dy) * Math.sign(ball.dirY);
+        increaseBallSpeed();
+        if (figureType === LineEnums.RACKETLEFT) {
+            ball.dirX = -1 * Math.abs(ball.dirX); // left
+            ball.x -= 1;
+        }
+        else if (figureType === LineEnums.RACKETRIGHT) {
+            ball.dirX = Math.abs(ball.dirX); // right
+            ball.x += 1;
+        }
+        else {
+            if (pi.x >= midpoint && ball.dirX < 0 || pi.x < midpoint && ball.dirX > 0) {
+                ball.dirX *= -1;
+            }
+            ball.y -= 1;
+        }
+        return true;
+    };
+
+    const handleBallBorderHit = (line, ball) => {
+        let hasHits = false;
+        let removeBall = false;
+        const figureType = line[2];
+        if (figureType === LineEnums.BORDERLEFT ||
+            figureType === LineEnums.BORDERRIGHT ||
+            figureType === LineEnums.BORDERTOP) {
+            hasHits = true;
+            if (line[0].y == line[1].y) {
+                ball.dirY *= -1;
+            }
+            else {
+                ball.dirX *= -1;
+            }
+            increaseBallSpeed();
+        }
+        else if (figureType === LineEnums.BORDERBUTTOM) {
+            hasHits = true;
+            if (balls.length === 1) {
+                gameOver = true;
+            }
+            else {
+                removeBall = true;
+            }
+        }
+        return { hasHits: hasHits, removeBall: removeBall };
+    };
+
+    const handleBallBricketHit = (line, ball) => {
+        const figureType = line[2];
+        if (figureType != LineEnums.BLOCKBUTTOM && figureType != LineEnums.BLOCKTOP && figureType != LineEnums.BLOCKLEFT && figureType != LineEnums.BLOCKRIGHT) return false;
+        let hit = false;
+        if (figureType === LineEnums.BLOCKLEFT && ball.dirX > 0) {
+            hit = true;
+            ball.dirX = -1 * Math.abs(ball.dirX); // left
+            ball.x -= 1;
+        }
+        else if (figureType === LineEnums.BLOCKRIGHT && ball.dirX < 0) {
+            hit = true;
+            ball.dirX = Math.abs(ball.dirX); // right
+            ball.x += 1;
+        }
+        else if (figureType === LineEnums.BLOCKBUTTOM && ball.dirY < 0) {
+            hit = true;
+            ball.dirY = Math.abs(ball.dirY); // down
+            ball.y -= 1;
+        }
+        else if (figureType === LineEnums.BLOCKTOP && ball.dirY > 0) {
+            hit = true;
+            ball.dirY = -1 * Math.abs(ball.dirY); // up
+            ball.y += 1;
+        }
+        if (hit) {
+            hitBrickLine(line);
+            increaseBallSpeed();
+            return true;
+        }
+        return false;
+    };
+
+    const hitBrickLine = (line) => {
+        const state = line[3];
+        if (state.type === BrickEnums.GOLD) return;
+        state.hit -= 1;
+        if (state.hit <= 0) {
+            score += getBrickScore(state.type);
+            if (!powerUp && line[2] === LineEnums.BLOCKBUTTOM && balls.length === 1) {
+                const random = getRandom(1, powerUpMaxRandom);
+                if (random === 1) {
+                    const powerUpType = powerUps[getRandom(0, powerUps.length - 1)];
+                    if (!racket.powerUp || racket.powerUp.type != powerUpType || powerUpType === PowerUpEnums.SLOW) {
+                        powerUp = createPowerUp(line[0].x + 2, line[0].y - brickHeight + 2, brickWidth - 4, brickHeight - 2, powerUpType);
+                    }
+                }
+            }
+        }
+    };
+
+    // --- move of racket, laser shots, balls and powerups
+
+    const moveRacketWithKeyboard = () => {
+        let speed;
+        if (keySpeed2Pressed) {
+            speed = 10;
+        }
+        else if (keySpeed1Pressed) {
+            speed = 5;
+        }
+        else {
+            speed = 2;
+        }
+        let moveLeft = false;
+        let moveRight = false;
+        if (keyLeftPressed && keyRightPressed && keyPreferLeft) {
+            moveLeft = true;
+        }
+        else if (keyRightPressed) {
+            moveRight = true;
+        }
+        else if (keyLeftPressed) {
+            moveLeft = true;
+        }
+        if (moveLeft || moveRight) {
+            if (moveLeft) {
+                racket.x = Math.max(borderWidth, racket.x - speed);
+            }
+            else if (moveRight) {
+                racket.x = Math.min(borderWidth + innerWidth - racketWidth, racket.x + speed);
+            }
+        }
+    };
+
+    const moveLaserShots = () => {
+        const activeShots = [];
+        laserShots.forEach(laserShot => {
+            if (moveLaserShot(laserShot)) {
+                activeShots.push(laserShot);
+            }
+        });
+        laserShots = activeShots;
+    };
+
+    const moveLaserShot = (laserShot) => {
+        const nextY = laserShot.y - 5;
+        if (nextY - laserShot.h < borderHeight) {
+            return false;
+        }
+        // @TODO: filter brick lines that are contained in next laser shot rectangle
+        for (let idx = 0; idx < brickLines.length; idx++) {
+            const line = brickLines[idx];
+            const figureType = line[2];
+            const state = line[3];
+            if (figureType === LineEnums.BLOCKBUTTOM && state.hit > 0) {
+                if (nextY - laserShot.h >= line[0].y - brickHeight && nextY - laserShot.h <= line[0].y &&
+                    (laserShot.x1 + laserShot.w >= line[0].x && laserShot.x1 + laserShot.w <= line[1].x ||
+                    laserShot.x2 + laserShot.w >= line[0].x && laserShot.x2 + laserShot.w <= line[1].x)) {
+                    hitBrickLine(line);
+                    return false;
+                }
+            }
+        }
+        laserShot.y = nextY;
+        return true;
+    };
+
+    const moveBalls = () => {
+        if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
+            balls.forEach(ball => {
+                ball.x = racket.x + racket.powerUp.ballRelX;
+            });
+            racket.powerUp.hold -= 1;
+            if (racket.powerUp.hold <= 0) {
+                racket.powerUp.catched = false;
+            }
+        }
+        else {
+            balls.forEach(ball => {
+                if (!ball.hasHits) {
+                    ball.x = ball.x + ball.dirX * ball.v;
+                    ball.y = ball.y + ball.dirY * ball.v;
+                }
+            });
+        }
+    };
+
+    const movePowerUp = () => {
+        if (!powerUp) return;
+        powerUp.y += 1;
+        if (powerUp.y + powerUp.h >= racket.y && powerUp.y <= powerUp.y + racketHeight &&
+            powerUp.x + powerUp.w >= racket.x && powerUp.x <= racket.x + racketWidth) {
+            // disable power up
+            if (racket.powerUp && powerUp.type != racket.powerUp.type) {
+                if (racket.powerUp.type === PowerUpEnums.DISRUPTION) {
+                    balls = [balls[0]];
+                }
+                else if (racket.powerUp.type === PowerUpEnums.ENLARGE) {
+                    racketGrayWidth = racketNormalGrayWidth;
+                    racketWidth = 2 * racketBlueWidth + 2 * racketRedWidth + racketGrayWidth;
+                    racket.x += Math.floor((racketEnlargeGrayWidth - racketNormalGrayWidth) / 2);
+                    if (racket.x + racketWidth > innerWidth) {
+                        racket.x = innerWidth - racketWidth;
+                    }
+                }
+                else if (racket.powerUp.type === PowerUpEnums.LASER) {
+                    laserShots = [];
+                }
+                racket.powerUp = undefined;
+            }
+            if (!racket.powerUp) {
+                // enable power up
+                if (powerUp.type === PowerUpEnums.SLOW) {
+                    balls.forEach(ball => ball.v = Math.max(1, ball.v - 1));
+                }
+                else if (powerUp.type === PowerUpEnums.CATCH) {
+                    racket.powerUp = { type: powerUp.type, hold: 0, catched: false, ballRelX: 0 };
+                }
+                else if (powerUp.type === PowerUpEnums.DISRUPTION) {
+                    const ball1 = balls[0];
+                    const ball2 = createBall(ball1.v);
+                    const ball3 = createBall(ball1.v);
+                    ball2.x = ball1.x;
+                    ball2.y = ball1.y;
+                    ball3.x = ball1.x;
+                    ball3.y = ball1.y;
+                    balls.push(ball2);
+                    balls.push(ball3);
+                }
+                else if (powerUp.type === PowerUpEnums.LASER) {
+                    racket.powerUp = { type: powerUp.type };
+                }
+                else if (powerUp.type === PowerUpEnums.ENLARGE) {
+                    racket.powerUp = { type: powerUp.type };
+                    racketGrayWidth = racketEnlargeGrayWidth;
+                    racketWidth = 2 * racketBlueWidth + 2 * racketRedWidth + racketGrayWidth;
+                    racket.x -= Math.floor((racketEnlargeGrayWidth - racketNormalGrayWidth) / 2);
+                    if (racket.x + racketWidth > innerWidth) {
+                        racket.x = innerWidth - racketWidth;
+                    }
+                    else if (racket.x < borderWidth) {
+                        racket.x = borderWidth;
+                    }
+                }
+            }
+            powerUp = undefined;
+        }
+        else if (powerUp.y >= innerHeight) {
+            powerUp = undefined;
+        }
+    };
+
+    // --- stage handling
+
+    const startNewGame = () => {
+        score = 0;
+        powerUp = undefined;
+        laserShots = [];
+        racketGrayWidth = racketNormalGrayWidth;
+        racketWidth = racketNormalWidth;
+        setBackgroundPicture();
+        racket = createRacket();
+        initBorderLines();
+        initStage1();
+        balls = [];
+        balls.push(createBall(1));
+        gameOver = false;
+        gameWon = false;
+        gameStarted = true;
+    };
+
+    const initStage1 = () => {
+        // stage 1
+        ballSpeedIncrease = 0.025;
+        powerUpMaxRandom = 3; // every 3th brick hit will return a power up in average
+        brickLines = [];
+        let row = 4;
+        const brickRowTypes = [BrickEnums.SILVER, BrickEnums.RED, BrickEnums.YELLOW, BrickEnums.BLUE, BrickEnums.PURBLE, BrickEnums.GREEN];
+        brickRowTypes.forEach(brickType => {
+            for (let col = 0; col < bricksPerRow; col++) {
+                const lines = createBrickLines(row, col, brickType);
+                /* jshint -W083 */
+                lines.forEach(line => brickLines.push(line));
+                /* jshint +W083 */
+            }
+            row++;
+        });
+    };
+
+    const increaseBallSpeed = () => {
+        balls.forEach(ball => ball.v = Math.min(10, ball.v + ballSpeedIncrease));
+    };
+
+    const getBrickScore = (brickType) => {
+        switch (brickType) {
+            case BrickEnums.WHITE:
+                return 50;
+            case BrickEnums.ORANGE:
+                return 60;
+            case BrickEnums.CYAN:
+                return 70;
+            case BrickEnums.GREEN:
+                return 80;
+            case BrickEnums.RED:
+                return 90;
+            case BrickEnums.BLUE:
+                return 100;
+            case BrickEnums.PURBLE:
+                return 110;
+            case BrickEnums.YELLOW:
+                return 120;
+            case BrickEnums.SILVER:
+                return 50 * stage;
+            default:
+                return 0;
+        }
+    };
+
+    const getPowerUpLetter = (powerUpType) => {
+        switch (powerUpType) {
+            case PowerUpEnums.LASER:
+                return "L";
+            case PowerUpEnums.ENLARGE:
+                return "E";
+            case PowerUpEnums.CATCH:
+                return "C";
+            case PowerUpEnums.SLOW:
+                return "S";
+            case PowerUpEnums.BREAK:
+                return "B";
+            case PowerUpEnums.DISRUPTION:
+                return "D";
+            case PowerUpEnums.PLAYER:
+                return "P";
+            default:
+                return "";
+        }
+    };
+
+    // --- drawing
+
+    const drawPointOfIntersection = (ctx) => {
+        if (pointOfIntersection) {
+            ctx.strokeStyle = "red";
+            ctx.beginPath();
+            ctx.moveTo(pointOfIntersection.x, pointOfIntersection.y - ballRadius);
+            ctx.lineTo(pointOfIntersection.x, pointOfIntersection.y + ballRadius);
+            ctx.stroke();
+        }
+    };
+
+    const drawLines = (ctx, lines) => {
+        lines.forEach(line => {
+            ctx.strokeStyle = "white";
+            ctx.beginPath();
+            ctx.moveTo(line[0].x, line[0].y);
+            ctx.lineTo(line[1].x, line[1].y);
+            ctx.stroke();
+        });
+    };
+
+    const drawPowerUp = (ctx) => {
+        if (!powerUp) return;
+        ctx.strokeStyle = "white";
+        ctx.rect(powerUp.x, powerUp.y, powerUp.w, powerUp.h);
+        ctx.stroke();
+        ctx.font = "13px serif";
+        ctx.fillText(getPowerUpLetter(powerUp.type), powerUp.x + powerUp.w / 2 - 4, powerUp.y + powerUp.h / 2 + 3);
+    };
+
+    const drawBalls = (ctx) => {
+        balls.forEach(ball => drawBall(ctx, ball));
+    };
+
+    const drawBall = (ctx, ball) => {
+        const x = Math.floor(ball.x);
+        const y = Math.floor(ball.y);
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, 2 * Math.PI);
+        ctx.fill();
+    };
+
+    const drawLaserShots = (ctx) => {
+        laserShots.forEach(laserShot => drawLaserShot(ctx, laserShot));
+    };
+
+    const drawLaserShot = (ctx, laserShot) => {
+        const x1 = Math.floor(laserShot.x1);
+        const x2 = Math.floor(laserShot.x2);
+        const y = Math.floor(laserShot.y);
+        ctx.fillStyle = "white";
+        ctx.fillRect(x1, y - laserShot.h, laserShot.w, laserShot.h);
+        ctx.fillRect(x2, y - laserShot.h, laserShot.w, laserShot.h);
+    };
+
+    const draw = () => {
+        if (gameStarted && !gameOver && !gameWon) {
+            // prepare lines
+            const lines = [];
+            addBorderLines(lines);
+            addRacketLines(lines);
+            addBrickLines(lines);
+            // draw canvas
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawLines(ctx, lines);
+            drawLaserShots(ctx);
+            drawBalls(ctx);
+            drawPowerUp(ctx);
+            drawPointOfIntersection(ctx);
+            // handle ball hits
+            handleBalls(lines);
+            // move items
+            movePowerUp();
+            moveLaserShots();
+            moveBalls();
+            moveRacketWithKeyboard();
+        }
+        // schedule redraw after 50ms
+        window.requestAnimationFrame(draw);
+    };
+
+    // --- rendering HTML elements
+
+    const renderArkanoid = (parent) => {
+        canvas = controls.create(parent, "canvas", "playground");
+        canvas.width = innerWidth + 2 * borderWidth;
+        canvas.height = innerHeight + borderHeight;
+        controls.createDiv(parent).id = "info-id";
+        startNewGame();
+        window.requestAnimationFrame(draw);
+    };
+
+    const render = () => {
+        controls.removeAllChildren(document.body);
+        const wrapBody = controls.createDiv(document.body, "wrap-body");
+        wrapBody.id = "wrap-body-id";
+        utils.create_cookies_banner(wrapBody);
+        const all = controls.createDiv(wrapBody);
+        renderArkanoid(all);
+        document.addEventListener("mousedown", e => {
+            if (gameOver || gameWon) {
+                startNewGame();
+            }
+            else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
+                laserShots.push(createShot());
+            }
+            else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
+                racket.powerUp.catched = false;
+            }
+        });
+        document.addEventListener("mousemove", e => {
+            if (e.movementX == 0) return;
+            const x = racket.x + e.movementX;
+            for (let idx = 0; idx < balls.length; idx++) {
+                const ball = balls[idx];
+                // move ball outside racket if neccessary
+                if (ball.y > racket.y && ball.y < racket.y + racketHeight &&
+                    ball.x > x && ball.x < x + racketWidth) {
+                    ball.y = racket.y;
+                    ball.dirY = -1 * Math.abs(ball.dirY); // up
+                    break;
+                }
+            }
+            racket.x = x;
+            racket.x = Math.max(borderWidth, racket.x);
+            racket.x = Math.min(borderWidth + innerWidth - racketWidth, racket.x);
+        });
+        document.addEventListener("keydown", e => {
+            if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                keyLeftPressed = true;
+                keyPreferLeft = true;
+            }
+            if (e.key === "ArrowRight") {
+                e.preventDefault();
+                keyRightPressed = true;
+                keyPreferLeft = false;
+            }
+            else if (e.key === "x") {
+                e.preventDefault();
+                keySpeed1Pressed = true;
+            }
+            else if (e.key === "y") {
+                e.preventDefault();
+                keySpeed2Pressed = true;
+            }
+            else if (e.code === "Space") {
+                if (gameOver || gameWon) {
+                    startNewGame();
+                }
+                else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
+                    laserShots.push(createShot());
+                }
+                else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
+                    racket.powerUp.catched = false;
+                }
+            }
+        });
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowLeft") {
+                keyLeftPressed = false;
+            }
+            if (e.key === "ArrowRight") {
+                keyRightPressed = false;
+            }
+            else if (e.key === "x") {
+                keySpeed1Pressed = false;
+            }
+            else if (e.key === "y") {
+                keySpeed2Pressed = false;
+            }
+        });
+    };
+
+    const onTimer = () => {
+        let info = `Score: ${score}, Stage: ${stage}`;
+        if (gameOver) {
+            info += " GAME OVER!";
+        }
+        else if (gameWon) {
+            info += " GAME WON!";
+        }
+        if (balls.length > 0) {
+            const v = Math.round(balls[0].v * 100) / 100;
+            info += ` Speed: ${v}`;
+            let idx = 1;
+            balls.forEach(ball => {
+                const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
+                const asin = Math.asin(ball.dirY / c);
+                const angle = Math.round(asin * 360 / Math.PI);
+                info += ` Angle${idx}: ${angle}`;
+                idx++;
+            });
+        }
+        if (racket.powerUp) {
+            info += ` PowerUp: ${racket.powerUp.type}`;
+            if (racket.powerUp.type === PowerUpEnums.CATCH) {
+                info += ` Catched: ${racket.powerUp.catched}`;
+                if (racket.powerUp.catched) {
+                    info += ` Hold: ${racket.powerUp.hold}`;
+                    info += ` BallRelX: ${racket.powerUp.ballRelX}`;
+                }
+            }
+        }
+        const textInfo = document.getElementById("info-id").textContent;
+        if (textInfo != info) {
+            document.getElementById("info-id").textContent = info;
+        }
+    };
+
+    const init = (sm) => {
+        initBackgroundPictures(sm.pictures);
+        render();
+    };
+
+    // --- public API
+
+    return {
+        init: init,
+        onTimer: onTimer
+    };
+})();
+
+// --- window loaded event
+
+window.onload = () => {
+    utils.set_locale(() => {
+        utils.auth_lltoken(() => {
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+                (model) => arkanoid.init(model),
+                (errMsg) => console.error(errMsg));
+        });
+    });
+};
+
+window.setInterval(arkanoid.onTimer, 100);

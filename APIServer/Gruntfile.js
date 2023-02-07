@@ -54,6 +54,10 @@ module.exports = function (grunt) {
             tetris: {
                 src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/tetris/tetris.js"],
                 dest: "temp/tetris.js"
+            },
+            arkanoid: {
+                src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/arkanoid/arkanoid.js"],
+                dest: "temp/arkanoid.js"
             }
         },
         jshint: {
@@ -70,7 +74,8 @@ module.exports = function (grunt) {
                 "temp/usermgmt.js",
                 "temp/skat.js",
                 "temp/slideshow.js",
-                "temp/tetris.js"],
+                "temp/tetris.js",
+                "temp/arkanoid.js"],
             options: {
                 "esversion": 9
             }
@@ -127,6 +132,10 @@ module.exports = function (grunt) {
             tetris: {
                 src: ["temp/tetris.js"],
                 dest: "wwwroot/js/tetris/tetris.min.js"
+            },
+            arkanoid: {
+                src: ["temp/arkanoid.js"],
+                dest: "wwwroot/js/arkanoid/arkanoid.min.js"
             }
         },
         watch: {
@@ -145,7 +154,8 @@ module.exports = function (grunt) {
                 "wwwroot/js/pwdman/usermgmt.js",
                 "wwwroot/js/skat/skat.js",
                 "wwwroot/js/slideshow/slideshow.js",
-                "wwwroot/js/tetris/tetris.js"],
+                "wwwroot/js/tetris/tetris.js",
+                "wwwroot/js/arkanoid/arkanoid.js"],
             tasks: ["all"]
         },
         cssmin: {
@@ -163,6 +173,7 @@ module.exports = function (grunt) {
                     "wwwroot/css/skat/skat.min.css": ["wwwroot/css/skat/skat.css"],
                     "wwwroot/css/slideshow/slideshow.min.css": ["wwwroot/css/slideshow/slideshow.css"],
                     "wwwroot/css/tetris/tetris.min.css": ["wwwroot/css/tetris/tetris.css"],
+                    "wwwroot/css/arkanoid/arkanoid.min.css": ["wwwroot/css/arkanoid/arkanoid.css"]
                 }
             }
         }
