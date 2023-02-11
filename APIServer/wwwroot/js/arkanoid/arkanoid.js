@@ -71,6 +71,7 @@ var arkanoid = (() => {
     let lastTouchId;
 
     let powerUp;
+    let nextPowerUps;
 
     // dimensions
 
@@ -528,14 +529,15 @@ var arkanoid = (() => {
         if (state.hit <= 0) {
             score += getBrickScore(state.type);
             updateScore();
-            if (!powerUp && line[2] === LineEnums.BLOCKBUTTOM && balls.length === 1) {
-                const random = getRandom(1, powerUpMaxRandom);
-                if (random === 1) {
-                    const powerUpType = powerUps[getRandom(0, powerUps.length - 1)];
-                    if (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION) {
-                        powerUp = createPowerUp(line[0].x + 2, line[0].y - brickHeight + 2, brickWidth - 4, brickHeight - 2, powerUpType);
-                    }
+            const random = getRandom(1, powerUpMaxRandom);
+            if (random ===1 && !powerUp && balls.length === 1 && (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION)) {
+                if (!nextPowerUps || nextPowerUps.length === 0) {
+                    nextPowerUps = [];
+                    powerUps.forEach(p => nextPowerUps.push(p));
+                    utils.shuffle_array(nextPowerUps);
                 }
+                const powerUpType = nextPowerUps.splice(0, 1)[0];
+                powerUp = createPowerUp(line[0].x + 2, line[0].y - brickHeight + 2, brickWidth - 4, brickHeight - 2, powerUpType);
             }
         }
     };
@@ -647,7 +649,7 @@ var arkanoid = (() => {
     const movePowerUp = () => {
         if (!powerUp) return;
         powerUp.y += 1;
-        if (powerUp.y + powerUp.h >= racket.y && powerUp.y <= powerUp.y + racketHeight &&
+        if (powerUp.y + powerUp.h >= racket.y && powerUp.y <= racket.y + racketHeight &&
             powerUp.x + powerUp.w >= racket.x && powerUp.x <= racket.x + racketWidth) {
             // disable power up
             if (racket.powerUp && powerUp.type != racket.powerUp.type) {
@@ -976,6 +978,10 @@ var arkanoid = (() => {
 
     const onMouseMove = (e) => {
         e.preventDefault();
+        if (touchActionRect) {
+            // hide if mouse is available
+            touchActionRect = undefined;
+        }
         moveRacketRelative(e.movementX);
     };
 
@@ -1090,7 +1096,7 @@ var arkanoid = (() => {
         touchActionRect = undefined;
         touchMoveRect = undefined;
         if (isTouchDevice()) {
-            touchActionRect = { x: 2 * borderWidth, y: innerHeight + brickHeight - 2 * borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 2 * brickHeight };
+            touchActionRect = { x: 2 * borderWidth, y: innerHeight + brickHeight - borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 3 * brickHeight };
             touchMoveRect = { x: touchActionRect.x, y: touchActionRect.y - touchActionRect.h * 5, w: innerWidth - borderWidth, h: touchActionRect.h * 6};
         }
         canvas = controls.create(parent, "canvas", "playground");
