@@ -56,6 +56,7 @@ var arkanoid = (() => {
     let laserShots;
     let borderLines;
     let brickLines;
+    let bricks;
 
     let gameOver;
     let gameWon;
@@ -87,6 +88,8 @@ var arkanoid = (() => {
     let borderWidth;
     let borderHeight;
 
+    let blueW = 3;
+    let redW = 15;
     let racketNormalWidth;
     let racketEnlargeWidth;
     let racketHeight;
@@ -158,28 +161,17 @@ var arkanoid = (() => {
         return [createPoint(x1, y1), createPoint(x2, y2), lineType, state];
     };
 
-    const createBrickLines = (row, column, brickType) => {
+    const createBrickLines = (row, column, brick) => {
         const w = brickWidth;
         const h = brickHeight;
         const gap = 0;
         const x = column * w + borderWidth;
         const y = row * h + borderWidth;
         const lines = [];
-        let hit;
-        if (brickType === BrickEnums.SILVER) {
-            hit = Math.floor(stage / 8) + 2;
-        }
-        else if (brickType === BrickEnums.GOLD) {
-            hit = Number.MAX_SAFE_INTEGER;
-        }
-        else {
-            hit = 1;
-        }
-        const state = { hit: hit, type: brickType };
-        lines.push(createLine(x, y + h - gap, x + w - gap, y + h - gap, LineEnums.BLOCKBUTTOM, state));
-        lines.push(createLine(x, y, x + w - gap, y, LineEnums.BLOCKTOP, state));
-        lines.push(createLine(x, y, x, y + h - gap, LineEnums.BLOCKLEFT, state));
-        lines.push(createLine(x + w - gap, y, x + w - gap, y + h - gap, LineEnums.BLOCKRIGHT, state));
+        lines.push(createLine(x, y + h - gap, x + w - gap, y + h - gap, LineEnums.BLOCKBUTTOM, brick));
+        lines.push(createLine(x, y, x + w - gap, y, LineEnums.BLOCKTOP, brick));
+        lines.push(createLine(x, y, x, y + h - gap, LineEnums.BLOCKLEFT, brick));
+        lines.push(createLine(x + w - gap, y, x + w - gap, y + h - gap, LineEnums.BLOCKRIGHT, brick));
         return lines;
     };
 
@@ -531,11 +523,11 @@ var arkanoid = (() => {
     };
 
     const hitBrickLine = (line) => {
-        const state = line[3];
-        if (state.type === BrickEnums.GOLD) return;
-        state.hit -= 1;
-        if (state.hit <= 0) {
-            score += getBrickScore(state.type);
+        const brick = line[3];
+        if (brick.type === BrickEnums.GOLD) return;
+        brick.hit -= 1;
+        if (brick.hit <= 0) {
+            score += getBrickScore(brick.type);
             updateScore();
             const random = getRandom(1, powerUpMaxRandom);
             if (random ===1 && !powerUp && balls.length === 1 && (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION)) {
@@ -620,8 +612,8 @@ var arkanoid = (() => {
         for (let idx = 0; idx < brickLines.length; idx++) {
             const line = brickLines[idx];
             const figureType = line[2];
-            const state = line[3];
-            if (figureType === LineEnums.BLOCKBUTTOM && state.hit > 0) {
+            const brick = line[3];
+            if (figureType === LineEnums.BLOCKBUTTOM && brick.hit > 0) {
                 if (nextY - laserShot.h >= line[0].y - brickHeight && nextY - laserShot.h <= line[0].y &&
                     (laserShot.x1 + laserShot.w >= line[0].x && laserShot.x1 + laserShot.w <= line[1].x ||
                     laserShot.x2 + laserShot.w >= line[0].x && laserShot.x2 + laserShot.w <= line[1].x)) {
@@ -687,8 +679,8 @@ var arkanoid = (() => {
                 else if (powerUp.type === PowerUpEnums.DISRUPTION) {
                     const ball1 = balls[0];
                     const angle1 = getBallAngle(ball1);
-                    const ball2 = createBall(ball1.v, ((angle1 + 30) % 140) + 30);
-                    const ball3 = createBall(ball1.v, ((angle1 + 60) % 140) + 30);
+                    const ball2 = createBall(ball1.v, Math.sign(angle1) * (((Math.abs(angle1) + 30) % 140) + 30));
+                    const ball3 = createBall(ball1.v, Math.sign(angle1) * (((Math.abs(angle1) + 60) % 140) + 30));
                     ball2.x = ball1.x;
                     ball2.y = ball1.y;
                     ball3.x = ball1.x;
@@ -725,6 +717,7 @@ var arkanoid = (() => {
         score = 0;
         powerUp = undefined;
         borderLines = [];
+        bricks = [];
         brickLines = [];
         laserShots = [];
         balls = [];
@@ -747,11 +740,14 @@ var arkanoid = (() => {
         ballSpeedIncrease = 0.025;
         powerUpMaxRandom = 3; // every 3th brick hit will return a power up in average
         brickLines = [];
+        bricks = [];
         let row = 4;
-        const brickRowTypes = [BrickEnums.SILVER, BrickEnums.RED, BrickEnums.YELLOW, BrickEnums.BLUE, BrickEnums.PURBLE, BrickEnums.GREEN];
-        brickRowTypes.forEach(brickType => {
+        const brickTypes = [BrickEnums.SILVER, BrickEnums.RED, BrickEnums.YELLOW, BrickEnums.BLUE, BrickEnums.PURBLE, BrickEnums.GREEN];
+        brickTypes.forEach(brickType => {
             for (let col = 0; col < bricksPerRow; col++) {
-                const lines = createBrickLines(row, col, brickType);
+                const brick = { row: row, col: col, type: brickType, hit: getBrickHitsPerType(brickType) };
+                bricks.push(brick);
+                const lines = createBrickLines(row, col, brick);
                 /* jshint -W083 */
                 lines.forEach(line => brickLines.push(line));
                 /* jshint +W083 */
@@ -762,6 +758,16 @@ var arkanoid = (() => {
 
     const increaseBallSpeed = () => {
         balls.forEach(ball => ball.v = Math.min(10, ball.v + ballSpeedIncrease));
+    };
+
+    const getBrickHitsPerType = (brickType) => {
+        if (brickType === BrickEnums.SILVER) {
+            return Math.floor(stage / 8) + 2;
+        }
+        if (brickType === BrickEnums.GOLD) {
+            return Number.MAX_SAFE_INTEGER;
+        }
+        return 1;
     };
 
     const getBrickScore = (brickType) => {
@@ -789,6 +795,31 @@ var arkanoid = (() => {
         }
     };
 
+    const getBrickColor = (brickType) => {
+        switch (brickType) {
+            case BrickEnums.WHITE:
+                return "white";
+            case BrickEnums.ORANGE:
+                return "orange";
+            case BrickEnums.CYAN:
+                return "cyan";
+            case BrickEnums.GREEN:
+                return "green";
+            case BrickEnums.RED:
+                return "red";
+            case BrickEnums.BLUE:
+                return "blue";
+            case BrickEnums.PURBLE:
+                return "#a020f0";
+            case BrickEnums.YELLOW:
+                return "yellow";
+            case BrickEnums.SILVER:
+                return "silver";
+            default:
+                return "";
+        }
+    };
+
     const getPowerUpLetter = (powerUpType) => {
         switch (powerUpType) {
             case PowerUpEnums.LASER:
@@ -805,6 +836,27 @@ var arkanoid = (() => {
                 return "D";
             case PowerUpEnums.PLAYER:
                 return "P";
+            default:
+                return "";
+        }
+    };
+
+    const getPowerUpColor = (powerUpType) => {
+        switch (powerUpType) {
+            case PowerUpEnums.LASER:
+                return "red";
+            case PowerUpEnums.ENLARGE:
+                return "blue";
+            case PowerUpEnums.CATCH:
+                return "green";
+            case PowerUpEnums.SLOW:
+                return "orange";
+            case PowerUpEnums.BREAK:
+                return "rosa";
+            case PowerUpEnums.DISRUPTION:
+                return "cyan";
+            case PowerUpEnums.PLAYER:
+                return "gray";
             default:
                 return "";
         }
@@ -829,45 +881,52 @@ var arkanoid = (() => {
 
     // --- drawing
 
-    const drawLines = (ctx, lines) => {
-        lines.forEach(line => {
-            ctx.strokeStyle = "white";
-            ctx.beginPath();
-            ctx.moveTo(line[0].x, line[0].y);
-            ctx.lineTo(line[1].x, line[1].y);
-            ctx.stroke();
-        });
-    };
-
     const drawBorder = (ctx) => {
-        borderLines.filter(line => line[2] != LineEnums.BORDERBUTTOM).forEach(line => {
-            ctx.strokeStyle = "white";
-            ctx.beginPath();
-            ctx.moveTo(line[0].x, line[0].y);
-            ctx.lineTo(line[1].x, line[1].y);
-            ctx.stroke();
-        });
+        ctx.fillStyle = "#555555";
+        ctx.fillRect(0, 0, 2 * borderWidth + innerWidth, borderHeight);
+        ctx.fillRect(0, borderHeight, borderWidth, innerHeight - borderHeight);
+        ctx.fillRect(innerWidth + borderWidth, borderHeight, borderWidth, innerHeight - borderHeight);
     };
 
     const drawBricks = (ctx) => {
-        const lines = brickLines.filter(line => line[3].hit > 0);
-        drawLines(ctx, lines);
+        const w = brickWidth;
+        const h = brickHeight;
+        const filtered = bricks.filter(brick => brick.hit > 0);
+        filtered.forEach(brick => {
+            const x = brick.col * w + borderWidth;
+            const y = brick.row * h + borderWidth;
+            ctx.fillStyle = getBrickColor(brick.type);
+            ctx.fillRect(x, y, w - 2, h - 2);
+        });
     };
 
     const drawRacket = (ctx) => {
-        const lines = [];
-        lines.push(createLine(racket.x, racket.y, racket.x + racketWidth, racket.y, LineEnums.RACKETTOP));
-        lines.push(createLine(racket.x, racket.y, racket.x, racket.y + racketHeight, LineEnums.RACKETLEFT));
-        lines.push(createLine(racket.x + racketWidth, racket.y, racket.x + racketWidth, racket.y + racketHeight, LineEnums.RACKETRIGHT));
-        drawLines(ctx, lines);
+        let colorBlue = "cyan";
+        let colorRed = "red";
+        let colorGray = "gray";
+        if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER) {
+            colorBlue = "#990000";
+            colorRed = "#880000";
+            colorGray = "#770000";
+        }
+        ctx.fillStyle = colorBlue;
+        ctx.fillRect(racket.x, racket.y, blueW, racketHeight);
+        ctx.fillStyle = colorRed;
+        ctx.fillRect(racket.x + blueW, racket.y, redW, racketHeight);
+        ctx.fillStyle = colorGray;
+        ctx.fillRect(racket.x + blueW + redW, racket.y, racketWidth - blueW * 2 - redW * 2, racketHeight);
+        ctx.fillStyle = colorRed;
+        ctx.fillRect(racket.x + racketWidth - redW - blueW, racket.y, redW, racketHeight);
+        ctx.fillStyle = colorBlue;
+        ctx.fillRect(racket.x + racketWidth - blueW, racket.y, blueW, racketHeight);
     };
 
     const drawPowerUp = (ctx) => {
         if (!powerUp) return;
-        ctx.strokeStyle = "white";
-        ctx.rect(powerUp.x, powerUp.y, powerUp.w, powerUp.h);
-        ctx.stroke();
-        ctx.font = "13px serif";
+        ctx.fillStyle = getPowerUpColor(powerUp.type);
+        ctx.fillRect(powerUp.x, powerUp.y, powerUp.w, powerUp.h);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 13px serif";
         ctx.fillText(getPowerUpLetter(powerUp.type), powerUp.x + powerUp.w / 2 - 4, powerUp.y + powerUp.h / 2 + 3);
     };
 
@@ -908,12 +967,14 @@ var arkanoid = (() => {
 
     const draw = () => {
         if (gameStarted && !gameOver && !gameWon) {
-            // prepare lines
-            // draw canvas
             const ctx = canvas.getContext("2d");
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBorder(ctx);
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = "black";
             drawBricks(ctx);
+            drawBorder(ctx);
             drawRacket(ctx);
             drawLaserShots(ctx);
             drawBalls(ctx);
@@ -1068,14 +1129,16 @@ var arkanoid = (() => {
     const renderArkanoid = (parent) => {
         brickWidth = 45;
         brickHeight = 22;
-        borderWidth = 25;
-        borderHeight = 22;
+        borderWidth = 20;
+        borderHeight = 20;
+        blueW = 3;
+        redW = 15;
         racketNormalWidth = 90;
         racketEnlargeWidth = 140;
         racketHeight = 22;
         racketYGap = 38;
         ballRadius = 5;
-        laserShotWidth = 1;
+        laserShotWidth = 5;
         laserShotHeight = 20;
         if (utils.is_mobile()) {
             const mobilew = 20;
@@ -1084,11 +1147,14 @@ var arkanoid = (() => {
             brickHeight -= mobileh;
             borderWidth = 1;
             borderHeight = 1;
+            blueW = 2;
+            redW = 13;
             racketNormalWidth = 60;
             racketEnlargeWidth = 88;
             racketHeight -= mobileh;
             racketYGap -= mobileh;
             ballRadius = 4;
+            laserShotWidth = 3;
             laserShotDiff -= mobilew;
         }
         laserShotDiff = racketNormalWidth / 10;

@@ -90,7 +90,7 @@ a {
     position: absolute;
     left: 100px;
     top: 50px;
-    background-color: black;
+    /*background-color: black;*/
 }
 
 #info-id {
