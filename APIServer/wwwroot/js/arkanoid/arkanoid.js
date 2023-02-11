@@ -546,7 +546,7 @@ var arkanoid = (() => {
 
     const moveRacketRelative = (movementX) => {
         if (movementX == 0) return;
-        const x = racket.x + movementX;
+        let x = racket.x + movementX;
         for (let idx = 0; idx < balls.length; idx++) {
             const ball = balls[idx];
             // move ball outside racket if neccessary
@@ -557,9 +557,9 @@ var arkanoid = (() => {
                 break;
             }
         }
+        x = Math.max(borderWidth, x);
+        x = Math.min(borderWidth + innerWidth - racketWidth, x);
         racket.x = x;
-        racket.x = Math.max(borderWidth, racket.x);
-        racket.x = Math.min(borderWidth + innerWidth - racketWidth, racket.x);
     };
 
     const moveRacketWithKeyboard = () => {
@@ -736,7 +736,7 @@ var arkanoid = (() => {
 
     const initStage1 = () => {
         // stage 1
-        startSpeed = 2;
+        startSpeed = utils.is_mobile() ? 1.5 : 2;
         ballSpeedIncrease = 0.025;
         powerUpMaxRandom = 3; // every 3th brick hit will return a power up in average
         brickLines = [];
@@ -991,6 +991,15 @@ var arkanoid = (() => {
             moveLaserShots();
             moveBalls();
             moveRacketWithKeyboard();
+            // avoid endless loop if ball leaves the canvas...
+            if (balls.length === 1) {
+                const ball = balls[0];
+                if (ball.y < 0 || ball.y > ballRadius + innerHeight + 2 * borderHeight ||
+                    ball.x < 0 || ball.x > ballRadius + innerWidth + 2 * borderWidth) {
+                    gameOver = true;
+                    updateGameEnded();
+                }
+            }
         }
         // schedule redraw after 50ms
         window.requestAnimationFrame(draw);
@@ -1106,10 +1115,14 @@ var arkanoid = (() => {
     };
 
     const onTouchEnd = (e) => {
+        // does not occurs if touch is moved outside the touch area!
         e.preventDefault();
         let touch = isMoveRectTouched(e);
         if (touch && touch.id == lastTouchId && lastTouchX) {
-            moveRacketRelative(touch.p.x - lastTouchX);
+            const diff = touch.p.x - lastTouchX;
+            if (Math.abs(diff) <= racketWidth) {
+                moveRacketRelative(diff);
+            }
             lastTouchX = undefined;
             lastTouchId = undefined;
         }
@@ -1117,9 +1130,12 @@ var arkanoid = (() => {
 
     const onTouchMove = (e) => {
         e.preventDefault();
-        let touch = isMoveRectTouched(e);
+        const touch = isMoveRectTouched(e);
         if (touch && touch.id == lastTouchId && lastTouchX) {
-            moveRacketRelative(touch.p.x - lastTouchX);
+            const diff = touch.p.x - lastTouchX;
+            if (Math.abs(diff) <= racketWidth) {
+                moveRacketRelative(diff);
+            }
             lastTouchX = touch.p.x;
         }
     };
@@ -1155,9 +1171,8 @@ var arkanoid = (() => {
             racketYGap -= mobileh;
             ballRadius = 4;
             laserShotWidth = 3;
-            laserShotDiff -= mobilew;
         }
-        laserShotDiff = racketNormalWidth / 10;
+        laserShotDiff = Math.round(racketNormalWidth / 5);
         innerWidth = brickWidth * bricksPerRow;
         innerHeight = brickHeight * bricksMaxRows;
         touchActionRect = undefined;
