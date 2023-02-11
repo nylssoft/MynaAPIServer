@@ -46,58 +46,69 @@ var arkanoid = (() => {
 
     // --- state
 
-    let stage = 1;
-    let score = 0;
-    let ballSpeedIncrease = 0.025;
-    let powerUpMaxRandom = 5;
+    let stage;
+    let score;
+    let ballSpeedIncrease;
+    let powerUpMaxRandom;
+    let startSpeed;
 
-    let balls = [];
-    let laserShots = [];
-    let borderLines = [];
-    let brickLines = [];
+    let balls;
+    let laserShots;
+    let borderLines;
+    let brickLines;
 
-    let gameOver = false;
-    let gameWon = false;
-    let gameStarted = false;
+    let gameOver;
+    let gameWon;
+    let gameStarted;
 
-    let keyPreferLeft = false;
-    let keyLeftPressed = false;
-    let keyRightPressed = false;
-    let keySpeed1Pressed = false;
-    let keySpeed2Pressed = false;
+    let keyPreferLeft;
+    let keyLeftPressed;
+    let keyRightPressed;
+    let keySpeed1Pressed;
+    let keySpeed2Pressed;
+
+    let lastTouchX;
+    let lastTouchId;
 
     let powerUp;
-    let pointOfIntersection;
+
+    // dimensions
+
+    let innerWidth;
+    let innerHeight;
 
     let racket;
     let racketWidth;
-    let racketGrayWidth;
+
+    let brickWidth;
+    let brickHeight;
+
+    let borderWidth;
+    let borderHeight;
+
+    let racketNormalWidth;
+    let racketEnlargeWidth;
+    let racketHeight;
+    let racketYGap;
+
+    let ballRadius;
+
+    let laserShotDiff;
+    let laserShotWidth;
+    let laserShotHeight;
+
+    let touchActionRect;
+    let touchMoveRect;
+
+    let backgroundPictures;
+    let currentBackgroundPicture;
 
     // --- constants
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
-    const brickWidth = 45;
-    const brickHeight = 25;
     const bricksPerRow = 13;
-    const bricksMaxRows = 25;
-    const innerWidth = brickWidth * bricksPerRow;
-    const innerHeight = brickHeight * bricksMaxRows;
-
-    const borderWidth = 25;
-    const borderHeight = 22;
-
-    const racketNormalGrayWidth = 50;
-    const racketEnlargeGrayWidth = 100;
-    const racketRedWidth = 16;
-    const racketBlueWidth = 5;
-    const racketNormalWidth = 2 * racketBlueWidth + 2 * racketRedWidth + racketNormalGrayWidth;
-    const racketHeight = 27;
-    const racketYGap = 38;
-    const ballRadius = 5;
-
-    let backgroundPictures;
-    let currentBackgroundPicture = 0;
+    const bricksMaxRows = 28;
 
     // --- background
 
@@ -111,15 +122,24 @@ var arkanoid = (() => {
     };
 
     const initBackgroundPictures = (pictures) => {
+        currentBackgroundPicture = 0;
         backgroundPictures = pictures;
         utils.shuffle_array(backgroundPictures);
     };
 
-    // --- utility
+    // --- utilities
 
     const getRandom = (min, max) => {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     };
+
+    const isTouchDevice = () => {
+        return (('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.msMaxTouchPoints > 0));
+    };
+
+    const isInRect = (p, rect) => p.x >= rect.x && p.y >= rect.y && p.x < rect.x + rect.w && p.y < rect.y + rect.h;
 
     // --- create structures
 
@@ -173,6 +193,7 @@ var arkanoid = (() => {
         filtered.forEach(line => lines.push(line));
         if (!filtered.some(line => line[3].type != BrickEnums.GOLD)) {
             gameWon = true;
+            updateGameEnded();
         }
     };
 
@@ -237,14 +258,14 @@ var arkanoid = (() => {
         };
     };
 
-    const createShot = () => {
-        const diff = racketBlueWidth + racketRedWidth + Math.floor(racketGrayWidth / 4);
+    const createLaserShot = () => {
+        const diff = Math.floor(racketWidth / 2) + laserShotDiff;
         const shot = {
             x1: racket.x + diff,
             x2: racket.x + racketWidth - diff,
             y: racket.y + 1,
-            w: 5,
-            h: 30,
+            w: laserShotWidth,
+            h: laserShotHeight,
         };
         return shot;
     };
@@ -356,6 +377,7 @@ var arkanoid = (() => {
     const handleBalls = (lines) => {
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) return;
         const removeBalls = [];
+        let idx = 0;
         balls.forEach(ball => {
             ball.hasHits = false;
             const hit = handleBallHits(lines, ball);
@@ -364,7 +386,11 @@ var arkanoid = (() => {
             }
             else if (hit.hasHits) {
                 ball.hasHits = true;
+                if (idx === 0) {
+                    increaseBallSpeed();
+                }
             }
+            idx++;
         });
         if (removeBalls.length > 0) {
             balls = balls.filter(ball => !removeBalls.includes(ball));
@@ -381,7 +407,6 @@ var arkanoid = (() => {
             const line = filtered[idx];
             const pi = streckeSchneidetStrecke(p1, p2, line[0], line[1]);
             if (pi) {
-                pointOfIntersection = pi;
                 hasHits = handleBallRacketHit(line, pi, ball);
                 if (!hasHits) {
                     const borderHit = handleBallBorderHit(line, ball);
@@ -420,7 +445,6 @@ var arkanoid = (() => {
         const dy = Math.sin(rad) * c;
         ball.dirX = Math.abs(dx) * Math.sign(ball.dirX);
         ball.dirY = Math.abs(dy) * Math.sign(ball.dirY);
-        increaseBallSpeed();
         if (figureType === LineEnums.RACKETLEFT) {
             ball.dirX = -1 * Math.abs(ball.dirX); // left
             ball.x -= 1;
@@ -452,12 +476,12 @@ var arkanoid = (() => {
             else {
                 ball.dirX *= -1;
             }
-            increaseBallSpeed();
         }
         else if (figureType === LineEnums.BORDERBUTTOM) {
             hasHits = true;
             if (balls.length === 1) {
                 gameOver = true;
+                updateGameEnded();
             }
             else {
                 removeBall = true;
@@ -470,29 +494,28 @@ var arkanoid = (() => {
         const figureType = line[2];
         if (figureType != LineEnums.BLOCKBUTTOM && figureType != LineEnums.BLOCKTOP && figureType != LineEnums.BLOCKLEFT && figureType != LineEnums.BLOCKRIGHT) return false;
         let hit = false;
-        if (figureType === LineEnums.BLOCKLEFT && ball.dirX > 0) {
+        if (figureType === LineEnums.BLOCKLEFT) {
             hit = true;
             ball.dirX = -1 * Math.abs(ball.dirX); // left
             ball.x -= 1;
         }
-        else if (figureType === LineEnums.BLOCKRIGHT && ball.dirX < 0) {
+        else if (figureType === LineEnums.BLOCKRIGHT) {
             hit = true;
             ball.dirX = Math.abs(ball.dirX); // right
             ball.x += 1;
         }
-        else if (figureType === LineEnums.BLOCKBUTTOM && ball.dirY < 0) {
+        else if (figureType === LineEnums.BLOCKBUTTOM) {
             hit = true;
             ball.dirY = Math.abs(ball.dirY); // down
             ball.y -= 1;
         }
-        else if (figureType === LineEnums.BLOCKTOP && ball.dirY > 0) {
+        else if (figureType === LineEnums.BLOCKTOP) {
             hit = true;
             ball.dirY = -1 * Math.abs(ball.dirY); // up
             ball.y += 1;
         }
         if (hit) {
             hitBrickLine(line);
-            increaseBallSpeed();
             return true;
         }
         return false;
@@ -504,11 +527,12 @@ var arkanoid = (() => {
         state.hit -= 1;
         if (state.hit <= 0) {
             score += getBrickScore(state.type);
+            updateScore();
             if (!powerUp && line[2] === LineEnums.BLOCKBUTTOM && balls.length === 1) {
                 const random = getRandom(1, powerUpMaxRandom);
                 if (random === 1) {
                     const powerUpType = powerUps[getRandom(0, powerUps.length - 1)];
-                    if (!racket.powerUp || racket.powerUp.type != powerUpType || powerUpType === PowerUpEnums.SLOW) {
+                    if (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION) {
                         powerUp = createPowerUp(line[0].x + 2, line[0].y - brickHeight + 2, brickWidth - 4, brickHeight - 2, powerUpType);
                     }
                 }
@@ -517,6 +541,24 @@ var arkanoid = (() => {
     };
 
     // --- move of racket, laser shots, balls and powerups
+
+    const moveRacketRelative = (movementX) => {
+        if (movementX == 0) return;
+        const x = racket.x + movementX;
+        for (let idx = 0; idx < balls.length; idx++) {
+            const ball = balls[idx];
+            // move ball outside racket if neccessary
+            if (ball.y > racket.y && ball.y < racket.y + racketHeight &&
+                ball.x > x && ball.x < x + racketWidth) {
+                ball.y = racket.y;
+                ball.dirY = -1 * Math.abs(ball.dirY); // up
+                break;
+            }
+        }
+        racket.x = x;
+        racket.x = Math.max(borderWidth, racket.x);
+        racket.x = Math.min(borderWidth + innerWidth - racketWidth, racket.x);
+    };
 
     const moveRacketWithKeyboard = () => {
         let speed;
@@ -565,7 +607,6 @@ var arkanoid = (() => {
         if (nextY - laserShot.h < borderHeight) {
             return false;
         }
-        // @TODO: filter brick lines that are contained in next laser shot rectangle
         for (let idx = 0; idx < brickLines.length; idx++) {
             const line = brickLines[idx];
             const figureType = line[2];
@@ -614,9 +655,8 @@ var arkanoid = (() => {
                     balls = [balls[0]];
                 }
                 else if (racket.powerUp.type === PowerUpEnums.ENLARGE) {
-                    racketGrayWidth = racketNormalGrayWidth;
-                    racketWidth = 2 * racketBlueWidth + 2 * racketRedWidth + racketGrayWidth;
-                    racket.x += Math.floor((racketEnlargeGrayWidth - racketNormalGrayWidth) / 2);
+                    racketWidth = racketNormalWidth;
+                    racket.x += Math.floor((racketEnlargeWidth - racketNormalWidth) / 2);
                     if (racket.x + racketWidth > innerWidth) {
                         racket.x = innerWidth - racketWidth;
                     }
@@ -629,7 +669,7 @@ var arkanoid = (() => {
             if (!racket.powerUp) {
                 // enable power up
                 if (powerUp.type === PowerUpEnums.SLOW) {
-                    balls.forEach(ball => ball.v = Math.max(1, ball.v - 1));
+                    balls.forEach(ball => ball.v = Math.max(startSpeed, ball.v - 1));
                 }
                 else if (powerUp.type === PowerUpEnums.CATCH) {
                     racket.powerUp = { type: powerUp.type, hold: 0, catched: false, ballRelX: 0 };
@@ -650,9 +690,8 @@ var arkanoid = (() => {
                 }
                 else if (powerUp.type === PowerUpEnums.ENLARGE) {
                     racket.powerUp = { type: powerUp.type };
-                    racketGrayWidth = racketEnlargeGrayWidth;
-                    racketWidth = 2 * racketBlueWidth + 2 * racketRedWidth + racketGrayWidth;
-                    racket.x -= Math.floor((racketEnlargeGrayWidth - racketNormalGrayWidth) / 2);
+                    racketWidth = racketEnlargeWidth;
+                    racket.x -= Math.floor((racketEnlargeWidth - racketNormalWidth) / 2);
                     if (racket.x + racketWidth > innerWidth) {
                         racket.x = innerWidth - racketWidth;
                     }
@@ -671,24 +710,29 @@ var arkanoid = (() => {
     // --- stage handling
 
     const startNewGame = () => {
+        stage = 1;
         score = 0;
         powerUp = undefined;
+        borderLines = [];
+        brickLines = [];
         laserShots = [];
-        racketGrayWidth = racketNormalGrayWidth;
+        balls = [];
         racketWidth = racketNormalWidth;
         setBackgroundPicture();
         racket = createRacket();
         initBorderLines();
         initStage1();
-        balls = [];
-        balls.push(createBall(1));
+        balls.push(createBall(startSpeed));
         gameOver = false;
         gameWon = false;
         gameStarted = true;
+        updateGameEnded();
+        updateScore();
     };
 
     const initStage1 = () => {
         // stage 1
+        startSpeed = 2;
         ballSpeedIncrease = 0.025;
         powerUpMaxRandom = 3; // every 3th brick hit will return a power up in average
         brickLines = [];
@@ -755,17 +799,24 @@ var arkanoid = (() => {
         }
     };
 
-    // --- drawing
-
-    const drawPointOfIntersection = (ctx) => {
-        if (pointOfIntersection) {
-            ctx.strokeStyle = "red";
-            ctx.beginPath();
-            ctx.moveTo(pointOfIntersection.x, pointOfIntersection.y - ballRadius);
-            ctx.lineTo(pointOfIntersection.x, pointOfIntersection.y + ballRadius);
-            ctx.stroke();
-        }
+    const updateScore = () => {
+        const infoElem = document.getElementById("info-id");
+        infoElem.textContent = `Score ${score}`;
     };
+
+    const updateGameEnded = () => {
+        let txt = "";
+        if (gameOver) {
+            txt = "GAME OVER!";
+        }
+        else if (gameWon) {
+            txt = "GAME WON!";
+        }
+        const infoGameOverElem = document.getElementById("info-gameover-id");
+        infoGameOverElem.textContent = txt;
+    };
+
+    // --- drawing
 
     const drawLines = (ctx, lines) => {
         lines.forEach(line => {
@@ -775,6 +826,29 @@ var arkanoid = (() => {
             ctx.lineTo(line[1].x, line[1].y);
             ctx.stroke();
         });
+    };
+
+    const drawBorder = (ctx) => {
+        borderLines.filter(line => line[2] != LineEnums.BORDERBUTTOM).forEach(line => {
+            ctx.strokeStyle = "white";
+            ctx.beginPath();
+            ctx.moveTo(line[0].x, line[0].y);
+            ctx.lineTo(line[1].x, line[1].y);
+            ctx.stroke();
+        });
+    };
+
+    const drawBricks = (ctx) => {
+        const lines = brickLines.filter(line => line[3].hit > 0);
+        drawLines(ctx, lines);
+    };
+
+    const drawRacket = (ctx) => {
+        const lines = [];
+        lines.push(createLine(racket.x, racket.y, racket.x + racketWidth, racket.y, LineEnums.RACKETTOP));
+        lines.push(createLine(racket.x, racket.y, racket.x, racket.y + racketHeight, LineEnums.RACKETLEFT));
+        lines.push(createLine(racket.x + racketWidth, racket.y, racket.x + racketWidth, racket.y + racketHeight, LineEnums.RACKETRIGHT));
+        drawLines(ctx, lines);
     };
 
     const drawPowerUp = (ctx) => {
@@ -812,22 +886,38 @@ var arkanoid = (() => {
         ctx.fillRect(x2, y - laserShot.h, laserShot.w, laserShot.h);
     };
 
+    const drawRect = (ctx, rect) => {
+        ctx.strokeStyle = "white";
+        ctx.beginPath();
+        ctx.rect(rect.x, rect.y, rect.w, rect.h);
+        ctx.stroke();
+    };
+
+    const drawTouchArea = (ctx) => {
+        if (touchActionRect && touchMoveRect) {
+            drawRect(ctx, touchActionRect);
+            drawRect(ctx, touchMoveRect);
+        }
+    }
+
     const draw = () => {
         if (gameStarted && !gameOver && !gameWon) {
             // prepare lines
+            // draw canvas
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBorder(ctx);
+            drawBricks(ctx);
+            drawRacket(ctx);
+            drawLaserShots(ctx);
+            drawBalls(ctx);
+            drawPowerUp(ctx);
+            drawTouchArea(ctx);
+            // handle ball hits
             const lines = [];
             addBorderLines(lines);
             addRacketLines(lines);
             addBrickLines(lines);
-            // draw canvas
-            const ctx = canvas.getContext("2d");
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawLines(ctx, lines);
-            drawLaserShots(ctx);
-            drawBalls(ctx);
-            drawPowerUp(ctx);
-            drawPointOfIntersection(ctx);
-            // handle ball hits
             handleBalls(lines);
             // move items
             movePowerUp();
@@ -839,13 +929,176 @@ var arkanoid = (() => {
         window.requestAnimationFrame(draw);
     };
 
+    // --- callbacks for user interaction
+
+    const getTouchPoint = (touch) => {
+        const rect = canvas.getBoundingClientRect();
+        return { x: touch.clientX - rect.x, y: touch.clientY - rect.y };
+    };
+
+    const isTouchInRect = (e, rect) => {
+        const touches = e.changedTouches;
+        for (let idx = 0; idx < touches.length; idx++) {
+            const touch = touches[idx];
+            const p = getTouchPoint(touch);
+            if (isInRect(p, rect)) {
+                return { p: p, id: touch.identifier };
+            }
+            return undefined;
+        }
+    };
+
+    const isMoveRectTouched = (e) => {
+        return isTouchInRect(e, touchMoveRect);
+    };
+
+    const isActionRectTouched = (e) => {
+        return isTouchInRect(e, touchActionRect);
+    };
+
+    const onActionButtonPressed = () => {
+        if (gameOver || gameWon) {
+            startNewGame();
+        }
+        else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
+            laserShots.push(createLaserShot());
+        }
+        else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
+            racket.powerUp.catched = false;
+        }
+    };
+
+    // --- mouse, key and touch events
+
+    const onMouseDown = (e) => {
+        e.preventDefault();
+        onActionButtonPressed();
+    };
+
+    const onMouseMove = (e) => {
+        e.preventDefault();
+        moveRacketRelative(e.movementX);
+    };
+
+    const onKeyDown = (e) => {
+        if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            keyLeftPressed = true;
+            keyPreferLeft = true;
+        }
+        if (e.key === "ArrowRight") {
+            e.preventDefault();
+            keyRightPressed = true;
+            keyPreferLeft = false;
+        }
+        else if (e.key === "x") {
+            e.preventDefault();
+            keySpeed1Pressed = true;
+        }
+        else if (e.key === "y") {
+            e.preventDefault();
+            keySpeed2Pressed = true;
+        }
+        else if (e.code === "Space") {
+            e.preventDefault();
+            onActionButtonPressed();
+        }
+    };
+
+    const onKeyUp = (e) => {
+        if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            keyLeftPressed = false;
+        }
+        if (e.key === "ArrowRight") {
+            e.preventDefault();
+            keyRightPressed = false;
+        }
+        else if (e.key === "x") {
+            e.preventDefault();
+            keySpeed1Pressed = false;
+        }
+        else if (e.key === "y") {
+            e.preventDefault();
+            keySpeed2Pressed = false;
+        }
+    };
+
+    const onTouchStart = (e) => {
+        e.preventDefault();
+        let touch = isActionRectTouched(e);
+        if (touch) {
+            onActionButtonPressed();
+            return;
+        }
+        touch = isMoveRectTouched(e);
+        if (touch) {
+            lastTouchId = touch.id;
+            lastTouchX = touch.p.x;
+        }
+    };
+
+    const onTouchEnd = (e) => {
+        e.preventDefault();
+        let touch = isMoveRectTouched(e);
+        if (touch && touch.id == lastTouchId && lastTouchX) {
+            moveRacketRelative(touch.p.x - lastTouchX);
+            lastTouchX = undefined;
+            lastTouchId = undefined;
+        }
+    };
+
+    const onTouchMove = (e) => {
+        e.preventDefault();
+        let touch = isMoveRectTouched(e);
+        if (touch && touch.id == lastTouchId && lastTouchX) {
+            moveRacketRelative(touch.p.x - lastTouchX);
+            lastTouchX = touch.p.x;
+        }
+    };
+
     // --- rendering HTML elements
 
     const renderArkanoid = (parent) => {
+        brickWidth = 45;
+        brickHeight = 22;
+        borderWidth = 25;
+        borderHeight = 22;
+        racketNormalWidth = 90;
+        racketEnlargeWidth = 140;
+        racketHeight = 22;
+        racketYGap = 38;
+        ballRadius = 5;
+        laserShotWidth = 1;
+        laserShotHeight = 20;
+        if (utils.is_mobile()) {
+            const mobilew = 20;
+            const mobileh = 5;
+            brickWidth -= mobilew;
+            brickHeight -= mobileh;
+            borderWidth = 1;
+            borderHeight = 1;
+            racketNormalWidth = 60;
+            racketEnlargeWidth = 88;
+            racketHeight -= mobileh;
+            racketYGap -= mobileh;
+            ballRadius = 4;
+            laserShotDiff -= mobilew;
+        }
+        laserShotDiff = racketNormalWidth / 10;
+        innerWidth = brickWidth * bricksPerRow;
+        innerHeight = brickHeight * bricksMaxRows;
+        touchActionRect = undefined;
+        touchMoveRect = undefined;
+        if (isTouchDevice()) {
+            touchActionRect = { x: 2 * borderWidth, y: innerHeight + brickHeight - 2 * borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 2 * brickHeight };
+            touchMoveRect = { x: touchActionRect.x + touchActionRect.w + brickWidth, y: touchActionRect.y, w: innerWidth - 4 * brickWidth - borderWidth, h: touchActionRect.h };
+        }
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = innerWidth + 2 * borderWidth;
-        canvas.height = innerHeight + borderHeight;
+        canvas.height = innerHeight + borderHeight + 48;
         controls.createDiv(parent).id = "info-id";
+        controls.createDiv(parent).id = "info-gameover-id";
         startNewGame();
         window.requestAnimationFrame(draw);
     };
@@ -857,114 +1110,15 @@ var arkanoid = (() => {
         utils.create_cookies_banner(wrapBody);
         const all = controls.createDiv(wrapBody);
         renderArkanoid(all);
-        document.addEventListener("mousedown", e => {
-            if (gameOver || gameWon) {
-                startNewGame();
-            }
-            else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
-                laserShots.push(createShot());
-            }
-            else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
-                racket.powerUp.catched = false;
-            }
-        });
-        document.addEventListener("mousemove", e => {
-            if (e.movementX == 0) return;
-            const x = racket.x + e.movementX;
-            for (let idx = 0; idx < balls.length; idx++) {
-                const ball = balls[idx];
-                // move ball outside racket if neccessary
-                if (ball.y > racket.y && ball.y < racket.y + racketHeight &&
-                    ball.x > x && ball.x < x + racketWidth) {
-                    ball.y = racket.y;
-                    ball.dirY = -1 * Math.abs(ball.dirY); // up
-                    break;
-                }
-            }
-            racket.x = x;
-            racket.x = Math.max(borderWidth, racket.x);
-            racket.x = Math.min(borderWidth + innerWidth - racketWidth, racket.x);
-        });
-        document.addEventListener("keydown", e => {
-            if (e.key === "ArrowLeft") {
-                e.preventDefault();
-                keyLeftPressed = true;
-                keyPreferLeft = true;
-            }
-            if (e.key === "ArrowRight") {
-                e.preventDefault();
-                keyRightPressed = true;
-                keyPreferLeft = false;
-            }
-            else if (e.key === "x") {
-                e.preventDefault();
-                keySpeed1Pressed = true;
-            }
-            else if (e.key === "y") {
-                e.preventDefault();
-                keySpeed2Pressed = true;
-            }
-            else if (e.code === "Space") {
-                if (gameOver || gameWon) {
-                    startNewGame();
-                }
-                else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
-                    laserShots.push(createShot());
-                }
-                else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
-                    racket.powerUp.catched = false;
-                }
-            }
-        });
-        document.addEventListener("keyup", (e) => {
-            if (e.key === "ArrowLeft") {
-                keyLeftPressed = false;
-            }
-            if (e.key === "ArrowRight") {
-                keyRightPressed = false;
-            }
-            else if (e.key === "x") {
-                keySpeed1Pressed = false;
-            }
-            else if (e.key === "y") {
-                keySpeed2Pressed = false;
-            }
-        });
-    };
-
-    const onTimer = () => {
-        let info = `Score: ${score}, Stage: ${stage}`;
-        if (gameOver) {
-            info += " GAME OVER!";
-        }
-        else if (gameWon) {
-            info += " GAME WON!";
-        }
-        if (balls.length > 0) {
-            const v = Math.round(balls[0].v * 100) / 100;
-            info += ` Speed: ${v}`;
-            let idx = 1;
-            balls.forEach(ball => {
-                const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
-                const asin = Math.asin(ball.dirY / c);
-                const angle = Math.round(asin * 360 / Math.PI);
-                info += ` Angle${idx}: ${angle}`;
-                idx++;
-            });
-        }
-        if (racket.powerUp) {
-            info += ` PowerUp: ${racket.powerUp.type}`;
-            if (racket.powerUp.type === PowerUpEnums.CATCH) {
-                info += ` Catched: ${racket.powerUp.catched}`;
-                if (racket.powerUp.catched) {
-                    info += ` Hold: ${racket.powerUp.hold}`;
-                    info += ` BallRelX: ${racket.powerUp.ballRelX}`;
-                }
-            }
-        }
-        const textInfo = document.getElementById("info-id").textContent;
-        if (textInfo != info) {
-            document.getElementById("info-id").textContent = info;
+        document.addEventListener("mousedown", onMouseDown);
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("keydown", onKeyDown);
+        document.addEventListener("keyup", onKeyUp);
+        if (isTouchDevice()) {
+            document.addEventListener("touchstart", onTouchStart, { passive: false });
+            document.addEventListener("touchend", onTouchEnd, { passive: false });
+            document.addEventListener("touchcancel", onTouchEnd, { passive: false });
+            document.addEventListener("touchmove", onTouchMove, { passive: false });
         }
     };
 
@@ -976,8 +1130,7 @@ var arkanoid = (() => {
     // --- public API
 
     return {
-        init: init,
-        onTimer: onTimer
+        init: init
     };
 })();
 
@@ -993,5 +1146,3 @@ window.onload = () => {
         });
     });
 };
-
-window.setInterval(arkanoid.onTimer, 100);

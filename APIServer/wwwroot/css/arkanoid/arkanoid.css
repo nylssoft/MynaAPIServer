@@ -14,7 +14,6 @@
     height: 100vh;
     width: 100%;
     /*cursor: url('/images/backgammon/rating.png') 4 12, auto;*/
-    cursor: auto; /*none;*/
 }
 
 .wrap-body::before {
@@ -94,8 +93,20 @@ a {
     background-color: black;
 }
 
+#info-id {
+    position: absolute;
+    left: 340px;
+    top: 15px;
+}
+
+#info-gameover-id {
+    position: absolute;
+    left: 340px;
+    top: 300px;
+}
+
 canvas {
-    /* pointer-events: none; */
+    cursor: url('/images/buttons/kball.png') 3 3, auto;
 }
 
 .help-div {
@@ -364,6 +375,18 @@ canvas {
 
     .playground {
         left: 10px;
+    }
+
+    #info-id {
+        position: absolute;
+        left: 120px;
+        top: 30px;
+    }
+
+    #info-gameover-id {
+        position: absolute;
+        left: 130px;
+        top: 300px;
     }
 
     .highscores {
