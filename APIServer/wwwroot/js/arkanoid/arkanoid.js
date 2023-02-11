@@ -894,11 +894,10 @@ var arkanoid = (() => {
     };
 
     const drawTouchArea = (ctx) => {
-        if (touchActionRect && touchMoveRect) {
+        if (touchActionRect) {
             drawRect(ctx, touchActionRect);
-            drawRect(ctx, touchMoveRect);
         }
-    }
+    };
 
     const draw = () => {
         if (gameStarted && !gameOver && !gameWon) {
@@ -1092,7 +1091,7 @@ var arkanoid = (() => {
         touchMoveRect = undefined;
         if (isTouchDevice()) {
             touchActionRect = { x: 2 * borderWidth, y: innerHeight + brickHeight - 2 * borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 2 * brickHeight };
-            touchMoveRect = { x: touchActionRect.x + touchActionRect.w + brickWidth, y: touchActionRect.y, w: innerWidth - 4 * brickWidth - borderWidth, h: touchActionRect.h };
+            touchMoveRect = { x: touchActionRect.x, y: touchActionRect.y - touchActionRect.h * 5, w: innerWidth - borderWidth, h: touchActionRect.h * 6};
         }
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = innerWidth + 2 * borderWidth;
