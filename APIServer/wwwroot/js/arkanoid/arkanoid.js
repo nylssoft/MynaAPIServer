@@ -142,6 +142,12 @@ var arkanoid = (() => {
 
     const isInRect = (p, rect) => p.x >= rect.x && p.y >= rect.y && p.x < rect.x + rect.w && p.y < rect.y + rect.h;
 
+    const getBallAngle = (ball) => {
+        const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
+        const asin = Math.asin(ball.dirY / c);
+        return Math.round(asin * 360 / Math.PI);
+    };
+
     // --- create structures
 
     const createPoint = (x, y) => {
@@ -218,7 +224,7 @@ var arkanoid = (() => {
         });
     };
 
-    const createBall = (v) => {
+    const createBall = (v, angle) => {
         const x = racket.x + racketWidth / 2 - ballRadius / 2;
         const y = racket.y - ballRadius;
         const ball = {
@@ -228,7 +234,9 @@ var arkanoid = (() => {
             dirY: -1,
             v: v
         };
-        const angle = getRandom(30, 170);
+        if (!angle) {
+            angle = getRandom(30, 170);
+        }
         const rad = (Math.PI / 360) * angle;
         const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
         const dx = Math.cos(rad) * c;
@@ -678,8 +686,9 @@ var arkanoid = (() => {
                 }
                 else if (powerUp.type === PowerUpEnums.DISRUPTION) {
                     const ball1 = balls[0];
-                    const ball2 = createBall(ball1.v);
-                    const ball3 = createBall(ball1.v);
+                    const angle1 = getBallAngle(ball1);
+                    const ball2 = createBall(ball1.v, ((angle1 + 30) % 140) + 30);
+                    const ball3 = createBall(ball1.v, ((angle1 + 60) % 140) + 30);
                     ball2.x = ball1.x;
                     ball2.y = ball1.y;
                     ball3.x = ball1.x;
@@ -888,16 +897,12 @@ var arkanoid = (() => {
         ctx.fillRect(x2, y - laserShot.h, laserShot.w, laserShot.h);
     };
 
-    const drawRect = (ctx, rect) => {
-        ctx.strokeStyle = "white";
-        ctx.beginPath();
-        ctx.rect(rect.x, rect.y, rect.w, rect.h);
-        ctx.stroke();
-    };
-
     const drawTouchArea = (ctx) => {
         if (touchActionRect) {
-            drawRect(ctx, touchActionRect);
+            ctx.fillStyle = "red";
+            ctx.beginPath();
+            ctx.arc(touchActionRect.x + touchActionRect.w / 2, touchActionRect.y + touchActionRect.h / 2, touchActionRect.w / 4, 0, 2 * Math.PI);
+            ctx.fill();
         }
     };
 
@@ -978,10 +983,6 @@ var arkanoid = (() => {
 
     const onMouseMove = (e) => {
         e.preventDefault();
-        if (touchActionRect) {
-            // hide if mouse is available
-            touchActionRect = undefined;
-        }
         moveRacketRelative(e.movementX);
     };
 
@@ -1096,7 +1097,7 @@ var arkanoid = (() => {
         touchActionRect = undefined;
         touchMoveRect = undefined;
         if (isTouchDevice()) {
-            touchActionRect = { x: 2 * borderWidth, y: innerHeight + brickHeight - borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 3 * brickHeight };
+            touchActionRect = { x: 2 * borderWidth, y: innerHeight - borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 3 * brickHeight - 1};
             touchMoveRect = { x: touchActionRect.x, y: touchActionRect.y - touchActionRect.h * 5, w: innerWidth - borderWidth, h: touchActionRect.h * 6};
         }
         canvas = controls.create(parent, "canvas", "playground");
