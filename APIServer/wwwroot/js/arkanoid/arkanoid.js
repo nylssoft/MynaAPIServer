@@ -1,4 +1,10 @@
 ﻿
+const AngleEnums = Object.freeze({
+    "STEEP": 135,
+    "NORMAL": 90,
+    "FLAT": 40
+});
+
 const LineEnums = Object.freeze({
     "RACKETLEFT": 0,
     "RACKETRIGHT": 1,
@@ -86,8 +92,8 @@ var arkanoid = (() => {
     let borderWidth;
     let borderHeight;
 
-    let blueW = 3;
-    let redW = 15;
+    let blueW;
+    let redW;
     let racketNormalWidth;
     let racketEnlargeWidth;
     let racketHeight;
@@ -195,7 +201,17 @@ var arkanoid = (() => {
         });
     };
 
-    const createBall = (v, angle) => {
+    const setBallDirection = (ball, angle) => {
+        ball.angle = angle;
+        const rad = (Math.PI / 360) * ball.angle;
+        const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
+        const dx = Math.cos(rad) * c;
+        const dy = Math.sin(rad) * c;
+        ball.dirX = Math.abs(dx) * Math.sign(ball.dirX);
+        ball.dirY = Math.abs(dy) * Math.sign(ball.dirY);
+    };
+
+    const createBall = () => {
         const x = racket.x + racketWidth / 2 - ballRadius / 2;
         const y = racket.y - ballRadius;
         const ball = {
@@ -203,20 +219,9 @@ var arkanoid = (() => {
             y: y,
             dirX: 1,
             dirY: -1,
-            v: v
+            v: currentLevel.startSpeed
         };
-        if (!angle) {
-            angle = getRandom(30, 170);
-        }
-        const rad = (Math.PI / 360) * angle;
-        const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
-        const dx = Math.cos(rad) * c;
-        const dy = Math.sin(rad) * c;
-        ball.dirX = Math.abs(dx) * Math.sign(ball.dirX);
-        ball.dirY = Math.abs(dy) * Math.sign(ball.dirY);
-        if (angle % 2 === 0) {
-            ball.dirX *= -1;
-        }
+        setBallDirection(ball, AngleEnums.STEEP);
         return ball;
     };
 
@@ -445,16 +450,18 @@ var arkanoid = (() => {
         ball.dirY = -1 * Math.abs(ball.dirY); // always up
         const w2 = Math.floor(racketWidth / 2);
         const midpoint = racket.x + w2;
-        // difference to midpoint, smaller means greater angle
+        // difference to midpoint
         const delta = (pi.x > midpoint) ? pi.x - midpoint : midpoint - pi.x;
         // reflection angle depends on hit position and returns between 30 and 170 degree
-        const angle = ((w2 - delta) / w2) * 140 + 30;
-        const rad = (Math.PI / 360) * angle;
-        const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
-        const dx = Math.cos(rad) * c;
-        const dy = Math.sin(rad) * c;
-        ball.dirX = Math.abs(dx) * Math.sign(ball.dirX);
-        ball.dirY = Math.abs(dy) * Math.sign(ball.dirY);
+        if (delta >= w2 - redW - blueW && delta < w2 - blueW) {
+            setBallDirection(ball, AngleEnums.NORMAL);
+        }
+        else if (delta >= w2 - redW) {
+            setBallDirection(ball, AngleEnums.FLAT);
+        }
+        else {
+            setBallDirection(ball, AngleEnums.STEEP);
+        }
         if (figureType === LineEnums.RACKETLEFT) {
             ball.dirX = -1 * Math.abs(ball.dirX); // left
             ball.x -= 1;
@@ -692,14 +699,13 @@ var arkanoid = (() => {
                 }
                 else if (powerUp.type === PowerUpEnums.DISRUPTION) {
                     const ball1 = balls[0];
-                    const angle1 = getBallAngle(ball1);
-                    const ball2 = createBall(ball1.v, Math.sign(angle1) * (((Math.abs(angle1) + 30) % 140) + 30));
-                    const ball3 = createBall(ball1.v, Math.sign(angle1) * (((Math.abs(angle1) + 60) % 140) + 30));
-                    ball2.x = ball1.x;
-                    ball2.y = ball1.y;
-                    ball3.x = ball1.x;
-                    ball3.y = ball1.y;
+                    const angles = [AngleEnums.FLAT, AngleEnums.NORMAL, AngleEnums.STEEP];
+                    const idx = angles.findIndex(a => a == ball1.angle);
+                    const ball2 = Object.assign({}, ball1);
+                    setBallDirection(ball2, angles[(idx + 1) % 3]);
                     balls.push(ball2);
+                    const ball3 = Object.assign({}, ball1);
+                    setBallDirection(ball3, angles[(idx + 2) % 3]);
                     balls.push(ball3);
                 }
                 else if (powerUp.type === PowerUpEnums.LASER) {
@@ -762,7 +768,7 @@ var arkanoid = (() => {
             }
             updateScore();
             createLevelBricks(level);
-            balls.push(createBall(currentLevel.startSpeed));
+            balls.push(createBall());
             setBackgroundPicture();
         }
     };
@@ -883,7 +889,7 @@ var arkanoid = (() => {
             "gold": BrickEnums.GOLD
         };
         return map[t];
-    }
+    };
 
     const getPowerUpLetter = (powerUpType) => {
         switch (powerUpType) {
@@ -1053,10 +1059,10 @@ var arkanoid = (() => {
         }
         else {
             handleBalls();
-            movePowerUp();
             moveLaserShots();
             moveBalls();
             moveRacketWithKeyboard();
+            movePowerUp();
         }
         window.requestAnimationFrame(draw);
     };
@@ -1206,8 +1212,8 @@ var arkanoid = (() => {
         brickHeight = 22;
         borderWidth = 20;
         borderHeight = 20;
-        blueW = 3;
-        redW = 15;
+        blueW = 4;
+        redW = 18;
         racketNormalWidth = 90;
         racketEnlargeWidth = 140;
         racketHeight = 22;
@@ -1222,7 +1228,7 @@ var arkanoid = (() => {
             brickHeight -= mobileh;
             borderWidth = 1;
             borderHeight = 1;
-            blueW = 2;
+            blueW = 3;
             redW = 13;
             racketNormalWidth = 60;
             racketEnlargeWidth = 88;
