@@ -111,12 +111,17 @@ var arkanoid = (() => {
     let backgroundPictures;
     let currentBackgroundPicture;
 
+    let fadeCount;
+    let switchNewLevel;
+
     // --- constants
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
     const bricksPerRow = 13;
     const bricksMaxRows = 30;
+
+    const maxFadeCount = 100;
 
     // --- background
 
@@ -148,12 +153,6 @@ var arkanoid = (() => {
     };
 
     const isInRect = (p, rect) => p.x >= rect.x && p.y >= rect.y && p.x < rect.x + rect.w && p.y < rect.y + rect.h;
-
-    const getBallAngle = (ball) => {
-        const c = Math.sqrt(ball.dirX * ball.dirX + ball.dirY * ball.dirY);
-        const asin = Math.asin(ball.dirY / c);
-        return Math.round(asin * 360 / Math.PI);
-    };
 
     // --- create structures
 
@@ -542,7 +541,7 @@ var arkanoid = (() => {
         const brick = line[3];
         if (brick.type === BrickEnums.GOLD) return;
         brick.hit -= 1;
-        if (brick.hit <= 0) {
+        if (brick.hit <= 0 && brick.type != BrickEnums.SILVER) {
             score += getBrickScore(brick.type);
             updateScore();
             const random = getRandom(1, currentLevel.powerUpAverage);
@@ -643,9 +642,13 @@ var arkanoid = (() => {
     };
 
     const moveBalls = () => {
-        if (currentLevel.delayStart >= 0) {
-            currentLevel.delayStart -= 1;
-            balls[0].x = racket.x + racketWidth / 2 - ballRadius / 2;
+        if (currentLevel.delayStart > 0 || fadeCount < maxFadeCount) {
+            if (currentLevel.delayStart > 0) {
+                currentLevel.delayStart -= 1;
+            }
+            if (!switchNewLevel) {
+                balls[0].x = racket.x + racketWidth / 2 - ballRadius / 2;
+            }
             return;
         }
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
@@ -747,6 +750,8 @@ var arkanoid = (() => {
     };
 
     const initLevel = (id) => {
+        fadeCount = maxFadeCount;
+        switchNewLevel = false;
         powerUp = undefined;
         bricks = [];
         brickLines = [];
@@ -766,6 +771,7 @@ var arkanoid = (() => {
             if (utils.is_mobile()) {
                 currentLevel.startSpeed = currentLevel.startSpeed / 2;
             }
+            fadeCount = 0;
             updateScore();
             createLevelBricks(level);
             balls.push(createBall());
@@ -1042,6 +1048,18 @@ var arkanoid = (() => {
             return;
         }
         const ctx = canvas.getContext("2d");
+        if (fadeCount < maxFadeCount) {
+            fadeCount += 1;
+            if (switchNewLevel) {
+                ctx.globalAlpha = 1 - fadeCount / maxFadeCount;
+                if (fadeCount === maxFadeCount) {
+                    initLevel(currentLevel.id + 1);
+                }
+            }
+            else {
+                ctx.globalAlpha = fadeCount / maxFadeCount;
+            }
+        }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.shadowOffsetX = 2;
         ctx.shadowOffsetY = 2;
@@ -1054,8 +1072,9 @@ var arkanoid = (() => {
         drawBalls(ctx);
         drawPowerUp(ctx);
         drawTouchArea(ctx);
-        if (!bricks.some(brick => brick.hit > 0 && brick.type != BrickEnums.GOLD)) {
-            initLevel(currentLevel.id + 1);
+        if (!switchNewLevel && !bricks.some(brick => brick.hit > 0 && brick.type != BrickEnums.GOLD)) {
+            fadeCount = 0;
+            switchNewLevel = true;
         }
         else {
             handleBalls();
@@ -1142,7 +1161,8 @@ var arkanoid = (() => {
             onActionButtonPressed();
         }
         else if (e.key === "l") {
-            initLevel(currentLevel.id+1);
+            switchNewLevel = true;
+            fadeCount = 0;
         }
     };
 
