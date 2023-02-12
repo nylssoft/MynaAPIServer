@@ -46,11 +46,10 @@ var arkanoid = (() => {
 
     // --- state
 
-    let stage;
+    let currentLevel;
+    let levels;
     let score;
-    let ballSpeedIncrease;
-    let powerUpMaxRandom;
-    let startSpeed;
+    // let powerUpMaxRandom;
 
     let balls;
     let laserShots;
@@ -112,7 +111,7 @@ var arkanoid = (() => {
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
     const bricksPerRow = 13;
-    const bricksMaxRows = 28;
+    const bricksMaxRows = 30;
 
     // --- background
 
@@ -191,9 +190,9 @@ var arkanoid = (() => {
         const filtered = brickLines.filter(line => line[3].hit > 0);
         filtered.forEach(line => lines.push(line));
         if (!filtered.some(line => line[3].type != BrickEnums.GOLD)) {
-            gameWon = true;
-            updateGameEnded();
+            return false;
         }
+        return true;
     };
 
     const addRacketLines = (lines) => {
@@ -410,11 +409,13 @@ var arkanoid = (() => {
             if (pi) {
                 hasHits = handleBallRacketHit(line, pi, ball);
                 if (!hasHits) {
+                    // @TODO: multi balls can leave border!
                     const borderHit = handleBallBorderHit(line, ball);
                     hasHits = borderHit.hasHits;
                     removeBall = borderHit.removeBall;
                 }
                 if (!hasHits) {
+                    // @TODO: first hit all bottom / top brick lines depending on ball.dirY
                     hasHits = handleBallBricketHit(line, ball);
                 }
                 break; // only one hit per evaluation
@@ -508,12 +509,12 @@ var arkanoid = (() => {
         else if (figureType === LineEnums.BLOCKBUTTOM) {
             hit = true;
             ball.dirY = Math.abs(ball.dirY); // down
-            ball.y -= 1;
+            ball.y += 1;
         }
         else if (figureType === LineEnums.BLOCKTOP) {
             hit = true;
             ball.dirY = -1 * Math.abs(ball.dirY); // up
-            ball.y += 1;
+            ball.y -= 1;
         }
         if (hit) {
             hitBrickLine(line);
@@ -529,7 +530,7 @@ var arkanoid = (() => {
         if (brick.hit <= 0) {
             score += getBrickScore(brick.type);
             updateScore();
-            const random = getRandom(1, powerUpMaxRandom);
+            const random = getRandom(1, currentLevel.powerUpAverage);
             if (random ===1 && !powerUp && balls.length === 1 && (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION)) {
                 if (!nextPowerUps || nextPowerUps.length === 0) {
                     nextPowerUps = [];
@@ -627,6 +628,11 @@ var arkanoid = (() => {
     };
 
     const moveBalls = () => {
+        if (currentLevel.delayStart >= 0) {
+            currentLevel.delayStart -= 1;
+            balls[0].x = racket.x + racketWidth / 2 - ballRadius / 2;
+            return;
+        }
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
             balls.forEach(ball => {
                 ball.x = racket.x + racket.powerUp.ballRelX;
@@ -671,7 +677,7 @@ var arkanoid = (() => {
             if (!racket.powerUp) {
                 // enable power up
                 if (powerUp.type === PowerUpEnums.SLOW) {
-                    balls.forEach(ball => ball.v = Math.max(startSpeed, ball.v - 1));
+                    balls.forEach(ball => ball.v = Math.max(currentLevel.startSpeed, ball.v - 1));
                 }
                 else if (powerUp.type === PowerUpEnums.CATCH) {
                     racket.powerUp = { type: powerUp.type, hold: 0, catched: false, ballRelX: 0 };
@@ -710,59 +716,102 @@ var arkanoid = (() => {
         }
     };
 
-    // --- stage handling
+    // --- level handling
 
     const startNewGame = () => {
-        stage = 1;
         score = 0;
-        powerUp = undefined;
         borderLines = [];
+        initBorderLines();
+        powerUp = undefined;    
+        racketWidth = racketNormalWidth;
+        racket = createRacket();
+        gameOver = false;
+        gameWon = false;
+        gameStarted = true;
+        updateGameEnded();
+        initLevel(1);
+    };
+
+    const initLevel = (id) => {
+        powerUp = undefined;
         bricks = [];
         brickLines = [];
         laserShots = [];
         balls = [];
         racketWidth = racketNormalWidth;
-        setBackgroundPicture();
         racket = createRacket();
-        initBorderLines();
-        initStage1();
-        balls.push(createBall(startSpeed));
-        gameOver = false;
-        gameWon = false;
-        gameStarted = true;
-        updateGameEnded();
-        updateScore();
+        const level = levels.find(l => l.id === id);
+        if (!level) {
+            gameWon = true;
+            updateGameEnded();
+        }
+        else {
+            currentLevel = level;
+            currentLevel.delayStart = 60; // 3 sec
+            currentLevel.startSpeed = level.initSpeed;
+            if (utils.is_mobile()) {
+                currentLevel.startSpeed = currentLevel.startSpeed / 2;
+            }
+            updateScore();
+            createLevelBricks(level);
+            balls.push(createBall(currentLevel.startSpeed));
+            setBackgroundPicture();
+        }
     };
 
-    const initStage1 = () => {
-        // stage 1
-        startSpeed = utils.is_mobile() ? 1.5 : 2;
-        ballSpeedIncrease = 0.025;
-        powerUpMaxRandom = 3; // every 3th brick hit will return a power up in average
-        brickLines = [];
+    const createLevelBrick = (levelnr, row, col, color) => {
+        let hit = 1;
+        const brickType = getBrickTypeByColor(color);
+        if (brickType === BrickEnums.SILVER) {
+            hit = Math.floor(levelnr / 8) + 2;
+        }
+        else if (brickType === BrickEnums.GOLD) {
+            hit = Number.MAX_SAFE_INTEGER;
+        }
+        const brick = { row: row, col: col, type: brickType, hit: hit };
+        bricks.push(brick);
+        const lines = createBrickLines(row, col, brick);
+        /* jshint -W083 */
+        lines.forEach(line => brickLines.push(line));
+        /* jshint +W083 */
+    };
+
+    const createLevelBricks = (level) => {
         bricks = [];
-        let row = 4;
-        const brickTypes = [BrickEnums.SILVER, BrickEnums.RED, BrickEnums.YELLOW, BrickEnums.BLUE, BrickEnums.PURBLE, BrickEnums.GREEN];
-        brickTypes.forEach(brickType => {
-            for (let col = 0; col < bricksPerRow; col++) {
-                const brick = { row: row, col: col, type: brickType, hit: getBrickHitsPerType(brickType) };
-                bricks.push(brick);
-                const lines = createBrickLines(row, col, brick);
-                /* jshint -W083 */
-                lines.forEach(line => brickLines.push(line));
-                /* jshint +W083 */
+        brickLines = [];
+        level.bricks.forEach(arr => {
+            const cmd = arr[0];
+            const row = arr[1];
+            const col = arr[2];
+            if (cmd === "lx" || cmd === "ly" || cmd === "ld") {
+                const cnt = arr[3];
+                const color = arr[4];
+                for (let idx = 0; idx < cnt; idx++) {
+                    if (cmd === "lx") {
+                        createLevelBrick(level.id, row, col + idx, color);
+                    }
+                    else if (cmd === "ly") {
+                        createLevelBrick(level.id, row + idx, col, color);
+                    }
+                    else {
+                        createLevelBrick(level.id, row - idx, col + idx, color);
+                    }
+                }
             }
-            row++;
+            else if (cmd === "p") {
+                const color = arr[3];
+                createLevelBrick(level.id, row, col, color);
+            }
         });
     };
 
     const increaseBallSpeed = () => {
-        balls.forEach(ball => ball.v = Math.min(10, ball.v + ballSpeedIncrease));
+        balls.forEach(ball => ball.v = Math.min(10, ball.v + currentLevel.increaseSpeed));
     };
 
-    const getBrickHitsPerType = (brickType) => {
+    const getBrickHitsPerType = (nr, brickType) => {
         if (brickType === BrickEnums.SILVER) {
-            return Math.floor(stage / 8) + 2;
+            return Math.floor(nr / 8) + 2;
         }
         if (brickType === BrickEnums.GOLD) {
             return Number.MAX_SAFE_INTEGER;
@@ -789,7 +838,7 @@ var arkanoid = (() => {
             case BrickEnums.YELLOW:
                 return 120;
             case BrickEnums.SILVER:
-                return 50 * stage;
+                return 50 * currentLevel.id;
             default:
                 return 0;
         }
@@ -808,17 +857,35 @@ var arkanoid = (() => {
             case BrickEnums.RED:
                 return "red";
             case BrickEnums.BLUE:
-                return "blue";
+                return "#1e7fcb";
             case BrickEnums.PURBLE:
-                return "#a020f0";
+                return "#ff69B4";
             case BrickEnums.YELLOW:
                 return "yellow";
             case BrickEnums.SILVER:
                 return "silver";
+            case BrickEnums.GOLD:
+                return "#d4af37";
             default:
                 return "";
         }
     };
+
+    const getBrickTypeByColor = (t) => {
+        const map = {
+            "white": BrickEnums.WHITE,
+            "orange": BrickEnums.ORANGE,
+            "cyan": BrickEnums.CYAN,
+            "green": BrickEnums.GREEN,
+            "red": BrickEnums.RED,
+            "blue": BrickEnums.BLUE,
+            "purble": BrickEnums.PURBLE,
+            "yellow": BrickEnums.YELLOW,
+            "silver": BrickEnums.SILVER,
+            "gold": BrickEnums.GOLD
+        };
+        return map[t];
+    }
 
     const getPowerUpLetter = (powerUpType) => {
         switch (powerUpType) {
@@ -864,7 +931,7 @@ var arkanoid = (() => {
 
     const updateScore = () => {
         const infoElem = document.getElementById("info-id");
-        infoElem.textContent = `Score ${score}`;
+        infoElem.textContent = `Level ${currentLevel.id} Score ${score}`;
     };
 
     const updateGameEnded = () => {
@@ -984,20 +1051,24 @@ var arkanoid = (() => {
             const lines = [];
             addBorderLines(lines);
             addRacketLines(lines);
-            addBrickLines(lines);
-            handleBalls(lines);
-            // move items
-            movePowerUp();
-            moveLaserShots();
-            moveBalls();
-            moveRacketWithKeyboard();
-            // avoid endless loop if ball leaves the canvas...
-            if (balls.length === 1) {
-                const ball = balls[0];
-                if (ball.y < 0 || ball.y > ballRadius + innerHeight + 2 * borderHeight ||
-                    ball.x < 0 || ball.x > ballRadius + innerWidth + 2 * borderWidth) {
-                    gameOver = true;
-                    updateGameEnded();
+            if (!addBrickLines(lines)) {
+                initLevel(currentLevel.id + 1);
+            }
+            else {
+                handleBalls(lines);
+                // move items
+                movePowerUp();
+                moveLaserShots();
+                moveBalls();
+                moveRacketWithKeyboard();
+                // avoid endless loop if ball leaves the canvas...
+                if (balls.length === 1) {
+                    const ball = balls[0];
+                    if (ball.y < 0 || ball.y > ballRadius + innerHeight + 2 * borderHeight ||
+                        ball.x < 0 || ball.x > ballRadius + innerWidth + 2 * borderWidth) {
+                        gameOver = true;
+                        updateGameEnded();
+                    }
                 }
             }
         }
@@ -1078,6 +1149,9 @@ var arkanoid = (() => {
         else if (e.code === "Space") {
             e.preventDefault();
             onActionButtonPressed();
+        }
+        else if (e.key === "l") {
+            initLevel(currentLevel.id+1);
         }
     };
 
@@ -1210,8 +1284,17 @@ var arkanoid = (() => {
     };
 
     const init = (sm) => {
-        initBackgroundPictures(sm.pictures);
-        render();
+        fetch("/js/arkanoid/levels.json?v=1")
+            .then(resp => {
+                resp.json()
+                    .then(json => {
+                        levels = json;
+                        initBackgroundPictures(sm.pictures);
+                        render();
+                    })
+                    .catch(err => console.log(err));
+            })
+            .catch(err => console.log(err));
     };
 
     // --- public API
