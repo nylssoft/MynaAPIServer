@@ -49,7 +49,6 @@ var arkanoid = (() => {
     let currentLevel;
     let levels;
     let score;
-    // let powerUpMaxRandom;
 
     let balls;
     let laserShots;
@@ -180,25 +179,6 @@ var arkanoid = (() => {
         borderLines.push(createLine(borderWidth + innerWidth, borderHeight, borderWidth + innerWidth, innerHeight, LineEnums.BORDERRIGHT));
         borderLines.push(createLine(borderWidth + innerWidth, innerHeight, borderWidth, innerHeight, LineEnums.BORDERBUTTOM));
         borderLines.push(createLine(borderWidth, innerHeight, borderWidth, borderHeight, LineEnums.BORDERLEFT));
-    };
-
-    const addBorderLines = (lines) => {
-        borderLines.forEach(line => lines.push(line));
-    };
-
-    const addBrickLines = (lines) => {
-        const filtered = brickLines.filter(line => line[3].hit > 0);
-        filtered.forEach(line => lines.push(line));
-        if (!filtered.some(line => line[3].type != BrickEnums.GOLD)) {
-            return false;
-        }
-        return true;
-    };
-
-    const addRacketLines = (lines) => {
-        lines.push(createLine(racket.x, racket.y, racket.x + racketWidth, racket.y, LineEnums.RACKETTOP));
-        lines.push(createLine(racket.x, racket.y, racket.x, racket.y + racketHeight, LineEnums.RACKETLEFT));
-        lines.push(createLine(racket.x + racketWidth, racket.y, racket.x + racketWidth, racket.y + racketHeight, LineEnums.RACKETRIGHT));
     };
 
     const filterLines = (lines, p1, p2) => {
@@ -374,23 +354,53 @@ var arkanoid = (() => {
 
     // --- ball handling, border, brick and racket reflection, powerup collection
 
-    const handleBalls = (lines) => {
+    const handleBalls = () => {
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) return;
         const removeBalls = [];
-        let idx = 0;
+        let hitCnt = 0;
+
+        const blockTopLines = brickLines.filter(l => l[2] == LineEnums.BLOCKTOP && l[3].hit > 0);
+        const blockButtomLines = brickLines.filter(l => l[2] == LineEnums.BLOCKBUTTOM && l[3].hit > 0);
+        const blockButtomLeft = brickLines.filter(l => l[2] == LineEnums.BLOCKLEFT && l[3].hit > 0);
+        const blockButtomRight = brickLines.filter(l => l[2] == LineEnums.BLOCKRIGHT && l[3].hit > 0);
+        const otherLines = [];
+        borderLines.forEach(line => otherLines.push(line));
+        otherLines.push(createLine(racket.x, racket.y, racket.x + racketWidth, racket.y, LineEnums.RACKETTOP));
+        otherLines.push(createLine(racket.x, racket.y, racket.x, racket.y + racketHeight, LineEnums.RACKETLEFT));
+        otherLines.push(createLine(racket.x + racketWidth, racket.y, racket.x + racketWidth, racket.y + racketHeight, LineEnums.RACKETRIGHT));
+
         balls.forEach(ball => {
-            ball.hasHits = false;
-            const hit = handleBallHits(lines, ball);
-            if (hit.removeBall) {
+            // avoid endless loop if ball leaves the canvas...
+            if (ball.y < 0 || ball.y > ballRadius + innerHeight + 2 * borderHeight ||
+                ball.x < 0 || ball.x > ballRadius + innerWidth + 2 * borderWidth) {
                 removeBalls.push(ball);
             }
-            else if (hit.hasHits) {
-                ball.hasHits = true;
-                if (idx === 0) {
-                    increaseBallSpeed();
+            else {
+                ball.hasHits = false;
+                let hit = handleBallHits(blockTopLines, ball);
+                if (!hit.removeBall || !hit.hasHits) {
+                    hit = handleBallHits(blockButtomLines, ball);
                 }
+                if (!hit.removeBall || !hit.hasHits) {
+                    hit = handleBallHits(blockButtomRight, ball);
+                }
+                if (!hit.removeBall || !hit.hasHits) {
+                    hit = handleBallHits(blockButtomLeft, ball);
+                }
+                if (!hit.removeBall || !hit.hasHits) {
+                    hit = handleBallHits(otherLines, ball);
+                }
+                if (hit.removeBall) {
+                    removeBalls.push(ball);
+                }
+                else if (hit.hasHits) {
+                    ball.hasHits = true;
+                    if (hitCnt === 0) {
+                        increaseBallSpeed();
+                    }
+                }
+                hitCnt++;
             }
-            idx++;
         });
         if (removeBalls.length > 0) {
             balls = balls.filter(ball => !removeBalls.includes(ball));
@@ -409,13 +419,11 @@ var arkanoid = (() => {
             if (pi) {
                 hasHits = handleBallRacketHit(line, pi, ball);
                 if (!hasHits) {
-                    // @TODO: multi balls can leave border!
                     const borderHit = handleBallBorderHit(line, ball);
                     hasHits = borderHit.hasHits;
                     removeBall = borderHit.removeBall;
                 }
                 if (!hasHits) {
-                    // @TODO: first hit all bottom / top brick lines depending on ball.dirY
                     hasHits = handleBallBricketHit(line, ball);
                 }
                 break; // only one hit per evaluation
@@ -809,16 +817,6 @@ var arkanoid = (() => {
         balls.forEach(ball => ball.v = Math.min(10, ball.v + currentLevel.increaseSpeed));
     };
 
-    const getBrickHitsPerType = (nr, brickType) => {
-        if (brickType === BrickEnums.SILVER) {
-            return Math.floor(nr / 8) + 2;
-        }
-        if (brickType === BrickEnums.GOLD) {
-            return Number.MAX_SAFE_INTEGER;
-        }
-        return 1;
-    };
-
     const getBrickScore = (brickType) => {
         switch (brickType) {
             case BrickEnums.WHITE:
@@ -1033,46 +1031,33 @@ var arkanoid = (() => {
     };
 
     const draw = () => {
-        if (gameStarted && !gameOver && !gameWon) {
-            const ctx = canvas.getContext("2d");
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-            ctx.shadowBlur = 2;
-            ctx.shadowColor = "black";
-            drawBricks(ctx);
-            drawBorder(ctx);
-            drawRacket(ctx);
-            drawLaserShots(ctx);
-            drawBalls(ctx);
-            drawPowerUp(ctx);
-            drawTouchArea(ctx);
-            // handle ball hits
-            const lines = [];
-            addBorderLines(lines);
-            addRacketLines(lines);
-            if (!addBrickLines(lines)) {
-                initLevel(currentLevel.id + 1);
-            }
-            else {
-                handleBalls(lines);
-                // move items
-                movePowerUp();
-                moveLaserShots();
-                moveBalls();
-                moveRacketWithKeyboard();
-                // avoid endless loop if ball leaves the canvas...
-                if (balls.length === 1) {
-                    const ball = balls[0];
-                    if (ball.y < 0 || ball.y > ballRadius + innerHeight + 2 * borderHeight ||
-                        ball.x < 0 || ball.x > ballRadius + innerWidth + 2 * borderWidth) {
-                        gameOver = true;
-                        updateGameEnded();
-                    }
-                }
-            }
+        if (!gameStarted || gameOver || gameWon) {
+            window.requestAnimationFrame(draw);
+            return;
         }
-        // schedule redraw after 50ms
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.shadowBlur = 2;
+        ctx.shadowColor = "black";
+        drawBricks(ctx);
+        drawBorder(ctx);
+        drawRacket(ctx);
+        drawLaserShots(ctx);
+        drawBalls(ctx);
+        drawPowerUp(ctx);
+        drawTouchArea(ctx);
+        if (!bricks.some(brick => brick.hit > 0 && brick.type != BrickEnums.GOLD)) {
+            initLevel(currentLevel.id + 1);
+        }
+        else {
+            handleBalls();
+            movePowerUp();
+            moveLaserShots();
+            moveBalls();
+            moveRacketWithKeyboard();
+        }
         window.requestAnimationFrame(draw);
     };
 
