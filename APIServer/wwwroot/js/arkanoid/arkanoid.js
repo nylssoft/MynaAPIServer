@@ -873,25 +873,25 @@ var arkanoid = (() => {
     const getBrickColor = (brickType) => {
         switch (brickType) {
             case BrickEnums.WHITE:
-                return "white";
+                return "#F1F1F1";
             case BrickEnums.ORANGE:
-                return "orange";
+                return "#FF8F00";
             case BrickEnums.CYAN:
-                return "cyan";
+                return "#00FFFF";
             case BrickEnums.GREEN:
-                return "green";
+                return "#00FF00";
             case BrickEnums.RED:
-                return "red";
+                return "#FF0000";
             case BrickEnums.BLUE:
-                return "#1e7fcb";
+                return "#0070FF";
             case BrickEnums.PURBLE:
-                return "#ff69B4";
+                return "#FF00FF";
             case BrickEnums.YELLOW:
-                return "yellow";
+                return "#FFFF00";
             case BrickEnums.SILVER:
-                return "silver";
+                return "#9D9D9D";
             case BrickEnums.GOLD:
-                return "#d4af37";
+                return "#BCAE00";
             default:
                 return "";
         }
