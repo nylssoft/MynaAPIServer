@@ -215,7 +215,7 @@ var arkanoid = (() => {
     };
 
     const createBall = () => {
-        const x = racket.x + racketWidth / 2 - ballRadius / 2;
+        const x = racket.x + racketWidth / 2;
         const y = racket.y - ballRadius;
         const ball = {
             x: x,
