@@ -16,7 +16,8 @@ const LineEnums = Object.freeze({
     "BLOCKLEFT": 7,
     "BLOCKRIGHT": 8,
     "BLOCKTOP": 9,
-    "BLOCKBUTTOM": 10
+    "BLOCKBUTTOM": 10,
+    "MONSTER": 11
 });
 
 const BrickEnums = Object.freeze({
@@ -62,6 +63,7 @@ var arkanoid = (() => {
     let borderLines;
     let brickLines;
     let bricks;
+    let monsters;
 
     let gameOver;
     let gameWon;
@@ -113,6 +115,7 @@ var arkanoid = (() => {
     let currentBackgroundPicture;
 
     let fadeCount;
+    let monsterNextCount;
     let switchNewLevel;
 
     // --- constants
@@ -255,6 +258,14 @@ var arkanoid = (() => {
         return shot;
     };
 
+    const createMonster = () => {
+        const w = brickWidth - Math.round(brickWidth / 4);
+        const h = w;
+        const x = getRandom(1, innerWidth - 2 * borderWidth - w / 2);
+        const y = borderHeight + w / 2;
+        return { x: x, y: y, w: w, h: h, dirX: 0, dirY: 1, moveX: 0, moveY: borderHeight, angle: 0 };
+    };
+
     // --- math
 
     const geradenGleichung = (p1, p2) => {
@@ -373,6 +384,12 @@ var arkanoid = (() => {
         otherLines.push(createLine(racket.x, racket.y, racket.x + racketWidth, racket.y, LineEnums.RACKETTOP));
         otherLines.push(createLine(racket.x, racket.y, racket.x, racket.y + racketHeight, LineEnums.RACKETLEFT));
         otherLines.push(createLine(racket.x + racketWidth, racket.y, racket.x + racketWidth, racket.y + racketHeight, LineEnums.RACKETRIGHT));
+        monsters.forEach(monster => {
+            otherLines.push(createLine(monster.x, monster.y + monster.h, monster.x + monster.w, monster.y + monster.h, LineEnums.MONSTER, monster));
+            otherLines.push(createLine(monster.x, monster.y, monster.x + monster.w, monster.y, LineEnums.MONSTER, monster));
+            otherLines.push(createLine(monster.x, monster.y, monster.x, monster.y + monster.h, LineEnums.MONSTER, monster));
+            otherLines.push(createLine(monster.x + monster.w, monster.y, monster.x + monster.w, monster.y + monster.h, LineEnums.MONSTER, monster));
+        });
 
         balls.forEach(ball => {
             // avoid endless loop if ball leaves the canvas...
@@ -421,6 +438,8 @@ var arkanoid = (() => {
                 fadeCount = 0;
                 powerUp = undefined;
                 disableRacketPowerUp();
+                monsterNextCount = undefined;
+                monsters = [];
                 balls = [createBall()];
                 currentLevel.delayStart = 60; // 3 sec
             }
@@ -446,10 +465,27 @@ var arkanoid = (() => {
                 if (!hasHits) {
                     hasHits = handleBallBricketHit(line, ball);
                 }
+                if (!hasHits) {
+                    hasHits = handleBallMonsterHit(line, ball);
+                }
                 break; // only one hit per evaluation
             }
         }
         return { hasHits: hasHits, removeBall: removeBall };
+    };
+
+    const handleBallMonsterHit = (line, ball) => {
+        const figureType = line[2];
+        if (figureType != LineEnums.MONSTER) return false;
+        const monster = line[3];
+        ball.dirY = Math.abs(ball.dirY);
+        ball.dirX = getRandom(1, 2) === 1 ? 1 : -1;
+        const angles = [AngleEnums.FLAT, AngleEnums.NORMAL, AngleEnums.STEEP];
+        const r = getRandom(1, angles.length);
+        setBallDirection(ball, angles[r - 1]);
+        monster.hit = true;
+        increaseBallSpeed();
+        return true;
     };
 
     const handleBallRacketHit = (line, pi, ball) => {
@@ -634,6 +670,14 @@ var arkanoid = (() => {
         if (nextY - laserShot.h < borderHeight) {
             return false;
         }
+        for (let idx = 0; idx < monsters.length; idx++) {
+            const monster = monsters[idx];
+            if (nextY - laserShot.h >= monster.y && nextY <= monster.y + monster.h &&
+                (laserShot.x1 + laserShot.w >= monster.x && laserShot.x2 - laserShot.w <= monster.x + monster.w)) {
+                monster.hit = true;
+                return false;
+            }
+        }
         for (let idx = 0; idx < brickLines.length; idx++) {
             const line = brickLines[idx];
             const figureType = line[2];
@@ -748,6 +792,75 @@ var arkanoid = (() => {
         }
     };
 
+    const moveMonsters = () => {
+        const avg = currentLevel.monsterAverage || 20; // create a monster after 10 seconds in average
+        const max = currentLevel.monsterMax || 3;
+        if (avg && monsters.length < max) {
+            if (!monsterNextCount || monsterNextCount <= 0) {
+                if (monsterNextCount <= 0) {
+                    monsters.push(createMonster());
+                }
+                monsterNextCount = getRandom(1, avg) * 50;
+            }
+            else {
+                monsterNextCount -= 1;
+            }
+        }
+        const removeMonsters = [];
+        monsters.forEach(monster => {
+            if (!moveMonster(monster)) {
+                removeMonsters.push(monster);
+            }
+        });
+        if (removeMonsters.length > 0) {
+            monsters = monsters.filter(monster => !removeMonsters.includes(monster));
+        }
+    };
+
+    const moveMonster = (monster) => {
+        if (monster.hit ||
+            monster.y + monster.h >= racket.y && monster.y <= racket.y + racketHeight &&
+            monster.x + monster.w >= racket.x && monster.x <= racket.x + racketWidth) {
+            return false;
+        }
+        const moveCount = currentLevel.monsterMoveCount || 300;
+        const speed = currentLevel.monsterSpeed || 0.5;
+        const r = monster.w / 2;
+        const maxMove = Math.max(r, speed);
+        const x = monster.x + (monster.moveX > 0 ? Math.sign(monster.dirX) * maxMove : 0);
+        const y = monster.y + (monster.moveY > 0 ? Math.sign(monster.dirY) * maxMove : 0);
+        if (isValidMonsterPosition(x, y)) {
+            if (monster.moveX > 0) {
+                monster.x += Math.sign(monster.dirX) * speed;
+                monster.moveX -= 1;
+            }
+            if (monster.moveY > 0) {
+                monster.y += Math.sign(monster.dirY) * speed;
+                monster.moveY -= 1;
+            }
+        }
+        else {
+            monster.moveX = 0;
+            monster.moveY = 0;
+        }
+        if (monster.moveX <= 0) {
+            monster.dirX = getRandom(1, 2) === 1 ? -1 : 1;
+            monster.moveX = getRandom(1, moveCount);
+        }
+        if (monster.moveY <= 0) {
+            monster.dirY = getRandom(1, 4) === 1 ? -1 : 1; // more likely to move down
+            monster.moveY = getRandom(1, moveCount);
+        }
+        return true;
+    };
+
+    const isValidMonsterPosition = (x, y) => {
+        const col = Math.round((x - borderWidth) / brickWidth);
+        const row = Math.round((y - borderWidth + brickHeight) / brickHeight);
+        return col >= 0 && col < bricksPerRow && row >= 0 && row <= bricksMaxRows &&
+            !bricks.some(brick => brick.hit > 0 && brick.col == col && brick.row == row);
+    };
+
     // --- level handling
 
     const startNewGame = () => {
@@ -766,6 +879,7 @@ var arkanoid = (() => {
     };
 
     const initLevel = (id) => {
+        monsterNextCount = undefined;
         fadeCount = maxFadeCount;
         switchNewLevel = false;
         powerUp = undefined;
@@ -773,6 +887,7 @@ var arkanoid = (() => {
         brickLines = [];
         laserShots = [];
         balls = [];
+        monsters = [];
         racketWidth = racketNormalWidth;
         racket = createRacket();
         const level = levels.find(l => l.id === id);
@@ -1074,18 +1189,48 @@ var arkanoid = (() => {
             }
             const gw = w - 2 * rw - 2 * bw;
             for (let idx = 0; idx < lives - 1; idx++) {
-                ctx.fillStyle = "cyan";
-                ctx.fillRect(borderWidth + gap * idx + idx * w, racket.y + racketHeight + gap, bw, h);
-                ctx.fillStyle = "red";
-                ctx.fillRect(borderWidth + gap * idx + bw + idx * w, racket.y + racketHeight + gap, rw, h);
-                ctx.fillStyle = "gray";
-                ctx.fillRect(borderWidth + gap * idx + idx * w + bw + rw, racket.y + racketHeight + gap, gw, h);
-                ctx.fillStyle = "red";
-                ctx.fillRect(borderWidth + gap * idx + idx * w + bw + rw + gw, racket.y + racketHeight + gap, rw, h);
-                ctx.fillStyle = "cyan";
-                ctx.fillRect(borderWidth + gap * idx + idx * w + bw + rw + gw + rw, racket.y + racketHeight + gap, bw, h);
+                drawLive(ctx, idx, gap, w, h, bw, rw, gw);
             }
         }
+    };
+
+    const drawLive = (ctx, idx, gap, w, h, bw, rw, gw) => {
+        ctx.fillStyle = "cyan";
+        ctx.fillRect(borderWidth + gap * idx + idx * w, racket.y + racketHeight + gap, bw, h);
+        ctx.fillStyle = "red";
+        ctx.fillRect(borderWidth + gap * idx + bw + idx * w, racket.y + racketHeight + gap, rw, h);
+        ctx.fillStyle = "gray";
+        ctx.fillRect(borderWidth + gap * idx + idx * w + bw + rw, racket.y + racketHeight + gap, gw, h);
+        ctx.fillStyle = "red";
+        ctx.fillRect(borderWidth + gap * idx + idx * w + bw + rw + gw, racket.y + racketHeight + gap, rw, h);
+        ctx.fillStyle = "cyan";
+        ctx.fillRect(borderWidth + gap * idx + idx * w + bw + rw + gw + rw, racket.y + racketHeight + gap, bw, h);
+    };
+
+    const drawMonsters = (ctx) => {
+        monsters.forEach(monster => drawMonster(ctx, monster));
+    };
+
+    const drawMonster = (ctx, monster) => {
+        const lw = ctx.lineWidth;
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        const r = monster.w / 2;
+        ctx.translate(monster.x + r, monster.y + r);
+        ctx.rotate((monster.angle * Math.PI) / 180);
+        ctx.beginPath();
+        ctx.moveTo(-r, -r);
+        ctx.lineTo(r, -r);
+        ctx.lineTo(0, r);
+        ctx.lineTo(0, r);
+        ctx.lineTo(-r, -r);
+        ctx.stroke();
+        ctx.fillStyle = "cyan";
+        ctx.fillRect(-2, -2, 2, 2);
+        ctx.translate(-monster.x - r, -monster.y - r);
+        ctx.resetTransform();
+        ctx.lineWidth = lw;
+        monster.angle = (monster.angle + 1) % 360;
     };
 
     const draw = () => {
@@ -1113,6 +1258,7 @@ var arkanoid = (() => {
         ctx.shadowColor = "black";
         drawBricks(ctx);
         drawBorder(ctx);
+        drawMonsters(ctx);
         drawRacket(ctx);
         drawLaserShots(ctx);
         drawBalls(ctx);
@@ -1129,6 +1275,7 @@ var arkanoid = (() => {
             moveBalls();
             moveRacketWithKeyboard();
             movePowerUp();
+            moveMonsters();
         }
         window.requestAnimationFrame(draw);
     };
@@ -1342,7 +1489,7 @@ var arkanoid = (() => {
     };
 
     const init = (sm) => {
-        fetch("/js/arkanoid/levels.json?v=1")
+        fetch(`/js/arkanoid/levels.json?v=${Date.now()}`)
             .then(resp => {
                 resp.json()
                     .then(json => {
