@@ -72,8 +72,7 @@ var arkanoid = (() => {
     let keyPreferLeft;
     let keyLeftPressed;
     let keyRightPressed;
-    let keySpeed1Pressed;
-    let keySpeed2Pressed;
+    let keySpeedYPressed;
 
     let lastTouchX;
     let lastTouchId;
@@ -117,8 +116,11 @@ var arkanoid = (() => {
     let fadeCount;
     let monsterNextCount;
     let switchNewLevel;
-
+    let lastDraw;
+    
     // --- constants
+
+    const version = "0.9.1";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -624,15 +626,9 @@ var arkanoid = (() => {
     };
 
     const moveRacketWithKeyboard = () => {
-        let speed;
-        if (keySpeed2Pressed) {
-            speed = 10;
-        }
-        else if (keySpeed1Pressed) {
-            speed = 5;
-        }
-        else {
-            speed = 2;
+        let speed = 10;
+        if (keySpeedYPressed) {
+            speed += 9;
         }
         let moveLeft = false;
         let moveRight = false;
@@ -1072,16 +1068,16 @@ var arkanoid = (() => {
 
     const updateScore = () => {
         const infoElem = document.getElementById("info-id");
-        infoElem.textContent = `Level ${currentLevel.id} Score ${score}`;
+        infoElem.textContent = `${_T("INFO_LEVEL_1", currentLevel.id)} ${_T("INFO_SCORE_1", score)}`;
     };
 
     const updateGameEnded = () => {
         let txt = "";
         if (gameOver) {
-            txt = "GAME OVER!";
+            txt = _T("INFO_GAME_OVER");
         }
         else if (gameWon) {
-            txt = "GAME WON!";
+            txt = _T("INFO_YOU_HAVE_WON");
         }
         const infoGameOverElem = document.getElementById("info-gameover-id");
         infoGameOverElem.textContent = txt;
@@ -1277,6 +1273,28 @@ var arkanoid = (() => {
             movePowerUp();
             moveMonsters();
         }
+        if (lastDraw) {
+            const diff = Date.now() - lastDraw;
+            let txt;
+            let x = 30;
+            let y = 670;
+            if (utils.is_mobile()) {
+                x = 70;
+                y = 550;
+            }
+            if (diff <= 20) { // 50hz is ok
+                ctx.fillStyle = "gray";
+                ctx.font = "13px serif";
+                txt = `${diff}`;
+            }
+            else {
+                ctx.fillStyle = "yellow";
+                ctx.font = "18px serif";
+                txt = `COMPUTER TOO SLOW: ${diff}`;
+            }
+            ctx.fillText(txt, x, y);
+        }
+        lastDraw = Date.now();
         window.requestAnimationFrame(draw);
     };
 
@@ -1342,21 +1360,13 @@ var arkanoid = (() => {
             keyRightPressed = true;
             keyPreferLeft = false;
         }
-        else if (e.key === "x") {
-            e.preventDefault();
-            keySpeed1Pressed = true;
-        }
         else if (e.key === "y") {
             e.preventDefault();
-            keySpeed2Pressed = true;
+            keySpeedYPressed = true;
         }
         else if (e.code === "Space") {
             e.preventDefault();
             onActionButtonPressed();
-        }
-        else if (e.key === "l") {
-            switchNewLevel = true;
-            fadeCount = 0;
         }
     };
 
@@ -1380,7 +1390,6 @@ var arkanoid = (() => {
     };
 
     const onTouchStart = (e) => {
-        e.preventDefault();
         let touch = isActionRectTouched(e);
         if (touch) {
             onActionButtonPressed();
@@ -1395,7 +1404,6 @@ var arkanoid = (() => {
 
     const onTouchEnd = (e) => {
         // does not occurs if touch is moved outside the touch area!
-        e.preventDefault();
         let touch = isMoveRectTouched(e);
         if (touch && touch.id == lastTouchId && lastTouchX) {
             const diff = touch.p.x - lastTouchX;
@@ -1421,7 +1429,15 @@ var arkanoid = (() => {
 
     // --- rendering HTML elements
 
+    const renderCopyright = (parent) => {
+        let div = controls.createDiv(parent, "copyright");
+        controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
+        controls.createA(div, undefined, "/view?page=copyright", _T("COPYRIGHT"));
+        controls.create(div, "span", undefined, ".");
+    };
+
     const renderArkanoid = (parent) => {
+        lastDraw = undefined;
         brickWidth = 45;
         brickHeight = 22;
         borderWidth = 20;
@@ -1473,9 +1489,9 @@ var arkanoid = (() => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
         wrapBody.id = "wrap-body-id";
-        utils.create_cookies_banner(wrapBody);
         const all = controls.createDiv(wrapBody);
         renderArkanoid(all);
+        renderCopyright(all);
         document.addEventListener("mousedown", onMouseDown);
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("keydown", onKeyDown);
