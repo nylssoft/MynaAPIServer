@@ -120,7 +120,7 @@ var arkanoid = (() => {
     
     // --- constants
 
-    const version = "0.9.1";
+    const version = "0.9.2";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -668,7 +668,7 @@ var arkanoid = (() => {
         }
         for (let idx = 0; idx < monsters.length; idx++) {
             const monster = monsters[idx];
-            if (nextY - laserShot.h >= monster.y && nextY <= monster.y + monster.h &&
+            if (nextY - laserShot.h >= monster.y && nextY - laserShot.h <= monster.y + monster.h &&
                 (laserShot.x1 + laserShot.w >= monster.x && laserShot.x2 - laserShot.w <= monster.x + monster.w)) {
                 monster.hit = true;
                 return false;
@@ -1284,6 +1284,11 @@ var arkanoid = (() => {
             }
             if (diff <= 20) { // 50hz is ok
                 ctx.fillStyle = "gray";
+                ctx.font = "13px serif";
+                txt = `${diff}`;
+            }
+            else if (diff <= 40) { // 25hz is acceptable, but not good
+                ctx.fillStyle = "yellow";
                 ctx.font = "13px serif";
                 txt = `${diff}`;
             }
