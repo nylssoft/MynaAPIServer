@@ -116,11 +116,12 @@ var arkanoid = (() => {
     let fadeCount;
     let monsterNextCount;
     let switchNewLevel;
-    let lastDraw;
-    
+
+    let drawStatistics = { cnt: 0, sum: 0, last: 0 };
+
     // --- constants
 
-    const version = "0.9.3";
+    const version = "0.9.4";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1229,6 +1230,41 @@ var arkanoid = (() => {
         monster.angle = (monster.angle + 1) % 360;
     };
 
+    const updateDrawStatistics = (ctx) => {
+        if (!drawStatistics) return;
+        if (drawStatistics.last) {
+            drawStatistics.sum += (Date.now() - drawStatistics.last);
+            drawStatistics.cnt += 1;
+            const drawAvg = Math.round(drawStatistics.sum / drawStatistics.cnt);
+            if (drawStatistics.cnt > 100) { // reset statistics after about 500 * 20 ms = 10 sec
+                drawStatistics.cnt = 0;
+                drawStatistics.sum = 0;
+            }
+            // display warning if rendering take more than 20ms (50hz refresh rate)
+            if (drawAvg > 20) {
+                let txt;
+                let x = 30;
+                let y = 670;
+                if (utils.is_mobile()) {
+                    x = 70;
+                    y = 550;
+                }
+                if (drawAvg <= 40) {
+                    ctx.fillStyle = "yellow";
+                    ctx.font = "13px serif";
+                    txt = `${drawAvg}`;
+                }
+                else {
+                    ctx.fillStyle = "yellow";
+                    ctx.font = "18px serif";
+                    txt = `COMPUTER TOO SLOW: ${drawAvg}`;
+                }
+                ctx.fillText(txt, x, y);
+            }
+        }
+        drawStatistics.last = Date.now();
+    };
+
     const draw = () => {
         if (!gameStarted || gameOver || gameWon) {
             window.requestAnimationFrame(draw);
@@ -1273,33 +1309,9 @@ var arkanoid = (() => {
             movePowerUp();
             moveMonsters();
         }
-        if (lastDraw) {
-            const diff = Date.now() - lastDraw;
-            let txt;
-            let x = 30;
-            let y = 670;
-            if (utils.is_mobile()) {
-                x = 70;
-                y = 550;
-            }
-            if (diff <= 20) { // 50hz is ok
-                ctx.fillStyle = "gray";
-                ctx.font = "13px serif";
-                txt = `${diff}`;
-            }
-            else if (diff <= 40) { // 25hz is acceptable, but not good
-                ctx.fillStyle = "yellow";
-                ctx.font = "13px serif";
-                txt = `${diff}`;
-            }
-            else {
-                ctx.fillStyle = "yellow";
-                ctx.font = "18px serif";
-                txt = `COMPUTER TOO SLOW: ${diff}`;
-            }
-            ctx.fillText(txt, x, y);
-        }
-        lastDraw = Date.now();
+
+        updateDrawStatistics(ctx);
+
         window.requestAnimationFrame(draw);
     };
 
@@ -1442,7 +1454,6 @@ var arkanoid = (() => {
     };
 
     const renderArkanoid = (parent) => {
-        lastDraw = undefined;
         brickWidth = 45;
         brickHeight = 22;
         borderWidth = 20;
