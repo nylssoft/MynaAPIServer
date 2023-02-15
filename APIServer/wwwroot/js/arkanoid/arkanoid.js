@@ -121,7 +121,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "0.9.4";
+    const version = "0.9.5";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -896,9 +896,6 @@ var arkanoid = (() => {
             currentLevel = level;
             currentLevel.delayStart = 60; // 3 sec
             currentLevel.startSpeed = level.initSpeed;
-            if (utils.is_mobile()) {
-                currentLevel.startSpeed = currentLevel.startSpeed / 2;
-            }
             fadeCount = 0;
             updateScore();
             createLevelBricks(level);
@@ -1407,6 +1404,7 @@ var arkanoid = (() => {
     };
 
     const onTouchStart = (e) => {
+        e.preventDefault();
         let touch = isActionRectTouched(e);
         if (touch) {
             onActionButtonPressed();
@@ -1420,6 +1418,7 @@ var arkanoid = (() => {
     };
 
     const onTouchEnd = (e) => {
+        e.preventDefault();
         // does not occurs if touch is moved outside the touch area!
         let touch = isMoveRectTouched(e);
         if (touch && touch.id == lastTouchId && lastTouchX) {
@@ -1448,9 +1447,7 @@ var arkanoid = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
-        controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
-        controls.createA(div, undefined, "/view?page=copyright", _T("COPYRIGHT"));
-        controls.create(div, "span", undefined, ".");
+        controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} ${_T("COPYRIGHT")}.`);
     };
 
     const renderArkanoid = (parent) => {
