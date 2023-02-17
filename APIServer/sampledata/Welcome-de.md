@@ -13,6 +13,7 @@ Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal 
 
 ### Spiele
 
+[![Arkanoid](/images/buttons/development-gtk-48.png "Arkanoid")](/arkanoid)
 [![Backgammon](/images/buttons/gnubg-48.png "Backgammon")](/backgammon)
 [![Schach](/images/buttons/gnome-chess-48.png "Schach")](/chess)
 [![Skat](/images/buttons/games-card_game-48.png "Skat")](/skat)

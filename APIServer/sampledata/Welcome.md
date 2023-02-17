@@ -15,6 +15,7 @@ See [Example](/view?page=example) how to configure pages and the portal server.
 
 ### Games
 
+[![Arkanoid](/images/buttons/development-gtk-48.png "Arkanoid")](/arkanoid)
 [![Backgammon](/images/buttons/gnubg-48.png "Backgammon")](/backgammon)
 [![Chess](/images/buttons/gnome-chess-48.png "Chess")](/chess)
 [![Skat](/images/buttons/games-card_game-48.png "Skat")](/skat)
