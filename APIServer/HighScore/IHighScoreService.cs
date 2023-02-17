@@ -15,26 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
-namespace APIServer.Database
+namespace APIServer.HighScore
 {
-    [Table("TetrisHighScores")]
-    public class DbTetrisHighScore
+    public interface IHighScoreService
     {
-        public long Id { get; set; }
+        const string TETRIS = "tetris";
 
-        public string Game { get; set; }
+        const string ARKANOID = "arkanoid";
 
-        public string Name { get; set; }
+        List<HighScore> GetHighScores(string game);
 
-        public int Score { get; set; }
-
-        public int Lines { get; set; }
-
-        public int Level { get; set; }
-
-        public DateTime Created { get; set; }
+        bool AddHighScore(string game, HighScore highScore);
     }
 }

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,14 +15,26 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace APIServer.Tetris
+namespace APIServer.Database
 {
-    public interface ITetrisService
+    [Table("HighScores")]
+    public class DbHighScore
     {
-        List<HighScore> GetHighScores();
+        public long Id { get; set; }
 
-        bool AddHighScore(HighScore highScore);
+        public string Game { get; set; }
+
+        public string Name { get; set; }
+
+        public int Score { get; set; }
+
+        public int Lines { get; set; }
+
+        public int Level { get; set; }
+
+        public DateTime Created { get; set; }
     }
 }

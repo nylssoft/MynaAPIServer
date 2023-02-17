@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,16 +18,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
-namespace APIServer.Tetris
+namespace APIServer.HighScore
 {
     [ApiController]
-    public class TetrisController : ControllerBase
+    public class HighScoreController : ControllerBase
     {
         public IConfiguration Configuration { get; }
 
-        public ITetrisService TetrisService { get; }
+        public IHighScoreService TetrisService { get; }
 
-        public TetrisController(IConfiguration configuration, ITetrisService tetrisService)
+        public HighScoreController(IConfiguration configuration, IHighScoreService tetrisService)
         {
             Configuration = configuration;
             TetrisService = tetrisService;
@@ -37,16 +37,31 @@ namespace APIServer.Tetris
 
         [HttpGet]
         [Route("api/tetris/highscore")]
-        public IActionResult GetHighScores()
+        public IActionResult GetTetrisHighScores()
         {
-            return new JsonResult(TetrisService.GetHighScores());
+            return new JsonResult(TetrisService.GetHighScores(IHighScoreService.TETRIS));
         }
 
         [HttpPost]
         [Route("api/tetris/highscore")]
-        public IActionResult AddHighScore([FromBody] HighScore value)
+        public IActionResult AddTetrisHighScore([FromBody] HighScore value)
         {
-            return new JsonResult(TetrisService.AddHighScore(value));
+            return new JsonResult(TetrisService.AddHighScore(IHighScoreService.TETRIS, value));
         }
+
+        [HttpGet]
+        [Route("api/arkanoid/highscore")]
+        public IActionResult GetArkanoidHighScores()
+        {
+            return new JsonResult(TetrisService.GetHighScores(IHighScoreService.ARKANOID));
+        }
+
+        [HttpPost]
+        [Route("api/arkanoid/highscore")]
+        public IActionResult AddArkanoidHighScore([FromBody] HighScore value)
+        {
+            return new JsonResult(TetrisService.AddHighScore(IHighScoreService.ARKANOID, value));
+        }
+
     }
 }

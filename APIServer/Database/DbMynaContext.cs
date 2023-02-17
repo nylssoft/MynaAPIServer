@@ -54,6 +54,8 @@ namespace APIServer.Database
 
         public DbSet<DbTetrisHighScore> DbTetrisHighScore { get; set; }
 
+        public DbSet<DbHighScore> DbHighScores { get; set; }
+
         public DbSet<DbDiary> DbDiaries { get; set; }
 
         public DbSet<DbNote> DbNotes { get; set; }

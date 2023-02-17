@@ -3,6 +3,7 @@ using System;
 using APIServer.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace APIServer.Migrations.DbPostgres
 {
     [DbContext(typeof(DbPostgresContext))]
-    partial class DbPostgresContextModelSnapshot : ModelSnapshot
+    [Migration("20230216213914_AddGameHighscore")]
+    partial class AddGameHighscore
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -152,37 +154,6 @@ namespace APIServer.Migrations.DbPostgres
                     b.HasIndex("ParentId");
 
                     b.ToTable("DocItems");
-                });
-
-            modelBuilder.Entity("APIServer.Database.DbHighScore", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Game")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Lines")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("HighScores");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbLoginIpAddress", b =>

@@ -139,6 +139,35 @@ namespace APIServer.Migrations.DbSqlite
                     b.ToTable("DocItems");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbHighScore", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Game")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Lines")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("HighScores");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbLoginIpAddress", b =>
                 {
                     b.Property<long>("Id")
@@ -410,6 +439,9 @@ namespace APIServer.Migrations.DbSqlite
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("Created")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Game")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Level")

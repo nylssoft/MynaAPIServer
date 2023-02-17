@@ -1,6 +1,6 @@
 /*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ using APIServer.Diary;
 using APIServer.Notes;
 using APIServer.PwdMan;
 using APIServer.Skat;
-using APIServer.Tetris;
+using APIServer.HighScore;
 using APIServer.Document;
 using SendGrid.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.StaticFiles;
@@ -56,7 +56,7 @@ namespace APIServer
             services.AddDbContext<DbSqliteContext>(builder => builder.UseSqlite(sqliteConnection));
             services.AddDbContext<DbPostgresContext>(builder => builder.UseNpgsql(postgresConnection));
             services.AddScoped<IPwdManService, PwdManService>();
-            services.AddScoped<ITetrisService, TetrisService>();
+            services.AddScoped<IHighScoreService, HighScoreService>();
             services.AddScoped<IDiaryService, DiaryService>();
             services.AddScoped<INotesService, NotesService>();
             services.AddScoped<IDocumentService, DocumentService>();
