@@ -126,7 +126,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "0.9.6";
+    const version = "0.9.7";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1326,10 +1326,6 @@ var arkanoid = (() => {
             }
         }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
-        ctx.shadowBlur = 2;
-        ctx.shadowColor = "black";
         drawBricks(ctx);
         drawBorder(ctx);
         drawMonsters(ctx);
