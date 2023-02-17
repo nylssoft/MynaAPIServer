@@ -71,6 +71,7 @@ var arkanoid = (() => {
 
     let gameOver;
     let gameStarted;
+    let isPaused;
 
     let keyPreferLeft;
     let keyLeftPressed;
@@ -117,6 +118,7 @@ var arkanoid = (() => {
 
     let backgroundPictures;
     let currentBackgroundPicture;
+    let currentUser;
 
     let fadeCount;
     let monsterNextCount;
@@ -126,7 +128,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "0.9.7";
+    const version = "0.9.8";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -873,6 +875,7 @@ var arkanoid = (() => {
         powerUp = undefined;    
         racketWidth = racketNormalWidth;
         racket = createRacket();
+        isPaused = false;
         gameOver = false;
         gameStarted = start;
         updateGameInfo();
@@ -1335,7 +1338,7 @@ var arkanoid = (() => {
         drawPowerUp(ctx);
         drawTouchArea(ctx);
         drawLives(ctx);
-        if (gameStarted && !gameOver) {
+        if (!isPaused && gameStarted && !gameOver) {
             if (!switchNewLevel && !bricks.some(brick => brick.hit > 0 && brick.type != BrickEnums.GOLD)) {
                 fadeCount = 0;
                 switchNewLevel = true;
@@ -1389,19 +1392,19 @@ var arkanoid = (() => {
     // --- mouse, key and touch events
 
     const onMouseDown = (e) => {
-        if (gameOver || !gameStarted) return;
+        if (isPaused || gameOver || !gameStarted) return;
         e.preventDefault();
         onActionButtonPressed();
     };
 
     const onMouseMove = (e) => {
-        if (gameOver || !gameStarted) return;
+        if (isPaused || gameOver || !gameStarted) return;
         e.preventDefault();
         moveRacketRelative(e.movementX);
     };
 
     const onKeyDown = (e) => {
-        if (gameOver || !gameStarted) return;
+        if (isPaused || gameOver || !gameStarted) return;
         if (e.key === "ArrowLeft") {
             e.preventDefault();
             keyLeftPressed = true;
@@ -1423,7 +1426,8 @@ var arkanoid = (() => {
     };
 
     const onKeyUp = (e) => {
-        if (gameOver || !gameStarted) return;
+        isPaused = !isPaused && e.key == "p";
+        if (isPaused || gameOver || !gameStarted) return;
         if (e.key === "ArrowLeft") {
             e.preventDefault();
             keyLeftPressed = false;
@@ -1439,7 +1443,7 @@ var arkanoid = (() => {
     };
 
     const onTouchStart = (e) => {
-        if (gameOver || !gameStarted) return;
+        if (isPaused || gameOver || !gameStarted) return;
         e.preventDefault();
         let touch = isActionRectTouched(e);
         if (touch) {
@@ -1454,7 +1458,7 @@ var arkanoid = (() => {
     };
 
     const onTouchEnd = (e) => {
-        if (gameOver || !gameStarted) return;
+        if (isPaused || gameOver || !gameStarted) return;
         e.preventDefault();
         // does not occurs if touch is moved outside the touch area!
         let touch = isMoveRectTouched(e);
@@ -1469,7 +1473,7 @@ var arkanoid = (() => {
     };
 
     const onTouchMove = (e) => {
-        if (gameOver || !gameStarted) return;
+        if (isPaused || gameOver || !gameStarted) return;
         e.preventDefault();
         const touch = isMoveRectTouched(e);
         if (touch && touch.id == lastTouchId && lastTouchX) {
@@ -1482,6 +1486,15 @@ var arkanoid = (() => {
     };
 
     // --- rendering HTML elements
+
+    const renderHeader = (parent) => {
+        const title = currentUser ? `${currentUser.name} - ${_T("HEADER_ARKANOID")}` : _T("HEADER_ARKANOID");
+        controls.create(parent, "h1", "header", title);
+        if (currentUser && currentUser.photo) {
+            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
+            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+        }
+    };
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
@@ -1576,11 +1589,15 @@ var arkanoid = (() => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
         wrapBody.id = "wrap-body-id";
+        utils.create_cookies_banner(wrapBody);
         const all = controls.createDiv(wrapBody);
+        utils.create_menu(all);
+        renderHeader(all);
         renderHighScores(all);
         renderCopyright(all);
         startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), () => startNewGame(true), "newgame", "newgame");
         renderArkanoid(all);
+        utils.set_menu_items(currentUser);
         document.addEventListener("mousedown", onMouseDown);
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("keydown", onKeyDown);
@@ -1593,6 +1610,25 @@ var arkanoid = (() => {
         }
     };
 
+    const renderInit = () => {
+        currentUser = undefined;
+        let token = utils.get_authentication_token();
+        if (!token) {
+            render();
+            return;
+        }
+        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+            (user) => {
+                currentUser = user;
+                render();
+            },
+            (errmsg) => {
+                console.error(errmsg);
+                utils.logout();
+                render();
+            });
+    };
+
     const init = (sm) => {
         fetch(`/js/arkanoid/levels.json?v=${Date.now()}`)
             .then(resp => {
@@ -1600,7 +1636,7 @@ var arkanoid = (() => {
                     .then(json => {
                         levels = json;
                         initBackgroundPictures(sm.pictures);
-                        render();
+                        renderInit();
                     })
                     .catch(err => console.log(err));
             })
