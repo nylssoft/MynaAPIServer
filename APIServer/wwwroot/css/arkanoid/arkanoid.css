@@ -102,7 +102,48 @@ a {
 #info-gameover-id {
     position: absolute;
     left: 340px;
-    top: 300px;
+    top: 70px;
+}
+
+.highscores {
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+    background-color: black;
+    position: absolute;
+    left: 270px;
+    top: 140px;
+    width: 240px;
+    height: 230px;
+    padding-left: 10px;
+    z-index: 3;
+}
+
+.addhighscore {
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    background-color: black;
+    position: absolute;
+    left: 270px;
+    top: 140px;
+    width: 240px;
+    height: 230px;
+    padding-left: 10px;
+    z-index: 3;
+}
+
+.newgame {
+    position: absolute;
+    left: 330px;
+    top: 400px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11pt;
+    z-index: 1;
+    background-color: black;
+    color: lightgreen;
+    border: 2px solid lightgreen;
+    padding: 10pt;
 }
 
 canvas {
@@ -149,36 +190,9 @@ canvas {
 
 .help-button {
     position: absolute;
-    left: 600px;
-    top: 310px;
+    left: 680px;
+    top: 800px;
     z-index: 1;
-}
-
-.highscores {
-    color: white;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 14pt;
-    background-color: black;
-    position: absolute;
-    left: 420px;
-    top: 350px;
-    width: 198px;
-    height: 230px;
-    padding-left: 10px;
-}
-
-.addhighscore {
-    color: white;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    background-color: black;
-    position: absolute;
-    left: 420px;
-    top: 350px;
-    width: 198px;
-    height: 230px;
-    padding-left: 10px;
-    z-index: 3;
 }
 
 .info {
@@ -231,19 +245,6 @@ canvas {
     font-size: 18pt;
     z-index: 1;
     background-color: black;
-    padding: 10pt;
-}
-
-.newgame {
-    position: absolute;
-    left: 425px;
-    top: 290px;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 11pt;
-    z-index: 1;
-    background-color: black;
-    color: lightgreen;
-    border: 2px solid lightgreen;
     padding: 10pt;
 }
 
@@ -386,24 +387,30 @@ canvas {
     #info-gameover-id {
         position: absolute;
         left: 130px;
-        top: 300px;
+        top: 60px;
     }
 
     .highscores {
-        left: 30px;
-        top: 120px;
-        width: 190px;
+        left: 60px;
+        top: 140px;
+        width: 230px;
         height: 230px;
-        padding-left: 0px;
+        padding: 5px;
         z-index: 1;
     }
 
     .addhighscore {
-        left: 30px;
-        top: 120px;
-        width: 190px;
+        left: 60px;
+        top: 140px;
+        width: 230px;
         height: 230px;
-        padding-left: 0px;
+        padding: 5px;
+    }
+
+    .newgame {
+        left: 110px;
+        top: 400px;
+        padding: 10pt;
     }
 
     .info {
@@ -420,8 +427,8 @@ canvas {
     }
 
     .help-button {
-        left: 320px;
-        top: 180px;
+        left: 300px;
+        top: 610px;
     }
 
     .arrow-div {
@@ -462,12 +469,6 @@ canvas {
         left: 30px;
         top: 70px;
         padding: 5pt;
-    }
-
-    .newgame {
-        left: 240px;
-        top: 360px;
-        padding: 10pt;
     }
 
     .copyright {

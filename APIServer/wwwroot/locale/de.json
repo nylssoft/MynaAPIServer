@@ -261,6 +261,7 @@
   "INFO_HAS_PLAYED_AND_1": "{0} hat gespielt und",
   "INFO_HAS_WON": "gewonnen.",
   "INFO_HAS_WON_1": "{0} hat gewonnen.",
+  "INFO_HIGHSCORE_1_2_3": "{0} Punkte. Level {1}. Spiel vom {2}.",
   "INFO_HIGHSCORE_1_2_3_4_5": "{0} Punkte. Level {1}. {2} {3}. Spiel vom {4}.",
   "INFO_INSTALL_GOOGLE_AUTH": "Installiere die App Google Authenticator auf deinem Smartphone und scanne den QR-Code oder gibt den Sicherheitsschlüssel ein.",
   "INFO_ITS_YOUR_TURN": "Du bist dran.",

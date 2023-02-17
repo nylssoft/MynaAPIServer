@@ -50,6 +50,10 @@ var arkanoid = (() => {
     // -- UI elements
 
     let canvas;
+    let highScoreDiv;
+    let addHighScoreDiv;
+    let inputUserName;
+    let startGameButton;
 
     // --- state
 
@@ -66,7 +70,6 @@ var arkanoid = (() => {
     let monsters;
 
     let gameOver;
-    let gameWon;
     let gameStarted;
 
     let keyPreferLeft;
@@ -79,6 +82,8 @@ var arkanoid = (() => {
 
     let powerUp;
     let nextPowerUps;
+
+    let highScores;
 
     // dimensions
 
@@ -117,11 +122,11 @@ var arkanoid = (() => {
     let monsterNextCount;
     let switchNewLevel;
 
-    let drawStatistics = { cnt: 0, sum: 0, last: 0 };
+    let drawStatistics;
 
     // --- constants
 
-    const version = "0.9.5";
+    const version = "0.9.6";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -435,7 +440,7 @@ var arkanoid = (() => {
             lives -= 1;            
             if (lives <= 0) {
                 gameOver = true;
-                updateGameEnded();
+                updateGameInfo();
             }
             else {
                 fadeCount = 0;
@@ -482,7 +487,7 @@ var arkanoid = (() => {
         if (figureType != LineEnums.MONSTER) return false;
         const monster = line[3];
         ball.dirY = Math.abs(ball.dirY);
-        ball.dirX = getRandom(1, 2) === 1 ? 1 : -1;
+        ball.dirX = getRandom(1, 2) === 1 ? Math.abs(ball.dirX) : -1 * Math.abs(ball.dirX);
         const angles = [AngleEnums.FLAT, AngleEnums.NORMAL, AngleEnums.STEEP];
         const r = getRandom(1, angles.length);
         setBallDirection(ball, angles[r - 1]);
@@ -860,7 +865,7 @@ var arkanoid = (() => {
 
     // --- level handling
 
-    const startNewGame = () => {
+    const startNewGame = (start) => {
         score = 0;
         lives = 3;
         borderLines = [];
@@ -869,15 +874,15 @@ var arkanoid = (() => {
         racketWidth = racketNormalWidth;
         racket = createRacket();
         gameOver = false;
-        gameWon = false;
-        gameStarted = true;
-        updateGameEnded();
+        gameStarted = start;
+        updateGameInfo();
         initLevel(1);
+        inputUserName.value = "";
     };
 
     const initLevel = (id) => {
         monsterNextCount = undefined;
-        fadeCount = maxFadeCount;
+        fadeCount = 0;
         switchNewLevel = false;
         powerUp = undefined;
         bricks = [];
@@ -887,21 +892,26 @@ var arkanoid = (() => {
         monsters = [];
         racketWidth = racketNormalWidth;
         racket = createRacket();
-        const level = levels.find(l => l.id === id);
+        let level = levels.find(l => l.id === id);
         if (!level) {
-            gameWon = true;
-            updateGameEnded();
+            if (levels.length > 0 && id > 0) {
+                level = levels[( id - 1 ) % levels.length];
+                level.id = id;
+                level.increaseSpeed *= 2;
+            }
+            else {
+                gameOver = true;
+                updateGameInfo();
+                return;
+            }
         }
-        else {
-            currentLevel = level;
-            currentLevel.delayStart = 60; // 3 sec
-            currentLevel.startSpeed = level.initSpeed;
-            fadeCount = 0;
-            updateScore();
-            createLevelBricks(level);
-            balls.push(createBall());
-            setBackgroundPicture();
-        }
+        currentLevel = level;
+        currentLevel.delayStart = 60; // 3 sec
+        currentLevel.startSpeed = level.initSpeed;
+        updateScore();
+        createLevelBricks(level);
+        balls.push(createBall());
+        setBackgroundPicture();
     };
 
     const createLevelBrick = (levelnr, row, col, color) => {
@@ -1069,16 +1079,50 @@ var arkanoid = (() => {
         infoElem.textContent = `${_T("INFO_LEVEL_1", currentLevel.id)} ${_T("INFO_SCORE_1", score)}`;
     };
 
-    const updateGameEnded = () => {
+    const updateGameInfo = () => {
         let txt = "";
         if (gameOver) {
             txt = _T("INFO_GAME_OVER");
         }
-        else if (gameWon) {
-            txt = _T("INFO_YOU_HAVE_WON");
-        }
         const infoGameOverElem = document.getElementById("info-gameover-id");
         infoGameOverElem.textContent = txt;
+        if (gameStarted && !gameOver) {
+            startGameButton.style.visibility = "hidden";
+            addHighScoreDiv.style.visibility = "hidden";
+            highScoreDiv.style.visibility = "hidden";
+        }
+        else {
+            startGameButton.style.visibility = "visible";
+            fetch("api/arkanoid/highscore")
+                .then(response => response.json())
+                .then(h => {
+                    highScores = h;
+                    if (score > 0 && (highScores.length < 10 || highScores[9].score < score)) {
+                        addHighScoreDiv.style.visibility = "visible";
+                        if (!utils.is_mobile()) {
+                            inputUserName.focus();
+                        }
+                    }
+                    else {
+                        highScoreDiv.style.visibility = highScores.length > 0 ? "visible" : "hidden";
+                    }
+                })
+                .catch((err) => console.error(err));
+        }
+    };
+
+    const addHighScore = () => {
+        const name = inputUserName.value.trim();
+        if (name.length > 0) {
+            addHighScoreDiv.style.visibility = "hidden";
+            fetch("api/arkanoid/highscore", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ "Name": name, "Score": score, "Level": currentLevel.id })
+            })
+            .then(() => renderHighScoreEntries())
+            .catch((err) => console.error(err));
+        }
     };
 
     // --- drawing
@@ -1228,8 +1272,12 @@ var arkanoid = (() => {
     };
 
     const updateDrawStatistics = (ctx) => {
-        if (!drawStatistics) return;
-        if (drawStatistics.last) {
+        if (!drawStatistics) {
+            drawStatistics = { cnt: 0, sum: 0, last: 0 };
+        }
+        const diff = Date.now() - drawStatistics.last;
+        // draw will not be invoked if the window is not visible
+        if (drawStatistics.last > 0 && diff < 1000) {
             drawStatistics.sum += (Date.now() - drawStatistics.last);
             drawStatistics.cnt += 1;
             const drawAvg = Math.round(drawStatistics.sum / drawStatistics.cnt);
@@ -1263,10 +1311,7 @@ var arkanoid = (() => {
     };
 
     const draw = () => {
-        if (!gameStarted || gameOver || gameWon) {
-            window.requestAnimationFrame(draw);
-            return;
-        }
+        window.requestAnimationFrame(draw);
         const ctx = canvas.getContext("2d");
         if (fadeCount < maxFadeCount) {
             fadeCount += 1;
@@ -1294,11 +1339,11 @@ var arkanoid = (() => {
         drawPowerUp(ctx);
         drawTouchArea(ctx);
         drawLives(ctx);
-        if (!switchNewLevel && !bricks.some(brick => brick.hit > 0 && brick.type != BrickEnums.GOLD)) {
-            fadeCount = 0;
-            switchNewLevel = true;
-        }
-        else {
+        if (gameStarted && !gameOver) {
+            if (!switchNewLevel && !bricks.some(brick => brick.hit > 0 && brick.type != BrickEnums.GOLD)) {
+                fadeCount = 0;
+                switchNewLevel = true;
+            }
             handleBalls();
             moveLaserShots();
             moveBalls();
@@ -1306,10 +1351,7 @@ var arkanoid = (() => {
             movePowerUp();
             moveMonsters();
         }
-
         updateDrawStatistics(ctx);
-
-        window.requestAnimationFrame(draw);
     };
 
     // --- callbacks for user interaction
@@ -1340,10 +1382,7 @@ var arkanoid = (() => {
     };
 
     const onActionButtonPressed = () => {
-        if (gameOver || gameWon) {
-            startNewGame();
-        }
-        else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
+        if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
             laserShots.push(createLaserShot());
         }
         else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
@@ -1354,16 +1393,19 @@ var arkanoid = (() => {
     // --- mouse, key and touch events
 
     const onMouseDown = (e) => {
+        if (gameOver || !gameStarted) return;
         e.preventDefault();
         onActionButtonPressed();
     };
 
     const onMouseMove = (e) => {
+        if (gameOver || !gameStarted) return;
         e.preventDefault();
         moveRacketRelative(e.movementX);
     };
 
     const onKeyDown = (e) => {
+        if (gameOver || !gameStarted) return;
         if (e.key === "ArrowLeft") {
             e.preventDefault();
             keyLeftPressed = true;
@@ -1385,6 +1427,7 @@ var arkanoid = (() => {
     };
 
     const onKeyUp = (e) => {
+        if (gameOver || !gameStarted) return;
         if (e.key === "ArrowLeft") {
             e.preventDefault();
             keyLeftPressed = false;
@@ -1393,17 +1436,14 @@ var arkanoid = (() => {
             e.preventDefault();
             keyRightPressed = false;
         }
-        else if (e.key === "x") {
-            e.preventDefault();
-            keySpeed1Pressed = false;
-        }
         else if (e.key === "y") {
             e.preventDefault();
-            keySpeed2Pressed = false;
+            keySpeedYPressed = false;
         }
     };
 
     const onTouchStart = (e) => {
+        if (gameOver || !gameStarted) return;
         e.preventDefault();
         let touch = isActionRectTouched(e);
         if (touch) {
@@ -1418,6 +1458,7 @@ var arkanoid = (() => {
     };
 
     const onTouchEnd = (e) => {
+        if (gameOver || !gameStarted) return;
         e.preventDefault();
         // does not occurs if touch is moved outside the touch area!
         let touch = isMoveRectTouched(e);
@@ -1432,6 +1473,7 @@ var arkanoid = (() => {
     };
 
     const onTouchMove = (e) => {
+        if (gameOver || !gameStarted) return;
         e.preventDefault();
         const touch = isMoveRectTouched(e);
         if (touch && touch.id == lastTouchId && lastTouchX) {
@@ -1448,6 +1490,42 @@ var arkanoid = (() => {
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent, "copyright");
         controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} ${_T("COPYRIGHT")}.`);
+    };
+
+    const renderHighScoreEntries = () => {
+        controls.removeAllChildren(highScoreDiv);
+        highScoreDiv.style.visibility = "hidden";
+        fetch("api/arkanoid/highscore")
+            .then(response => response.json())
+            .then(h => {
+                highScores = h;
+                let pos = 1;
+                highScores.forEach(hs => {
+                    const e = controls.createDiv(highScoreDiv, "highscore");
+                    e.textContent = `${pos}. ${hs.name} - ${hs.score}`;
+                    const dstr = utils.format_date_string(hs.created);
+                    e.title = _T("INFO_HIGHSCORE_1_2_3", hs.score, hs.level, dstr);
+                    pos++;
+                });
+                if (highScores.length > 0 && (!gameStarted || gameOver)) {
+                    highScoreDiv.style.visibility = "visible";
+                }
+            })
+            .catch((err) => console.error(err));
+    };
+
+    const renderHighScores = (parent) => {
+        highScoreDiv = controls.createDiv(parent, "highscores");
+        highScoreDiv.style.visibility = "hidden";
+        addHighScoreDiv = controls.createDiv(parent, "addhighscore");
+        addHighScoreDiv.style.visibility = "hidden";
+        const msg = controls.createDiv(addHighScoreDiv, undefined);
+        msg.textContent = _T("INFO_CONGRAT_HIGHSCORE");
+        inputUserName = controls.createInputField(addHighScoreDiv, _T("TEXT_NAME"), () => addHighScore(), "username-input", 10, 10);
+        inputUserName.placeholder = _T("TEXT_NAME");
+        const div = controls.createDiv(addHighScoreDiv);
+        controls.createButton(div, _T("BUTTON_OK"), () => addHighScore());
+        renderHighScoreEntries();
     };
 
     const renderArkanoid = (parent) => {
@@ -1494,7 +1572,7 @@ var arkanoid = (() => {
         canvas.height = innerHeight + borderHeight + 48;
         controls.createDiv(parent).id = "info-id";
         controls.createDiv(parent).id = "info-gameover-id";
-        startNewGame();
+        startNewGame(false);
         window.requestAnimationFrame(draw);
     };
 
@@ -1503,8 +1581,10 @@ var arkanoid = (() => {
         const wrapBody = controls.createDiv(document.body, "wrap-body");
         wrapBody.id = "wrap-body-id";
         const all = controls.createDiv(wrapBody);
-        renderArkanoid(all);
+        renderHighScores(all);
         renderCopyright(all);
+        startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), () => startNewGame(true), "newgame", "newgame");
+        renderArkanoid(all);
         document.addEventListener("mousedown", onMouseDown);
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("keydown", onKeyDown);

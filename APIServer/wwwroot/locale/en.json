@@ -261,6 +261,7 @@
   "INFO_HAS_PLAYED_AND_1": "has played {0} and",
   "INFO_HAS_WON": "has won.",
   "INFO_HAS_WON_1": "{0} has won.",
+  "INFO_HIGHSCORE_1_2_3": "Score {0}. Level {1}. Game at {2}.",
   "INFO_HIGHSCORE_1_2_3_4_5": "Score {0}. Level {1}. {2} {3}. Game at {4}.",
   "INFO_INSTALL_GOOGLE_AUTH": "Install the app Google Authenticator on your smartphone and scan the QR code.",
   "INFO_ITS_YOUR_TURN": "It's your turn.",
