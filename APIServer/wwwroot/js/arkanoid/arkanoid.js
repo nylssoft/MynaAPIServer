@@ -126,14 +126,11 @@ var arkanoid = (() => {
 
     let drawStatistics;
 
-    // --- audio
-
-    let audioCtx;
-    let audioBuffer;
+    let audioInfos;
 
     // --- constants
 
-    const version = "0.9.9";
+    const version = "1.0.0";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1538,38 +1535,32 @@ var arkanoid = (() => {
 
     // --- audio handling
 
-    const initAudio = async () => {
-        audioCtx = new AudioContext();
-        const response = await fetch("/js/arkanoid/effects.mp3?v=1");
-        const arrayBuffer = await response.arrayBuffer();
-        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const playAudio = (idx) => {
+        if (idx != undefined && idx >= 0 && idx < audioInfos.length) {
+            const audioInfo = audioInfos[idx];
+            audioInfo.audio.currentTime = audioInfo.start;
+            audioInfo.audio.play();
+        }
     };
 
-    const playAudio = (start, stop) => {
-        const audioTrackSource = audioCtx.createBufferSource();
-        audioTrackSource.buffer = audioBuffer;
-        audioTrackSource.connect(audioCtx.destination);
-        audioTrackSource.start(0, start, stop - start);
-    };
-
-    const playAudioStartNewGame = () => playAudio(0, 2);
+    const playAudioStartNewGame = () => playAudio(0);
 
     const playAudioRacketMonsterHit = () => playAudioLaserShot();
 
-    const playAudioLaserShot = () => playAudio(16, 16.35);
-    const playAudioLaserMonsterHit = () => playAudioBallVerticalBrickHit();
+    const playAudioLaserShot = () => playAudio(7);
+    const playAudioLaserMonsterHit = () => playAudioBallBorderHit();
     const playAudioLaserBrickHit = () => playAudioBallVerticalBrickHit();
 
-    const playAudioPowerUpAppear = () => playAudio(12, 12.8);
-    const playAudioPowerUpCollect = () => playAudio(14, 14.5);
+    const playAudioPowerUpAppear = () => playAudio(5);
+    const playAudioPowerUpCollect = () => playAudio(6);
 
-    const playAudioBallRacketHit = () => playAudio(4, 4.5);
-    const playAudioBallBorderHit = () => playAudio(10, 10.5);
-    const playAudioBallVerticalBrickHit = () => playAudio(6, 6.5);
-    const playAudioBallHorizontalBrickHit = () => playAudio(8, 8.5);
-    const playAudioBallMonsterHit = () => playAudioLaserShot();
+    const playAudioBallRacketHit = () => playAudio(1);
+    const playAudioBallBorderHit = () => playAudio(4);
+    const playAudioBallVerticalBrickHit = () => playAudio(2);
+    const playAudioBallHorizontalBrickHit = () => playAudio(3);
+    const playAudioBallMonsterHit = () => playAudio(4);
 
-    const playAudioRemoveBall = () => playAudio(18, 19);
+    const playAudioRemoveBall = () => playAudio(8);
 
     // --- rendering HTML elements
 
@@ -1671,6 +1662,28 @@ var arkanoid = (() => {
         window.requestAnimationFrame(draw);
     };
 
+    const createAudioInfos = () => {
+        const url = `/js/arkanoid/effects.mp3?v=${version}`;
+        audioInfos = [];
+        audioInfos.push({ start: 0, stop: 2 }); // start game
+        audioInfos.push({ start: 4, stop: 4.5 }); // ball hit racket
+        audioInfos.push({ start: 6, stop: 6.5 }); // ball hit brick vertical
+        audioInfos.push({ start: 8, stop: 8.5 }); // ball hit brick horizontal
+        audioInfos.push({ start: 10, stop: 10.5 }); // ball hit border
+        audioInfos.push({ start: 12, stop: 12.8 }); // power up appears
+        audioInfos.push({ start: 14, stop: 14.5 }); // power up caught
+        audioInfos.push({ start: 16, stop: 16.35 }); // laser fired
+        audioInfos.push({ start: 18, stop: 19 }); // ball lost
+        audioInfos.forEach(audioInfo => {
+            audioInfo.audio = new Audio(url);
+            audioInfo.audio.addEventListener("timeupdate", () => {
+                if (audioInfo.audio.currentTime > audioInfo.stop) {
+                    audioInfo.audio.pause();
+                }
+            });
+        });
+    };
+
     const render = () => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
@@ -1716,7 +1729,7 @@ var arkanoid = (() => {
     };
 
     const init = async (sm) => {
-        await initAudio();
+        createAudioInfos();
         fetch(`/js/arkanoid/levels.json?v=${Date.now()}`)
             .then(resp => {
                 resp.json()
