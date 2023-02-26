@@ -126,9 +126,14 @@ var arkanoid = (() => {
 
     let drawStatistics;
 
+    // --- audio
+
+    let audioCtx;
+    let audioBuffer;
+
     // --- constants
 
-    const version = "0.9.8";
+    const version = "0.9.9";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -424,6 +429,7 @@ var arkanoid = (() => {
                 }
                 if (hit.removeBall) {
                     removeBalls.push(ball);
+                    playAudioRemoveBall();
                 }
                 else if (hit.hasHits) {
                     ball.hasHits = true;
@@ -477,6 +483,37 @@ var arkanoid = (() => {
                 }
                 if (!hasHits) {
                     hasHits = handleBallMonsterHit(line, ball);
+                }
+                if (hasHits) {
+                    const lineType = line[2];
+                    if (lineType === LineEnums.RACKETLEFT ||
+                        lineType === LineEnums.RACKETRIGHT ||
+                        lineType === LineEnums.RACKETTOP) {
+                        playAudioBallRacketHit();
+                    }
+                    else if (lineType === LineEnums.BORDERLEFT ||
+                        lineType === LineEnums.BORDERRIGHT ||
+                        lineType === LineEnums.BORDERTOP) {
+                        playAudioBallBorderHit();
+                    }
+                    else if (lineType === LineEnums.MONSTER) {
+                        playAudioBallMonsterHit();
+                    }
+                    else if (lineType === LineEnums.BLOCKBUTTOM ||
+                        lineType === LineEnums.BLOCKTOP ||
+                        lineType === LineEnums.BLOCKLEFT ||
+                        lineType === LineEnums.BLOCKRIGHT) {
+                        const brick = line[3];
+                        if (brick.hit > 0) {
+                            playAudioBallBorderHit();
+                        }
+                        else if (lineType === LineEnums.BLOCKBUTTOM || lineType === LineEnums.BLOCKTOP) {
+                            playAudioBallVerticalBrickHit();
+                        }
+                        else {
+                            playAudioBallHorizontalBrickHit();
+                        }
+                    }
                 }
                 break; // only one hit per evaluation
             }
@@ -609,6 +646,7 @@ var arkanoid = (() => {
                 }
                 const powerUpType = nextPowerUps.splice(0, 1)[0];
                 powerUp = createPowerUp(line[0].x + 2, line[0].y - brickHeight + 2, brickWidth - 4, brickHeight - 2, powerUpType);
+                playAudioPowerUpAppear();
             }
         }
     };
@@ -679,6 +717,7 @@ var arkanoid = (() => {
             if (nextY - laserShot.h >= monster.y && nextY - laserShot.h <= monster.y + monster.h &&
                 (laserShot.x1 + laserShot.w >= monster.x && laserShot.x2 - laserShot.w <= monster.x + monster.w)) {
                 monster.hit = true;
+                playAudioLaserMonsterHit();
                 return false;
             }
         }
@@ -691,6 +730,12 @@ var arkanoid = (() => {
                     (laserShot.x1 + laserShot.w >= line[0].x && laserShot.x1 + laserShot.w <= line[1].x ||
                     laserShot.x2 + laserShot.w >= line[0].x && laserShot.x2 + laserShot.w <= line[1].x)) {
                     hitBrickLine(line);
+                    if (brick.hit > 0) {
+                        playAudioBallBorderHit();
+                    }
+                    else {
+                        playAudioLaserBrickHit();
+                    }
                     return false;
                 }
             }
@@ -789,6 +834,7 @@ var arkanoid = (() => {
                     }
                 }
             }
+            playAudioPowerUpCollect();
             powerUp = undefined;
         }
         else if (powerUp.y >= innerHeight) {
@@ -825,6 +871,7 @@ var arkanoid = (() => {
         if (monster.hit ||
             monster.y + monster.h >= racket.y && monster.y <= racket.y + racketHeight &&
             monster.x + monster.w >= racket.x && monster.x <= racket.x + racketWidth) {
+            playAudioRacketMonsterHit();
             return false;
         }
         const moveCount = currentLevel.monsterMoveCount || 300;
@@ -881,6 +928,9 @@ var arkanoid = (() => {
         updateGameInfo();
         initLevel(1);
         inputUserName.value = "";
+        if (start) {
+            playAudioStartNewGame();
+        }
     };
 
     const initLevel = (id) => {
@@ -1383,6 +1433,7 @@ var arkanoid = (() => {
     const onActionButtonPressed = () => {
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.LASER && laserShots.length < 3) {
             laserShots.push(createLaserShot());
+            playAudioLaserShot();
         }
         else if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) {
             racket.powerUp.catched = false;
@@ -1484,6 +1535,41 @@ var arkanoid = (() => {
             lastTouchX = touch.p.x;
         }
     };
+
+    // --- audio handling
+
+    const initAudio = async () => {
+        audioCtx = new AudioContext();
+        const response = await fetch("/js/arkanoid/effects.mp3?v=1");
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    };
+
+    const playAudio = (start, stop) => {
+        const audioTrackSource = audioCtx.createBufferSource();
+        audioTrackSource.buffer = audioBuffer;
+        audioTrackSource.connect(audioCtx.destination);
+        audioTrackSource.start(0, start, stop - start);
+    };
+
+    const playAudioStartNewGame = () => playAudio(0, 2);
+
+    const playAudioRacketMonsterHit = () => playAudioLaserShot();
+
+    const playAudioLaserShot = () => playAudio(16, 16.35);
+    const playAudioLaserMonsterHit = () => playAudioBallVerticalBrickHit();
+    const playAudioLaserBrickHit = () => playAudioBallVerticalBrickHit();
+
+    const playAudioPowerUpAppear = () => playAudio(12, 12.8);
+    const playAudioPowerUpCollect = () => playAudio(14, 14.5);
+
+    const playAudioBallRacketHit = () => playAudio(4, 4.5);
+    const playAudioBallBorderHit = () => playAudio(10, 10.5);
+    const playAudioBallVerticalBrickHit = () => playAudio(6, 6.5);
+    const playAudioBallHorizontalBrickHit = () => playAudio(8, 8.5);
+    const playAudioBallMonsterHit = () => playAudioLaserShot();
+
+    const playAudioRemoveBall = () => playAudio(18, 19);
 
     // --- rendering HTML elements
 
@@ -1629,7 +1715,8 @@ var arkanoid = (() => {
             });
     };
 
-    const init = (sm) => {
+    const init = async (sm) => {
+        await initAudio();
         fetch(`/js/arkanoid/levels.json?v=${Date.now()}`)
             .then(resp => {
                 resp.json()
