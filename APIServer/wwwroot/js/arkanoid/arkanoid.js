@@ -130,7 +130,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.0";
+    const version = "1.0.1";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1130,6 +1130,17 @@ var arkanoid = (() => {
     };
 
     const updateGameInfo = () => {
+        const visibilty = gameStarted && !gameOver ? "hidden" : "visible";
+        const elems = [];
+        elems.push(document.getElementById("div-dropdown-id"));
+        elems.push(document.getElementById("copyright-id"));
+        elems.push(document.getElementById("header-id"));
+        elems.push(document.getElementById("photo-id"));
+        elems.forEach(elem => {
+            if (elem) {
+                elem.style.visibility = visibilty;
+            }
+        });
         let txt = "";
         if (gameOver) {
             txt = _T("INFO_GAME_OVER");
@@ -1566,15 +1577,18 @@ var arkanoid = (() => {
 
     const renderHeader = (parent) => {
         const title = currentUser ? `${currentUser.name} - ${_T("HEADER_ARKANOID")}` : _T("HEADER_ARKANOID");
-        controls.create(parent, "h1", "header", title);
+        const headerElem = controls.create(parent, "h1", "header", title);
+        headerElem.id = "header-id";
         if (currentUser && currentUser.photo) {
             const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
+            imgPhoto.id = "photo-id";
             imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
     };
 
     const renderCopyright = (parent) => {
-        let div = controls.createDiv(parent, "copyright");
+        const div = controls.createDiv(parent, "copyright");
+        div.id = "copyright-id";
         controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} ${_T("COPYRIGHT")}.`);
     };
 

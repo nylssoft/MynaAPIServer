@@ -116,7 +116,7 @@ a {
     width: 240px;
     height: 230px;
     padding-left: 10px;
-    z-index: 3;
+    z-index: 1;
 }
 
 .addhighscore {
@@ -130,7 +130,7 @@ a {
     width: 240px;
     height: 230px;
     padding-left: 10px;
-    z-index: 3;
+    z-index: 1;
 }
 
 .newgame {
