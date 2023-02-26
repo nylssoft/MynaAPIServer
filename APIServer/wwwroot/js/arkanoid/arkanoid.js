@@ -72,6 +72,7 @@ var arkanoid = (() => {
     let gameOver;
     let gameStarted;
     let isPaused;
+    let isSoundEnabled;
 
     let keyPreferLeft;
     let keyLeftPressed;
@@ -1141,6 +1142,7 @@ var arkanoid = (() => {
                 elem.style.visibility = visibilty;
             }
         });
+        document.getElementById("pause-button-id").style.visibility = gameStarted && !gameOver ? "visible" : "hidden";
         let txt = "";
         if (gameOver) {
             txt = _T("INFO_GAME_OVER");
@@ -1448,10 +1450,29 @@ var arkanoid = (() => {
         }
     };
 
+    const toggleSoundButton = () => {
+        isSoundEnabled = !isSoundEnabled;
+        const imgSound = document.getElementById("sound-button-id");
+        imgSound.src = isSoundEnabled ? "/images/buttons/kmix.png" : "/images/buttons/kmixdocked_mute.png";
+        imgSound.title = isSoundEnabled ? _T("BUTTON_DISABLE_SOUND") : _T("BUTTON_ENABLE_SOUND");
+        if (isSoundEnabled) {
+            playAudioBallBorderHit();
+        }
+    };
+
+    const togglePauseButton = () => {
+        if (!gameStarted || gameOver) return;
+        isPaused = !isPaused;
+        const imgPause = document.getElementById("pause-button-id");
+        imgPause.src = isPaused ? "/images/buttons/media-playback-start-5.png" : "/images/buttons/media-playback-pause-5.png";
+        imgPause.title = isPaused ? _T("BUTTON_CONTINUE_PLAY") : _T("BUTTON_PAUSE_GAME");
+    };
+
     // --- mouse, key and touch events
 
     const onMouseDown = (e) => {
         if (isPaused || gameOver || !gameStarted) return;
+        if (e.clientY < 40) return;
         e.preventDefault();
         onActionButtonPressed();
     };
@@ -1485,6 +1506,9 @@ var arkanoid = (() => {
     };
 
     const onKeyUp = (e) => {
+        if (e.key == "m") {
+            toggleSoundButton();
+        }
         isPaused = !isPaused && e.key == "p";
         if (isPaused || gameOver || !gameStarted) return;
         if (e.key === "ArrowLeft") {
@@ -1503,6 +1527,12 @@ var arkanoid = (() => {
 
     const onTouchStart = (e) => {
         if (isPaused || gameOver || !gameStarted) return;
+        const touches = e.changedTouches;
+        for (let idx = 0; idx < touches.length; idx++) {
+            if (touches[idx].clientY < 40) {
+                return;
+            }
+        }
         e.preventDefault();
         let touch = isActionRectTouched(e);
         if (touch) {
@@ -1518,6 +1548,12 @@ var arkanoid = (() => {
 
     const onTouchEnd = (e) => {
         if (isPaused || gameOver || !gameStarted) return;
+        const touches = e.changedTouches;
+        for (let idx = 0; idx < touches.length; idx++) {
+            if (touches[idx].clientY < 40) {
+                return;
+            }
+        }
         e.preventDefault();
         // does not occurs if touch is moved outside the touch area!
         let touch = isMoveRectTouched(e);
@@ -1547,7 +1583,7 @@ var arkanoid = (() => {
     // --- audio handling
 
     const playAudio = (idx) => {
-        if (idx != undefined && idx >= 0 && idx < audioInfos.length) {
+        if (isSoundEnabled && idx != undefined && idx >= 0 && idx < audioInfos.length) {
             const audioInfo = audioInfos[idx];
             audioInfo.audio.currentTime = audioInfo.start;
             audioInfo.audio.play();
@@ -1629,6 +1665,7 @@ var arkanoid = (() => {
     };
 
     const renderArkanoid = (parent) => {
+        isSoundEnabled = true;
         brickWidth = 45;
         brickHeight = 22;
         borderWidth = 20;
@@ -1676,26 +1713,16 @@ var arkanoid = (() => {
         window.requestAnimationFrame(draw);
     };
 
-    const createAudioInfos = () => {
-        const url = `/js/arkanoid/effects.mp3?v=${version}`;
-        audioInfos = [];
-        audioInfos.push({ start: 0, stop: 2 }); // start game
-        audioInfos.push({ start: 4, stop: 4.5 }); // ball hit racket
-        audioInfos.push({ start: 6, stop: 6.5 }); // ball hit brick vertical
-        audioInfos.push({ start: 8, stop: 8.5 }); // ball hit brick horizontal
-        audioInfos.push({ start: 10, stop: 10.5 }); // ball hit border
-        audioInfos.push({ start: 12, stop: 12.8 }); // power up appears
-        audioInfos.push({ start: 14, stop: 14.5 }); // power up caught
-        audioInfos.push({ start: 16, stop: 16.35 }); // laser fired
-        audioInfos.push({ start: 18, stop: 19 }); // ball lost
-        audioInfos.forEach(audioInfo => {
-            audioInfo.audio = new Audio(url);
-            audioInfo.audio.addEventListener("timeupdate", () => {
-                if (audioInfo.audio.currentTime > audioInfo.stop) {
-                    audioInfo.audio.pause();
-                }
-            });
-        });
+    const renderSoundButton = (parent) => {
+        const imgSound = controls.createImg(parent, undefined, 32, 32, "/images/buttons/kmix.png", _T("BUTTON_DISABLE_SOUND"));
+        imgSound.id = "sound-button-id";
+        imgSound.addEventListener("click", () => toggleSoundButton());
+    };
+
+    const renderPauseButton = (parent) => {
+        const imgPause = controls.createImg(parent, undefined, 32, 32, "/images/buttons/media-playback-pause-5.png", _T("BUTTON_PAUSE_GAME"));
+        imgPause.id = "pause-button-id";
+        imgPause.addEventListener("click", () => togglePauseButton());
     };
 
     const render = () => {
@@ -1706,6 +1733,8 @@ var arkanoid = (() => {
         const all = controls.createDiv(wrapBody);
         utils.create_menu(all);
         renderHeader(all);
+        renderPauseButton(all);
+        renderSoundButton(all);
         renderHighScores(all);
         renderCopyright(all);
         startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), () => startNewGame(true), "newgame", "newgame");
@@ -1742,8 +1771,30 @@ var arkanoid = (() => {
             });
     };
 
+    const initAudioInfos = () => {
+        const url = `/js/arkanoid/effects.mp3?v=${version}`;
+        audioInfos = [];
+        audioInfos.push({ start: 0, stop: 2 }); // start game
+        audioInfos.push({ start: 4, stop: 4.5 }); // ball hit racket
+        audioInfos.push({ start: 6, stop: 6.5 }); // ball hit brick vertical
+        audioInfos.push({ start: 8, stop: 8.5 }); // ball hit brick horizontal
+        audioInfos.push({ start: 10, stop: 10.5 }); // ball hit border
+        audioInfos.push({ start: 12, stop: 12.8 }); // power up appears
+        audioInfos.push({ start: 14, stop: 14.5 }); // power up caught
+        audioInfos.push({ start: 16, stop: 16.35 }); // laser fired
+        audioInfos.push({ start: 18, stop: 19 }); // ball lost
+        audioInfos.forEach(audioInfo => {
+            audioInfo.audio = new Audio(url);
+            audioInfo.audio.addEventListener("timeupdate", () => {
+                if (audioInfo.audio.currentTime > audioInfo.stop) {
+                    audioInfo.audio.pause();
+                }
+            });
+        });
+    };
+
     const init = async (sm) => {
-        createAudioInfos();
+        initAudioInfos();
         fetch(`/js/arkanoid/levels.json?v=${Date.now()}`)
             .then(resp => {
                 resp.json()
