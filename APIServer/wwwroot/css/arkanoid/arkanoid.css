@@ -13,7 +13,6 @@
     position: relative;
     height: 100vh;
     width: 100%;
-    /*cursor: url('/images/backgammon/rating.png') 4 12, auto;*/
 }
 
 .wrap-body::before {
@@ -156,10 +155,6 @@ a {
     color: lightgreen;
     border: 2px solid lightgreen;
     padding: 10pt;
-}
-
-canvas {
-    cursor: url('/images/buttons/kball.png') 3 3, auto;
 }
 
 .help-div {

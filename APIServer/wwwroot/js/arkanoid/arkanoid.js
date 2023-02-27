@@ -128,10 +128,12 @@ var arkanoid = (() => {
     let drawStatistics;
 
     let audioInfos;
+    let audioCtx;
+    let audioBuffer;
 
     // --- constants
 
-    const version = "1.0.2";
+    const version = "1.0.4";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -446,7 +448,9 @@ var arkanoid = (() => {
             lives -= 1;            
             if (lives <= 0) {
                 gameOver = true;
-                document.exitPointerLock();
+                if (document.exitPointerLock) {
+                    document.exitPointerLock();
+                }
                 updateGameInfo();
             }
             else {
@@ -913,7 +917,29 @@ var arkanoid = (() => {
 
     // --- level handling
 
-    const startNewGame = (start) => {
+    const initAudio = async () => {
+        if (audioCtx) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        const response = await fetch(`/js/arkanoid/effects.mp3?v=${version}`);
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        audioInfos = [];
+        audioInfos.push({ start: 0, stop: 2 }); // start game
+        audioInfos.push({ start: 4, stop: 4.5 }); // ball hit racket
+        audioInfos.push({ start: 6, stop: 6.5 }); // ball hit brick vertical
+        audioInfos.push({ start: 8, stop: 8.5 }); // ball hit brick horizontal
+        audioInfos.push({ start: 10, stop: 10.5 }); // ball hit border
+        audioInfos.push({ start: 12, stop: 12.8 }); // power up appears
+        audioInfos.push({ start: 14, stop: 14.5 }); // power up caught
+        audioInfos.push({ start: 16, stop: 16.35 }); // laser fired
+        audioInfos.push({ start: 18, stop: 19 }); // ball lost
+        if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+        }
+    };
+
+    const startNewGame = async (start) => {
         score = 0;
         lives = 3;
         borderLines = [];
@@ -928,8 +954,11 @@ var arkanoid = (() => {
         initLevel(1);
         inputUserName.value = "";
         if (start) {
+            await initAudio();
             playAudioStartNewGame();
-            canvas.requestPointerLock();
+            if (canvas.requestPointerLock) {
+                await canvas.requestPointerLock();
+            }
         }
     };
 
@@ -1131,13 +1160,13 @@ var arkanoid = (() => {
         elems.push(document.getElementById("div-dropdown-id"));
         elems.push(document.getElementById("copyright-id"));
         elems.push(document.getElementById("header-id"));
-        elems.push(document.getElementById("photo-id"));
+        elems.push(document.getElementById("cookie-banner-id"));
         elems.forEach(elem => {
             if (elem) {
                 elem.style.visibility = visibilty;
             }
         });
-        document.getElementById("pause-button-id").style.visibility = gameStarted && !gameOver ? "visible" : "hidden";
+        document.getElementById("sound-button-id").style.visibility = gameStarted && !gameOver ? "hidden" : "visible";
         let txt = "";
         if (gameOver) {
             txt = _T("INFO_GAME_OVER");
@@ -1445,22 +1474,15 @@ var arkanoid = (() => {
         }
     };
 
-    const toggleSoundButton = () => {
+    const toggleSoundButton = async () => {
         isSoundEnabled = !isSoundEnabled;
         const imgSound = document.getElementById("sound-button-id");
         imgSound.src = isSoundEnabled ? "/images/buttons/kmix.png" : "/images/buttons/kmixdocked_mute.png";
         imgSound.title = isSoundEnabled ? _T("BUTTON_DISABLE_SOUND") : _T("BUTTON_ENABLE_SOUND");
         if (isSoundEnabled) {
+            await initAudio();
             playAudioBallBorderHit();
         }
-    };
-
-    const togglePauseButton = () => {
-        if (!gameStarted || gameOver) return;
-        isPaused = !isPaused;
-        const imgPause = document.getElementById("pause-button-id");
-        imgPause.src = isPaused ? "/images/buttons/media-playback-start-5.png" : "/images/buttons/media-playback-pause-5.png";
-        imgPause.title = isPaused ? _T("BUTTON_CONTINUE_PLAY") : _T("BUTTON_PAUSE_GAME");
     };
 
     // --- mouse, key and touch events
@@ -1505,7 +1527,7 @@ var arkanoid = (() => {
             toggleSoundButton();
         }
         if (e.key == "p") {
-            togglePauseButton();
+            isPaused = !isPaused;
         }
         if (isPaused || gameOver || !gameStarted) return;
         if (e.key === "ArrowLeft") {
@@ -1580,10 +1602,13 @@ var arkanoid = (() => {
     // --- audio handling
 
     const playAudio = (idx) => {
+        if (!audioCtx || !audioBuffer || !audioInfos) return;
         if (isSoundEnabled && idx != undefined && idx >= 0 && idx < audioInfos.length) {
             const audioInfo = audioInfos[idx];
-            audioInfo.audio.currentTime = audioInfo.start;
-            audioInfo.audio.play();
+            const trackSource = audioCtx.createBufferSource();
+            trackSource.buffer = audioBuffer;
+            trackSource.connect(audioCtx.destination);
+            trackSource.start(0, audioInfo.start, audioInfo.stop - audioInfo.start);
         }
     };
 
@@ -1612,11 +1637,6 @@ var arkanoid = (() => {
         const title = currentUser ? `${currentUser.name} - ${_T("HEADER_ARKANOID")}` : _T("HEADER_ARKANOID");
         const headerElem = controls.create(parent, "h1", "header", title);
         headerElem.id = "header-id";
-        if (currentUser && currentUser.photo) {
-            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
-            imgPhoto.id = "photo-id";
-            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
-        }
     };
 
     const renderCopyright = (parent) => {
@@ -1663,8 +1683,8 @@ var arkanoid = (() => {
         renderHighScoreEntries();
     };
 
-    const renderArkanoid = (parent) => {
-        isSoundEnabled = true;
+    const renderArkanoid = async (parent) => {
+        isSoundEnabled = false;
         brickWidth = 45;
         brickHeight = 22;
         borderWidth = 20;
@@ -1708,46 +1728,17 @@ var arkanoid = (() => {
         canvas.height = innerHeight + borderHeight + 48;
         controls.createDiv(parent).id = "info-id";
         controls.createDiv(parent).id = "info-gameover-id";
-        startNewGame(false);
+        await startNewGame(false);
         window.requestAnimationFrame(draw);
     };
 
     const renderSoundButton = (parent) => {
-        const imgSound = controls.createImg(parent, undefined, 32, 32, "/images/buttons/kmix.png", _T("BUTTON_DISABLE_SOUND"));
+        const imgSound = controls.createImg(parent, undefined, 32, 32, "/images/buttons/kmixdocked_mute.png", _T("BUTTON_ENABLE_SOUND"));
         imgSound.id = "sound-button-id";
-        imgSound.addEventListener("click", () => toggleSoundButton());
+        imgSound.addEventListener("click", async () => await toggleSoundButton());
     };
 
-    const renderPauseButton = (parent) => {
-        const imgPause = controls.createImg(parent, undefined, 32, 32, "/images/buttons/media-playback-pause-5.png", _T("BUTTON_PAUSE_GAME"));
-        imgPause.id = "pause-button-id";
-        imgPause.addEventListener("click", () => togglePauseButton());
-    };
-
-    const renderAudioInfos = (parent) => {
-        const url = `/js/arkanoid/effects.mp3?v=${version}`;
-        audioInfos = [];
-        audioInfos.push({ start: 0, stop: 2 }); // start game
-        audioInfos.push({ start: 4, stop: 4.5 }); // ball hit racket
-        audioInfos.push({ start: 6, stop: 6.5 }); // ball hit brick vertical
-        audioInfos.push({ start: 8, stop: 8.5 }); // ball hit brick horizontal
-        audioInfos.push({ start: 10, stop: 10.5 }); // ball hit border
-        audioInfos.push({ start: 12, stop: 12.8 }); // power up appears
-        audioInfos.push({ start: 14, stop: 14.5 }); // power up caught
-        audioInfos.push({ start: 16, stop: 16.35 }); // laser fired
-        audioInfos.push({ start: 18, stop: 19 }); // ball lost
-        audioInfos.forEach(audioInfo => {
-            audioInfo.audio = controls.create(parent, "audio");
-            audioInfo.audio.src = url;
-            audioInfo.audio.addEventListener("timeupdate", () => {
-                if (audioInfo.audio.currentTime > audioInfo.stop) {
-                    audioInfo.audio.pause();
-                }
-            });
-        });
-    };
-
-    const render = () => {
+    const render = async () => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
         wrapBody.id = "wrap-body-id";
@@ -1755,13 +1746,11 @@ var arkanoid = (() => {
         const all = controls.createDiv(wrapBody);
         utils.create_menu(all);
         renderHeader(all);
-        renderAudioInfos(all);
-        renderPauseButton(all);
         renderSoundButton(all);
         renderHighScores(all);
         renderCopyright(all);
-        startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), () => startNewGame(true), "newgame", "newgame");
-        renderArkanoid(all);
+        startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), async () => await startNewGame(true), "newgame", "newgame");
+        await renderArkanoid(all);
         utils.set_menu_items(currentUser);
         document.addEventListener("mousedown", onMouseDown);
         document.addEventListener("mousemove", onMouseMove);

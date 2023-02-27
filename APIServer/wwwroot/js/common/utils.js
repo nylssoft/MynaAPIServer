@@ -559,6 +559,7 @@ var utils = (() => {
     const create_cookies_banner = (parent) => {
         if (!is_cookies_accepted()) {
             const cookieDiv = controls.createDiv(parent, "cookie-banner");
+            cookieDiv.id = "cookie-banner-id";
             const spanDiv = controls.createDiv(cookieDiv, "cookie-container");
             if (!has_session_storage()) {
                 controls.createSpan(spanDiv, undefined, _T("INFO_WEBSITE_USE_COOKIES_BUT_CANNOT_READ_SAVE"));
