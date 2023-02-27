@@ -131,7 +131,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.1";
+    const version = "1.0.2";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -446,6 +446,7 @@ var arkanoid = (() => {
             lives -= 1;            
             if (lives <= 0) {
                 gameOver = true;
+                document.exitPointerLock();
                 updateGameInfo();
             }
             else {
@@ -928,6 +929,7 @@ var arkanoid = (() => {
         inputUserName.value = "";
         if (start) {
             playAudioStartNewGame();
+            canvas.requestPointerLock();
         }
     };
 
@@ -945,16 +947,9 @@ var arkanoid = (() => {
         racket = createRacket();
         let level = levels.find(l => l.id === id);
         if (!level) {
-            if (levels.length > 0 && id > 0) {
-                level = levels[( id - 1 ) % levels.length];
-                level.id = id;
-                level.increaseSpeed *= 2;
-            }
-            else {
-                gameOver = true;
-                updateGameInfo();
-                return;
-            }
+            level = levels[( id - 1 ) % levels.length];
+            level.id = id;
+            level.increaseSpeed *= 2;
         }
         currentLevel = level;
         currentLevel.delayStart = 60; // 3 sec
@@ -1509,7 +1504,9 @@ var arkanoid = (() => {
         if (e.key == "m") {
             toggleSoundButton();
         }
-        isPaused = !isPaused && e.key == "p";
+        if (e.key == "p") {
+            togglePauseButton();
+        }
         if (isPaused || gameOver || !gameStarted) return;
         if (e.key === "ArrowLeft") {
             e.preventDefault();
@@ -1625,7 +1622,9 @@ var arkanoid = (() => {
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent, "copyright");
         div.id = "copyright-id";
-        controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} ${_T("COPYRIGHT")}.`);
+        controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
+        controls.createA(div, undefined, "/view?page=copyright", _T("COPYRIGHT"));
+        controls.create(div, "span", undefined, ".");
     };
 
     const renderHighScoreEntries = () => {
@@ -1725,6 +1724,29 @@ var arkanoid = (() => {
         imgPause.addEventListener("click", () => togglePauseButton());
     };
 
+    const renderAudioInfos = (parent) => {
+        const url = `/js/arkanoid/effects.mp3?v=${version}`;
+        audioInfos = [];
+        audioInfos.push({ start: 0, stop: 2 }); // start game
+        audioInfos.push({ start: 4, stop: 4.5 }); // ball hit racket
+        audioInfos.push({ start: 6, stop: 6.5 }); // ball hit brick vertical
+        audioInfos.push({ start: 8, stop: 8.5 }); // ball hit brick horizontal
+        audioInfos.push({ start: 10, stop: 10.5 }); // ball hit border
+        audioInfos.push({ start: 12, stop: 12.8 }); // power up appears
+        audioInfos.push({ start: 14, stop: 14.5 }); // power up caught
+        audioInfos.push({ start: 16, stop: 16.35 }); // laser fired
+        audioInfos.push({ start: 18, stop: 19 }); // ball lost
+        audioInfos.forEach(audioInfo => {
+            audioInfo.audio = controls.create(parent, "audio");
+            audioInfo.audio.src = url;
+            audioInfo.audio.addEventListener("timeupdate", () => {
+                if (audioInfo.audio.currentTime > audioInfo.stop) {
+                    audioInfo.audio.pause();
+                }
+            });
+        });
+    };
+
     const render = () => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
@@ -1733,6 +1755,7 @@ var arkanoid = (() => {
         const all = controls.createDiv(wrapBody);
         utils.create_menu(all);
         renderHeader(all);
+        renderAudioInfos(all);
         renderPauseButton(all);
         renderSoundButton(all);
         renderHighScores(all);
@@ -1771,31 +1794,8 @@ var arkanoid = (() => {
             });
     };
 
-    const initAudioInfos = () => {
-        const url = `/js/arkanoid/effects.mp3?v=${version}`;
-        audioInfos = [];
-        audioInfos.push({ start: 0, stop: 2 }); // start game
-        audioInfos.push({ start: 4, stop: 4.5 }); // ball hit racket
-        audioInfos.push({ start: 6, stop: 6.5 }); // ball hit brick vertical
-        audioInfos.push({ start: 8, stop: 8.5 }); // ball hit brick horizontal
-        audioInfos.push({ start: 10, stop: 10.5 }); // ball hit border
-        audioInfos.push({ start: 12, stop: 12.8 }); // power up appears
-        audioInfos.push({ start: 14, stop: 14.5 }); // power up caught
-        audioInfos.push({ start: 16, stop: 16.35 }); // laser fired
-        audioInfos.push({ start: 18, stop: 19 }); // ball lost
-        audioInfos.forEach(audioInfo => {
-            audioInfo.audio = new Audio(url);
-            audioInfo.audio.addEventListener("timeupdate", () => {
-                if (audioInfo.audio.currentTime > audioInfo.stop) {
-                    audioInfo.audio.pause();
-                }
-            });
-        });
-    };
-
     const init = async (sm) => {
-        initAudioInfos();
-        fetch(`/js/arkanoid/levels.json?v=${Date.now()}`)
+        fetch(`/js/arkanoid/levels.json?v=${version}`)
             .then(resp => {
                 resp.json()
                     .then(json => {
