@@ -134,7 +134,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.5";
+    const version = "1.0.6";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -585,16 +585,20 @@ var arkanoid = (() => {
         let hasHits = false;
         let removeBall = false;
         const figureType = line[2];
-        if (figureType === LineEnums.BORDERLEFT ||
-            figureType === LineEnums.BORDERRIGHT ||
-            figureType === LineEnums.BORDERTOP) {
+        if (figureType === LineEnums.BORDERLEFT) {
             hasHits = true;
-            if (line[0].y == line[1].y) {
-                ball.dirY *= -1;
-            }
-            else {
-                ball.dirX *= -1;
-            }
+            ball.dirX = Math.abs(ball.dirX); // right
+            ball.x += 1;
+        }
+        else if (figureType === LineEnums.BORDERRIGHT) {
+            hasHits = true;
+            ball.dirX = -1 * Math.abs(ball.dirX); // left
+            ball.x -= 1;
+        }
+        else if (figureType === LineEnums.BORDERTOP) {
+            hasHits = true;
+            ball.dirY = Math.abs(ball.dirY); // down
+            ball.y += 1;
         }
         else if (figureType === LineEnums.BORDERBUTTOM) {
             hasHits = true;
@@ -638,19 +642,21 @@ var arkanoid = (() => {
         const brick = line[3];
         if (brick.type === BrickEnums.GOLD) return;
         brick.hit -= 1;
-        if (brick.hit <= 0 && brick.type != BrickEnums.SILVER) {
+        if (brick.hit <= 0) {
             score += getBrickScore(brick.type);
             updateScore();
-            const random = getRandom(1, currentLevel.powerUpAverage);
-            if (random ===1 && !powerUp && balls.length === 1 && (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION)) {
-                if (!nextPowerUps || nextPowerUps.length === 0) {
-                    nextPowerUps = [];
-                    powerUps.forEach(p => nextPowerUps.push(p));
-                    utils.shuffle_array(nextPowerUps);
+            if (brick.type != BrickEnums.SILVER) {
+                const random = getRandom(1, currentLevel.powerUpAverage);
+                if (random === 1 && !powerUp && balls.length === 1 && (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION)) {
+                    if (!nextPowerUps || nextPowerUps.length === 0) {
+                        nextPowerUps = [];
+                        powerUps.forEach(p => nextPowerUps.push(p));
+                        utils.shuffle_array(nextPowerUps);
+                    }
+                    const powerUpType = nextPowerUps.splice(0, 1)[0];
+                    powerUp = createPowerUp(line[0].x + 2, line[0].y - brickHeight + 2, brickWidth - 4, brickHeight - 2, powerUpType);
+                    playAudioPowerUpAppear();
                 }
-                const powerUpType = nextPowerUps.splice(0, 1)[0];
-                powerUp = createPowerUp(line[0].x + 2, line[0].y - brickHeight + 2, brickWidth - 4, brickHeight - 2, powerUpType);
-                playAudioPowerUpAppear();
             }
         }
     };
