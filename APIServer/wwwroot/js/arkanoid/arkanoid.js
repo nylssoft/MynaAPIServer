@@ -88,6 +88,8 @@ var arkanoid = (() => {
 
     let highScores;
 
+    let nextExtraLive;
+
     // dimensions
 
     let innerWidth;
@@ -134,7 +136,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.6";
+    const version = "1.0.7";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -651,6 +653,9 @@ var arkanoid = (() => {
                     if (!nextPowerUps || nextPowerUps.length === 0) {
                         nextPowerUps = [];
                         powerUps.forEach(p => nextPowerUps.push(p));
+                        if (score >= nextExtraLive) {
+                            nextPowerUps.push(PowerUpEnums.PLAYER);
+                        }
                         utils.shuffle_array(nextPowerUps);
                     }
                     const powerUpType = nextPowerUps.splice(0, 1)[0];
@@ -815,6 +820,15 @@ var arkanoid = (() => {
                 if (powerUp.type === PowerUpEnums.SLOW) {
                     balls.forEach(ball => ball.v = Math.max(currentLevel.startSpeed, ball.v - 1));
                 }
+                else if (powerUp.type === PowerUpEnums.PLAYER) {
+                    lives += 1;
+                    if (nextExtraLive === 20000) {
+                        nextExtraLive += 40000;
+                    }
+                    else {
+                        nextExtraLive += 60000;
+                    }
+                }
                 else if (powerUp.type === PowerUpEnums.CATCH) {
                     racket.powerUp = { type: powerUp.type, hold: 0, catched: false, ballRelX: 0 };
                 }
@@ -949,6 +963,7 @@ var arkanoid = (() => {
     const startNewGame = async (start) => {
         score = 0;
         lives = 3;
+        nextExtraLive = 20000;
         borderLines = [];
         initBorderLines();
         powerUp = undefined;    
