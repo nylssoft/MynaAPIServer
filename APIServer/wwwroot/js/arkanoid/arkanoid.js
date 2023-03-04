@@ -54,6 +54,7 @@ var arkanoid = (() => {
     let addHighScoreDiv;
     let inputUserName;
     let startGameButton;
+    let helpDiv;
 
     // --- state
 
@@ -133,7 +134,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.4";
+    const version = "1.0.5";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -692,10 +693,10 @@ var arkanoid = (() => {
         }
         if (moveLeft || moveRight) {
             if (moveLeft) {
-                racket.x = Math.max(borderWidth, racket.x - speed);
+                moveRacketRelative(-speed);
             }
             else if (moveRight) {
-                racket.x = Math.min(borderWidth + innerWidth - racketWidth, racket.x + speed);
+                moveRacketRelative(speed);
             }
         }
     };
@@ -1161,6 +1162,7 @@ var arkanoid = (() => {
         elems.push(document.getElementById("copyright-id"));
         elems.push(document.getElementById("header-id"));
         elems.push(document.getElementById("cookie-banner-id"));
+        elems.push(document.getElementById("help-button-id"));
         elems.forEach(elem => {
             if (elem) {
                 elem.style.visibility = visibilty;
@@ -1523,10 +1525,10 @@ var arkanoid = (() => {
     };
 
     const onKeyUp = (e) => {
-        if (e.key == "m") {
+        if (e.key === "m") {
             toggleSoundButton();
         }
-        if (e.key == "p") {
+        if (e.key === "p" && gameStarted && !gameOver) {
             isPaused = !isPaused;
         }
         if (isPaused || gameOver || !gameStarted) return;
@@ -1738,6 +1740,26 @@ var arkanoid = (() => {
         imgSound.addEventListener("click", async () => await toggleSoundButton());
     };
 
+    const onUpdateHelp = (show) => {
+        if (helpDiv) {
+            helpDiv.className = show ? "help-div" : "invisible-div";
+            controls.removeAllChildren(helpDiv);
+            if (show) {
+                const contentDiv = controls.createDiv(helpDiv, "help-content");
+                const mdDiv = controls.createDiv(contentDiv, "help-item");
+                utils.fetch_api_call(`/api/pwdman/markdown/help-arkanoid?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
+                controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false), undefined, "help-ok").focus();
+            }
+        }
+    };
+
+    const renderHelp = (parent) => {
+        const helpImg = controls.createImg(parent, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
+        helpImg.addEventListener("click", () => onUpdateHelp(true));
+        helpImg.id = "help-button-id";
+        helpDiv = controls.createDiv(parent, "invisible-div");
+    };
+
     const render = async () => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
@@ -1747,6 +1769,7 @@ var arkanoid = (() => {
         utils.create_menu(all);
         renderHeader(all);
         renderSoundButton(all);
+        renderHelp(all);
         renderHighScores(all);
         renderCopyright(all);
         startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), async () => await startNewGame(true), "newgame", "newgame");
