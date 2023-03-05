@@ -1,9 +1,6 @@
 ﻿[
   {
     "id": 1,
-    "initSpeed": 3,
-    "increaseSpeed": 0.025,
-    "powerUpAverage": 3,
     "bricks": [
       [ "lx", 4, 0, 13, "silver" ],
       [ "lx", 5, 0, 13, "red" ],
@@ -15,9 +12,6 @@
   },
   {
     "id": 2,
-    "initSpeed": 3,
-    "increaseSpeed": 0.025,
-    "powerUpAverage": 3,
     "bricks": [
       [ "ly", 3, 0, 12, "white" ],
       [ "ly", 4, 1, 11, "orange" ],
@@ -37,9 +31,6 @@
   },
   {
     "id": 3,
-    "initSpeed": 3,
-    "increaseSpeed": 0.005,
-    "powerUpAverage": 3,
     "bricks": [
       [ "lx", 3, 0, 13, "green" ],
       [ "lx", 5, 0, 3, "white" ],
@@ -57,9 +48,6 @@
   },
   {
     "id": 4,
-    "initSpeed": 3,
-    "increaseSpeed": 0.025,
-    "powerUpAverage": 3,
     "bricks": [
       [ "p", 5, 1, "orange" ],
       [ "ld", 6, 1, 2, "cyan" ],
@@ -101,9 +89,6 @@
   },
   {
     "id": 5,
-    "initSpeed": 3,
-    "increaseSpeed": 0.025,
-    "powerUpAverage": 3,
     "bricks": [
       [ "ly", 10, 1, 6, "silver" ],
       [ "ly", 8, 2, 5, "silver" ],
@@ -132,9 +117,6 @@
   },
   {
     "id": 6,
-    "initSpeed": 3,
-    "increaseSpeed": 0.025,
-    "powerUpAverage": 3,
     "bricks": [
       [ "ly", 4, 0, 10, "blue" ],
       [ "ly", 14, 0, 1, "orange" ],
@@ -175,9 +157,6 @@
   },
   {
     "id": 7,
-    "initSpeed": 3,
-    "increaseSpeed": 0.025,
-    "powerUpAverage": 3,
     "bricks": [
       [ "ld", 8, 2, 5, "yellow" ],
       [ "ld", 9, 2, 6, "purble" ],
@@ -199,9 +178,6 @@
   },
   {
     "id": 8,
-    "initSpeed": 3,
-    "increaseSpeed": 0.025,
-    "powerUpAverage": 3,
     "bricks": [
       [ "ly", 5, 1, 2, "gold" ],
       [ "p", 8, 1, "gold" ],
@@ -242,6 +218,86 @@
       [ "p", 8, 11, "gold" ],
       [ "p", 12, 11, "gold" ],
       [ "ly", 14, 11, 2, "gold" ]
+    ]
+  },
+  {
+    "id": 9,
+    "bricks": [
+      [ "ly", 2, 1, 3, "gold" ],
+      [ "ly", 2, 3, 3, "gold" ],
+      [ "lx", 5, 1, 3, "gold" ],
+      [ "p", 3, 2, "green" ],
+      [ "p", 4, 2, "cyan" ],
+      [ "ly", 2, 9, 3, "gold" ],
+      [ "ly", 2, 11, 3, "gold" ],
+      [ "lx", 5, 9, 3, "gold" ],
+      [ "p", 3, 10, "green" ],
+      [ "p", 4, 10, "cyan" ],
+      [ "ly", 7, 4, 6, "purble" ],
+      [ "lx", 7, 5, 3, "white" ],
+      [ "lx", 8, 5, 3, "orange" ],
+      [ "lx", 9, 5, 3, "cyan" ],
+      [ "lx", 10, 5, 3, "green" ],
+      [ "lx", 11, 5, 3, "red" ],
+      [ "lx", 12, 5, 3, "blue" ],
+      [ "ly", 7, 8, 6, "yellow" ]
+    ]
+  },
+  {
+    "id": 10,
+    "bricks": [
+      [ "p", 0, 1, "gold" ],
+      [ "ly", 2, 1, 15, "gold" ],
+      [ "lx", 17, 1, 12, "gold" ],
+      [ "ld", 9, 3, 5, "blue" ],
+      [ "ld", 9, 4, 4, "cyan" ],
+      [ "ld", 9, 5, 3, "white" ],
+      [ "ld", 10, 5, 4, "cyan" ],
+      [ "p", 10, 6, "white" ],
+      [ "p", 9, 7, "silver" ],
+      [ "ldd", 10, 4, 4, "blue" ],
+      [ "ld", 11, 6, 4, "cyan" ],
+      [ "ld", 11, 7, 3, "white" ],
+      [ "ld", 12, 7, 4, "cyan" ],
+      [ "ld", 12, 8, 4, "blue" ],
+      [ "ldd", 6, 8, 4, "blue" ],
+      [ "p", 8, 8, "white" ]
+    ]
+  },
+  {
+    "id": 11,
+    "bricks": [
+      [ "lx", 4, 1, 11, "silver" ],
+      [ "ly", 5, 1, 9, "silver" ],
+      [ "lx", 14, 1, 11, "silver" ],
+      [ "ly", 5, 11, 9, "silver" ],
+      [ "lx", 6, 3, 7, "silver" ],
+      [ "ly", 7, 3, 5, "silver" ],
+      [ "lx", 12, 3, 7, "silver" ],
+      [ "ly", 7, 9, 5, "silver" ],
+      [ "lx", 8, 5, 3, "silver" ],
+      [ "p", 9, 5, "silver" ],
+      [ "lx", 10, 5, 3, "silver" ],
+      [ "p", 9, 7, "silver" ]
+    ]
+  },
+  {
+    "id": 12,
+    "bricks": [
+      [ "lx", 4, 0, 13, "gold" ],
+      [ "ly", 6, 1, 11, "gold" ],
+      [ "lx", 17, 1, 12, "gold" ],
+      [ "ly", 5, 4, 10, "gold" ],
+      [ "ly", 8, 7, 9, "gold" ],
+      [ "ly", 5, 10, 10, "gold" ],
+      [ "p", 6, 2, "white" ],
+      [ "p", 10, 3, "orange" ],
+      [ "p", 15, 2, "cyan" ],
+      [ "p", 8, 5, "green" ],
+      [ "p", 13, 6, "red" ],
+      [ "p", 10, 9, "blue" ],
+      [ "p", 5, 11, "purble" ],
+      [ "p", 16, 12, "yellow" ]
     ]
   }
 ]

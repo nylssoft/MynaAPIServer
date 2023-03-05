@@ -91,6 +91,8 @@ var arkanoid = (() => {
     let nextExtraLive;
     let hasBreakPowerUp;
 
+    let lastHit;
+
     // dimensions
 
     let innerWidth;
@@ -137,7 +139,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.9";
+    const version = "1.1.0";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -392,7 +394,6 @@ var arkanoid = (() => {
     const handleBalls = () => {
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.CATCH && racket.powerUp.catched) return;
         const removeBalls = [];
-        let hitCnt = 0;
 
         const blockTopLines = brickLines.filter(l => l[2] == LineEnums.BLOCKTOP && l[3].hit > 0);
         const blockButtomLines = brickLines.filter(l => l[2] == LineEnums.BLOCKBUTTOM && l[3].hit > 0);
@@ -419,16 +420,16 @@ var arkanoid = (() => {
             else {
                 ball.hasHits = false;
                 let hit = handleBallHits(blockTopLines, ball);
-                if (!hit.removeBall || !hit.hasHits) {
+                if (!hit.removeBall && !hit.hasHits) {
                     hit = handleBallHits(blockButtomLines, ball);
                 }
-                if (!hit.removeBall || !hit.hasHits) {
+                if (!hit.removeBall && !hit.hasHits) {
                     hit = handleBallHits(blockButtomRight, ball);
                 }
-                if (!hit.removeBall || !hit.hasHits) {
+                if (!hit.removeBall && !hit.hasHits) {
                     hit = handleBallHits(blockButtomLeft, ball);
                 }
-                if (!hit.removeBall || !hit.hasHits) {
+                if (!hit.removeBall && !hit.hasHits) {
                     hit = handleBallHits(otherLines, ball);
                 }
                 if (hit.removeBall) {
@@ -437,11 +438,7 @@ var arkanoid = (() => {
                 }
                 else if (hit.hasHits) {
                     ball.hasHits = true;
-                    if (hitCnt === 0) {
-                        increaseBallSpeed();
-                    }
                 }
-                hitCnt++;
             }
         });
         if (removeBalls.length > 0) {
@@ -460,6 +457,8 @@ var arkanoid = (() => {
             else {
                 fadeCount = 0;
                 powerUp = undefined;
+                nextPowerUps = [];
+                lastHit = undefined;
                 disableRacketPowerUp();
                 monsterNextCount = undefined;
                 monsters = [];
@@ -496,6 +495,7 @@ var arkanoid = (() => {
                     if (lineType === LineEnums.RACKETLEFT ||
                         lineType === LineEnums.RACKETRIGHT ||
                         lineType === LineEnums.RACKETTOP) {
+                        lastHit = Date.now();
                         playAudioBallRacketHit();
                     }
                     else if (lineType === LineEnums.BORDERLEFT ||
@@ -504,6 +504,7 @@ var arkanoid = (() => {
                         playAudioBallBorderHit();
                     }
                     else if (lineType === LineEnums.MONSTER) {
+                        lastHit = Date.now();
                         playAudioBallMonsterHit();
                     }
                     else if (lineType === LineEnums.BLOCKBUTTOM ||
@@ -511,14 +512,20 @@ var arkanoid = (() => {
                         lineType === LineEnums.BLOCKLEFT ||
                         lineType === LineEnums.BLOCKRIGHT) {
                         const brick = line[3];
+                        if (brick.type != BrickEnums.GOLD) {
+                            lastHit = Date.now();
+                        }
                         if (brick.hit > 0) {
                             playAudioBallBorderHit();
                         }
-                        else if (lineType === LineEnums.BLOCKBUTTOM || lineType === LineEnums.BLOCKTOP) {
-                            playAudioBallVerticalBrickHit();
-                        }
                         else {
-                            playAudioBallHorizontalBrickHit();
+                            increaseBallSpeed();
+                            if (lineType === LineEnums.BLOCKBUTTOM || lineType === LineEnums.BLOCKTOP) {
+                                playAudioBallVerticalBrickHit();
+                            }
+                            else {
+                                playAudioBallHorizontalBrickHit();
+                            }
                         }
                     }
                 }
@@ -636,6 +643,16 @@ var arkanoid = (() => {
         }
         if (hit) {
             hitBrickLine(line);
+            if (lastHit && line[3].type === BrickEnums.GOLD) {
+                const millis = Date.now() - lastHit;
+                if (millis > 1000 * 10) {
+                    // avoid endless loop: change angle after 10 seconds without any non gold brick or border hit
+                    const angles = [AngleEnums.FLAT, AngleEnums.NORMAL, AngleEnums.STEEP];
+                    const idx = angles.findIndex(a => a == ball.angle);
+                    setBallDirection(ball, angles[(idx + 1) % 3]);
+                    lastHit = Date.now();
+                }
+            }
             return true;
         }
         return false;
@@ -1006,6 +1023,7 @@ var arkanoid = (() => {
         monsterNextCount = undefined;
         fadeCount = 0;
         switchNewLevel = false;
+        lastHit = undefined;
         powerUp = undefined;
         nextPowerUps = [];
         hasBreakPowerUp = getRandom(1, 10) === 1;
@@ -1018,6 +1036,9 @@ var arkanoid = (() => {
         racket = createRacket();
         let level = levels.find(l => l.id === id);
         if (level) {
+            level.initSpeed = level.initSpeed || 3;
+            level.increaseSpeed = level.increaseSpeed || 0.025;
+            level.powerUpAverage = level.powerUpAverage || 5;
             currentLevel = Object.assign({}, level);
         }
         else {
@@ -1062,7 +1083,7 @@ var arkanoid = (() => {
             const cmd = arr[0];
             const row = arr[1];
             const col = arr[2];
-            if (cmd === "lx" || cmd === "ly" || cmd === "ld") {
+            if (cmd === "lx" || cmd === "ly" || cmd === "ld" || cmd === "ldd") {
                 const cnt = arr[3];
                 const color = arr[4];
                 for (let idx = 0; idx < cnt; idx++) {
@@ -1072,8 +1093,11 @@ var arkanoid = (() => {
                     else if (cmd === "ly") {
                         createLevelBrick(level.id, row + idx, col, color);
                     }
-                    else {
+                    else if (cmd === "ld") {
                         createLevelBrick(level.id, row - idx, col + idx, color);
+                    }
+                    else {
+                        createLevelBrick(level.id, row + idx, col + idx, color);
                     }
                 }
             }
