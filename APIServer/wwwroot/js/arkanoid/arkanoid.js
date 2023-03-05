@@ -89,6 +89,7 @@ var arkanoid = (() => {
     let highScores;
 
     let nextExtraLive;
+    let hasBreakPowerUp;
 
     // dimensions
 
@@ -136,7 +137,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.7";
+    const version = "1.0.8";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -656,6 +657,10 @@ var arkanoid = (() => {
                         if (score >= nextExtraLive) {
                             nextPowerUps.push(PowerUpEnums.PLAYER);
                         }
+                        if (hasBreakPowerUp) {
+                            nextPowerUps.push(PowerUpEnums.BREAK);
+                            hasBreakPowerUp = false;
+                        }
                         utils.shuffle_array(nextPowerUps);
                     }
                     const powerUpType = nextPowerUps.splice(0, 1)[0];
@@ -669,7 +674,7 @@ var arkanoid = (() => {
     // --- move of racket, laser shots, balls and powerups
 
     const moveRacketRelative = (movementX) => {
-        if (movementX == 0) return;
+        if (movementX == 0 || switchNewLevel) return;
         let x = racket.x + movementX;
         for (let idx = 0; idx < balls.length; idx++) {
             const ball = balls[idx];
@@ -682,7 +687,17 @@ var arkanoid = (() => {
             }
         }
         x = Math.max(borderWidth, x);
-        x = Math.min(borderWidth + innerWidth - racketWidth, x);
+        if (racket.powerUp && racket.powerUp.type === PowerUpEnums.BREAK) {
+            if (x > innerWidth + borderWidth + racketWidth) {
+                fadeCount = 0;
+                switchNewLevel = true;
+                score += 10000;
+                updateScore();
+            }
+        }
+        else {
+            x = Math.min(borderWidth + innerWidth - racketWidth, x);
+        }
         racket.x = x;
     };
 
@@ -828,6 +843,9 @@ var arkanoid = (() => {
                     else {
                         nextExtraLive += 60000;
                     }
+                }
+                else if (powerUp.type === PowerUpEnums.BREAK) {
+                    racket.powerUp = { type: powerUp.type };
                 }
                 else if (powerUp.type === PowerUpEnums.CATCH) {
                     racket.powerUp = { type: powerUp.type, hold: 0, catched: false, ballRelX: 0 };
@@ -989,6 +1007,8 @@ var arkanoid = (() => {
         fadeCount = 0;
         switchNewLevel = false;
         powerUp = undefined;
+        nextPowerUps = [];
+        hasBreakPowerUp = getRandom(1, 10) === 1;
         bricks = [];
         brickLines = [];
         laserShots = [];
@@ -1000,7 +1020,11 @@ var arkanoid = (() => {
         if (!level) {
             level = levels[( id - 1 ) % levels.length];
             level.id = id;
+            level.initSpeed += 1;
             level.increaseSpeed *= 2;
+        }
+        if (!utils.is_mobile()) {
+            level.initSpeed += 1;
         }
         currentLevel = level;
         currentLevel.delayStart = 60; // 3 sec
@@ -1161,7 +1185,7 @@ var arkanoid = (() => {
             case PowerUpEnums.SLOW:
                 return "orange";
             case PowerUpEnums.BREAK:
-                return "rosa";
+                return "magenta";
             case PowerUpEnums.DISRUPTION:
                 return "cyan";
             case PowerUpEnums.PLAYER:
@@ -1241,7 +1265,13 @@ var arkanoid = (() => {
         ctx.fillStyle = "#555555";
         ctx.fillRect(0, 0, 2 * borderWidth + innerWidth, borderHeight);
         ctx.fillRect(0, borderHeight, borderWidth, innerHeight - borderHeight);
-        ctx.fillRect(innerWidth + borderWidth, borderHeight, borderWidth, innerHeight - borderHeight);
+        if (racket.powerUp && racket.powerUp.type == PowerUpEnums.BREAK) {
+            ctx.fillRect(innerWidth + borderWidth, borderHeight, borderWidth, racket.y - racketHeight - borderHeight);
+            ctx.fillRect(innerWidth + borderWidth, racket.y + racketHeight, borderWidth, innerHeight - racket.y - racketHeight);
+        }
+        else {
+            ctx.fillRect(innerWidth + borderWidth, borderHeight, borderWidth, innerHeight - borderHeight);
+        }
     };
 
     const drawBricks = (ctx) => {
