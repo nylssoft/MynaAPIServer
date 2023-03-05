@@ -137,7 +137,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.0.8";
+    const version = "1.0.9";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -688,7 +688,7 @@ var arkanoid = (() => {
         }
         x = Math.max(borderWidth, x);
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.BREAK) {
-            if (x > innerWidth + borderWidth + racketWidth) {
+            if (x > innerWidth + borderWidth) {
                 fadeCount = 0;
                 switchNewLevel = true;
                 score += 10000;
@@ -1017,20 +1017,23 @@ var arkanoid = (() => {
         racketWidth = racketNormalWidth;
         racket = createRacket();
         let level = levels.find(l => l.id === id);
-        if (!level) {
-            level = levels[( id - 1 ) % levels.length];
-            level.id = id;
-            level.initSpeed += 1;
-            level.increaseSpeed *= 2;
+        if (level) {
+            currentLevel = Object.assign({}, level);
+        }
+        else {
+            const fac = Math.floor((id - 1) / levels.length);
+            currentLevel = Object.assign({}, levels[( id - 1 ) % levels.length]);
+            currentLevel.id = id;
+            currentLevel.initSpeed += 1 * fac;
+            currentLevel.increaseSpeed *= 2;
         }
         if (!utils.is_mobile()) {
-            level.initSpeed += 1;
+            currentLevel.initSpeed += 1;
         }
-        currentLevel = level;
         currentLevel.delayStart = 60; // 3 sec
-        currentLevel.startSpeed = level.initSpeed;
+        currentLevel.startSpeed = currentLevel.initSpeed;
         updateScore();
-        createLevelBricks(level);
+        createLevelBricks(currentLevel);
         balls.push(createBall());
         setBackgroundPicture();
     };
