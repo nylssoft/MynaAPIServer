@@ -439,7 +439,7 @@ var utils = (() => {
     const set_menu_items = (currentUser) => {
         const parent = document.getElementById("dropdown-id");
         if (!parent) return;
-        const small_height = window.matchMedia('(max-height: 450px)').matches;
+        const small_height = window.matchMedia('(max-height: 500px)').matches;
         controls.removeAllChildren(parent);
         controls.createA(parent, undefined, "/view", _T("MENU_START"));
         if (!small_height) {
@@ -450,6 +450,7 @@ var utils = (() => {
             controls.createA(parent, undefined, "/notes", _T("MENU_NOTES"));
             controls.createA(parent, undefined, "/diary", _T("MENU_DIARY"));
             controls.create(parent, "hr");
+            controls.createA(parent, undefined, "/arkanoid", _T("MENU_ARKANOID"));
             controls.createA(parent, undefined, "/backgammon", _T("MENU_BACKGAMMON"));
             controls.createA(parent, undefined, "/chess", _T("MENU_CHESS"));
             controls.createA(parent, undefined, "/skat", _T("MENU_SKAT"));
