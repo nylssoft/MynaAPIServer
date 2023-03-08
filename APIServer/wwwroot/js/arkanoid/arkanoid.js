@@ -139,7 +139,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.0";
+    const version = "1.1.1";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -902,7 +902,7 @@ var arkanoid = (() => {
     };
 
     const moveMonsters = () => {
-        const avg = currentLevel.monsterAverage || 20; // create a monster after 10 seconds in average
+        const avg = currentLevel.monsterAverage || 20;
         const max = currentLevel.monsterMax || 3;
         if (avg && monsters.length < max) {
             if (!monsterNextCount || monsterNextCount <= 0) {
@@ -1034,29 +1034,43 @@ var arkanoid = (() => {
         monsters = [];
         racketWidth = racketNormalWidth;
         racket = createRacket();
-        let level = levels.find(l => l.id === id);
-        if (level) {
-            level.initSpeed = level.initSpeed || 3;
-            level.increaseSpeed = level.increaseSpeed || 0.025;
-            level.powerUpAverage = level.powerUpAverage || 5;
-            currentLevel = Object.assign({}, level);
-        }
-        else {
-            const fac = Math.floor((id - 1) / levels.length);
-            currentLevel = Object.assign({}, levels[( id - 1 ) % levels.length]);
-            currentLevel.id = id;
-            currentLevel.initSpeed += 1 * fac;
-            currentLevel.increaseSpeed *= 2;
-        }
-        if (!utils.is_mobile()) {
-            currentLevel.initSpeed += 1;
-        }
-        currentLevel.delayStart = 60; // 3 sec
-        currentLevel.startSpeed = currentLevel.initSpeed;
-        updateScore();
+        currentLevel = prepareLevel(id);
         createLevelBricks(currentLevel);
         balls.push(createBall());
         setBackgroundPicture();
+        updateScore();
+    };
+
+    const prepareLevel = (id) => {
+        let level;
+        let fac;
+        let lv = levels.find(l => l.id === id);
+        if (!lv) {
+            fac = Math.floor((id - 1) / levels.length);
+            lv = levels[(id - 1) % levels.length];
+        }
+        level = Object.assign({}, lv);
+        level.id = id;
+        level.initSpeed = level.initSpeed || 3;
+        level.increaseSpeed = level.increaseSpeed || 0.025;
+        level.powerUpAverage = level.powerUpAverage || 5;
+        level.monsterMax = level.monsterMax || 3;
+        level.monsterAverage = level.monsterAverage || 20;
+        level.monsterMoveCount = level.monsterMoveCount || 300;
+        level.monsterSpeed = level.monsterSpeed || 0.5;
+        if (fac) {
+            level.initSpeed = Math.min(8, level.initSpeed + fac);
+            level.increaseSpeed = Math.min(0.1, level.increaseSpeed * 2 * fac);
+            level.monsterMax = Math.min(10, level.monsterMax * 2 * fac);
+            level.monsterSpeed = Math.min(5, level.monsterSpeed * 2 * fac);
+            level.monsterAverage = Math.max(1, Math.floor(level.monsterAverage / (2 * fac)));            
+        }
+        if (!utils.is_mobile()) {
+            level.initSpeed += 1;
+        }
+        level.delayStart = 60; // 3 sec
+        level.startSpeed = level.initSpeed;
+        return level;
     };
 
     const createLevelBrick = (levelnr, row, col, color) => {
@@ -1599,6 +1613,11 @@ var arkanoid = (() => {
         else if (e.code === "Space") {
             e.preventDefault();
             onActionButtonPressed();
+        }
+        else if (e.key === "l") {
+            switchNewLevel = true;
+            fadeCount = 0;
+            score = 0;
         }
     };
 

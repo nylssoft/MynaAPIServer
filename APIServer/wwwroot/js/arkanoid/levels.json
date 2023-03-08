@@ -299,5 +299,34 @@
       [ "p", 5, 11, "purble" ],
       [ "p", 16, 12, "yellow" ]
     ]
+  },
+  {
+    "id": 13,
+    "bricks": [
+      [ "lx", 4, 1, 3, "yellow" ],
+      [ "lx", 4, 5, 3, "white" ],
+      [ "lx", 4, 9, 3, "yellow" ],
+      [ "lx", 5, 1, 3, "purble" ],
+      [ "lx", 5, 5, 3, "orange" ],
+      [ "lx", 5, 9, 3, "purble" ],
+      [ "lx", 6, 1, 3, "blue" ],
+      [ "lx", 6, 5, 3, "cyan" ],
+      [ "lx", 6, 9, 3, "blue" ],
+      [ "lx", 7, 1, 3, "red" ],
+      [ "lx", 7, 5, 3, "green" ],
+      [ "lx", 7, 9, 3, "red" ],
+      [ "lx", 8, 1, 3, "green" ],
+      [ "lx", 8, 5, 3, "red" ],
+      [ "lx", 8, 9, 3, "green" ],
+      [ "lx", 9, 1, 3, "cyan" ],
+      [ "lx", 9, 5, 3, "blue" ],
+      [ "lx", 9, 9, 3, "cyan" ],
+      [ "lx", 10, 1, 3, "orange" ],
+      [ "lx", 10, 5, 3, "purble" ],
+      [ "lx", 10, 9, 3, "orange" ],
+      [ "lx", 11, 1, 3, "white" ],
+      [ "lx", 11, 5, 3, "yellow" ],
+      [ "lx", 11, 9, 3, "white" ]
+    ]
   }
 ]
