@@ -141,7 +141,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.3";
+    const version = "1.1.4";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -516,18 +516,16 @@ var arkanoid = (() => {
                         const brick = line[3];
                         if (brick.type != BrickEnums.GOLD) {
                             lastHit = Date.now();
+                            increaseBallSpeed();
                         }
                         if (brick.hit > 0) {
                             playAudioBallBorderHit();
                         }
+                        else if (lineType === LineEnums.BLOCKBUTTOM || lineType === LineEnums.BLOCKTOP) {
+                            playAudioBallVerticalBrickHit();
+                        }
                         else {
-                            increaseBallSpeed();
-                            if (lineType === LineEnums.BLOCKBUTTOM || lineType === LineEnums.BLOCKTOP) {
-                                playAudioBallVerticalBrickHit();
-                            }
-                            else {
-                                playAudioBallHorizontalBrickHit();
-                            }
+                            playAudioBallHorizontalBrickHit();
                         }
                     }
                 }
