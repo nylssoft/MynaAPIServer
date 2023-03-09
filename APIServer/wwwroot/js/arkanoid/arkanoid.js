@@ -141,7 +141,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.2";
+    const version = "1.1.3";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
