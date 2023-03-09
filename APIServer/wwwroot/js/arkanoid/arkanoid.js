@@ -54,6 +54,7 @@ var arkanoid = (() => {
     let addHighScoreDiv;
     let inputUserName;
     let startGameButton;
+    let continueGameButton;
     let helpDiv;
 
     // --- state
@@ -74,6 +75,7 @@ var arkanoid = (() => {
     let gameStarted;
     let isPaused;
     let isSoundEnabled;
+    let isLevelSkipped;
 
     let keyPreferLeft;
     let keyLeftPressed;
@@ -139,7 +141,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.1";
+    const version = "1.1.2";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -663,8 +665,7 @@ var arkanoid = (() => {
         if (brick.type === BrickEnums.GOLD) return;
         brick.hit -= 1;
         if (brick.hit <= 0) {
-            score += getBrickScore(brick.type);
-            updateScore();
+            updateScore(getBrickScore(brick.type));
             if (brick.type != BrickEnums.SILVER) {
                 const random = getRandom(1, currentLevel.powerUpAverage);
                 if (random === 1 && !powerUp && balls.length === 1 && (!racket.powerUp || racket.powerUp.type != PowerUpEnums.DISRUPTION)) {
@@ -708,8 +709,7 @@ var arkanoid = (() => {
             if (x > innerWidth + borderWidth) {
                 fadeCount = 0;
                 switchNewLevel = true;
-                score += 10000;
-                updateScore();
+                updateScore(10000);
             }
         }
         else {
@@ -995,7 +995,7 @@ var arkanoid = (() => {
         }
     };
 
-    const startNewGame = async (start) => {
+    const startNewGame = async (start, cont) => {
         score = 0;
         lives = 3;
         nextExtraLive = 20000;
@@ -1005,10 +1005,12 @@ var arkanoid = (() => {
         racketWidth = racketNormalWidth;
         racket = createRacket();
         isPaused = false;
+        isLevelSkipped = false;
         gameOver = false;
         gameStarted = start;
         updateGameInfo();
-        initLevel(1);
+        const levelId = (cont && currentLevel) ? currentLevel.id : 1;
+        initLevel(levelId);
         inputUserName.value = "";
         if (start) {
             await initAudio();
@@ -1236,7 +1238,10 @@ var arkanoid = (() => {
         }
     };
 
-    const updateScore = () => {
+    const updateScore = (add) => {
+        if (add && !isLevelSkipped) {
+            score += add;
+        }
         const infoElem = document.getElementById("info-id");
         infoElem.textContent = `${_T("INFO_LEVEL_1", currentLevel.id)} ${_T("INFO_SCORE_1", score)}`;
     };
@@ -1263,11 +1268,13 @@ var arkanoid = (() => {
         infoGameOverElem.textContent = txt;
         if (gameStarted && !gameOver) {
             startGameButton.style.visibility = "hidden";
+            continueGameButton.style.visibility = "hidden";
             addHighScoreDiv.style.visibility = "hidden";
             highScoreDiv.style.visibility = "hidden";
         }
         else {
             startGameButton.style.visibility = "visible";
+            continueGameButton.style.visibility = gameOver && currentLevel.id > 1 && !isLevelSkipped ? "visible" : "hidden";
             fetch("api/arkanoid/highscore")
                 .then(response => response.json())
                 .then(h => {
@@ -1615,9 +1622,11 @@ var arkanoid = (() => {
             onActionButtonPressed();
         }
         else if (e.key === "l") {
+            isLevelSkipped = true;
+            score = 0;
+            updateScore();
             switchNewLevel = true;
             fadeCount = 0;
-            score = 0;
         }
     };
 
@@ -1870,6 +1879,7 @@ var arkanoid = (() => {
         renderHighScores(all);
         renderCopyright(all);
         startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), async () => await startNewGame(true), "newgame", "newgame");
+        continueGameButton = controls.createButton(all, _T("BUTTON_CONTINUE_GAME"), async () => await startNewGame(true, true), "continuegame", "continuegame");
         await renderArkanoid(all);
         utils.set_menu_items(currentUser);
         document.addEventListener("mousedown", onMouseDown);
