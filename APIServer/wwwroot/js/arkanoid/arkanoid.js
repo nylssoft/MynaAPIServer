@@ -63,6 +63,7 @@ var arkanoid = (() => {
     let levels;
     let score;
     let lives;
+    let continueLevelId;
 
     let balls;
     let laserShots;
@@ -141,7 +142,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.5";
+    const version = "1.1.6";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1009,7 +1010,12 @@ var arkanoid = (() => {
         gameOver = false;
         gameStarted = start;
         updateGameInfo();
-        const levelId = (cont && currentLevel) ? currentLevel.id : 1;
+        continueLevelId = undefined;
+        let levelId = 1;
+        if (cont && currentLevel) {
+            levelId = currentLevel.id;
+            continueLevelId = levelId;
+        }
         initLevel(levelId);
         inputUserName.value = "";
         if (start) {
@@ -1147,6 +1153,9 @@ var arkanoid = (() => {
             case BrickEnums.YELLOW:
                 return 120;
             case BrickEnums.SILVER:
+                if (continueLevelId) {
+                    return 50 * (currentLevel.id - continueLevelId + 1);
+                }
                 return 50 * currentLevel.id;
             default:
                 return 0;
