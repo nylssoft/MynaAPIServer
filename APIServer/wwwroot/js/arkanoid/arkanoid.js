@@ -141,7 +141,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.4";
+    const version = "1.1.5";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -516,16 +516,18 @@ var arkanoid = (() => {
                         const brick = line[3];
                         if (brick.type != BrickEnums.GOLD) {
                             lastHit = Date.now();
-                            increaseBallSpeed();
                         }
                         if (brick.hit > 0) {
                             playAudioBallBorderHit();
                         }
-                        else if (lineType === LineEnums.BLOCKBUTTOM || lineType === LineEnums.BLOCKTOP) {
-                            playAudioBallVerticalBrickHit();
-                        }
                         else {
-                            playAudioBallHorizontalBrickHit();
+                            increaseBallSpeed();
+                            if (lineType === LineEnums.BLOCKBUTTOM || lineType === LineEnums.BLOCKTOP) {
+                                playAudioBallVerticalBrickHit();
+                            }
+                            else {
+                                playAudioBallHorizontalBrickHit();
+                            }
                         }
                     }
                 }
@@ -1802,6 +1804,7 @@ var arkanoid = (() => {
         racketHeight = 22;
         racketYGap = 38;
         ballRadius = 5;
+        laserShotDiff = 13;
         laserShotWidth = 5;
         laserShotHeight = 20;
         if (utils.is_mobile()) {
@@ -1819,8 +1822,8 @@ var arkanoid = (() => {
             racketYGap -= mobileh;
             ballRadius = 4;
             laserShotWidth = 3;
+            laserShotDiff = 8;
         }
-        laserShotDiff = Math.round(racketNormalWidth / 5);
         innerWidth = brickWidth * bricksPerRow;
         innerHeight = brickHeight * bricksMaxRows;
         touchActionRect = undefined;
