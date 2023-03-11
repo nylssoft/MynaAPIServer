@@ -70,6 +70,7 @@ var arkanoid = (() => {
     let borderLines;
     let brickLines;
     let bricks;
+    let brickMatrix;
     let monsters;
 
     let gameOver;
@@ -142,7 +143,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.6";
+    const version = "1.1.7";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -220,10 +221,10 @@ var arkanoid = (() => {
         const miny = Math.min(p1.y, p2.y);
         const maxy = Math.max(p1.y, p2.y);
         return lines.filter(line => {
-            const lminx = Math.min(line[0].x, line[1].x);
-            const lmaxx = Math.max(line[0].x, line[1].x);
-            const lminy = Math.min(line[0].y, line[1].y);
-            const lmaxy = Math.max(line[0].y, line[1].y);
+            const lminx = Math.min(line[0].x, line[1].x) - brickWidth;
+            const lmaxx = Math.max(line[0].x, line[1].x) + brickWidth;
+            const lminy = Math.min(line[0].y, line[1].y) - brickHeight;
+            const lmaxy = Math.max(line[0].y, line[1].y) + brickHeight;
             return !(lmaxx < minx || lmaxy < miny || lminx > maxx || lminy > maxy);
         });
     };
@@ -620,30 +621,35 @@ var arkanoid = (() => {
         return { hasHits: hasHits, removeBall: removeBall };
     };
 
+    const hasBrick = (row, col) => col >= 0 && col < bricksPerRow && row >= 0 && row < bricksMaxRows && brickMatrix[row][col];
+
     const handleBallBricketHit = (line, ball) => {
         const figureType = line[2];
         if (figureType != LineEnums.BLOCKBUTTOM && figureType != LineEnums.BLOCKTOP && figureType != LineEnums.BLOCKLEFT && figureType != LineEnums.BLOCKRIGHT) return false;
         let hit = false;
-        if (figureType === LineEnums.BLOCKLEFT) {
+        const brick = line[3];
+        const row = brick.row;
+        const col = brick.col;
+        if (figureType === LineEnums.BLOCKLEFT && !hasBrick(row, col - 1)) {
             hit = true;
             ball.dirX = -1 * Math.abs(ball.dirX); // left
             ball.x -= 1;
         }
-        else if (figureType === LineEnums.BLOCKRIGHT) {
+        else if (figureType === LineEnums.BLOCKRIGHT && !hasBrick(row, col + 1)) {
             hit = true;
             ball.dirX = Math.abs(ball.dirX); // right
             ball.x += 1;
         }
-        else if (figureType === LineEnums.BLOCKBUTTOM) {
+        else if (figureType === LineEnums.BLOCKBUTTOM && !hasBrick(row + 1, col)) {
             hit = true;
             ball.dirY = Math.abs(ball.dirY); // down
             ball.y += 1;
         }
-        else if (figureType === LineEnums.BLOCKTOP) {
+        else if (figureType === LineEnums.BLOCKTOP && !hasBrick(row - 1, col)) {
             hit = true;
             ball.dirY = -1 * Math.abs(ball.dirY); // up
             ball.y -= 1;
-        }
+        }        
         if (hit) {
             hitBrickLine(line);
             if (lastHit && line[3].type === BrickEnums.GOLD) {
@@ -666,6 +672,7 @@ var arkanoid = (() => {
         if (brick.type === BrickEnums.GOLD) return;
         brick.hit -= 1;
         if (brick.hit <= 0) {
+            brickMatrix[brick.row][brick.col] = undefined;
             updateScore(getBrickScore(brick.type));
             if (brick.type != BrickEnums.SILVER) {
                 const random = getRandom(1, currentLevel.powerUpAverage);
@@ -782,6 +789,7 @@ var arkanoid = (() => {
                         playAudioBallBorderHit();
                     }
                     else {
+                        increaseBallSpeed();
                         playAudioLaserBrickHit();
                     }
                     return false;
@@ -1092,6 +1100,7 @@ var arkanoid = (() => {
         }
         const brick = { row: row, col: col, type: brickType, hit: hit };
         bricks.push(brick);
+        brickMatrix[row][col] = brick;
         const lines = createBrickLines(row, col, brick);
         /* jshint -W083 */
         lines.forEach(line => brickLines.push(line));
@@ -1100,6 +1109,14 @@ var arkanoid = (() => {
 
     const createLevelBricks = (level) => {
         bricks = [];
+        brickMatrix = Array(bricksMaxRows);
+        for (let row = 0; row < bricksMaxRows; row++) {
+            const arr = Array(bricksPerRow);
+            for (let col = 0; col < bricksPerRow; col++) {
+                arr[col] = undefined;
+            }
+            brickMatrix[row] = arr;
+        }
         brickLines = [];
         level.bricks.forEach(arr => {
             const cmd = arr[0];
