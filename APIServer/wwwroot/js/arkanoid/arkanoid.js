@@ -143,7 +143,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.7";
+    const version = "1.1.8";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -630,22 +630,22 @@ var arkanoid = (() => {
         const brick = line[3];
         const row = brick.row;
         const col = brick.col;
-        if (figureType === LineEnums.BLOCKLEFT && !hasBrick(row, col - 1)) {
+        if (figureType === LineEnums.BLOCKLEFT && (ball.dirX < 0 || !hasBrick(row, col - 1))) {
             hit = true;
             ball.dirX = -1 * Math.abs(ball.dirX); // left
             ball.x -= 1;
         }
-        else if (figureType === LineEnums.BLOCKRIGHT && !hasBrick(row, col + 1)) {
+        else if (figureType === LineEnums.BLOCKRIGHT && (ball.dirX > 0 || !hasBrick(row, col + 1))) {
             hit = true;
             ball.dirX = Math.abs(ball.dirX); // right
             ball.x += 1;
         }
-        else if (figureType === LineEnums.BLOCKBUTTOM && !hasBrick(row + 1, col)) {
+        else if (figureType === LineEnums.BLOCKBUTTOM && (ball.dirY > 0 || !hasBrick(row + 1, col))) {
             hit = true;
             ball.dirY = Math.abs(ball.dirY); // down
             ball.y += 1;
         }
-        else if (figureType === LineEnums.BLOCKTOP && !hasBrick(row - 1, col)) {
+        else if (figureType === LineEnums.BLOCKTOP && (ball.dirY < 0 || !hasBrick(row - 1, col))) {
             hit = true;
             ball.dirY = -1 * Math.abs(ball.dirY); // up
             ball.y -= 1;
