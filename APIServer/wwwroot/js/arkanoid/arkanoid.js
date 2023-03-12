@@ -126,6 +126,7 @@ var arkanoid = (() => {
 
     let touchActionRect;
     let touchMoveRect;
+    let touchDebugRect;
 
     let backgroundPictures;
     let currentBackgroundPicture;
@@ -135,7 +136,7 @@ var arkanoid = (() => {
     let monsterNextCount;
     let switchNewLevel;
 
-    let drawStatistics;
+    let debugStatistics;
 
     let audioInfos;
     let audioCtx;
@@ -143,7 +144,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.8";
+    const version = "1.1.9";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -714,7 +715,7 @@ var arkanoid = (() => {
         }
         x = Math.max(borderWidth, x);
         if (racket.powerUp && racket.powerUp.type === PowerUpEnums.BREAK) {
-            if (x > innerWidth + borderWidth) {
+            if (x > innerWidth) {
                 fadeCount = 0;
                 switchNewLevel = true;
                 updateScore(10000);
@@ -1036,6 +1037,7 @@ var arkanoid = (() => {
     };
 
     const initLevel = (id) => {
+        debugStatistics = { drawCnt: 0, drawSum: 0, actionCnt: 0, actionSum: 0 };
         monsterNextCount = undefined;
         fadeCount = 0;
         switchNewLevel = false;
@@ -1485,46 +1487,29 @@ var arkanoid = (() => {
         monster.angle = (monster.angle + 1) % 360;
     };
 
-    const updateDrawStatistics = (ctx) => {
-        if (!drawStatistics) {
-            drawStatistics = { cnt: 0, sum: 0, last: 0 };
+    const drawDebugStatistics = (ctx) => {
+        if (!utils.is_debug()) return;
+        ctx.fillStyle = "yellow";
+        ctx.font = "13px serif";
+        if (touchDebugRect) {
+            ctx.fillText("Skip", touchDebugRect.x + 20, touchDebugRect.y + 20);
         }
-        const diff = Date.now() - drawStatistics.last;
-        // draw will not be invoked if the window is not visible
-        if (drawStatistics.last > 0 && diff < 1000) {
-            drawStatistics.sum += (Date.now() - drawStatistics.last);
-            drawStatistics.cnt += 1;
-            const drawAvg = Math.round(drawStatistics.sum / drawStatistics.cnt);
-            if (drawStatistics.cnt > 100) { // reset statistics after about 500 * 20 ms = 10 sec
-                drawStatistics.cnt = 0;
-                drawStatistics.sum = 0;
-            }
-            // display warning if rendering take more than 20ms (50hz refresh rate)
-            if (drawAvg > 20) {
-                let txt;
-                let x = 30;
-                let y = 670;
-                if (utils.is_mobile()) {
-                    x = 70;
-                    y = 550;
-                }
-                if (drawAvg <= 40) {
-                    ctx.fillStyle = "yellow";
-                    ctx.font = "13px serif";
-                    txt = `${drawAvg}`;
-                }
-                else {
-                    ctx.fillStyle = "yellow";
-                    ctx.font = "18px serif";
-                    txt = `COMPUTER TOO SLOW: ${drawAvg}`;
-                }
-                ctx.fillText(txt, x, y);
-            }
+        const x = utils.is_mobile() ? 70 : 120;
+        const y = utils.is_mobile() ? 550 : 670;
+        let txt = "";
+        if (debugStatistics.drawCnt > 0) {
+            const drawAvg = debugStatistics.drawSum / debugStatistics.drawCnt;
+            txt = `Draw: ${drawAvg.toFixed(2)} ms`;
         }
-        drawStatistics.last = Date.now();
+        if (debugStatistics.actionCnt > 0) {
+            const actionAvg = debugStatistics.actionSum / debugStatistics.actionCnt;
+            txt += ` Action: ${actionAvg.toFixed(2)} ms`;
+        }
+        ctx.fillText(txt, x, y);
     };
 
     const draw = () => {
+        let start = performance.now();
         window.requestAnimationFrame(draw);
         const ctx = canvas.getContext("2d");
         if (fadeCount < maxFadeCount) {
@@ -1549,7 +1534,10 @@ var arkanoid = (() => {
         drawPowerUp(ctx);
         drawTouchArea(ctx);
         drawLives(ctx);
+        debugStatistics.drawCnt += 1;
+        debugStatistics.drawSum += (performance.now() - start);
         if (!isPaused && gameStarted && !gameOver) {
+            start = performance.now();
             if (!switchNewLevel && !bricks.some(brick => brick.hit > 0 && brick.type != BrickEnums.GOLD)) {
                 fadeCount = 0;
                 switchNewLevel = true;
@@ -1560,8 +1548,10 @@ var arkanoid = (() => {
             moveRacketWithKeyboard();
             movePowerUp();
             moveMonsters();
+            debugStatistics.actionCnt += 1;
+            debugStatistics.actionSum += (performance.now() - start);
         }
-        updateDrawStatistics(ctx);
+        drawDebugStatistics(ctx);
     };
 
     // --- callbacks for user interaction
@@ -1647,7 +1637,7 @@ var arkanoid = (() => {
             e.preventDefault();
             onActionButtonPressed();
         }
-        else if (e.key === "l") {
+        else if (e.key === "l" && utils.is_debug()) {
             isLevelSkipped = true;
             score = 0;
             updateScore();
@@ -1690,6 +1680,14 @@ var arkanoid = (() => {
         let touch = isActionRectTouched(e);
         if (touch) {
             onActionButtonPressed();
+            return;
+        }
+        if (utils.is_debug() && isTouchInRect(e, touchDebugRect)) {
+            isLevelSkipped = true;
+            score = 0;
+            updateScore();
+            switchNewLevel = true;
+            fadeCount = 0;
             return;
         }
         touch = isMoveRectTouched(e);
@@ -1854,9 +1852,13 @@ var arkanoid = (() => {
         innerHeight = brickHeight * bricksMaxRows;
         touchActionRect = undefined;
         touchMoveRect = undefined;
+        touchDebugRect = undefined;
         if (isTouchDevice()) {
-            touchActionRect = { x: 2 * borderWidth, y: innerHeight - borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 3 * brickHeight - 1};
-            touchMoveRect = { x: touchActionRect.x, y: touchActionRect.y - touchActionRect.h * 5, w: innerWidth - borderWidth, h: touchActionRect.h * 6};
+            touchActionRect = { x: 2 * borderWidth, y: innerHeight - borderHeight, w: 3 * brickWidth - 2 * borderWidth, h: 3 * brickHeight - 1 };
+            touchMoveRect = { x: touchActionRect.x, y: touchActionRect.y - touchActionRect.h * 5, w: innerWidth - borderWidth, h: touchActionRect.h * 6 };
+            if (utils.is_debug()) {
+                touchDebugRect = { x: 10 * brickWidth, y: innerHeight, w: 3 * brickWidth - 2 * borderWidth, h: 2 * brickHeight };
+            }
         }
         canvas = controls.create(parent, "canvas", "playground");
         canvas.width = innerWidth + 2 * borderWidth;
@@ -1941,6 +1943,12 @@ var arkanoid = (() => {
     };
 
     const init = async (sm) => {
+        debugStatistics = { drawCnt: 0, drawSum: 0, actionCnt: 0, actionSum: 0 };
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("debug")) {
+            utils.enable_debug(true);
+            utils.debug("DEBUG enabled.");
+        }
         fetch(`/js/arkanoid/levels.json?v=${version}`)
             .then(resp => {
                 resp.json()
