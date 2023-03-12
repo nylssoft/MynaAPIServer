@@ -144,7 +144,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.1.9";
+    const version = "1.2.0";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1124,9 +1124,10 @@ var arkanoid = (() => {
             const cmd = arr[0];
             const row = arr[1];
             const col = arr[2];
-            if (cmd === "lx" || cmd === "ly" || cmd === "ld" || cmd === "ldd") {
+            if (cmd === "lx" || cmd === "ly" || cmd === "ld" || cmd === "ldd" || cmd === "ldd2") {
                 const cnt = arr[3];
                 const color = arr[4];
+                const color2 = arr.length === 6 ? arr[5] : undefined;
                 for (let idx = 0; idx < cnt; idx++) {
                     if (cmd === "lx") {
                         createLevelBrick(level.id, row, col + idx, color);
@@ -1137,8 +1138,12 @@ var arkanoid = (() => {
                     else if (cmd === "ld") {
                         createLevelBrick(level.id, row - idx, col + idx, color);
                     }
-                    else {
+                    else if (cmd === "ldd") {
                         createLevelBrick(level.id, row + idx, col + idx, color);
+                    }
+                    else if (cmd === "ldd2") {
+                        const c = color2 && (idx % 2 === 1) ? color2 : color;
+                        createLevelBrick(level.id, row + 2 * idx, col + idx, c);
                     }
                 }
             }
