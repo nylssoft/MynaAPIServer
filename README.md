@@ -74,7 +74,7 @@ Markdown files can be stored locally in the file system or in the database using
 Different content can be provided for different languages.
 
 A few sample markdown pages are provided in the website, e.g. the welcome page as the start page and the home page that contains
-additional technical information about this project. See e.g. (/APIServer/sampledata/Welcome.md).
+additional technical information about this project. See e.g. [Welcome Page](/APIServer/sampledata/Welcome.md).
 
 ### Documents
 
