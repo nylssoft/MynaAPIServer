@@ -43,7 +43,7 @@ previously used values if required.
 
 An Android app is provided to access and manage the data on an Android device. This app allows to add, update or delete passwords,
 manage notes, diary, contacts and download documents, see
-([Password Reader](https://github.com/nylssoft/MynaPasswordReaderMAUI)).
+[Password Reader](https://github.com/nylssoft/MynaPasswordReaderMAUI).
 
 ## Setup
 
