@@ -19,6 +19,5 @@ The following source code and icon libraries are used for the project:
 - [qrcode.js](https://github.com/davidshimjs/qrcodejs){target="_blank" .external}
 - [SendGrid](https://github.com/sendgrid/sendgrid-csharp){target="_blank" .external}
 - [Sqlite](https://www.nuget.org/packages/Microsoft.EntityFrameworkCore.Sqlite){target="_blank" .external}
-- [XSkat](http://xskat.de/xskat-cards-de.html){target="_blank" .external}
 
 $backbutton
