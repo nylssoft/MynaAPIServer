@@ -75,6 +75,7 @@ Different content can be provided for different languages.
 
 A few sample markdown pages are provided in the website, e.g. the welcome page as the start page and the home page that contains
 additional technical information about this project. See e.g. [Start Page](/APIServer/sampledata/Welcome.md).
+See also [Open Source Software](/APIServer/sampledata/Copyright.md) for the used software and libraries.
 
 ### Documents
 
