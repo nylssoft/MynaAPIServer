@@ -25,7 +25,7 @@ Visit [stockfleth.eu](https://www.stockfleth.eu) to see a customized version of 
 The main goal of the applications is data protection. Nobody except the logged in user can access, read and manage the content.
 
 The appliations store any content encrypted on the server.
-The encryption key is stored locally in the client application, i.e. in the locale storage of the web browser.
+The encryption key is stored locally in the client application, i.e. in the local storage of the web browser.
 The key value itself is also encrypted in the browser storage and can only be decrypted after successfull login.
 The server cannot decrypt the content, all decryption is done in the browser using the locally stored encryption key.
 
@@ -33,22 +33,22 @@ Each user must store or print the encryption key and place it securely, e.g. in 
 The data cannot be restored if the encryption key is lost.
 
 Use a secure random encryption key, do not use any password as encryption key. After user registration the browser
-generates a secure random encryption key as a suggestion.
+generates a secure random encryption key.
  
 The user's data stored in the cloud can be downloaded using the tool [Cloud Export](https://github.com/nylssoft/MynaCloudExport).
 
-Currently, the encryption key cannot be changed. Use the Cloud Export tool to copy the data to a newly registered user account
+The encryption key cannot be changed. Use the Cloud Export tool to copy the data to a newly registered user account
 with the changed encryption key and afterwards delete the previously used account. Change the login name and email address to the
 previously used values if required.
 
-An Android app is provided to access and manage the data on an Android device. This app is named Password Reader but it
-also allows to add, update or delete passwords, manage notes, the diary and download documents
+An Android app is provided to access and manage the data on an Android device. This app allows to add, update or delete passwords,
+manage notes, diary, contacts and download documents, see
 ([Password Reader](https://github.com/nylssoft/MynaPasswordReaderMAUI)).
 
 ## Setup
 
-First the project has to be compiled with Visual Studio 2022.
-If you run the .NET core server you will see sample pages.
+The project can be compiled with Visual Studio 2022.
+If you run the .NET 6 server you will see sample pages.
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
