@@ -3,11 +3,11 @@
 Provides a website with games and applications. The website runs on Unix or Windows using .NET 6 as backend server (Kestrel web server).
 
 The following games are provided:
-- Skat, a german card game
-- Arkanoid
-- Backgammon
-- Chess
-- Tetris
+- [Skat](https://www.stockfleth.eu/skat), a german card game
+- A clone of the arcade version of [Arkanoid](https://www.stockfleth.eu/arkanoid)
+- [Backgammon](https://www.stockfleth.eu/backgammon)
+- [Chess](https://www.stockfleth.eu/chess)
+- A [Tetris](https://www.stockfleth.eu/tetris) clone
 
 Skat requires 3 or 4 players, Backgammon and Chess 2 players. Arkanoid and Tetris are single player games.
 Chess can be used as a single player game if a chess engine is configured, e.g. Zappa or Stockfish.
