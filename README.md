@@ -1,6 +1,6 @@
 # MynaAPIServer
 
-Provides a website with games and applications. The website runs on Unix or Windows using .NET core as backend server (Kestrel web server).
+Provides a website with games and applications. The website runs on Unix or Windows using .NET 6 as backend server (Kestrel web server).
 
 The following games are provided:
 - Skat, a german card game
