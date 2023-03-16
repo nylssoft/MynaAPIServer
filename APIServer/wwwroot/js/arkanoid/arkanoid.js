@@ -144,7 +144,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.2.1";
+    const version = "1.2.2";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1612,15 +1612,15 @@ var arkanoid = (() => {
         }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawShadows(ctx);
-        drawBricks(ctx);
-        drawBorder(ctx);
-        drawMonsters(ctx);
-        drawRacket(ctx);
-        drawLaserShots(ctx);
-        drawBalls(ctx);
-        drawPowerUp(ctx);
         drawTouchArea(ctx);
         drawLives(ctx);
+        drawBorder(ctx);
+        drawBricks(ctx);
+        drawPowerUp(ctx);
+        drawMonsters(ctx);
+        drawLaserShots(ctx);
+        drawRacket(ctx);
+        drawBalls(ctx);
         debugStatistics.drawCnt += 1;
         debugStatistics.drawSum += (performance.now() - start);
         if (!isPaused && gameStarted && !gameOver) {
