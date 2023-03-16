@@ -9,24 +9,6 @@
     -ms-user-select: none; /* Internet Explorer/Edge */
 }
 
-.wrap-body {
-    position: relative;
-    height: 100vh;
-    width: 100%;
-}
-
-.wrap-body::before {
-    content: "";
-    background-image: var(--bgimg);
-    background-size: cover;
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    bottom: 0px;
-    left: 0px;
-    opacity: 0.2;
-}
-
 body {
     margin: 0pt;
     border: none;

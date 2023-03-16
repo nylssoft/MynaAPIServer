@@ -144,7 +144,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.2.0";
+    const version = "1.2.1";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1342,6 +1342,75 @@ var arkanoid = (() => {
 
     // --- drawing
 
+    const drawShadows = (ctx) => {
+        const b = brickHeight;
+        const alpha = ctx.globalAlpha;
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = "#000000";
+        // visible bricks
+        const filtered = bricks.filter(brick => brick.hit > 0);
+        filtered.forEach(brick => {
+            ctx.fillRect(brick.col * brickWidth + borderWidth + b, brick.row * brickHeight + borderWidth + b, brickWidth, brickHeight);
+        });
+        // borders
+        ctx.fillRect(b, b, 2 * borderWidth + innerWidth, borderHeight);
+        ctx.fillRect(b, borderHeight + b, borderWidth, innerHeight - borderHeight);
+        ctx.fillRect(innerWidth + borderWidth + b, borderHeight + b, borderWidth, innerHeight - borderHeight);
+        // balls
+        balls.forEach(ball => {
+            ctx.beginPath();
+            ctx.arc(ball.x + b, ball.y + b, ballRadius, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+        // racket
+        ctx.fillRect(racket.x + b, racket.y + b, racketWidth, racketHeight);
+        // power up
+        if (powerUp) {
+            ctx.fillRect(powerUp.x + b, powerUp.y + b, powerUp.w, powerUp.h);
+        }
+        // laser shots
+        laserShots.forEach(laserShot => {
+            ctx.fillRect(laserShot.x1 + b, laserShot.y - laserShot.h + b, laserShot.w, laserShot.h);
+            ctx.fillRect(laserShot.x2 + b, laserShot.y - laserShot.h + b, laserShot.w, laserShot.h);
+        });
+        // lives
+        if (lives > 0) {
+            let w = 30;
+            let h = 10;
+            let gap = 10;
+            if (utils.is_mobile()) {
+                w -= 10;
+                gap -= 3;
+            }
+            for (let idx = 0; idx < lives - 1; idx++) {
+                ctx.fillRect(borderWidth + gap * idx + idx * w + b, racket.y + racketHeight + gap + b, w, h);
+            }
+        }
+        // monsters
+        monsters.forEach(monster => {
+            const r = monster.w / 2;
+            ctx.translate(monster.x + r + b, monster.y + r + b);
+            ctx.rotate((monster.angle * Math.PI) / 180);
+            ctx.beginPath();
+            ctx.moveTo(-r, -r);
+            ctx.lineTo(r, -r);
+            ctx.lineTo(0, r);
+            ctx.lineTo(0, r);
+            ctx.lineTo(-r, -r);
+            ctx.fill();
+            ctx.resetTransform();
+            monster.angle = (monster.angle + 1) % 360;
+        });
+        // touch area
+        if (touchActionRect) {
+            ctx.beginPath();
+            ctx.arc(touchActionRect.x + touchActionRect.w / 2 + b, touchActionRect.y + touchActionRect.h / 2 + b, touchActionRect.w / 4, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+        // reset alpha
+        ctx.globalAlpha = alpha;
+    };
+
     const drawBorder = (ctx) => {
         ctx.fillStyle = "#555555";
         ctx.fillRect(0, 0, 2 * borderWidth + innerWidth, borderHeight);
@@ -1364,6 +1433,21 @@ var arkanoid = (() => {
             const y = brick.row * h + borderWidth;
             ctx.fillStyle = getBrickColor(brick.type);
             ctx.fillRect(x, y, w - 2, h - 2);
+            if (brick.type === BrickEnums.SILVER || brick.type === BrickEnums.GOLD) {
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = brick.type === BrickEnums.SILVER ? "#d2d2d2" : "#e0d200";
+                ctx.beginPath();
+                ctx.moveTo(x + 1, y + h - 4);
+                ctx.lineTo(x + 1, y + 1);
+                ctx.lineTo(x + 1 + w - 4, y + 1);
+                ctx.stroke();
+                ctx.strokeStyle = brick.type === BrickEnums.SILVER ? "#8f8f8f" : "#9d8f00";
+                ctx.beginPath();
+                ctx.moveTo(x + 1, y + h - 4);
+                ctx.lineTo(x + 1 + w - 4, y + h - 4);
+                ctx.lineTo(x + 1 + w - 4, y + 1);
+                ctx.stroke();
+            }
         });
     };
 
@@ -1471,11 +1555,12 @@ var arkanoid = (() => {
     };
 
     const drawMonster = (ctx, monster) => {
-        const lw = ctx.lineWidth;
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 2;
         const r = monster.w / 2;
         ctx.translate(monster.x + r, monster.y + r);
+        const g = ctx.createLinearGradient(-r, -r, r, r);
+        g.addColorStop(0, "#ff0000");
+        g.addColorStop(1, "#440000");
+        ctx.fillStyle = g;
         ctx.rotate((monster.angle * Math.PI) / 180);
         ctx.beginPath();
         ctx.moveTo(-r, -r);
@@ -1483,12 +1568,8 @@ var arkanoid = (() => {
         ctx.lineTo(0, r);
         ctx.lineTo(0, r);
         ctx.lineTo(-r, -r);
-        ctx.stroke();
-        ctx.fillStyle = "cyan";
-        ctx.fillRect(-2, -2, 2, 2);
-        ctx.translate(-monster.x - r, -monster.y - r);
+        ctx.fill();
         ctx.resetTransform();
-        ctx.lineWidth = lw;
         monster.angle = (monster.angle + 1) % 360;
     };
 
@@ -1530,6 +1611,7 @@ var arkanoid = (() => {
             }
         }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawShadows(ctx);
         drawBricks(ctx);
         drawBorder(ctx);
         drawMonsters(ctx);
@@ -1866,8 +1948,8 @@ var arkanoid = (() => {
             }
         }
         canvas = controls.create(parent, "canvas", "playground");
-        canvas.width = innerWidth + 2 * borderWidth;
-        canvas.height = innerHeight + borderHeight + 48;
+        canvas.width = innerWidth + 2 * borderWidth + brickHeight;
+        canvas.height = innerHeight + borderHeight + 48 + brickHeight;
         controls.createDiv(parent).id = "info-id";
         controls.createDiv(parent).id = "info-gameover-id";
         await startNewGame(false);
