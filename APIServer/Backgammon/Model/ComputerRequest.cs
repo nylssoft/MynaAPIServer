@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2022-2023 Niels Stockfleth
+    Copyright (C) 2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,22 +15,16 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
-
 namespace APIServer.Backgammon.Model
 {
-    public class BackgammonModel
+    public class ComputerRequest
     {
-        public long State { get; set; }
+        public string CurrentPlayerName { get; set; }
 
-        public List<UserModel> AllUsers { get; set; }
+        public string OpponentPlayerName { get; set; }
 
-        public UserModel CurrentUser { get; set; }
+        public string State { get; set; }
 
-        public BoardModel Board { get; set; }
-
-        public bool IsBoardFull { get; set; } = false;
-
-        public string InternalState { get; set; }
+        public MoveModel Move { get; set; }
     }
 }

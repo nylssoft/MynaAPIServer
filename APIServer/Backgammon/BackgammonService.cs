@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2022 Niels Stockfleth
+    Copyright (C) 2022-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Text.Json;
 
 namespace APIServer.Backgammon
 {
@@ -128,6 +130,90 @@ namespace APIServer.Backgammon
             }
         }
 
+        // --- computer game (stateless)
+
+        public BackgammonModel GetModel(string currentPlayerName, string opponentPlayerName, string state)
+        {
+            BackgammonBoard b;
+            Context ctx = null;
+            if (state != null)
+            {
+                b = GetBoard(state);
+                ctx = new Context { Name = currentPlayerName };
+            }
+            else
+            {
+                b = new BackgammonBoard(currentPlayerName, opponentPlayerName);
+            }
+            var ret = new BackgammonModel();
+            ret.CurrentUser = new UserModel() { Name = currentPlayerName, StartGameConfirmed = true };
+            ret.Board = CreateBoardModel(ctx, b);
+            ret.InternalState = GetInternalState(b);
+            return ret;
+        }
+
+        public BackgammonModel Roll(string currentPlayerName, string state)
+        {
+            var ctx = new Context { Name = currentPlayerName };
+            var b = GetBoard(state);
+            if (!b.GameOver)
+            {
+                var currentColor = GetPlayerColor(currentPlayerName, b);
+                if (!b.GameStarted)
+                {
+                    var startRollNumber = b.GetStartRollNumber(currentColor);
+                    if (!startRollNumber.HasValue)
+                    {
+                        b.RollStartDice(currentColor);
+                    }
+                }
+                else if (currentColor == b.CurrentColor && b.CurrentRoll == null)
+                {
+                    b.RollDice();
+                }
+            }
+            return GetModel(ctx, b);
+        }
+
+        public BackgammonModel Move(string currentPlayerName, string state, MoveModel move)
+        {
+            var ctx = new Context { Name = currentPlayerName };
+            var b = GetBoard(state);
+            if (b.GameStarted &&
+                !b.GameOver &&
+                IsActiveUser(ctx, b))
+            {
+                b.Move(move.From, move.To);
+            }
+            return GetModel(ctx, b);
+        }
+
+        public BackgammonModel Skip(string currentPlayerName, string state)
+        {
+            var ctx = new Context { Name = currentPlayerName };
+            var b = GetBoard(state);
+            if (b.GameStarted &&
+                !b.GameOver &&
+                IsActiveUser(ctx, b))
+            {
+                b.Skip();
+            }
+            return GetModel(ctx, b);
+        }
+
+        public BackgammonModel GiveUp(string currentPlayerName, string state)
+        {
+            var ctx = new Context { Name = currentPlayerName };
+            var b = GetBoard(state);
+            if (b.GameStarted &&
+                !b.GameOver &&
+                IsActiveUser(ctx, b))
+            {
+                b.GiveUp = true;
+            }
+            return GetModel(ctx, b);
+        }
+
         // --- with authentication
 
         public BackgammonModel GetBackgammonModel(string ticket)
@@ -148,78 +234,7 @@ namespace APIServer.Backgammon
                 }
                 if (board != null)
                 {
-                    ret.Board = new BoardModel();
-                    // board options and status
-                    ret.Board.WhitePlayer = board.WhitePlayer;
-                    ret.Board.BlackPlayer = board.BlackPlayer;
-                    ret.Board.GameOver = board.GameOver;
-                    ret.Board.GameStarted = board.GameStarted;
-                    ret.Board.NextGameRequested = board.NextGameRequested;
-                    ret.Board.CurrentColor = ConvertCheckerColor(board.CurrentColor);
-                    // reasons for game over and the winner
-                    ret.Board.GiveUp = board.GiveUp;
-                    ret.Board.Gammon = board.Gammon;
-                    ret.Board.Backgammon = board.Backgammon;
-                    if (board.Winner.HasValue)
-                    {
-                        ret.Board.Winner = board.Winner.Value == CheckerColor.White ? ret.Board.WhitePlayer : ret.Board.BlackPlayer;
-                    }
-                    ret.Board.HasStartRoll = false;
-                    ret.Board.CurrentRollNumbers = new List<int>();
-                    ret.Board.RemainingRollNumbers = new List<int>();
-                    ret.Board.DoubleRoll = null;
-                    ret.Board.Items = new List<ItemModel>();
-                    ret.Board.Moves = new List<MoveModel>();
-                    if (!board.GameStarted)
-                    {
-                        // start rolls
-                        var playerColor = ctx != null ? GetPlayerColor(ctx.Name) : CheckerColor.White;
-                        var opponentColor = GetOpponentColor(playerColor);
-                        var startRollPlayer = board.GetStartRollNumber(playerColor);
-                        var startRollOpponent = board.GetStartRollNumber(opponentColor);
-                        ret.Board.HasStartRoll = startRollPlayer.HasValue;
-                        if (startRollPlayer.HasValue)
-                        {
-                            ret.Board.CurrentRollNumbers.Add(startRollPlayer.Value);
-                        }
-                        else if (startRollOpponent.HasValue)
-                        {
-                            ret.Board.CurrentRollNumbers.Add(startRollOpponent.Value);
-                        }
-                        else if (board.CurrentRoll != null)
-                        {
-                            ret.Board.DoubleRoll = board.CurrentRoll.Number1;
-                        }
-                    }
-                    else // game started
-                    {
-                        if (board.CurrentRoll != null)
-                        {
-                            // current rolls and remaining rolls
-                            ret.Board.CurrentRollNumbers.Add(board.CurrentRoll.Number1);
-                            ret.Board.CurrentRollNumbers.Add(board.CurrentRoll.Number2);
-                            ret.Board.RemainingRollNumbers.AddRange(board.GetRemainingRollNumbers());
-                        }
-                        // moves
-                        foreach (var move in board.GetAllMoves())
-                        {
-                            ret.Board.Moves.Add(new MoveModel
-                            {
-                                From = move.Item1,
-                                To = move.Item2
-                            });
-                        }
-                    }
-                    // items
-                    foreach (var item in board.GetItems())
-                    {
-                        ret.Board.Items.Add(new ItemModel
-                        {
-                            Color = ConvertCheckerColor(item.Color),
-                            Count = item.Count,
-                            Position = item.Position
-                        });
-                    }
+                    ret.Board = CreateBoardModel(ctx, board);
                 }
                 return ret;
             }
@@ -267,7 +282,7 @@ namespace APIServer.Backgammon
                 var ctx = GetContext(ticket);
                 if (ctx != null && board != null && !board.GameOver)
                 {
-                    var currentColor = GetPlayerColor(ctx.Name);
+                    var currentColor = GetPlayerColor(ctx.Name, board);
                     if (!board.GameStarted)
                     {
                         var startRollNumber = board.GetStartRollNumber(currentColor);
@@ -296,7 +311,7 @@ namespace APIServer.Backgammon
                     board != null &&
                     board.GameStarted &&
                     !board.GameOver &&
-                    IsActiveUser(ctx))
+                    IsActiveUser(ctx, board))
                 {
                     board.GiveUp = true;
                     stateChanged = DateTime.UtcNow;
@@ -370,7 +385,7 @@ namespace APIServer.Backgammon
                     board != null &&
                     board.GameStarted &&
                     !board.GameOver &&
-                    IsActiveUser(ctx))
+                    IsActiveUser(ctx, board))
                 {
                     board.Move(move.From, move.To);
                     stateChanged = DateTime.UtcNow;
@@ -388,7 +403,7 @@ namespace APIServer.Backgammon
                     board != null &&
                     board.GameStarted &&
                     !board.GameOver &&
-                    IsActiveUser(ctx))
+                    IsActiveUser(ctx, board))
                 {
                     board.Skip();
                     stateChanged = DateTime.UtcNow;
@@ -398,21 +413,6 @@ namespace APIServer.Backgammon
         }
 
         // --- private
-
-        private bool IsActiveUser(Context ctx)
-        {
-            return ctx != null && GetPlayerColor(ctx.Name) == board.CurrentColor;
-        }
-
-        private CheckerColor GetPlayerColor(string playerName)
-        {
-            return (playerName == board.WhitePlayer) ? CheckerColor.White : CheckerColor.Black;
-        }
-
-        private CheckerColor GetOpponentColor(CheckerColor color)
-        {
-            return (color == CheckerColor.White) ? CheckerColor.Black : CheckerColor.White;
-        }
 
         private BackgammonOptions GetOptions()
         {
@@ -448,6 +448,83 @@ namespace APIServer.Backgammon
 
         // --- private static
 
+        private static BoardModel CreateBoardModel(Context ctx, BackgammonBoard b)
+        {
+            var m = new BoardModel();
+            // board options and status
+            m.WhitePlayer = b.WhitePlayer;
+            m.BlackPlayer = b.BlackPlayer;
+            m.GameOver = b.GameOver;
+            m.GameStarted = b.GameStarted;
+            m.NextGameRequested = b.NextGameRequested;
+            m.CurrentColor = ConvertCheckerColor(b.CurrentColor);
+            // reasons for game over and the winner
+            m.GiveUp = b.GiveUp;
+            m.Gammon = b.Gammon;
+            m.Backgammon = b.Backgammon;
+            if (b.Winner.HasValue)
+            {
+                m.Winner = b.Winner.Value == CheckerColor.White ? m.WhitePlayer : m.BlackPlayer;
+            }
+            m.HasStartRoll = false;
+            m.CurrentRollNumbers = new List<int>();
+            m.RemainingRollNumbers = new List<int>();
+            m.DoubleRoll = null;
+            m.Items = new List<ItemModel>();
+            m.Moves = new List<MoveModel>();
+            if (!b.GameStarted)
+            {
+                // start rolls
+                var playerColor = ctx != null ? GetPlayerColor(ctx.Name, b) : CheckerColor.White;
+                var opponentColor = GetOpponentColor(playerColor);
+                var startRollPlayer = b.GetStartRollNumber(playerColor);
+                var startRollOpponent = b.GetStartRollNumber(opponentColor);
+                m.HasStartRoll = startRollPlayer.HasValue;
+                if (startRollPlayer.HasValue)
+                {
+                    m.CurrentRollNumbers.Add(startRollPlayer.Value);
+                }
+                else if (startRollOpponent.HasValue)
+                {
+                    m.CurrentRollNumbers.Add(startRollOpponent.Value);
+                }
+                else if (b.CurrentRoll != null)
+                {
+                    m.DoubleRoll = b.CurrentRoll.Number1;
+                }
+            }
+            else // game started
+            {
+                if (b.CurrentRoll != null)
+                {
+                    // current rolls and remaining rolls
+                    m.CurrentRollNumbers.Add(b.CurrentRoll.Number1);
+                    m.CurrentRollNumbers.Add(b.CurrentRoll.Number2);
+                    m.RemainingRollNumbers.AddRange(b.GetRemainingRollNumbers());
+                }
+                // moves
+                foreach (var move in b.GetAllMoves())
+                {
+                    m.Moves.Add(new MoveModel
+                    {
+                        From = move.Item1,
+                        To = move.Item2
+                    });
+                }
+            }
+            // items
+            foreach (var item in b.GetItems())
+            {
+                m.Items.Add(new ItemModel
+                {
+                    Color = ConvertCheckerColor(item.Color),
+                    Count = item.Count,
+                    Position = item.Position
+                });
+            }
+            return m;
+        }
+
         private static UserModel GetCurrentUser(Context ctx)
         {
             return new UserModel { Name = ctx.Name, StartGameConfirmed = ctx.StartGameConfirmed };
@@ -460,6 +537,40 @@ namespace APIServer.Backgammon
                 return c == CheckerColor.White ? "W" : "B";
             }
             return "";
+        }
+
+        private static bool IsActiveUser(Context ctx, BackgammonBoard b)
+        {
+            return ctx != null && GetPlayerColor(ctx.Name, b) == b.CurrentColor;
+        }
+
+        private static CheckerColor GetPlayerColor(string playerName, BackgammonBoard b)
+        {
+            return (playerName == b.WhitePlayer) ? CheckerColor.White : CheckerColor.Black;
+        }
+
+        private static CheckerColor GetOpponentColor(CheckerColor color)
+        {
+            return (color == CheckerColor.White) ? CheckerColor.Black : CheckerColor.White;
+        }
+
+        private static BackgammonModel GetModel(Context ctx, BackgammonBoard b)
+        {
+            var ret = new BackgammonModel();
+            ret.CurrentUser = new UserModel() { Name = ctx.Name, StartGameConfirmed = true };
+            ret.Board = CreateBoardModel(ctx, b);
+            ret.InternalState = GetInternalState(b);
+            return ret;
+        }
+
+        private static BackgammonBoard GetBoard(string state)
+        {
+            return new BackgammonBoard(JsonSerializer.Deserialize<InternalState>(Encoding.UTF8.GetString(Convert.FromBase64String(state))));
+        }
+
+        private static string GetInternalState(BackgammonBoard b)
+        {
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(b.GetInternalState())));
         }
     }
 }

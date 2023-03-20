@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2022 Niels Stockfleth
+    Copyright (C) 2022-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,6 +27,18 @@ namespace APIServer.Backgammon
         long GetState();
 
         LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username);
+
+        // --- computer game (stateless)
+
+        BackgammonModel GetModel(string currentPlayerName, string opponentPlayerName, string state);
+
+        BackgammonModel Roll(string currentPlayerName, string state);
+
+        BackgammonModel Move(string currentPlayerName, string state, MoveModel move);
+
+        BackgammonModel Skip(string currentPlayerName, string state);
+
+        BackgammonModel GiveUp(string currentPlayerName, string state);
 
         // --- with authentication (ticket)
 

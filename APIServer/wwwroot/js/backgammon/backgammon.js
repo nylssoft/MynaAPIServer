@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.0.5";
+    let version = "2.1.0";
 
     let dirty;
 
@@ -81,6 +81,9 @@ var backgammon = (() => {
     let gameOverImageData;
     let gameOverDelay = 10;
     let gameOverMaxSpeed = 3;
+
+    let computerGame = false;
+    let computerActionCount = 0;
 
     const animateGameOver = (canvas, winner) => {
         const ctx = canvas.getContext("2d");
@@ -188,45 +191,52 @@ var backgammon = (() => {
         }
     };
 
-    const isPlaying = () => {
-        return model && model.board && !model.board.gameOver;
+    const isPlaying = (m) => {
+        m = m || model;
+        return m && m.board && !m.board.gameOver;
     };
 
-    const isActivePlayer = () => {
-        return model && model.board && model.currentUser && model.currentUser.name === getActivePlayer();
+    const isActivePlayer = (m) => {
+        m = m || model;
+        return m && m.board && m.currentUser && m.currentUser.name === getActivePlayer(m);
     };
 
-    const isBlackPlayer = () => {
-        return model && model.currentUser && model.board && model.currentUser.name === model.board.blackPlayer;
+    const isBlackPlayer = (m) => {
+        m = m || model;
+        return m && m.currentUser && m.board && m.currentUser.name === m.board.blackPlayer;
     };
 
-    const hasRolledDice = () => {
-        return model && model.board && model.board.currentRollNumbers.length > 0;
+    const hasRolledDice = (m) => {
+        m = m || model;
+        return m && m.board && m.board.currentRollNumbers.length > 0;
     };
 
-    const canRollDice = () => {
-        if (model && model.board && !model.board.gameOver) {
-            if (!model.board.gameStarted) {
-                return model.currentUser && !model.board.hasStartRoll;
+    const canRollDice = (m) => {
+        m = m || model;
+        if (m && m.board && !m.board.gameOver) {
+            if (!m.board.gameStarted) {
+                return m.currentUser && !m.board.hasStartRoll;
             }
-            return isActivePlayer() && model.board.currentRollNumbers.length == 0;
+            return isActivePlayer(m) && m.board.currentRollNumbers.length == 0;
         }
         return false;
     };
 
-    const getOpponentPlayer = () => {
-        if (isBlackPlayer()) {
-            return model.board.whitePlayer;
+    const getOpponentPlayer = (m) => {
+        m = m || model;
+        if (isBlackPlayer(m)) {
+            return m.board.whitePlayer;
         }
-        return model.board.blackPlayer;
+        return m.board.blackPlayer;
     };
 
-    const getActivePlayer = () => {
-        if (model.board.currentColor === "B") {
-            return model.board.blackPlayer;
+    const getActivePlayer = (m) => {
+        m = m || model;
+        if (m.board.currentColor === "B") {
+            return m.board.blackPlayer;
         }
-        else if (model.board.currentColor === "W") {
-            return model.board.whitePlayer;
+        else if (m.board.currentColor === "W") {
+            return m.board.whitePlayer;
         }
         return undefined;
     };
@@ -260,7 +270,14 @@ var backgammon = (() => {
                 if (model.board.giveUp) {
                     msg += " " + _T("INFO_GIVE_UP");
                 }
-                if (ticket && model.currentUser) {
+                if (computerGame) {
+                    controls.createButton(pConfirmNextGame, _T("BUTTON_NEXT_GAME"), () => {
+                        computerGame = false;
+                        render();
+                    }, "newgame").id = "newgame";
+                    isActive = true;
+                }
+                else if (ticket && model.currentUser) {
                     if (model.board.nextGameRequested) {
                         if (model.currentUser.startGameConfirmed) {
                             controls.create(pConfirmNextGame, "p", undefined, _T("INFO_WAIT_CONFIRMATION"));
@@ -612,6 +629,13 @@ var backgammon = (() => {
     };
 
     const draw = () => {
+        window.requestAnimationFrame(draw);
+        if (computerGame && computerActionCount > 0) {
+            computerActionCount -= 1;
+            if (computerActionCount === 0) {
+                onComputerAction();
+            }
+        }
         const canvas = document.getElementById("playground-id");
         if (canvas && dirty) {
             gameOverImageData = undefined;
@@ -655,7 +679,6 @@ var backgammon = (() => {
         else if (gameOverSprites.length > 0) {
             gameOverSprites = [];
         }
-        window.requestAnimationFrame(draw);
     };
 
     const updateMessage = () => {
@@ -689,6 +712,12 @@ var backgammon = (() => {
         }
     };
 
+    const updateComputerAction = () => {
+        if (computerGame && !(model.board.gameStarted && isActivePlayer() || !model.board.gameStarted && canRollDice())) {
+            computerActionCount = 50 * 5;
+        }
+    };
+
     const updateRollButton = () => {
         const roll = document.getElementById("rollbutton");
         if (roll) {
@@ -718,6 +747,18 @@ var backgammon = (() => {
     };
 
     const update = (to) => {
+        if (computerGame) {
+            updateRollButton();
+            updateSkipButton();
+            updateGiveUpButton();
+            updateComputerAction();
+            updateMessage();
+            if (to) {
+                updateHighlightItem(to);
+            }
+            dirty = true;
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
@@ -828,15 +869,37 @@ var backgammon = (() => {
         }
     };
 
-    const move = (from, to) => {
+    const move = (from, to, m) => {
+        const isComputer = m;
+        m = m || model;
         moveItem = undefined;
         let toMove;
-        model.board.moves.forEach((move) => {
+        m.board.moves.forEach((move) => {
             if (!toMove && move.from === from && move.to === to) {
                 toMove = move;
             }
         });
         if (toMove) {
+            if (computerGame) {
+                utils.fetch_api_call("api/backgammon/computer/move",
+                    {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({ CurrentPlayerName: m.currentUser.name, State: m.internalState, Move: { from: toMove.from, to: toMove.to } })
+                    },
+                    (mnew) => {
+                        if (isComputer) {
+                            model.internalState = mnew.internalState;
+                            onUpdateModel();
+                        }
+                        else {
+                            model = mnew;
+                            update(to);
+                        }
+                    },
+                    handleError);
+                return;
+            }
             disableTimer();
             utils.fetch_api_call("api/backgammon/move",
                 {
@@ -986,21 +1049,22 @@ var backgammon = (() => {
             setActive(true);
             return true;
         }
-        controls.createButton(parent, _T("BUTTON_ROLL_DICE"), btnRoll_click, "rollbutton").id = "rollbutton";
+        controls.createButton(parent, _T("BUTTON_ROLL_DICE"), () => rollDice(), "rollbutton").id = "rollbutton";
         updateRollButton();
-        controls.createButton(parent, _T("BUTTON_CONTINUE"), btnSkip_click, "skipbutton").id = "skipbutton";
+        controls.createButton(parent, _T("BUTTON_CONTINUE"), () => skip(), "skipbutton").id = "skipbutton";
         updateSkipButton();
         controls.createButton(parent, _T("BUTTON_GIVE_UP"), btnGiveUp_click, "giveupbutton").id = "giveupbutton";
         updateGiveUpButton();
+        updateComputerAction();
         return false;
     };
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_BACKGAMMON")} ${version}. ${_T("TEXT_COPYRIGHT")} 2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_BACKGAMMON")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
-        if (ticket) {
-            if (!model.board) {
+        if (ticket || computerGame) {
+            if (!model.board && !computerGame) {
                 controls.createButton(div, _T("BUTTON_LOGOUT"), btnLogout_click, "Logout", "logout-button");
             }
             else {
@@ -1090,10 +1154,14 @@ var backgammon = (() => {
         controls.removeAllChildren(document.body);
         utils.create_cookies_banner(document.body);
         setActive(false);
-        if (model.allUsers.length == 0) {
+        if (model.allUsers && model.allUsers.length == 0) {
             clearTicket();
         }
         const divMain = controls.createDiv(document.body, "main");
+        if (computerGame) {
+            renderMainPage(divMain);
+            return;
+        }
         if (!ticket) {
             if (guestMode) {
                 document.title = `${_T("HEADER_BACKGAMMON")} - ${_T("INFO_GUEST_VIEW")}`;
@@ -1102,6 +1170,7 @@ var backgammon = (() => {
                 }
                 else {
                     controls.create(divMain, "p", undefined, _T("INFO_NO_RUNNING_GAME"));
+                    controls.createButton(divMain, "Computerspiel", () => onStartComputerGame());
                     renderCopyright(divMain);
                 }
             }
@@ -1114,6 +1183,7 @@ var backgammon = (() => {
                     renderLogin(divMain);
                     controls.createDiv(divMain, "error").id = "login-error-id";
                 }
+                controls.createButton(divMain, "Computerspiel", () => onStartComputerGame());
                 renderCopyright(divMain);
             }
         }
@@ -1123,7 +1193,69 @@ var backgammon = (() => {
         enableTimer();
     };
 
+    const onStartComputerGame = () => {
+        computerGame = true;
+        const name = currentUser ? currentUser.name : _T("TEXT_YOU");
+        disableTimer();
+        utils.fetch_api_call("api/backgammon/computer/model", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: name, OpponentPlayerName: _T("TEXT_COMPUTER") })
+            },
+            m => renderModel(m),
+            handleError);
+        return;
+    };
+
+    const onUpdateModel = () => {
+            utils.fetch_api_call("api/backgammon/computer/model", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: model.currentUser.name, State: model.internalState })
+            },
+            m => renderModel(m),
+            handleError);
+    };
+
+    const onComputerAction = () => {
+        if (!computerGame || !model || !model.board || isActivePlayer()) return;
+        utils.fetch_api_call("api/backgammon/computer/model", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: _T("TEXT_COMPUTER"), State: model.internalState })
+            },
+            m => {
+                if (canRollDice(m)) {
+                    rollDice(m);
+                }
+                else if (m.board.gameStarted && !m.board.gameOver && m.board.currentRollNumbers.length) {
+                    if (m.board.moves.length > 0) {
+                        const mv = chooseComputerMove(m.board);
+                        move(mv.from, mv.to, m);
+                    }
+                    else
+                    {
+                        skip(m);
+                    }
+                }
+            },
+            handleError);
+    };
+
+    const getRandom = (min, max) => {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
+    const chooseComputerMove = (board) => {
+        const idx = getRandom(1, board.moves.length);
+        return board.moves[idx - 1];
+    };
+
     const render = () => {
+        if (computerGame && model) {
+            renderModel(model);
+            return;
+        }
         const params = new URLSearchParams(window.location.search);
         if (params.has("debug")) {
             utils.enable_debug(true);
@@ -1216,7 +1348,7 @@ var backgammon = (() => {
             const y = borderHeight + pointHeight + checkerRadius;
             if (evt.offsetX >= x && evt.offsetX <= x + 2 * checkerRadius &&
                 evt.offsetY >= y && evt.offsetY <= y + 2 * checkerRadius) {
-                btnRoll_click();
+                rollDice();
             }
         }
     };
@@ -1320,7 +1452,28 @@ var backgammon = (() => {
         }
     };
 
-    const btnRoll_click = () => {
+    const rollDice = (m) => {
+        const isComputer = m;
+        m = m || model;
+        if (computerGame) {
+            utils.fetch_api_call("api/backgammon/computer/roll", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: m.currentUser.name, State: m.internalState })
+            },
+                (mnew) => {
+                    if (isComputer) {
+                        model.internalState = mnew.internalState;
+                        onUpdateModel();
+                    }
+                    else {
+                        model = mnew;
+                        update();
+                    }
+                },
+                handleError);
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/backgammon/roll", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
@@ -1333,6 +1486,9 @@ var backgammon = (() => {
     };
 
     const btnNextGame_click = () => {
+        if (computerGame) {
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/backgammon/nextgame", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
@@ -1374,7 +1530,29 @@ var backgammon = (() => {
             handleError);
     };
 
-    const btnSkip_click = () => {
+    const skip = (m) => {
+        if (computerGame) {
+            const isComputer = m;
+            m = m || model;
+            utils.fetch_api_call("api/backgammon/computer/skip",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    body: JSON.stringify({ CurrentPlayerName: m.currentUser.name, State: m.internalState })
+                },
+                (mnew) => {
+                    if (isComputer) {
+                        model.internalState = mnew.internalState;
+                        onUpdateModel();
+                    }
+                    else {
+                        model = mnew;
+                        update();
+                    }
+                },
+                handleError);
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/backgammon/skip", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
@@ -1388,6 +1566,21 @@ var backgammon = (() => {
 
     const btnGiveUp_click = (elem) => {
         if (elem.value == "GiveUpYes") {
+            if (computerGame) {
+                utils.fetch_api_call("api/backgammon/computer/giveup",
+                    {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({ CurrentPlayerName: model.currentUser.name, State: model.internalState })
+                    },
+                    (mnew) => {
+                        model = mnew;
+                        giveUpClicked = false;
+                        render();
+                    },
+                    handleError);
+                return;
+            }
             disableTimer();
             utils.fetch_api_call("api/backgammon/giveup", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
@@ -1410,6 +1603,12 @@ var backgammon = (() => {
 
     const btnEndGame_click = (elem) => {
         if (elem.value == "EndGameYes") {
+            if (computerGame) {
+                computerGame = false;
+                endGameClicked = false;
+                render();
+                return;
+            }
             disableTimer();
             utils.fetch_api_call("api/backgammon/logout", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {

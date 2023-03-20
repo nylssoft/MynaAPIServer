@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2022 Niels Stockfleth
+    Copyright (C) 2022-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ namespace APIServer.Backgammon.Core
 
     public class Checker
     {
+        public Checker() { }
         public Checker(int id, CheckerColor color, int position)
         {
             Id = id;
@@ -41,15 +42,16 @@ namespace APIServer.Backgammon.Core
             Position = c.Position;
         }
 
-        public int Id { get; }
+        public int Id { get; set; }
 
-        public CheckerColor Color { get; }
+        public CheckerColor Color { get; set; }
 
         public int Position { get; set; }
     }
 
     public class Point
     {
+        public Point() { }
         public Point(int position)
         {
             Position = position;
@@ -66,27 +68,51 @@ namespace APIServer.Backgammon.Core
             }
         }
 
-        public int Position { get; }
+        public int Position { get; set; }
 
-        public Stack<Checker> Checkers { get; }
+        public Stack<Checker> Checkers { get; set; }
     }
 
     public class Roll
     {
+        public Roll() { }
         public Roll(int n1, int n2)
         {
             Number1 = n1;
             Number2 = n2;
         }
 
-        public int Number1 { get; }
+        public int Number1 { get; set; }
 
-        public int Number2 { get; }
+        public int Number2 { get; set; }
 
         public override string ToString()
         {
             return $"{Number1} - {Number2}";
         }
+    }
+
+    public class InternalState
+    {
+        public InternalState() { }
+        public string WhitePlayer { get; set; }
+        public string BlackPlayer { get; set; }
+        public CheckerColor? CurrentColor { get; set; }
+        public CheckerColor? Winner { get; set; }
+        public bool GameOver { get; set; }
+        public bool GameStarted { get; set; }
+        public bool Gammon { get; set; }
+        public bool Backgammon { get; set; }
+        public bool NextGameRequested { get; set; }
+        public Roll CurrentRoll { get; set; }
+        public Roll LastRoll { get; set; }
+        public bool GiveUp { get; set; }
+        public Point[] BoardPoints { get; set; }
+        public List<Checker> CheckerBar { get; set; }
+        public List<Checker> CheckerOff { get; set; }
+        public Dictionary<CheckerColor, int> StartRollNumbers { get; set; }
+        public List<int> RemainingRollNumbers { get; set; }
+        public int NextCheckerId { get; set; }
     }
 
     public class BackgammonBoard
@@ -229,12 +255,59 @@ namespace APIServer.Backgammon.Core
             startRollNumbers = new Dictionary<CheckerColor, int>(source.startRollNumbers);
         }
 
+        public BackgammonBoard(InternalState s)
+        {
+            // properties
+            WhitePlayer = s.WhitePlayer;
+            BlackPlayer = s.BlackPlayer;
+            CurrentColor = s.CurrentColor;
+            Winner = s.Winner;
+            GameOver = s.GameOver;
+            GameStarted = s.GameStarted;
+            Gammon = s.Gammon;
+            Backgammon = s.Backgammon;
+            CurrentRoll = s.CurrentRoll;
+            LastRoll = s.LastRoll;
+            // private members
+            remainingRollNumbers = s.RemainingRollNumbers;
+            board = s.BoardPoints;
+            bar = s.CheckerBar;
+            offBoard = s.CheckerOff;
+            startRollNumbers = s.StartRollNumbers;
+            giveUp = s.GiveUp;
+            nextCheckerId = s.NextCheckerId;
+        }
+
         public void AddNewCheckers(Point p, CheckerColor color, int count)
         {
             for (; count > 0; count--)
             {
                 p.Checkers.Push(new Checker(nextCheckerId++, color, p.Position));
             }
+        }
+
+        public InternalState GetInternalState()
+        {
+            InternalState s = new InternalState();
+            s.WhitePlayer = WhitePlayer;
+            s.BlackPlayer = BlackPlayer;
+            s.CurrentColor = CurrentColor;
+            s.Winner = Winner;
+            s.GameOver = GameOver;
+            s.GameStarted = GameStarted;
+            s.Gammon = Gammon;
+            s.Backgammon = Backgammon;
+            s.NextGameRequested = NextGameRequested;
+            s.CurrentRoll = CurrentRoll;
+            s.LastRoll = LastRoll;
+            s.GiveUp = GiveUp;
+            s.BoardPoints = board;
+            s.CheckerBar = bar;
+            s.CheckerOff = offBoard;
+            s.StartRollNumbers = startRollNumbers;
+            s.RemainingRollNumbers = remainingRollNumbers;
+            s.NextCheckerId = nextCheckerId;
+            return s;
         }
 
         // state

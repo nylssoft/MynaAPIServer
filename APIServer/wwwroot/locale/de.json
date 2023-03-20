@@ -470,6 +470,7 @@
   "TEXT_BIRTHDAY": "Geburtstag",
   "TEXT_CLUBS": "Kreuz",
   "TEXT_CONFIRM_PWD": "Kennwort-Bestätigung",
+  "TEXT_COMPUTER": "Computer",
   "TEXT_COPYRIGHT": "Copyright",
   "TEXT_COPYRIGHT_YEAR": "Copyright 2023",
   "TEXT_DECLINE_BID": "Weg",
@@ -539,5 +540,6 @@
   "TEXT_TUESDAY": "Dienstag",
   "TEXT_WEDNESDAY": "Mittwoch",
   "TEXT_WITH": "Mit",
-  "TEXT_WITHOUT": "Ohne"
+  "TEXT_WITHOUT": "Ohne",
+  "TEXT_YOU": "Du"
 }

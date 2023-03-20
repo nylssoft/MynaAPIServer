@@ -469,6 +469,7 @@
   "TEXT_ACE": "ace",
   "TEXT_BIRTHDAY": "Birthday",
   "TEXT_CLUBS": "clubs",
+  "TEXT_COMPUTER": "Computer",
   "TEXT_CONFIRM_PWD": "confirm password",
   "TEXT_COPYRIGHT": "Copyright",
   "TEXT_COPYRIGHT_YEAR": "Copyright 2023",
@@ -539,5 +540,6 @@
   "TEXT_TUESDAY": "Tuesday",
   "TEXT_WEDNESDAY": "Wednesday",
   "TEXT_WITH": "with",
-  "TEXT_WITHOUT": "without"
+  "TEXT_WITHOUT": "without",
+  "TEXT_YOU": "You"
 }

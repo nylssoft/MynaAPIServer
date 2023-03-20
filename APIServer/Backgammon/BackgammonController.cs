@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2022 Niels Stockfleth
+    Copyright (C) 2022-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,6 +49,49 @@ namespace APIServer.Backgammon
         {
             if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             return new JsonResult(BackgammonService.Login(PwdManService, GetToken(), username));
+        }
+
+        // --- computer game (stateless)
+
+        [HttpPost]
+        [Route("api/backgammon/computer/model")]
+        public IActionResult GetModel([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName)) return null;
+            if (string.IsNullOrEmpty(request.State) && string.IsNullOrEmpty(request.OpponentPlayerName)) return null;
+            return new JsonResult(BackgammonService.GetModel(request.CurrentPlayerName, request.OpponentPlayerName, request.State));
+        }
+
+        [HttpPost]
+        [Route("api/backgammon/computer/roll")]
+        public IActionResult Roll([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.State)) return null;
+            return new JsonResult(BackgammonService.Roll(request.CurrentPlayerName, request.State));
+        }
+
+        [HttpPost]
+        [Route("api/backgammon/computer/move")]
+        public IActionResult Move([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.State)) return null;
+            return new JsonResult(BackgammonService.Move(request.CurrentPlayerName, request.State, request.Move));
+        }
+
+        [HttpPost]
+        [Route("api/backgammon/computer/skip")]
+        public IActionResult Skip([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.State)) return null;
+            return new JsonResult(BackgammonService.Skip(request.CurrentPlayerName, request.State));
+        }
+
+        [HttpPost]
+        [Route("api/backgammon/computer/giveup")]
+        public IActionResult GiveUp([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.State)) return null;
+            return new JsonResult(BackgammonService.GiveUp(request.CurrentPlayerName, request.State));
         }
 
         // --- with authentication
