@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.0";
+    let version = "2.1.1";
 
     let dirty;
 
@@ -1170,7 +1170,7 @@ var backgammon = (() => {
                 }
                 else {
                     controls.create(divMain, "p", undefined, _T("INFO_NO_RUNNING_GAME"));
-                    controls.createButton(divMain, "Computerspiel", () => onStartComputerGame());
+                    controls.createButton(divMain, _T("BUTTON_COMPUTER_GAME"), () => onStartComputerGame());
                     renderCopyright(divMain);
                 }
             }
@@ -1183,7 +1183,7 @@ var backgammon = (() => {
                     renderLogin(divMain);
                     controls.createDiv(divMain, "error").id = "login-error-id";
                 }
-                controls.createButton(divMain, "Computerspiel", () => onStartComputerGame());
+                controls.createButton(divMain, _T("BUTTON_COMPUTER_GAME"), () => onStartComputerGame());
                 renderCopyright(divMain);
             }
         }
@@ -1247,8 +1247,68 @@ var backgammon = (() => {
     };
 
     const chooseComputerMove = (board) => {
-        const idx = getRandom(1, board.moves.length);
-        return board.moves[idx - 1];
+        if (utils.is_debug()) {
+            utils.debug(board);
+            utils.debug(board.moves);
+            utils.debug(board.items);
+        }
+        let bestScore;
+        let bestScoreIndizes;
+        for (let idx = 0; idx < board.moves.length; idx++) {
+            const mv = board.moves[idx];
+            const score = getScore(board.items, mv.from, mv.to);
+            if (utils.is_debug()) utils.debug(`Score after move ${mv.from} -> ${mv.to}: ${score}`);
+            if (!bestScore || score > bestScore) {
+                bestScore = score;
+                bestScoreIndizes = [idx];
+                if (utils.is_debug()) utils.debug(`Best score: ${bestScore}`);
+            }
+            else if (score === bestScore) {
+                bestScoreIndizes.push(idx);
+            }
+        }
+        const r = getRandom(1, bestScoreIndizes.length);
+        return board.moves[bestScoreIndizes[r-1]];
+    };
+
+    const getScore = (items, from, to) => {
+        let score = 0;
+        if (to === -2) { // offboard
+            if (utils.is_debug()) utils.debug("offboard move => +20");
+            score += 20;
+        }
+        // prefer moves out of player's home zone
+        if (from >= 18 && to <= 17) {
+            if (utils.is_debug()) utils.debug("move out of player's home zone => +10");
+            score += 10;
+        }
+        let toFound = to < 0;
+        items.forEach(item => {
+            // leave single checker?
+            if (from === item.position && item.count === 2) {
+                if (utils.is_debug()) utils.debug("leave single checker => -50");
+                score -= 50;
+            }
+            if (to === item.position) {
+                toFound = true;
+                // hit player's checker?
+                if (item.color === "W") {
+                    if (utils.is_debug()) utils.debug("hit checker => +30");
+                    score += 30;
+                }
+                // add to existing checker
+                else {
+                    if (utils.is_debug()) utils.debug("add to existing checker => +50");
+                    score += 50;
+                }
+            }
+        });
+        // leave single checker
+        if (!toFound) {
+            if (utils.is_debug()) utils.debug("create new single checker => -50");
+            score -= 50;
+        }
+        return score;
     };
 
     const render = () => {
