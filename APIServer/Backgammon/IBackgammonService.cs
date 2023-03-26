@@ -30,7 +30,7 @@ namespace APIServer.Backgammon
 
         // --- computer game (stateless)
 
-        BackgammonModel GetModel(string currentPlayerName, string opponentPlayerName, string state);
+        BackgammonModel GetModel(string currentPlayerName, string opponentPlayerName, bool buildMoveTree, string state);
 
         BackgammonModel Roll(string currentPlayerName, string state);
 

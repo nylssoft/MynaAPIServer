@@ -26,5 +26,7 @@ namespace APIServer.Backgammon.Model
         public string State { get; set; }
 
         public MoveModel Move { get; set; }
+
+        public bool BuildMoveTree { get; set; }
     }
 }

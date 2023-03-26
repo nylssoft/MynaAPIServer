@@ -115,6 +115,17 @@ namespace APIServer.Backgammon.Core
         public int NextCheckerId { get; set; }
     }
 
+    public class MoveNode
+    {
+        public int From { get; set; }
+
+        public int To { get; set; }
+
+        public double HitPropability { get; set; }
+
+        public List<MoveNode> ChildNodes { get; set; }
+    }
+
     public class BackgammonBoard
     {
         // --- classes
@@ -358,6 +369,79 @@ namespace APIServer.Backgammon.Core
                 return val;
             }
             return null;
+        }
+
+        public List<MoveNode> BuildMoveTree()
+        {
+            List<MoveNode> ret = new();
+            foreach (var move in GetAllMoves())
+            {
+                var temp = new BackgammonBoard(this);
+                temp.MoveInternal(move.Item1, move.Item2);
+                var node = new MoveNode { From = move.Item1, To = move.Item2 };
+                node.HitPropability = temp.GetHitPropability();
+                node.ChildNodes = temp.BuildMoveTree();
+                ret.Add(node);
+            }
+            return ret;
+        }
+
+        private double GetHitPropability()
+        {
+            // number of roll pairs that can reach the distance from 1 to 12
+            var map = new Dictionary<int, int>();
+            map[1] = 11; // (1,1),...,(1,6) = 6, (6,1),...,(2,1) = 5 => 6 + 5 = 11
+            map[2] = 12; // (1,1) = 1, (2,1),...,(2,6) = 6, (1,2),...,(6,2) = 6 => 1 + 6 + 5 = 12
+            map[3] = 13; // (2,1),(1,2) = 2, (3,1),...,(3,6) = 6, (1,3),...,(6,3) = 6 => 2 + 6 + 5 = 13
+            map[4] = 14; // (1,3),(3,1),(2,2) = 3, (4,1),...,(4,6) = 6, (1,4),...,(6,4) = 5 => 3 + 6 + 5 = 14
+            map[5] = 15; // (1,4),(4,1),(2,3),(3,2) = 4, (5,1),...,(5,6) = 6, (1,5),...,(6,5) = 5 => 4 + 6 + 5 = 15
+            map[6] = 16; // (1,5),(5,1),(2,4),(4,2),(3,3) = 5, (6,1),...,(6,6) = 6, (1,6),...,(5,6) = 5 => 5 + 6 + 5 = 16
+            map[7] = 6; // (1,6),(6,1),(2,5),(5,2),(3,4),(4,3) = 6
+            map[8] = 5; // (2,6),(6,2),(3,5),(5,3),(4,4) = 5
+            map[9] = 4; // (3,6),(6,3),(5,4),(4,5) = 4
+            map[10] = 3; // (4,6),(6,4),(5,5) = 3
+            map[11] = 2; // (5,6),(6,5) = 2
+            map[12] = 1; // (6,6) = 1
+            var playerPoints = board.Where(p => p.Checkers.Any() && p.Checkers.Peek().Color == CheckerColor.White);
+            var playerCheckersOnBar = bar.Count(c => c.Color == CheckerColor.White);
+            var hitable = board.Where(p => p.Checkers.Any() && p.Checkers.Peek().Color == CheckerColor.Black && p.Checkers.Count == 1);
+            double hitProp = 0.0;
+            int maxDistance = 12;
+            if (playerCheckersOnBar > 0)
+            {
+                var hitableBar = hitable.Where(p => p.Position <= 5).Select(p => p.Position);
+                foreach (var pos in hitableBar)
+                {
+                    var distance = pos + 1; // 1 to 6
+                    var prop = map[distance] / 36.0;
+                    if (prop > hitProp)
+                    {
+                        hitProp = prop;
+                    }
+                }
+                maxDistance = playerCheckersOnBar == 1 ? 6 : 0;
+            }
+            if (maxDistance > 0)
+            {
+                foreach (var computerPoint in hitable)
+                {
+                    var hitableBoard = playerPoints
+                        .Where(playerPoint =>
+                                    playerPoint.Position < computerPoint.Position &&
+                                    playerPoint.Position + maxDistance >= computerPoint.Position)
+                        .Select(p => p.Position);
+                    foreach (var pos in hitableBoard)
+                    {
+                        var distance = computerPoint.Position - pos; // 1 to maxDistance
+                        var prop = map[distance] / 36.0;
+                        if (prop > hitProp)
+                        {
+                            hitProp = prop;
+                        }
+                    }
+                }
+            }
+            return hitProp;
         }
 
         public List<(int,int)> GetAllMoves()

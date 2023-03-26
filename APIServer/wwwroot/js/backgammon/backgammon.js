@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.1";
+    let version = "2.1.2";
 
     let dirty;
 
@@ -1230,8 +1230,7 @@ var backgammon = (() => {
                 }
                 else if (m.board.gameStarted && !m.board.gameOver && m.board.currentRollNumbers.length) {
                     if (m.board.moves.length > 0) {
-                        const mv = chooseComputerMove(m.board);
-                        move(mv.from, mv.to, m);
+                        onChooseComputerMove(m);
                     }
                     else
                     {
@@ -1242,73 +1241,42 @@ var backgammon = (() => {
             handleError);
     };
 
-    const getRandom = (min, max) => {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+    const onChooseComputerMove = (m) => {
+        utils.fetch_api_call("api/backgammon/computer/movetree", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: _T("TEXT_COMPUTER"), State: m.internalState, BuildMoveTree: true })
+            },
+            mnew => {
+                if (utils.is_debug()) utils.debug(mnew.board.moveTree);
+                let bestProp;
+                let bestNode;
+                mnew.board.moveTree.forEach(mn => {
+                    let p = getLowestHitPropability(mn);
+                    if (utils.is_debug()) utils.debug(`hit prop for ${mn.from} - ${mn.to} => ${p}`);
+                    if (p != undefined && (!bestProp || p < bestProp)) {
+                        bestNode = mn;
+                        bestProp = p;
+                    }
+                });
+                if (utils.is_debug()) utils.debug(`best move is ${bestNode.from} -> ${bestNode.to} with hit prop ${bestProp}`);
+                move(bestNode.from, bestNode.to, mnew);
+            },
+            handleError);
     };
 
-    const chooseComputerMove = (board) => {
-        if (utils.is_debug()) {
-            utils.debug(board);
-            utils.debug(board.moves);
-            utils.debug(board.items);
+    const getLowestHitPropability = (node) => {
+        if (node.childNodes.length === 0) {
+            return node.hitPropability;
         }
-        let bestScore;
-        let bestScoreIndizes;
-        for (let idx = 0; idx < board.moves.length; idx++) {
-            const mv = board.moves[idx];
-            const score = getScore(board.items, mv.from, mv.to);
-            if (utils.is_debug()) utils.debug(`Score after move ${mv.from} -> ${mv.to}: ${score}`);
-            if (!bestScore || score > bestScore) {
-                bestScore = score;
-                bestScoreIndizes = [idx];
-                if (utils.is_debug()) utils.debug(`Best score: ${bestScore}`);
-            }
-            else if (score === bestScore) {
-                bestScoreIndizes.push(idx);
-            }
-        }
-        const r = getRandom(1, bestScoreIndizes.length);
-        return board.moves[bestScoreIndizes[r-1]];
-    };
-
-    const getScore = (items, from, to) => {
-        let score = 0;
-        if (to === -2) { // offboard
-            if (utils.is_debug()) utils.debug("offboard move => +20");
-            score += 20;
-        }
-        // prefer moves out of player's home zone
-        if (from >= 18 && to <= 17) {
-            if (utils.is_debug()) utils.debug("move out of player's home zone => +10");
-            score += 10;
-        }
-        let toFound = to < 0;
-        items.forEach(item => {
-            // leave single checker?
-            if (from === item.position && item.count === 2) {
-                if (utils.is_debug()) utils.debug("leave single checker => -50");
-                score -= 50;
-            }
-            if (to === item.position) {
-                toFound = true;
-                // hit player's checker?
-                if (item.color === "W") {
-                    if (utils.is_debug()) utils.debug("hit checker => +30");
-                    score += 30;
-                }
-                // add to existing checker
-                else {
-                    if (utils.is_debug()) utils.debug("add to existing checker => +50");
-                    score += 50;
-                }
+        let bestChild;
+        node.childNodes.forEach(childNode => {
+            let p = getLowestHitPropability(childNode);
+            if (p != undefined && (!bestChild || p < bestChild)) {
+                bestChild = p;
             }
         });
-        // leave single checker
-        if (!toFound) {
-            if (utils.is_debug()) utils.debug("create new single checker => -50");
-            score -= 50;
-        }
-        return score;
+        return bestChild;
     };
 
     const render = () => {

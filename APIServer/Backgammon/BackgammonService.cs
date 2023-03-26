@@ -132,7 +132,7 @@ namespace APIServer.Backgammon
 
         // --- computer game (stateless)
 
-        public BackgammonModel GetModel(string currentPlayerName, string opponentPlayerName, string state)
+        public BackgammonModel GetModel(string currentPlayerName, string opponentPlayerName, bool buildMoveTree, string state)
         {
             BackgammonBoard b;
             Context ctx = null;
@@ -147,7 +147,7 @@ namespace APIServer.Backgammon
             }
             var ret = new BackgammonModel();
             ret.CurrentUser = new UserModel() { Name = currentPlayerName, StartGameConfirmed = true };
-            ret.Board = CreateBoardModel(ctx, b);
+            ret.Board = CreateBoardModel(ctx, b, buildMoveTree);
             ret.InternalState = GetInternalState(b);
             return ret;
         }
@@ -448,7 +448,7 @@ namespace APIServer.Backgammon
 
         // --- private static
 
-        private static BoardModel CreateBoardModel(Context ctx, BackgammonBoard b)
+        private static BoardModel CreateBoardModel(Context ctx, BackgammonBoard b, bool buildMoveTree = false)
         {
             var m = new BoardModel();
             // board options and status
@@ -510,6 +510,10 @@ namespace APIServer.Backgammon
                         From = move.Item1,
                         To = move.Item2
                     });
+                }
+                if (buildMoveTree)
+                {
+                    m.MoveTree = b.BuildMoveTree();
                 }
             }
             // items

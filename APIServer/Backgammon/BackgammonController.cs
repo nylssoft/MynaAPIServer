@@ -59,7 +59,16 @@ namespace APIServer.Backgammon
         {
             if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName)) return null;
             if (string.IsNullOrEmpty(request.State) && string.IsNullOrEmpty(request.OpponentPlayerName)) return null;
-            return new JsonResult(BackgammonService.GetModel(request.CurrentPlayerName, request.OpponentPlayerName, request.State));
+            return new JsonResult(BackgammonService.GetModel(request.CurrentPlayerName, request.OpponentPlayerName, false, request.State));
+        }
+
+        [HttpPost]
+        [Route("api/backgammon/computer/movetree")]
+        public IActionResult GetMoveTree([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName)) return null;
+            if (string.IsNullOrEmpty(request.State) && string.IsNullOrEmpty(request.OpponentPlayerName)) return null;
+            return new JsonResult(BackgammonService.GetModel(request.CurrentPlayerName, request.OpponentPlayerName, request.BuildMoveTree, request.State));
         }
 
         [HttpPost]
