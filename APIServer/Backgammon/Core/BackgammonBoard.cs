@@ -406,8 +406,7 @@ namespace APIServer.Backgammon.Core
             var playerCheckersOnBar = bar.Count(c => c.Color == CheckerColor.White);
             var hitable = board.Where(p => p.Checkers.Any() && p.Checkers.Peek().Color == CheckerColor.Black && p.Checkers.Count == 1);
             double hitProp = 0.0;
-            int maxDistance = 12;
-            if (playerCheckersOnBar > 0)
+            if (playerCheckersOnBar > 1)
             {
                 var hitableBar = hitable.Where(p => p.Position <= 5).Select(p => p.Position);
                 foreach (var pos in hitableBar)
@@ -419,20 +418,26 @@ namespace APIServer.Backgammon.Core
                         hitProp = prop;
                     }
                 }
-                maxDistance = playerCheckersOnBar == 1 ? 6 : 0;
             }
-            if (maxDistance > 0)
+            else
             {
-                foreach (var computerPoint in hitable)
+                foreach (var cp in hitable)
                 {
                     var hitableBoard = playerPoints
-                        .Where(playerPoint =>
-                                    playerPoint.Position < computerPoint.Position &&
-                                    playerPoint.Position + maxDistance >= computerPoint.Position)
+                        .Where(p => p.Position < cp.Position && p.Position + 12 >= cp.Position)
                         .Select(p => p.Position);
                     foreach (var pos in hitableBoard)
                     {
-                        var distance = computerPoint.Position - pos; // 1 to maxDistance
+                        var distance = cp.Position - pos; // 1 to maxDistance
+                        var prop = map[distance] / 36.0;
+                        if (prop > hitProp)
+                        {
+                            hitProp = prop;
+                        }
+                    }
+                    if (playerCheckersOnBar == 1 && cp.Position <= 11)
+                    {
+                        var distance = cp.Position + 1; // 1 to 12
                         var prop = map[distance] / 36.0;
                         if (prop > hitProp)
                         {

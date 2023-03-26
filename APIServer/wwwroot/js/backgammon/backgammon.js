@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.2";
+    let version = "2.1.3";
 
     let dirty;
 
@@ -1254,7 +1254,7 @@ var backgammon = (() => {
                 mnew.board.moveTree.forEach(mn => {
                     let p = getLowestHitPropability(mn);
                     if (utils.is_debug()) utils.debug(`hit prop for ${mn.from} - ${mn.to} => ${p}`);
-                    if (p != undefined && (!bestProp || p < bestProp)) {
+                    if (p != undefined && (bestProp == undefined || p < bestProp)) {
                         bestNode = mn;
                         bestProp = p;
                     }
@@ -1272,7 +1272,7 @@ var backgammon = (() => {
         let bestChild;
         node.childNodes.forEach(childNode => {
             let p = getLowestHitPropability(childNode);
-            if (p != undefined && (!bestChild || p < bestChild)) {
+            if (p != undefined && (bestChild == undefined || p < bestChild)) {
                 bestChild = p;
             }
         });
