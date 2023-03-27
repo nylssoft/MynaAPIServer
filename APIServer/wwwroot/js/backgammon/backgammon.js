@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.3";
+    let version = "2.1.4";
 
     let dirty;
 
@@ -1250,19 +1250,54 @@ var backgammon = (() => {
             mnew => {
                 if (utils.is_debug()) utils.debug(mnew.board.moveTree);
                 let bestProp;
-                let bestNode;
+                let bestNodes = [];
                 mnew.board.moveTree.forEach(mn => {
                     let p = getLowestHitPropability(mn);
                     if (utils.is_debug()) utils.debug(`hit prop for ${mn.from} - ${mn.to} => ${p}`);
-                    if (p != undefined && (bestProp == undefined || p < bestProp)) {
-                        bestNode = mn;
+                    if (p != undefined && (bestProp == undefined || p <= bestProp)) {
+                        if (bestProp != undefined && p < bestProp) {
+                            bestNodes = [];
+                        }
+                        bestNodes.push(mn);
                         bestProp = p;
                     }
                 });
-                if (utils.is_debug()) utils.debug(`best move is ${bestNode.from} -> ${bestNode.to} with hit prop ${bestProp}`);
+                if (utils.is_debug()) {
+                    bestNodes.forEach(n => utils.debug(`best move is ${n.from} -> ${n.to} with hit prop ${bestProp}.`));
+                }
+                const bestNode = chooseBestNode(bestNodes, mnew);
+                if (utils.is_debug()) utils.debug(`Use best move ${bestNode.from} -> ${bestNode.to}.`);
                 move(bestNode.from, bestNode.to, mnew);
             },
             handleError);
+    };
+
+    const chooseBestNode = (bestNodes, m) => {
+        const hitable = m.board.items
+            .filter(item => item.color == "W" && item.count == 1 && item.position >= 0)
+            .map(item => item.position);
+        let hit = false;
+        let bestNode;
+        bestNodes.forEach(n => {
+            if (bestNode == undefined) {
+                bestNode = n;
+            }
+            else if (bestNode.to != -2) {
+                if (n.to == -2) {
+                    bestNode = n;
+                }
+                else if (!hit) {
+                    if (hitable.includes(n.to)) {
+                        bestNode = n;
+                        hit = true;
+                    }
+                    else if (n.from > bestNode.from || n.from == bestNode.from && n.to > bestNode.to) {
+                        bestNode = n;
+                    }
+                }
+            }
+        });
+        return bestNode;
     };
 
     const getLowestHitPropability = (node) => {
