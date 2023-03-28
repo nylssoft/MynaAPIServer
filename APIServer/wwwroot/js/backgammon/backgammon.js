@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.4";
+    let version = "2.1.5";
 
     let dirty;
 
@@ -1248,28 +1248,52 @@ var backgammon = (() => {
                 body: JSON.stringify({ CurrentPlayerName: _T("TEXT_COMPUTER"), State: m.internalState, BuildMoveTree: true })
             },
             mnew => {
-                if (utils.is_debug()) utils.debug(mnew.board.moveTree);
-                let bestProp;
-                let bestNodes = [];
-                mnew.board.moveTree.forEach(mn => {
-                    let p = getLowestHitPropability(mn);
-                    if (utils.is_debug()) utils.debug(`hit prop for ${mn.from} - ${mn.to} => ${p}`);
-                    if (p != undefined && (bestProp == undefined || p <= bestProp)) {
-                        if (bestProp != undefined && p < bestProp) {
-                            bestNodes = [];
-                        }
-                        bestNodes.push(mn);
-                        bestProp = p;
-                    }
-                });
-                if (utils.is_debug()) {
-                    bestNodes.forEach(n => utils.debug(`best move is ${n.from} -> ${n.to} with hit prop ${bestProp}.`));
-                }
+                const bestNodes = collectBestNodes(mnew);
                 const bestNode = chooseBestNode(bestNodes, mnew);
                 if (utils.is_debug()) utils.debug(`Use best move ${bestNode.from} -> ${bestNode.to}.`);
                 move(bestNode.from, bestNode.to, mnew);
             },
             handleError);
+    };
+
+    const collectBestNodes = (m) => {
+        if (utils.is_debug()) utils.debug(m.board.moveTree);
+        const moveNodesInPlayerHome = m.board.moveTree.filter(mn => mn.from >= 18);
+        if (moveNodesInPlayerHome.length > 0) {
+            const computerPosOnBoard = m.board.items.filter(item => item.color == "B" && item.position >= 0).map(item => item.position);
+            const highestComputerPosOutsidePlayerHome = computerPosOnBoard
+                .filter(p => p < 18)
+                .reduce((p, v) => p > v ? p : v, 0);
+            const lowestPlayerPos = m.board.items
+                .filter(item => item.color == "W" && item.position >= -1)
+                .map(item => item.position)
+                .reduce((p, v) => p < v ? p : v, 24);
+            if (highestComputerPosOutsidePlayerHome < lowestPlayerPos) {
+                if (utils.is_debug()) utils.debug("choose move from player home.");
+                return getBestNodesFromMoveTree(moveNodesInPlayerHome);
+            }
+        }
+        return getBestNodesFromMoveTree(m.board.moveTree);
+    };
+
+    const getBestNodesFromMoveTree = (moveTree) => {
+        let bestProp;
+        let bestNodes = [];
+        moveTree.forEach(mn => {
+            let p = getLowestHitPropability(mn);
+            if (utils.is_debug()) utils.debug(`hit prop for ${mn.from} - ${mn.to} => ${p}`);
+            if (p != undefined && (bestProp == undefined || p <= bestProp)) {
+                if (bestProp != undefined && p < bestProp) {
+                    bestNodes = [];
+                }
+                bestNodes.push(mn);
+                bestProp = p;
+            }
+        });
+        if (utils.is_debug()) {
+            bestNodes.forEach(n => utils.debug(`best move is ${n.from} -> ${n.to} with hit prop ${bestProp}.`));
+        }
+        return bestNodes;
     };
 
     const chooseBestNode = (bestNodes, m) => {
@@ -1291,7 +1315,12 @@ var backgammon = (() => {
                         bestNode = n;
                         hit = true;
                     }
-                    else if (n.from > bestNode.from || n.from == bestNode.from && n.to > bestNode.to) {
+                    else if (bestNode.from <= 5 && n.from <= 5) {
+                        if (n.to < bestNode.to) {
+                            bestNode = n;
+                        }
+                    }
+                    else if (n.from > bestNode.from || n.from == bestNode.from && n.to < bestNode.to) {
                         bestNode = n;
                     }
                 }
