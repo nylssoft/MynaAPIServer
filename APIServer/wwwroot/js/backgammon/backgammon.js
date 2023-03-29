@@ -45,7 +45,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.5";
+    let version = "2.1.6";
 
     let dirty;
 
@@ -84,6 +84,7 @@ var backgammon = (() => {
 
     let computerGame = false;
     let computerActionCount = 0;
+    let computerMoveData;
 
     const animateGameOver = (canvas, winner) => {
         const ctx = canvas.getContext("2d");
@@ -487,8 +488,64 @@ var backgammon = (() => {
         }
         // checkers
         items.forEach((item) => {
-            drawCheckers(ctx, item.position, item.count, item.color);
+            let cnt = item.count;
+            if (computerMoveData && computerMoveData.from == item.position) {
+                cnt -= 1;
+            }
+            drawCheckers(ctx, item.position, cnt, item.color);
         });
+    };
+
+    const drawCurrentMove = (ctx) => {
+        if (!computerMoveData) return;
+        const items = computerMoveData.model.board.items;
+        const fromItem = items.find(item => item.position == computerMoveData.from);
+        const toItem = items.find(item => item.position == computerMoveData.to);
+        if (computerMoveData.coordinates == undefined) {
+            computerMoveData.coordinates = getCheckerCoordinates(fromItem.position, fromItem.count, fromItem.color);
+            computerMoveData.destCoordinates = getCheckerCoordinates(computerMoveData.to, !toItem ? 1 : toItem.count + 1, fromItem.color);
+            computerMoveData.yMoveMidddle = true;
+            computerMoveData.xMoveDest = false;
+            computerMoveData.yMoveDest = false;
+        }
+        drawCheckerArc(ctx, computerMoveData.coordinates, fromItem.color);
+        const moveSpeed = 5;
+        if (computerMoveData.yMoveMidddle) {
+            const ymiddle = borderHeight + pointHeight + 2 * checkerRadius;
+            const ydiff = (computerMoveData.coordinates.y > ymiddle) ? -moveSpeed : moveSpeed;
+            if (ydiff > 0 && computerMoveData.coordinates.y + ydiff >= ymiddle ||
+                ydiff < 0 && computerMoveData.coordinates.y + ydiff <= ymiddle) {
+                computerMoveData.coordinates.y = ymiddle;
+                computerMoveData.yMoveMidddle = false;
+                computerMoveData.xMoveDest = true;
+            }
+            else {
+                computerMoveData.coordinates.y += ydiff;
+            }
+        }
+        else if (computerMoveData.xMoveDest) {
+            const xdiff = (computerMoveData.coordinates.x > computerMoveData.destCoordinates.x) ? -moveSpeed : moveSpeed;
+            if (xdiff > 0 && computerMoveData.coordinates.x + xdiff >= computerMoveData.destCoordinates.x ||
+                xdiff < 0 && computerMoveData.coordinates.x + xdiff <= computerMoveData.destCoordinates.x) {
+                computerMoveData.coordinates.x = computerMoveData.destCoordinates.x;
+                computerMoveData.xMoveDest = false;
+                computerMoveData.yMoveDest = true;
+            }
+            else {
+                computerMoveData.coordinates.x += xdiff;
+            }
+        }
+        if (computerMoveData.yMoveDest) {
+            const ydiff = (computerMoveData.coordinates.y > computerMoveData.destCoordinates.y) ? -moveSpeed : moveSpeed;
+            if (ydiff > 0 && computerMoveData.coordinates.y + ydiff >= computerMoveData.destCoordinates.y ||
+                ydiff < 0 && computerMoveData.coordinates.y + ydiff <= computerMoveData.destCoordinates.y) {
+                move(computerMoveData.from, computerMoveData.to, computerMoveData.model);
+                computerMoveData = undefined;
+            }
+            else {
+                computerMoveData.coordinates.y += ydiff;
+            }
+        }
     };
 
     const drawCheckers = (ctx, pos, count, col) => {
@@ -497,7 +554,7 @@ var backgammon = (() => {
         }
     };
 
-    const drawChecker = (ctx, pos, nr, col, fillColor) => {
+    const getCheckerCoordinates = (pos, nr, col) => {
         const ym = pointHeight * 2 + gapPointHeight + 2 * borderHeight;
         let x, y;
         // y
@@ -532,6 +589,15 @@ var backgammon = (() => {
         else if (pos >= 18 && pos <= 23) {
             x = borderWidth + 7 * pointWidth + (pos - 18) * pointWidth + gapCheckers + checkerRadius;
         }
+        return { x, y };
+    };
+
+    const drawChecker = (ctx, pos, nr, col, fillColor) => {
+        const coordinates = getCheckerCoordinates(pos, nr, col);
+        drawCheckerArc(ctx, coordinates, col, fillColor);
+    };
+
+    const drawCheckerArc = (ctx, coordinates, col, fillColor) => {
         if (fillColor) {
             ctx.fillStyle = fillColor;
         }
@@ -539,11 +605,11 @@ var backgammon = (() => {
             ctx.fillStyle = col === "W" ? colorCheckerWhite : colorCheckerBlack;
         }
         ctx.beginPath();
-        ctx.arc(x, y, checkerRadius, 0, 2 * Math.PI);
+        ctx.arc(coordinates.x, coordinates.y, checkerRadius, 0, 2 * Math.PI);
         ctx.fill();
         ctx.strokeStyle = colorShadowDark;
         ctx.beginPath();
-        ctx.arc(x, y, checkerRadius, 0, 2 * Math.PI);
+        ctx.arc(coordinates.x, coordinates.y, checkerRadius, 0, 2 * Math.PI);
         ctx.stroke();
     };
 
@@ -670,8 +736,9 @@ var backgammon = (() => {
                 else if (highlightItem) {
                     drawChecker(ctx, highlightItem.position, highlightItem.count, model.board.currentColor, colorCheckerHighlightItem);
                 }
+                drawCurrentMove(ctx);
             }
-            dirty = false;
+            dirty = computerMoveData;
         }
         if (canvas && model && model.board && model.board.gameOver && model.currentUser) {
             animateGameOver(canvas, model.currentUser.name === model.board.winner);
@@ -714,7 +781,7 @@ var backgammon = (() => {
 
     const updateComputerAction = () => {
         if (computerGame && !(model.board.gameStarted && isActivePlayer() || !model.board.gameStarted && canRollDice())) {
-            computerActionCount = 50 * 5;
+            computerActionCount = 50;
         }
     };
 
@@ -867,6 +934,16 @@ var backgammon = (() => {
                 }
             });
         }
+    };
+
+
+    const startMove = (from, to, m) => {
+        // start computer move animation
+        computerMoveData = {};
+        computerMoveData.from = from;
+        computerMoveData.to = to;
+        computerMoveData.model = m;
+        dirty = true;
     };
 
     const move = (from, to, m) => {
@@ -1251,7 +1328,7 @@ var backgammon = (() => {
                 const bestNodes = collectBestNodes(mnew);
                 const bestNode = chooseBestNode(bestNodes, mnew);
                 if (utils.is_debug()) utils.debug(`Use best move ${bestNode.from} -> ${bestNode.to}.`);
-                move(bestNode.from, bestNode.to, mnew);
+                startMove(bestNode.from, bestNode.to, mnew);
             },
             handleError);
     };
