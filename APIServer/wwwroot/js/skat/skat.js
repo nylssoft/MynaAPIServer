@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.0";
+    let version = "2.1.1";
 
     let computerGame = false;
     let computerInternalState;
@@ -301,7 +301,21 @@ var skat = (() => {
         return freeTimes;
     };
 
+    const getCurrentUsername = () => currentUser ? currentUser.name : _T("TEXT_YOU");
+
+    const getRandom = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
     // rendering
+
+    const draw = () => {
+        window.requestAnimationFrame(draw);
+        if (computerGame && computerActionCount > 0) {
+            computerActionCount -= 1;
+            if (computerActionCount == 0) {
+                onComputerAction();
+            }
+        }
+    };
 
     const renderTableFull = (parent, ignoreToken) => {
         if (ignoreToken || !currentUser) {
@@ -597,112 +611,6 @@ var skat = (() => {
         controls.createButton(pComputer, _T("BUTTON_COMPUTER_GAME"), () => onStartComputerGame());
     };
 
-    const draw = () => {
-        window.requestAnimationFrame(draw);
-        if (computerGame && computerActionCount > 0) {
-            computerActionCount -= 1;
-            if (computerActionCount == 0) {
-                onComputerAction();
-            }
-        }
-    };
-
-    const getCurrentUsername = () => currentUser ? currentUser.name : _T("TEXT_YOU");
-
-    const getRandom = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-    const onStartComputerGame = () => {
-        computerGame = true;
-        computerActionCount = 0;
-        computerInternalState = undefined;
-        utils.remove_session_storage("result-internalstate");
-        disableTimer();
-        utils.fetch_api_call("api/skat/computer/model",
-            {
-                method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                body: JSON.stringify({ CurrentPlayerName: getCurrentUsername(), ComputerPlayerName1: _T("TEXT_COMPUTER_1"), ComputerPlayerName2: _T("TEXT_COMPUTER_2") })
-            },
-            m => {
-                if (utils.is_debug()) {
-                    utils.debug("COMPUTER MODEL RETRIEVED (onStartComputerGame).");
-                    utils.debug(m);
-                }
-                renderModel(m);
-            },
-            handleError);
-    };
-
-    const onComputerAction = () => {
-        if (!computerGame || !computerInternalState || !model || !model.skatTable || !model.skatTable.currentPlayer) return;
-        utils.fetch_api_call("api/skat/computer/model",
-            {
-                method: "POST",
-                headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                body: JSON.stringify({ CurrentPlayerName: model.skatTable.currentPlayer.name, InternalState: computerInternalState })
-            },
-            m => {
-                if (utils.is_debug()) {
-                    utils.debug("COMPUTER MODEL RETRIEVED (onComputerAction).");
-                    utils.debug(m);
-                }
-                if (!m.skatTable.gameStarted) {
-                    if (!m.skatTable.gameEnded) {
-                        if (m.skatTable.actions.length > 0) {
-                            const idx = getRandom(0, m.skatTable.actions.length - 1);
-                            const action = m.skatTable.actions[idx].name;
-                            utils.fetch_api_call("api/skat/computer/bid",
-                                {
-                                    method: "POST",
-                                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                                    body: JSON.stringify({ Action: action, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
-                                },
-                                (internalState) => {
-                                    if (utils.is_debug()) utils.debug("COMPUTER BID OR ACTION.");
-                                    computerInternalState = internalState;
-                                    render();
-                                },
-                                handleError);
-                        }
-                    }
-                }
-                else if (!m.skatTable.gameEnded) {
-                    if (m.skatTable.canCollectStitch) {
-                        utils.fetch_api_call("api/skat/computer/collectstitch",
-                            {
-                                method: "POST",
-                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                                body: JSON.stringify({ CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
-                            },
-                            (internalState) => {
-                                if (utils.is_debug()) utils.debug("COMPUTER COLLECT STITCH.");
-                                computerInternalState = internalState;
-                                render();
-                            },
-                            (errMsg) => handleError(errMsg));
-                        return;
-                    }
-                    if (m.skatTable.playableCards.length > 0) {
-                        const idx = getRandom(0, m.skatTable.playableCards.length - 1);
-                        const card = m.skatTable.playableCards[idx];
-                        utils.fetch_api_call("api/skat/computer/playcard",
-                            {
-                                method: "POST",
-                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                                body: JSON.stringify({ Card: card.orderNumber, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
-                            },
-                            (internalState) => {
-                                if (utils.is_debug()) utils.debug("COMPUTER PLAY CARD.");
-                                computerInternalState = internalState;
-                                render();
-                            },
-                            (errMsg) => handleError(errMsg));
-                    }
-                }
-            },
-            handleError);
-    };
-
     const renderWaitForUsers = (parent) => {
         controls.create(parent, "p", "activity", _T("INFO_WAIT_FOR_ALL"));
         document.body.className = "inactive-background";
@@ -849,16 +757,13 @@ var skat = (() => {
             if (model.skatTable.canStartNewGame && model.currentUser) {
                 if (!model.currentUser.startGameConfirmed || computerGame) {
                     if (computerGame) {
-                        utils.set_session_storage("result-internalstate", computerInternalState);
                         controls.createButton(parent, _T("BUTTON_NEW_GAME"), btnStartGame_click, "StartGame");
                     }
                     else if (model.skatTable.player) {
                         controls.createButton(parent, _T("BUTTON_OK"), btnConfirmStartGame_click, "ConfirmStartGame");
                     }
-                    const currentUrl = utils.get_window_location();
-                    const sep = window.location.search.startsWith("?") ? "&" : "?";
-                    controls.createButton(parent, _T("BUTTON_GAME_HISTORY"), () => window.open(`${currentUrl}${sep}gamehistory`, "_blank"));
-                    controls.createButton(parent, _T("BUTTON_RESULT_TABLE"), () => window.open(`${currentUrl}${sep}result`, "_blank"));
+                    controls.createButton(parent, _T("BUTTON_GAME_HISTORY"), () => onShowGameHistory());
+                    controls.createButton(parent, _T("BUTTON_RESULT_TABLE"), () => onShowResult());
                     active = true;
                 }
                 else if (model.skatTable.player) {
@@ -1133,7 +1038,7 @@ var skat = (() => {
         let token = utils.get_authentication_token();
         if (token) {
             let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
-            imgResults.addEventListener("click", () => window.open("/skat?results", "_blank"));
+            imgResults.addEventListener("click", () => onShowResults());
         }
         divChat = controls.createDiv(parent, "layout-right");
         let chatState = utils.get_session_storage("chatstate");
@@ -1177,9 +1082,9 @@ var skat = (() => {
     };
 
     const renderResults = (results, skatadmin) => {
-        document.title = `${_T("HEADER_SKAT")} - ${_T("INFO_GAME_RESULTS")}`;
         controls.removeAllChildren(document.body);
-        document.body.className = "inactive-background";
+        const backButtonDiv = controls.createDiv(document.body);
+        controls.createButton(backButtonDiv, _T("BUTTON_BACK"), () => render());
         let parent = document.body;
         if (results.length == 0) {
             controls.createLabel(parent, undefined, _T("INFO_MISSING_GAME_RESULTS"));            
@@ -1200,7 +1105,7 @@ var skat = (() => {
                             utils.debug("RESULT RETRIEVED.");
                             utils.debug(result);
                         }
-                        renderResultTable(div, result);
+                        renderResultTable(div, result, true);
                     },
                     handleError);                    
             }
@@ -1223,7 +1128,7 @@ var skat = (() => {
                         utils.debug("RESULT RETRIEVED.");
                         utils.debug(result);
                     }
-                    renderResultTable(div, result);
+                    renderResultTable(div, result, true);
                 },
                 handleError);                    
         });
@@ -1235,13 +1140,15 @@ var skat = (() => {
     };
 
     const renderResult = (result) => {
-        document.title = `${_T("HEADER_SKAT")} - ${_T("TEXT_TABLE")}`;
-        document.body.className = "inactive-background";
         renderResultTable(document.body, result);
     };
 
-    const renderResultTable = (parent, result) => {
+    const renderResultTable = (parent, result, hideBackButton) => {
         controls.removeAllChildren(parent);
+        if (!hideBackButton) {
+            const backButtonDiv = controls.createDiv(parent);
+            controls.createButton(backButtonDiv, _T("BUTTON_BACK"), () => render());
+        }
         currentSkatResultId = result ? result.id : undefined;
         if (!result || !result.endedUtc) {
             controls.createLabel(parent, undefined, _T("INFO_TABLE_NOT_AVAILABLE"));
@@ -1338,15 +1245,15 @@ var skat = (() => {
     };
 
     const renderGameHistory = (parent, result, gameHistory) => {
-        if (!result) {
-            document.title = `${_T("HEADER_SKAT")} - ${_T("TEXT_GAME_HISTORY")}`;
-            document.body.className = "inactive-background";
-        }
         const p = document.getElementById("results-overview-id");
         if (p) {
             p.style.display = "none";
         }
         controls.removeAllChildren(parent);
+        if (!result) {
+            const backButtonDiv = controls.createDiv(parent);
+            controls.createButton(backButtonDiv, _T("BUTTON_BACK"), () => render());
+        }
         if (!gameHistory) {
             controls.create(parent, "p", undefined, _T("INFO_GAME_HISTORY_NOT_AVAILABLE"));
             return;
@@ -1515,87 +1422,6 @@ var skat = (() => {
             return;
         }
         ticket = !computerGame ? getTicket() : undefined;
-        if (params.has("gamehistory")) {
-            if (!ticket) {
-                const internalState = utils.get_session_storage("result-internalstate");
-                if (internalState) {
-                    utils.fetch_api_call("api/skat/computer/gamehistory", {
-                            method: "POST",
-                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                            body: JSON.stringify({ InternalState: internalState })
-                        },
-                        (gamehistory) => {
-                            if (utils.is_debug()) {
-                                utils.debug("COMPUTER GAME HISTORY RETRIEVED.");
-                                utils.debug(gamehistory);
-                            }
-                            renderGameHistory(document.body, undefined, gamehistory);
-                        },
-                        handleError);
-                    return;
-                }
-            }
-            else {
-                utils.fetch_api_call("api/skat/gamehistory", { headers: { "ticket": ticket } },
-                    (gamehistory) => {
-                        if (utils.is_debug()) {
-                            utils.debug("GAME HISTORY RETRIEVED.");
-                            utils.debug(gamehistory);
-                        }
-                        renderGameHistory(document.body, undefined, gamehistory);
-                    },
-                    handleError);
-                return;
-            }
-        }
-        if (params.has("result")) {
-            if (!ticket) {
-                const internalState = utils.get_session_storage("result-internalstate");
-                if (internalState) {
-                    utils.fetch_api_call("api/skat/computer/result", {
-                            method: "POST",
-                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                            body: JSON.stringify({ InternalState: internalState })
-                        },
-                        (result) => {
-                            if (utils.is_debug()) {
-                                utils.debug("COMPUTER RESULT RETRIEVED (render).");
-                                utils.debug(result);
-                            }
-                            renderResult(result);
-                        },
-                        handleError);
-                    return;
-                }
-            }
-            else {
-                utils.fetch_api_call("api/skat/result", { headers: { "ticket": ticket } },
-                    (result) => {
-                        if (utils.is_debug()) {
-                            utils.debug("RESULT RETRIEVED (render).");
-                            utils.debug(result);
-                        }
-                        renderResult(result);
-                    },
-                    handleError);
-                return;
-            }
-        }
-        if (params.has("results")) {
-            if (currentUser) {
-                let token = utils.get_authentication_token();
-                utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
-                    (results) => {
-                        if (utils.is_debug()) {
-                            utils.debug("RESULTS RETRIEVED (render).");
-                            utils.debug(results);
-                        }
-                        renderResults(results, currentUser.roles.includes("skatadmin"));
-                    },
-                    handleError);
-                return;
-            }
-        }
         if (params.has("admin")) {
             if (currentUser && currentUser.roles.includes("skatadmin")) {
                 let parent = document.body;
@@ -1605,7 +1431,7 @@ var skat = (() => {
                 let p = controls.create(parent, "p");
                 controls.createButton(p, _T("BUTTON_RESET"), () => onReset(p, true));
                 controls.createButton(p, _T("BUTTON_TICKETS"), () => onShowTickets(p));
-                controls.createButton(p, _T("BUTTON_GAME_RESULTS"), () => utils.set_window_location("/skat?results"));
+                controls.createButton(p, _T("BUTTON_GAME_RESULTS"), () => onShowResults());
             }
             else {
                 utils.replace_window_location("/skat");
@@ -1657,6 +1483,181 @@ var skat = (() => {
     };
 
     // callbacks
+
+    const onStartComputerGame = () => {
+        computerGame = true;
+        computerActionCount = 0;
+        computerInternalState = undefined;
+        disableTimer();
+        utils.fetch_api_call("api/skat/computer/model",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: getCurrentUsername(), ComputerPlayerName1: _T("TEXT_COMPUTER_1"), ComputerPlayerName2: _T("TEXT_COMPUTER_2") })
+            },
+            m => {
+                if (utils.is_debug()) {
+                    utils.debug("COMPUTER MODEL RETRIEVED (onStartComputerGame).");
+                    utils.debug(m);
+                }
+                renderModel(m);
+            },
+            handleError);
+    };
+
+    const onComputerAction = () => {
+        if (!computerGame || !computerInternalState || !model || !model.skatTable || !model.skatTable.currentPlayer) return;
+        utils.fetch_api_call("api/skat/computer/model",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: model.skatTable.currentPlayer.name, InternalState: computerInternalState })
+            },
+            m => {
+                if (utils.is_debug()) {
+                    utils.debug("COMPUTER MODEL RETRIEVED (onComputerAction).");
+                    utils.debug(m);
+                }
+                if (!m.skatTable.gameStarted) {
+                    if (!m.skatTable.gameEnded) {
+                        if (m.skatTable.actions.length > 0) {
+                            const idx = getRandom(0, m.skatTable.actions.length - 1);
+                            const action = m.skatTable.actions[idx].name;
+                            utils.fetch_api_call("api/skat/computer/bid",
+                                {
+                                    method: "POST",
+                                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                    body: JSON.stringify({ Action: action, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
+                                },
+                                (internalState) => {
+                                    if (utils.is_debug()) utils.debug("COMPUTER BID OR ACTION.");
+                                    computerInternalState = internalState;
+                                    render();
+                                },
+                                handleError);
+                        }
+                    }
+                }
+                else if (!m.skatTable.gameEnded) {
+                    if (m.skatTable.canCollectStitch) {
+                        utils.fetch_api_call("api/skat/computer/collectstitch",
+                            {
+                                method: "POST",
+                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                body: JSON.stringify({ CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
+                            },
+                            (internalState) => {
+                                if (utils.is_debug()) utils.debug("COMPUTER COLLECT STITCH.");
+                                computerInternalState = internalState;
+                                render();
+                            },
+                            (errMsg) => handleError(errMsg));
+                        return;
+                    }
+                    if (m.skatTable.playableCards.length > 0) {
+                        const idx = getRandom(0, m.skatTable.playableCards.length - 1);
+                        const card = m.skatTable.playableCards[idx];
+                        utils.fetch_api_call("api/skat/computer/playcard",
+                            {
+                                method: "POST",
+                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                body: JSON.stringify({ Card: card.orderNumber, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
+                            },
+                            (internalState) => {
+                                if (utils.is_debug()) utils.debug("COMPUTER PLAY CARD.");
+                                computerInternalState = internalState;
+                                render();
+                            },
+                            (errMsg) => handleError(errMsg));
+                    }
+                }
+            },
+            handleError);
+    };
+
+    const onShowGameHistory = () => {
+        if (!ticket) {
+            if (computerInternalState) {
+                utils.fetch_api_call("api/skat/computer/gamehistory",
+                    {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({ InternalState: computerInternalState })
+                    },
+                    (gamehistory) => {
+                        if (utils.is_debug()) {
+                            utils.debug("COMPUTER GAME HISTORY RETRIEVED.");
+                            utils.debug(gamehistory);
+                        }
+                        renderGameHistory(document.body, undefined, gamehistory);
+                    },
+                    handleError);
+                return;
+            }
+        }
+        else {
+            utils.fetch_api_call("api/skat/gamehistory", { headers: { "ticket": ticket } },
+                (gamehistory) => {
+                    if (utils.is_debug()) {
+                        utils.debug("GAME HISTORY RETRIEVED.");
+                        utils.debug(gamehistory);
+                    }
+                    renderGameHistory(document.body, undefined, gamehistory);
+                },
+                handleError);
+            return;
+        }
+    };
+
+    const onShowResult = () => {
+        if (!ticket) {
+            if (computerInternalState) {
+                utils.fetch_api_call("api/skat/computer/result",
+                    {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({ InternalState: computerInternalState })
+                    },
+                    (result) => {
+                        if (utils.is_debug()) {
+                            utils.debug("COMPUTER RESULT RETRIEVED (render).");
+                            utils.debug(result);
+                        }
+                        renderResult(result);
+                    },
+                    handleError);
+                return;
+            }
+        }
+        else {
+            utils.fetch_api_call("api/skat/result", { headers: { "ticket": ticket } },
+                (result) => {
+                    if (utils.is_debug()) {
+                        utils.debug("RESULT RETRIEVED (render).");
+                        utils.debug(result);
+                    }
+                    renderResult(result);
+                },
+                handleError);
+            return;
+        }
+    };
+
+    const onShowResults = () => {
+        if (currentUser) {
+            let token = utils.get_authentication_token();
+            utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
+                (results) => {
+                    if (utils.is_debug()) {
+                        utils.debug("RESULTS RETRIEVED (render).");
+                        utils.debug(results);
+                    }
+                    renderResults(results, currentUser.roles.includes("skatadmin"));
+                },
+                handleError);
+            return;
+        }
+    };
 
     const onUpdateHelp = (show) => {
         if (helpDiv) {
@@ -2113,7 +2114,6 @@ var skat = (() => {
                 computerGame = false;
                 computerInternalState = undefined;
                 computerActionCount = 0;
-                utils.remove_session_storage("result-internalstate");
                 render();
                 return;
             }
@@ -2206,7 +2206,7 @@ var skat = (() => {
             controls.removeAllChildren(parent);
             controls.create(parent, "p", "confirmation", _T("INFO_REALLY_DELETE_TABLE"));
             controls.createButton(parent, _T("BUTTON_YES"), () => onDeleteSkatResult(false));
-            controls.createButton(parent, _T("BUTTON_NO"), () => utils.replace_window_location("/skat?results"));
+            controls.createButton(parent, _T("BUTTON_NO"), () => onShowResults());
             return;
         }
         let token = utils.get_authentication_token();
@@ -2218,7 +2218,7 @@ var skat = (() => {
             },
             () => {
                 if (utils.is_debug()) utils.debug("SKAT RESULT DELETED.");
-                utils.replace_window_location("/skat?results");
+                onShowResults();
             },
             handleError);
     };

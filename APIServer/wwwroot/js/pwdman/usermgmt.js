@@ -11,7 +11,7 @@ var usermgmt = (() => {
     let currentUser;
     let errorMessage;
     let nexturl;
-    let version = "2.0.12";
+    let version = "2.0.13";
 
     // helper
 
@@ -365,8 +365,6 @@ var usermgmt = (() => {
         // documents quota
         const documentsP = controls.create(parent, "p");
         controls.createSpan(documentsP, undefined, _T("LABEL_QUOTA_OCCUPIED_1_2", utils.format_size(currentUser.usedStorage), utils.format_size(currentUser.storageQuota)));
-        // skat results
-        controls.createA(parent, undefined, "/skat/results", _T("INFO_SKAT_RESULTS"), () => window.open("/skat?results", "_blank"));
         // actions
         controls.create(parent, "p").id = "account-actions-id";
         renderAccountActions();
