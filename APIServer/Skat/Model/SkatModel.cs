@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,5 +32,7 @@ namespace APIServer.Skat.Model
         public bool IsTableFull { get; set; } = false;
 
         public ReservationModel NextReservation { get; set; }
+
+        public string InternalState { get; set; }
     }
 }

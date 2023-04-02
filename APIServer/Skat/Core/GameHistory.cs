@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,20 @@ using System.Collections.Generic;
 
 namespace APIServer.Skat.Core
 {
+    public class PlayerCards
+    {
+        public string PlayerName { get; set; }
+
+        public List<Card> Cards { get; set; }
+    }
+
+    public class PlayerCard
+    {
+        public string PlayerName { get; set; }
+
+        public Card Card { get; set; }
+    }
+
     public class GameHistory
     {
         public List<string> GameTextLabels { get; set; } = new List<string>();
@@ -29,12 +43,12 @@ namespace APIServer.Skat.Core
 
         public int GameValue { get; set; }
 
-        public List<(string, List<Card>)> PlayerCards { get; set; } = new List<(string, List<Card>)>();
+        public List<PlayerCards> PlayerCards { get; set; } = new List<PlayerCards>();
 
         public List<Card> Skat { get; set; } = new List<Card>();
 
         public List<Card> Back { get; set; } = new List<Card>();
 
-        public List<(string,Card)> Played { get; set; } = new List<(string,Card)>();
+        public List<PlayerCard> Played { get; set; } = new List<PlayerCard>();
     }
 }

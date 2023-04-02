@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,6 +33,8 @@ namespace APIServer.Skat.Core
         public GameOption Option { get; set; } = GameOption.None;
 
         public CardColor? Color { get; set; } = null;
+
+        public Game() {}
 
         public Game(GameType gameType, CardColor? gameColor = null)
         {

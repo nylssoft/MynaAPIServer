@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +32,28 @@ namespace APIServer.Skat
         ChatModel GetChatModel(IPwdManService pwdManService);
 
         bool Chat(IPwdManService pwdManService, string authenticationToken, string message);
+
+        // --- computer game
+
+        SkatModel GetComputerSkatModel(string currentPlayer, string state, string computer1, string computer2);
+
+        string SetComputerGame(string currentPlayer, string state, GameModel skatGameModel);
+
+        string SetComputerGameOption(string currentPlayer, string state, GameOptionModel skatGameOptionModel);
+
+        string PerformComputerBidAction(string currentPlayer, string state, string bidAction);
+
+        string PickupComputerSkat(string currentPlayer, string state, int internalCardNumber);
+
+        string PlayComputerCard(string currentPlayer, string state, int internalCardNumber);
+
+        string CollectComputerStitch(string currentPlayer, string state);
+
+        string StartComputerNewGame(string currentPlayer, string state);
+
+        ResultModel GetComputerResultModel(string state);
+
+        GameHistoryModel GetComputerGameHistoryModel(string state);
 
         // --- with authentication (ticket)
 

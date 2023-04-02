@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 
 namespace APIServer.Skat.Core
 {
@@ -33,6 +32,30 @@ namespace APIServer.Skat.Core
         public List<ActionType> ActionTypes { get; set; } = new List<ActionType>();
 
         public List<string> TooltipLabels { get; set; } = new List<string>();
+    };
+
+    public class InternalState
+    {
+        public InternalState() { }
+        public int GameCounter { get; set; }
+        public List<Player> Players { get; set; }
+        public List<Player> TablePlayers { get; set; }
+        public Player InactivePlayer { get; set; }
+        public List<Card> Skat { get; set; }
+        public List<Card> Stitch { get; set; }
+        public List<Card> LastStitch { get; set; }
+        public Player GamePlayer { get; set; }
+        public bool GameStarted { get; set; }
+        public GameHistory CurrentHistory { get; set; }
+        public SkatResult SkatResult { get; set; }
+        public MatadorsJackStraight MatadorsJackStraight { get; set; }
+        public GameValue GameValue { get; set; }
+        public Player CurrentPlayer { get; set; }
+        public bool SkatTaken { get; set; }
+        public bool IsSpeedUp { get; set; }
+        public bool BidSaid { get; set; }
+        public int BidValueIndex { get; set; }
+        public List<int> BidValues { get; set; }
     };
 
     public class SkatTable
@@ -132,7 +155,7 @@ namespace APIServer.Skat.Core
             {
                 player.Cards.AddRange(Card.Draw(deck, 10));
                 player.SortCards();
-                CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
+                CurrentHistory.PlayerCards.Add(new PlayerCards { PlayerName = player.Name, Cards = new List<Card>(player.Cards) });
             }
             Skat.AddRange(Card.Draw(deck, 2));
             CurrentHistory.Skat.AddRange(Skat);
@@ -160,6 +183,54 @@ namespace APIServer.Skat.Core
             s.Add(59);
             BidValues = s.ToList<int>();
             BidValues.Sort();
+        }
+
+        public SkatTable(InternalState s)
+        {
+            GameCounter = s.GameCounter;
+            Players = s.Players;
+            TablePlayers = s.TablePlayers;
+            InactivePlayer = s.InactivePlayer;
+            Skat = s.Skat;
+            Stitch = s.Stitch;
+            LastStitch = s.LastStitch;
+            GamePlayer = s.GamePlayer;
+            GameStarted = s.GameStarted;
+            MatadorsJackStraight = s.MatadorsJackStraight;
+            CurrentHistory = s.CurrentHistory;
+            SkatResult = s.SkatResult;
+            GameValue = s.GameValue;
+            CurrentPlayer = s.CurrentPlayer;
+            SkatTaken = s.SkatTaken;
+            IsSpeedUp = s.IsSpeedUp;
+            BidSaid = s.BidSaid;
+            BidValueIndex = s.BidValueIndex;
+            BidValues = s.BidValues;
+        }
+
+        public InternalState GetInternalState()
+        {
+            InternalState s = new InternalState();
+            s.GameCounter = GameCounter;
+            s.Players = Players;
+            s.TablePlayers = TablePlayers;
+            s.InactivePlayer = InactivePlayer;
+            s.Skat = Skat;
+            s.Stitch = Stitch;
+            s.LastStitch = LastStitch;
+            s.GamePlayer = GamePlayer;
+            s.GameStarted = GameStarted;
+            s.MatadorsJackStraight = MatadorsJackStraight;
+            s.CurrentHistory = CurrentHistory;
+            s.SkatResult = SkatResult;
+            s.GameValue = GameValue;
+            s.CurrentPlayer = CurrentPlayer;
+            s.SkatTaken = SkatTaken;
+            s.IsSpeedUp = IsSpeedUp;
+            s.BidSaid = BidSaid;
+            s.BidValueIndex = BidValueIndex;
+            s.BidValues = BidValues;
+            return s;
         }
 
         public void StartNewRound()
@@ -244,7 +315,7 @@ namespace APIServer.Skat.Core
             {
                 player.Cards.AddRange(Card.Draw(deck, 10));
                 player.SortCards();
-                CurrentHistory.PlayerCards.Add((player.Name, new List<Card>(player.Cards)));
+                CurrentHistory.PlayerCards.Add(new PlayerCards { PlayerName = player.Name, Cards = new List<Card>(player.Cards) });
             }
             Skat.AddRange(Card.Draw(deck, 2));
             CurrentHistory.Skat.AddRange(Skat);
@@ -967,7 +1038,7 @@ namespace APIServer.Skat.Core
                 }
                 if (IsValidForStitch(card))
                 {
-                    CurrentHistory.Played.Add((player.Name, card));
+                    CurrentHistory.Played.Add(new PlayerCard { PlayerName = player.Name, Card = card });
                     player.Cards.Remove(card);
                     CurrentPlayer = GetNextPlayer(player);
                     Stitch.Add(card);

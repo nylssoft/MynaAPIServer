@@ -41,7 +41,11 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.0.6";
+    let version = "2.1.0";
+
+    let computerGame = false;
+    let computerInternalState;
+    let computerActionCount = 0;
 
     // helper
 
@@ -80,7 +84,7 @@ var skat = (() => {
     };
 
     const enableTimer = () => {
-        if (!timerEnabled) {
+        if (!timerEnabled && !computerGame) {
             if (utils.is_debug()) utils.debug("TIMER ENABLED.");
             timerEnabled = true;
         }
@@ -589,6 +593,114 @@ var skat = (() => {
                 controls.createButton(parent, _T("BUTTON_RESERVATIONS"), () => btnShowReservations_click());
             }
         }
+        const pComputer = controls.create(parent, "p");
+        controls.createButton(pComputer, _T("BUTTON_COMPUTER_GAME"), () => onStartComputerGame());
+    };
+
+    const draw = () => {
+        window.requestAnimationFrame(draw);
+        if (computerGame && computerActionCount > 0) {
+            computerActionCount -= 1;
+            if (computerActionCount == 0) {
+                onComputerAction();
+            }
+        }
+    };
+
+    const getCurrentUsername = () => currentUser ? currentUser.name : _T("TEXT_YOU");
+
+    const getRandom = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const onStartComputerGame = () => {
+        computerGame = true;
+        computerActionCount = 0;
+        computerInternalState = undefined;
+        utils.remove_session_storage("result-internalstate");
+        disableTimer();
+        utils.fetch_api_call("api/skat/computer/model",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: getCurrentUsername(), ComputerPlayerName1: _T("TEXT_COMPUTER_1"), ComputerPlayerName2: _T("TEXT_COMPUTER_2") })
+            },
+            m => {
+                if (utils.is_debug()) {
+                    utils.debug("COMPUTER MODEL RETRIEVED (onStartComputerGame).");
+                    utils.debug(m);
+                }
+                renderModel(m);
+            },
+            handleError);
+    };
+
+    const onComputerAction = () => {
+        if (!computerGame || !computerInternalState || !model || !model.skatTable || !model.skatTable.currentPlayer) return;
+        utils.fetch_api_call("api/skat/computer/model",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ CurrentPlayerName: model.skatTable.currentPlayer.name, InternalState: computerInternalState })
+            },
+            m => {
+                if (utils.is_debug()) {
+                    utils.debug("COMPUTER MODEL RETRIEVED (onComputerAction).");
+                    utils.debug(m);
+                }
+                if (!m.skatTable.gameStarted) {
+                    if (!m.skatTable.gameEnded) {
+                        if (m.skatTable.actions.length > 0) {
+                            const idx = getRandom(0, m.skatTable.actions.length - 1);
+                            const action = m.skatTable.actions[idx].name;
+                            utils.fetch_api_call("api/skat/computer/bid",
+                                {
+                                    method: "POST",
+                                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                    body: JSON.stringify({ Action: action, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
+                                },
+                                (internalState) => {
+                                    if (utils.is_debug()) utils.debug("COMPUTER BID OR ACTION.");
+                                    computerInternalState = internalState;
+                                    render();
+                                },
+                                handleError);
+                        }
+                    }
+                }
+                else if (!m.skatTable.gameEnded) {
+                    if (m.skatTable.canCollectStitch) {
+                        utils.fetch_api_call("api/skat/computer/collectstitch",
+                            {
+                                method: "POST",
+                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                body: JSON.stringify({ CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
+                            },
+                            (internalState) => {
+                                if (utils.is_debug()) utils.debug("COMPUTER COLLECT STITCH.");
+                                computerInternalState = internalState;
+                                render();
+                            },
+                            (errMsg) => handleError(errMsg));
+                        return;
+                    }
+                    if (m.skatTable.playableCards.length > 0) {
+                        const idx = getRandom(0, m.skatTable.playableCards.length - 1);
+                        const card = m.skatTable.playableCards[idx];
+                        utils.fetch_api_call("api/skat/computer/playcard",
+                            {
+                                method: "POST",
+                                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                                body: JSON.stringify({ Card: card.orderNumber, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
+                            },
+                            (internalState) => {
+                                if (utils.is_debug()) utils.debug("COMPUTER PLAY CARD.");
+                                computerInternalState = internalState;
+                                render();
+                            },
+                            (errMsg) => handleError(errMsg));
+                    }
+                }
+            },
+            handleError);
     };
 
     const renderWaitForUsers = (parent) => {
@@ -735,8 +847,12 @@ var skat = (() => {
         }
         else {
             if (model.skatTable.canStartNewGame && model.currentUser) {
-                if (!model.currentUser.startGameConfirmed) {
-                    if (model.skatTable.player) {
+                if (!model.currentUser.startGameConfirmed || computerGame) {
+                    if (computerGame) {
+                        utils.set_session_storage("result-internalstate", computerInternalState);
+                        controls.createButton(parent, _T("BUTTON_NEW_GAME"), btnStartGame_click, "StartGame");
+                    }
+                    else if (model.skatTable.player) {
                         controls.createButton(parent, _T("BUTTON_OK"), btnConfirmStartGame_click, "ConfirmStartGame");
                     }
                     const currentUrl = utils.get_window_location();
@@ -770,10 +886,10 @@ var skat = (() => {
                 if (model.skatTable.canViewLastStitch) {
                     controls.createButton(parent, _T("BUTTON_VIEW_LAST_STITCH"), btnLastStitchCard_click, "ViewLastStitch");
                 }
-                if (model.skatTable.canGiveUp) {
+                if (model.skatTable.canGiveUp && !computerGame) {
                     controls.createButton(parent, _T("BUTTON_GIVE_UP"), btnGiveUp_click, "GiveUpQuestion");
                 }
-                if (model.skatTable.canSpeedUp) {
+                if (model.skatTable.canSpeedUp && !computerGame) {
                     controls.createButton(parent, _T("BUTTON_SPEED_UP"), btnSpeedUp_click, "SpeedUp");
                 }
             }
@@ -944,7 +1060,7 @@ var skat = (() => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_SKAT")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
-        if (ticket) {
+        if (ticket || computerGame) {
             controls.createButton(div, _T("BUTTON_LEAVE_TABLE"), btnLogout_click, "Logout", "logout-button");
         }
         renderLogoutAlert(parent);
@@ -1007,6 +1123,7 @@ var skat = (() => {
     };
 
     const renderChat = (parent) => {
+        if (computerGame) return;
         let divChatButton = controls.createDiv(parent, "layout-chat-button");
         let imgMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/buttons/mail-unread-3.png");
         imgMessage.addEventListener("click", (e) => {
@@ -1282,6 +1399,12 @@ var skat = (() => {
             lastChatText = inputChatText.value; // keep old value if rendered again
         }
         model = m;
+        if (computerGame && model) {
+            computerInternalState = model.internalState;
+            if (model.skatTable && model.skatTable.currentPlayer && model.skatTable.currentPlayer.name != getCurrentUsername()) {
+                computerActionCount = 100;
+            }
+        }
         setState(model.state);
         controls.removeAllChildren(document.body);
         utils.create_cookies_banner(document.body);
@@ -1292,7 +1415,7 @@ var skat = (() => {
         divLayoutLeft = controls.createDiv(document.body, "layout-left");
         divMain = controls.createDiv(divLayoutLeft);
         renderChat(document.body);
-        if (!ticket) {
+        if (!ticket && !computerGame) {
             if (guestMode) {
                 document.title = `${_T("HEADER_SKAT")} - ${_T("INFO_GUEST_VIEW")}`;
                 if (model.skatTable) {
@@ -1324,6 +1447,23 @@ var skat = (() => {
 
     const fetchModel = (ticket) => {
         disableTimer();
+        if (computerGame) {
+            utils.fetch_api_call("api/skat/computer/model",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    body: JSON.stringify({ CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                },
+                m => {
+                    if (utils.is_debug()) {
+                        utils.debug(`COMPUTER MODEL RETRIEVED (fetchModel).`);
+                        utils.debug(m);
+                    }
+                    renderModel(m);
+                },
+                handleError);
+            return;
+        }
         utils.fetch_api_call("api/skat/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -1374,30 +1514,72 @@ var skat = (() => {
             login(params.get("login"));
             return;
         }
-        ticket = getTicket();
-        if (ticket && params.has("gamehistory")) {
-            utils.fetch_api_call("api/skat/gamehistory", { headers: { "ticket": ticket } },
-                (gamehistory) => {
-                    if (utils.is_debug()) {
-                        utils.debug("GAME HISTORY RETRIEVED.");
-                        utils.debug(gamehistory);
-                    }
-                    renderGameHistory(document.body, undefined, gamehistory);
-                },
-                handleError);
-            return;
+        ticket = !computerGame ? getTicket() : undefined;
+        if (params.has("gamehistory")) {
+            if (!ticket) {
+                const internalState = utils.get_session_storage("result-internalstate");
+                if (internalState) {
+                    utils.fetch_api_call("api/skat/computer/gamehistory", {
+                            method: "POST",
+                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                            body: JSON.stringify({ InternalState: internalState })
+                        },
+                        (gamehistory) => {
+                            if (utils.is_debug()) {
+                                utils.debug("COMPUTER GAME HISTORY RETRIEVED.");
+                                utils.debug(gamehistory);
+                            }
+                            renderGameHistory(document.body, undefined, gamehistory);
+                        },
+                        handleError);
+                    return;
+                }
+            }
+            else {
+                utils.fetch_api_call("api/skat/gamehistory", { headers: { "ticket": ticket } },
+                    (gamehistory) => {
+                        if (utils.is_debug()) {
+                            utils.debug("GAME HISTORY RETRIEVED.");
+                            utils.debug(gamehistory);
+                        }
+                        renderGameHistory(document.body, undefined, gamehistory);
+                    },
+                    handleError);
+                return;
+            }
         }
-        if (ticket && params.has("result")) {
-            utils.fetch_api_call("api/skat/result", { headers: { "ticket": ticket } },
-                (result) => {
-                    if (utils.is_debug()) {
-                        utils.debug("RESULT RETRIEVED (render).");
-                        utils.debug(result);
-                    }
-                    renderResult(result);
-                },
-                handleError);
-            return;
+        if (params.has("result")) {
+            if (!ticket) {
+                const internalState = utils.get_session_storage("result-internalstate");
+                if (internalState) {
+                    utils.fetch_api_call("api/skat/computer/result", {
+                            method: "POST",
+                            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                            body: JSON.stringify({ InternalState: internalState })
+                        },
+                        (result) => {
+                            if (utils.is_debug()) {
+                                utils.debug("COMPUTER RESULT RETRIEVED (render).");
+                                utils.debug(result);
+                            }
+                            renderResult(result);
+                        },
+                        handleError);
+                    return;
+                }
+            }
+            else {
+                utils.fetch_api_call("api/skat/result", { headers: { "ticket": ticket } },
+                    (result) => {
+                        if (utils.is_debug()) {
+                            utils.debug("RESULT RETRIEVED (render).");
+                            utils.debug(result);
+                        }
+                        renderResult(result);
+                    },
+                    handleError);
+                return;
+            }
         }
         if (params.has("results")) {
             if (currentUser) {
@@ -1450,6 +1632,7 @@ var skat = (() => {
     };
 
     const renderInit = () => {
+        window.requestAnimationFrame(draw);
         currentUser = undefined;
         let token = utils.get_authentication_token();
         if (!token) {
@@ -1573,6 +1756,21 @@ var skat = (() => {
     };
 
     const btnStartGame_click = () => {
+        if (computerGame) {
+            utils.fetch_api_call("api/skat/computer/newgame",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    body: JSON.stringify({ CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                },
+                (internalState) => {
+                    if (utils.is_debug()) utils.debug("COMPUTER NEW GAME.");
+                    computerInternalState = internalState;
+                    render();
+                },
+                handleError);
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
@@ -1583,6 +1781,7 @@ var skat = (() => {
     };
 
     const btnConfirmStartGame_click = () => {
+        if (computerGame) return;
         disableTimer();
         utils.fetch_api_call("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
@@ -1593,6 +1792,7 @@ var skat = (() => {
     };
 
     const btnGiveUp_click = (elem) => {
+        if (computerGame) return;
         if (elem.value == "GiveUpYes") {
             disableTimer();
             utils.fetch_api_call("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } },
@@ -1614,6 +1814,7 @@ var skat = (() => {
     };
 
     const btnSpeedUp_click = (elem) => {
+        if (computerGame) return;
         if (elem.value == "SpeedUpYes") {
             disableTimer();
             utils.fetch_api_call("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } },
@@ -1635,6 +1836,7 @@ var skat = (() => {
     };
 
     const btnSpeedUpConfirm_click = () => {
+        if (computerGame) return;
         disableTimer();
         utils.fetch_api_call("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } },
             () => {
@@ -1645,6 +1847,7 @@ var skat = (() => {
     };
 
     const btnContinuePlay_click = () => {
+        if (computerGame) return;
         disableTimer();
         utils.fetch_api_call("api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } },
             () => {
@@ -1666,6 +1869,21 @@ var skat = (() => {
         else {
             gamecolor = elem.value;
         }
+        if (computerGame) {
+            utils.fetch_api_call("api/skat/computer/game",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    body: JSON.stringify({ GameModel: { Type: gametype, Color: gamecolor }, CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                },
+                (internalState) => {
+                    if (utils.is_debug()) utils.debug("COMPUTER CHANGED GAME.");
+                    computerInternalState = internalState;
+                    render();
+                },
+                handleError);
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/skat/game",
             {
@@ -1681,6 +1899,32 @@ var skat = (() => {
     };
 
     const btnGameOption_click = () => {
+        if (computerGame) {
+            utils.fetch_api_call("api/skat/computer/gameoption",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify(
+                {
+                    GameOptionModel:
+                    {
+                        ouvert: checkBoxOuvert.checked,
+                        hand: checkBoxHand.checked,
+                        schneider: checkBoxSchneider.checked,
+                        schwarz: checkBoxSchwarz.checked
+                    },
+                    CurrentPlayerName: getCurrentUsername(),
+                    InternalState: computerInternalState
+                })
+            },
+            (internalState) => {
+                if (utils.is_debug()) utils.debug("COMPUTER CHANGED GAME OPTION.");
+                computerInternalState = internalState;
+                render();
+            },
+            handleError);
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/skat/gameoption",
             {
@@ -1707,6 +1951,21 @@ var skat = (() => {
             render();
         }
         else {
+            if (computerGame) {
+                utils.fetch_api_call("api/skat/computer/bid",
+                    {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({ Action: action, CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                    },
+                    (internalState) => {
+                        if (utils.is_debug()) utils.debug("COMPUTER BID (btnAction_click).");
+                        computerInternalState = internalState;
+                        render();
+                    },
+                    handleError);
+                return;
+            }
             disableTimer();
             utils.fetch_api_call("api/skat/bid",
                 {
@@ -1736,6 +1995,25 @@ var skat = (() => {
         });
         if (!found) return;
         document.body.style.cursor = "wait";
+        if (computerGame) {
+            utils.fetch_api_call("api/skat/computer/playcard",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    body: JSON.stringify({ Card: card.orderNumber, CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                },
+                (internalState) => {
+                    if (utils.is_debug()) utils.debug("COMPUTER PLAY CARD (btnPlayerCard_click).");
+                    computerInternalState = internalState;
+                    render();
+                    document.body.style.cursor = "default";
+                },
+                (errMsg) => {
+                    handleError(errMsg);
+                    document.body.style.cursor = "default";
+                });
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/skat/playcard",
             {
@@ -1756,6 +2034,21 @@ var skat = (() => {
 
     const btnSkatCard_click = (card) => {
         if (!model.skatTable.player || !card || showLastStitch || !model.skatTable.canPickupSkat) return;
+        if (computerGame) {
+            utils.fetch_api_call("api/skat/computer/pickupskat",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    body: JSON.stringify({ Card: card.orderNumber, CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                },
+                (internalState) => {
+                    if (utils.is_debug()) utils.debug("COMPUTER PICKUP SKAT (btnSkatCard_click).");
+                    computerInternalState = internalState;
+                    render();
+                },
+                handleError);
+            return;
+        }
         disableTimer();
         utils.fetch_api_call("api/skat/pickupskat",
             {
@@ -1782,6 +2075,25 @@ var skat = (() => {
             model.skatTable.isSpeedUp) return;
         disableTimer();
         document.body.style.cursor = "wait";
+        if (computerGame) {
+            utils.fetch_api_call("api/skat/computer/collectstitch",
+                {
+                    method: "POST",
+                    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                    body: JSON.stringify({ CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                },
+                (internalState) => {
+                    if (utils.is_debug()) utils.debug("COMPUTER COLLECT STITCH (btnStitchCard_click).");
+                    computerInternalState = internalState;
+                    render();
+                    document.body.style.cursor = "default";
+                },
+                (errMsg) => {
+                    handleError(errMsg);
+                    document.body.style.cursor = "default";
+                });
+            return;
+        }
         utils.fetch_api_call("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("COLLECT STITCH.");
@@ -1796,6 +2108,15 @@ var skat = (() => {
 
     const btnLogout_click = (elem) => {
         if (elem.value == "LogoutYes" || !model.skatTable) {
+            if (computerGame) {
+                logoutClicked = false;
+                computerGame = false;
+                computerInternalState = undefined;
+                computerActionCount = 0;
+                utils.remove_session_storage("result-internalstate");
+                render();
+                return;
+            }
             disableTimer();
             utils.fetch_api_call("api/skat/logout", { method: "POST", headers: { "ticket": ticket } },
                 () => {
@@ -1818,6 +2139,22 @@ var skat = (() => {
 
     const btnLetsStart_click = (elem) => {
         if (elem.value == "LetsStartYes") {
+            if (computerGame) {
+                utils.fetch_api_call("api/skat/computer/bid",
+                    {
+                        method: "POST",
+                        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                        body: JSON.stringify({ Action: "StartGame", CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                    },
+                    (internalState) => {
+                        if (utils.is_debug()) utils.debug("COMPUTER BID (start game).");
+                        letsStartClicked = false;
+                        computerInternalState = internalState;
+                        render();
+                    },
+                    handleError);
+                return;
+            }
             disableTimer();
             utils.fetch_api_call("api/skat/bid",
                 {
@@ -1922,7 +2259,7 @@ var skat = (() => {
     };
 
     const onTimer = () => {
-        if (!timerEnabled) return;
+        if (!timerEnabled || computerGame) return;
         utils.fetch_api_call("api/skat/state", undefined,
             (d) => {
                 const statechanged = getState();

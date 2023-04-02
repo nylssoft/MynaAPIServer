@@ -25,6 +25,8 @@ namespace APIServer.Skat.Core
 
     public class Player
     {
+        public Player() {}
+
         public Player(string name, PlayerPosition position)
         {
             Name = name;

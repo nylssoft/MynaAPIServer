@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -58,6 +58,109 @@ namespace APIServer.Skat
         public IActionResult GetChat()
         {
             return new JsonResult(SkatService.GetChatModel(PwdManService));
+        }
+
+        // --- computer game (stateless)
+
+        [HttpPost]
+        [Route("api/skat/computer/model")]
+        public IActionResult GetComputerSkatModel([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CurrentPlayerName)) throw new MissingParameterException();
+            if (string.IsNullOrEmpty(request.InternalState) && (string.IsNullOrEmpty(request.ComputerPlayerName1) || string.IsNullOrEmpty(request.ComputerPlayerName2))) throw new MissingParameterException();
+            if (request.CurrentPlayerName?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.ComputerPlayerName1?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.ComputerPlayerName2?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState?.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.GetComputerSkatModel(request.CurrentPlayerName, request.InternalState, request.ComputerPlayerName1, request.ComputerPlayerName2));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/game")]
+        public IActionResult SetComputerGame([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName) || request.GameModel == null) throw new MissingParameterException();
+            if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.SetComputerGame(request.CurrentPlayerName, request.InternalState, request.GameModel));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/gameoption")]
+        public IActionResult SetComputerGameOption([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName) || request.GameOptionModel == null) throw new MissingParameterException();
+            if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.SetComputerGameOption(request.CurrentPlayerName, request.InternalState, request.GameOptionModel));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/bid")]
+        public IActionResult PerformComputerBidAction([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState)|| string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.Action)) throw new MissingParameterException();
+            if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.PerformComputerBidAction(request.CurrentPlayerName, request.InternalState, request.Action));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/pickupskat")]
+        public IActionResult PickupComputerSkat([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName)) throw new MissingParameterException();
+            if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.PickupComputerSkat(request.CurrentPlayerName, request.InternalState, request.Card));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/playcard")]
+        public IActionResult PlayComputerCard([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName)) throw new MissingParameterException();
+            if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.PlayComputerCard(request.CurrentPlayerName, request.InternalState, request.Card));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/collectstitch")]
+        public IActionResult CollectComputerStitch([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName)) throw new MissingParameterException();
+            if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.CollectComputerStitch(request.CurrentPlayerName, request.InternalState));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/newgame")]
+        public IActionResult StartComputerNewGame([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName)) throw new MissingParameterException();
+            if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.StartComputerNewGame(request.CurrentPlayerName, request.InternalState));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/result")]
+        public IActionResult GetComputerResult([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState)) throw new MissingParameterException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.GetComputerResultModel(request.InternalState));
+        }
+
+        [HttpPost]
+        [Route("api/skat/computer/gamehistory")]
+        public IActionResult GetComputerGameHistory([FromBody] ComputerRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.InternalState)) throw new MissingParameterException();
+            if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
+            return new JsonResult(SkatService.GetComputerGameHistoryModel(request.InternalState));
         }
 
         // --- with authentication

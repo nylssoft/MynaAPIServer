@@ -28,6 +28,7 @@ using APIServer.Skat.Model;
 using APIServer.Skat.Core;
 using APIServer.PwdMan;
 using APIServer.Database;
+using System.Text;
 
 namespace APIServer.Skat
 {
@@ -46,7 +47,7 @@ namespace APIServer.Skat
         private readonly ILogger logger;
 
         private SkatTable skatTable;
-        
+
         private ReservationModel nextReservation;
 
         private long? skatResultId;
@@ -117,7 +118,7 @@ namespace APIServer.Skat
 
         public LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username)
         {
-            if (!VerifyReservation(pwdManService, new [] { username }))
+            if (!VerifyReservation(pwdManService, new[] { username }))
             {
                 throw new TableAlreadyReservedException();
             }
@@ -228,6 +229,105 @@ namespace APIServer.Skat
             return false;
         }
 
+        // --- computer game
+
+        public SkatModel GetComputerSkatModel(string currentPlayer, string state, string computer1, string computer2)
+        {
+            var ret = new SkatModel { State = 0, AllUsers = new List<UserModel>(), IsTableFull = true };
+            ret.CurrentUser = new UserModel { Name = currentPlayer, StartGameConfirmed = true };
+            ret.NextReservation = null;
+            SkatTable t;
+            if (!string.IsNullOrEmpty(state))
+            {
+                t = GetSkatTableFromState(state);
+            }
+            else
+            {
+                t = new SkatTable(currentPlayer, computer1, computer2);
+            }
+            foreach (var p in t.Players)
+            {
+                ret.AllUsers.Add(new UserModel { Name = p.Name, StartGameConfirmed = true });
+            }
+            ret.SkatTable = GetTableModel(t, new Context { Name = currentPlayer });
+            ret.InternalState = GetInternalState(t);
+            return ret;
+        }
+
+        public string SetComputerGame(string currentPlayer, string state, GameModel gameModel)
+        {
+            var t = GetSkatTableFromState(state);
+            SetGame(t, currentPlayer, gameModel);
+            return GetInternalState(t);
+        }
+
+        public string SetComputerGameOption(string currentPlayer, string state, GameOptionModel gameOptionModel)
+        {
+            var t = GetSkatTableFromState(state);
+            SetGameOption(t, currentPlayer, gameOptionModel);
+            return GetInternalState(t);
+        }
+
+        public string PerformComputerBidAction(string currentPlayer, string state, string bidAction)
+        {
+            var t = GetSkatTableFromState(state);
+            PerformBidAction(t, currentPlayer, bidAction);
+            return GetInternalState(t);
+        }
+
+        public string PickupComputerSkat(string currentPlayer, string state, int internalCardNumber)
+        {
+            var t = GetSkatTableFromState(state);
+            PickupSkat(t, currentPlayer, internalCardNumber);
+            return GetInternalState(t);
+        }
+
+        public string PlayComputerCard(string currentPlayer, string state, int internalCardNumber)
+        {
+            var t = GetSkatTableFromState(state);
+            PlayCard(t, currentPlayer, internalCardNumber);
+            return GetInternalState(t);
+        }
+
+        public string CollectComputerStitch(string currentPlayer, string state)
+        {
+            var t = GetSkatTableFromState(state);
+            CollectStitch(t, currentPlayer);
+            return GetInternalState(t);
+        }
+
+        public string StartComputerNewGame(string currentPlayer, string state)
+        {
+            var t = GetSkatTableFromState(state);
+            if (t != null && t.CanStartNewGame())
+            {
+                t.StartNewRound();
+            }
+            return GetInternalState(t);
+        }
+
+        public ResultModel GetComputerResultModel(string state)
+        {
+            var t = GetSkatTableFromState(state);
+            if (t != null && t.SkatResult != null && t.TablePlayers != null && t.GameEnded)
+            {
+                return GetSkatResultModel(t.TablePlayers, t.SkatResult);
+            }
+            return null;
+        }
+
+        public GameHistoryModel GetComputerGameHistoryModel(string state)
+        {
+            var t = GetSkatTableFromState(state);
+            if (t != null && t.CurrentHistory != null && t.GameEnded)
+            {
+                return GetGameHistoryModel(t.CurrentHistory);
+            }
+            return null;
+        }
+
+        // --- multi player game
+
         public SkatModel GetSkatModel(string ticket)
         {
             lock (mutex)
@@ -240,7 +340,7 @@ namespace APIServer.Skat
                 }
                 if (skatTable != null)
                 {
-                    ret.SkatTable = GetTableModel(ctx);
+                    ret.SkatTable = GetTableModel(skatTable, ctx);
                 }
                 ret.NextReservation = nextReservation;
                 return ret;
@@ -462,28 +562,17 @@ namespace APIServer.Skat
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
-                if (ctx != null &&
-                    skatTable != null &&
-                    Enum.TryParse(bidAction, true, out ActionType actionType))
+                if (ctx != null && skatTable != null)
                 {
-                    var player = GetPlayerByName(ctx.Name);
-                    if (player != null)
+                    ret = PerformBidAction(skatTable, ctx.Name, bidAction);
+                    if (ret)
                     {
-                        var stat = skatTable.GetPlayerStatus(player);
-                        if (stat.ActionTypes.Contains(actionType))
+                        if (skatTable.GameEnded)
                         {
-                            skatTable.PerformPlayerAction(player, actionType);
-                            if (skatTable.GameEnded)
-                            {
-                                AddGameHistory(pwdManService);
-                            }
-                            ret = true;
+                            AddGameHistory(pwdManService);
                         }
+                        stateChanged = DateTime.UtcNow;
                     }
-                }
-                if (ret)
-                {
-                    stateChanged = DateTime.UtcNow;
                 }
             }
             return ret;
@@ -570,26 +659,7 @@ namespace APIServer.Skat
                 var ctx = GetContext(ticket);
                 if (ctx != null && skatTable != null)
                 {
-                    var player = GetPlayerByName(ctx.Name);
-                    if (player != null && Enum.TryParse(skatGameModel.Type, true, out GameType gameType))
-                    {
-                        if (gameType == GameType.Color)
-                        {
-                            if (Enum.TryParse(skatGameModel.Color, true, out CardColor gameColor))
-                            {
-                                player.Game.Type = gameType;
-                                player.Game.Color = gameColor;
-                                player.Game.Option = GameOption.None;
-                                ret = true;
-                            }
-                        }
-                        else
-                        {
-                            player.Game.Type = gameType;
-                            player.Game.Option = GameOption.None;
-                            ret = true;
-                        }
-                    }
+                    ret = SetGame(skatTable, ctx.Name, skatGameModel);
                 }
             }
             return ret;
@@ -603,29 +673,7 @@ namespace APIServer.Skat
                 var ctx = GetContext(ticket);
                 if (ctx != null && skatTable != null)
                 {
-                    GameOption gameOption = GameOption.None;
-                    if (gameOptionModel.Ouvert)
-                    {
-                        gameOption |= GameOption.Ouvert;
-                    }
-                    if (gameOptionModel.Hand)
-                    {
-                        gameOption |= GameOption.Hand;
-                    }
-                    if (gameOptionModel.Schneider)
-                    {
-                        gameOption |= GameOption.Schneider;
-                    }
-                    if (gameOptionModel.Schwarz)
-                    {
-                        gameOption |= GameOption.Schwarz;
-                    }
-                    var player = GetPlayerByName(ctx.Name);
-                    if (player != null)
-                    {
-                        skatTable.SetGameOption(player, gameOption);
-                        ret = true;
-                    }
+                    ret = SetGameOption(skatTable, ctx.Name, gameOptionModel);
                 }
             }
             return ret;
@@ -651,24 +699,15 @@ namespace APIServer.Skat
                 var ctx = GetContext(ticket);
                 if (ctx != null && skatTable != null)
                 {
-                    var player = GetPlayerByName(ctx.Name);
-                    if (player != null)
+                    ret = PlayCard(skatTable, ctx.Name, internalCardNumber);
+                    if (ret)
                     {
-                        foreach (var c in player.Cards)
+                        lastCardPlayed = DateTime.Now;
+                        if (skatTable.GameStarted)
                         {
-                            if (c.InternalNumber == internalCardNumber)
-                            {
-                                skatTable.PlayCard(player, c);
-                                lastCardPlayed = DateTime.Now;
-                                ret = true;
-                                break;
-                            }
+                            stateChanged = DateTime.UtcNow;
                         }
                     }
-                }
-                if (ret && skatTable.GameStarted)
-                {
-                    stateChanged = DateTime.UtcNow;
                 }
             }
             return ret;
@@ -691,20 +730,16 @@ namespace APIServer.Skat
                 var ctx = GetContext(ticket);
                 if (ctx != null && skatTable != null)
                 {
-                    var player = GetPlayerByName(ctx.Name);
-                    if (player != null && skatTable.CanCollectStitch(player))
+                    ret = CollectStitch(skatTable, ctx.Name);
+                    if (ret)
                     {
-                        skatTable.CollectStitch(player);
+                        var player = GetPlayerByName(ctx.Name);
                         if (player.Cards.Count == 0)
                         {
                             AddGameHistory(pwdManService);
                         }
-                        ret = true;
+                        stateChanged = DateTime.UtcNow;
                     }
-                }
-                if (ret)
-                {
-                    stateChanged = DateTime.UtcNow;
                 }
             }
             return ret;
@@ -718,19 +753,7 @@ namespace APIServer.Skat
                 var ctx = GetContext(ticket);
                 if (ctx != null && skatTable != null)
                 {
-                    var player = GetPlayerByName(ctx.Name);
-                    if (player != null && skatTable.CanPickupSkat(player))
-                    {
-                        foreach (var card in skatTable.Skat)
-                        {
-                            if (card.InternalNumber == internalCardNumber)
-                            {
-                                skatTable.PickupSkat(player, card);
-                                ret = true;
-                                break;
-                            }
-                        }
-                    }
+                    ret = PickupSkat(skatTable, ctx.Name, internalCardNumber);
                 }
             }
             return ret;
@@ -941,7 +964,7 @@ namespace APIServer.Skat
 
         private Player GetPlayerByName(string username)
         {
-            return skatTable.Players.FirstOrDefault((p) => p.Name == username);
+            return GetPlayerByName(skatTable, username);
         }
 
         private List<UserModel> GetAllUsers()
@@ -953,6 +976,13 @@ namespace APIServer.Skat
                 ret.Add(new UserModel { Name = user.Name, StartGameConfirmed = user.StartGameConfirmed });
             }
             return ret;
+        }
+
+        // --- private static methods (stateless)
+
+        private static Player GetPlayerByName(SkatTable skatTable, string username)
+        {
+            return skatTable.Players.FirstOrDefault((p) => p.Name == username);
         }
 
         private static UserModel GetCurrentUser(Context ctx)
@@ -1007,11 +1037,11 @@ namespace APIServer.Skat
             foreach (var tuple in gameHistory.PlayerCards)
             {
                 var playerCards = new List<CardModel>();
-                foreach (var card in tuple.Item2)
+                foreach (var card in tuple.Cards)
                 {
                     playerCards.Add(GetSkatCardModel(card));
                 }
-                ret.PlayerCards.Add(new PlayerCardsModel { PlayerName = tuple.Item1, Cards = playerCards });
+                ret.PlayerCards.Add(new PlayerCardsModel { PlayerName = tuple.PlayerName, Cards = playerCards });
             }
             foreach (var card in gameHistory.Skat)
             {
@@ -1023,7 +1053,7 @@ namespace APIServer.Skat
             }
             foreach (var tuple in gameHistory.Played)
             {
-                ret.Played.Add(new PlayedCardModel { Player = tuple.Item1, Card = GetSkatCardModel(tuple.Item2) });
+                ret.Played.Add(new PlayedCardModel { Player = tuple.PlayerName, Card = GetSkatCardModel(tuple.Card) });
             }
             return ret;
         }
@@ -1043,10 +1073,10 @@ namespace APIServer.Skat
             return ret;
         }
 
-        private TableModel GetTableModel(Context ctx)
+        private static TableModel GetTableModel(SkatTable skatTable, Context ctx)
         {
             var model = new TableModel();
-            var player = GetPlayerByName(ctx?.Name);
+            var player = GetPlayerByName(skatTable, ctx?.Name);
             if (player != null)
             {
                 var stat = skatTable.GetPlayerStatus(player);
@@ -1229,6 +1259,156 @@ namespace APIServer.Skat
                 }
             }
             return false;
+        }
+
+        private static SkatTable GetSkatTableFromState(string state)
+        {
+            var json = Encoding.UTF8.GetString(Convert.FromBase64String(state));
+            var t = new SkatTable(JsonSerializer.Deserialize<InternalState>(json));
+            // use same instances for Player objects
+            if (t.CurrentPlayer != null)
+            {
+                t.CurrentPlayer = t.Players.Find(p => p.Name.Equals(t.CurrentPlayer.Name));
+            }
+            if (t.GamePlayer != null)
+            {
+                t.GamePlayer = t.Players.Find(p => p.Name.Equals(t.GamePlayer.Name));
+            }
+            // only 3 player game in computer game mode, use same instances
+            t.TablePlayers = new();
+            t.TablePlayers.AddRange(t.Players);
+            t.InactivePlayer = null;
+            return t;
+        }
+
+        private static string GetInternalState(SkatTable t)
+        {
+            var json = JsonSerializer.Serialize(t.GetInternalState());
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+        }
+
+        private static bool PerformBidAction(SkatTable skatTable, string name, string bidAction)
+        {
+            bool ret = false;
+            if (Enum.TryParse(bidAction, true, out ActionType actionType))
+            {
+                var player = GetPlayerByName(skatTable, name);
+                if (player != null)
+                {
+                    var stat = skatTable.GetPlayerStatus(player);
+                    if (stat.ActionTypes.Contains(actionType))
+                    {
+                        skatTable.PerformPlayerAction(player, actionType);
+                        ret = true;
+                    }
+                }
+            }
+            return ret;
+        }
+
+        private static bool SetGame(SkatTable skatTable, string name, GameModel skatGameModel)
+        {
+            var ret = false;
+            var player = GetPlayerByName(skatTable, name);
+            if (player != null && Enum.TryParse(skatGameModel.Type, true, out GameType gameType))
+            {
+                if (gameType == GameType.Color)
+                {
+                    if (Enum.TryParse(skatGameModel.Color, true, out CardColor gameColor))
+                    {
+                        player.Game.Type = gameType;
+                        player.Game.Color = gameColor;
+                        player.Game.Option = GameOption.None;
+                        ret = true;
+                    }
+                }
+                else
+                {
+                    player.Game.Type = gameType;
+                    player.Game.Option = GameOption.None;
+                    ret = true;
+                }
+            }
+            return ret;
+        }
+
+        private static bool SetGameOption(SkatTable skatTable, string name, GameOptionModel gameOptionModel)
+        {
+            var ret = false;
+            GameOption gameOption = GameOption.None;
+            if (gameOptionModel.Ouvert)
+            {
+                gameOption |= GameOption.Ouvert;
+            }
+            if (gameOptionModel.Hand)
+            {
+                gameOption |= GameOption.Hand;
+            }
+            if (gameOptionModel.Schneider)
+            {
+                gameOption |= GameOption.Schneider;
+            }
+            if (gameOptionModel.Schwarz)
+            {
+                gameOption |= GameOption.Schwarz;
+            }
+            var player = GetPlayerByName(skatTable, name);
+            if (player != null)
+            {
+                skatTable.SetGameOption(player, gameOption);
+                ret = true;
+            }
+            return ret;
+        }
+
+        private static bool PlayCard(SkatTable skatTable, string name, int internalCardNumber)
+        {
+            var ret = false;
+            var player = GetPlayerByName(skatTable, name);
+            if (player != null)
+            {
+                foreach (var c in player.Cards)
+                {
+                    if (c.InternalNumber == internalCardNumber)
+                    {
+                        skatTable.PlayCard(player, c);
+                        ret = true;
+                        break;
+                    }
+                }
+            }
+            return ret;
+        }
+
+        private static bool CollectStitch(SkatTable skatTable, string name)
+        {
+            var ret = false;
+            var player = GetPlayerByName(skatTable, name);
+            if (player != null && skatTable.CanCollectStitch(player))
+            {
+                skatTable.CollectStitch(player);
+                ret = true;
+            }
+            return ret;
+        }
+
+        private static bool PickupSkat(SkatTable skatTable, string name, int internalCardNumber)
+        {
+            var ret = false;
+            var player = GetPlayerByName(skatTable, name);
+            if (player != null && skatTable.CanPickupSkat(player))
+            {
+                foreach (var card in skatTable.Skat)
+                {
+                    if (card.InternalNumber == internalCardNumber)
+                    {
+                        skatTable.PickupSkat(player, card);
+                        ret = true;
+                        break;
+                    }
+                }
+            }
+            return ret;
         }
 
         // --- store skat result and game history
