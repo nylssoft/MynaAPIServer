@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.1";
+    let version = "2.1.2";
 
     let computerGame = false;
     let computerInternalState;
@@ -1282,7 +1282,8 @@ var skat = (() => {
         let divSkat = controls.createDiv(parent);
         renderCards(divSkat, true, gameHistory.skat, true, undefined, true);
         gameHistory.playerCards.forEach((pc) => {
-            controls.create(parent, "p", undefined, _T("LABEL_CARDS_OF_1", pc.playerName));
+            const labelCardsOf = pc.playerName == _T("TEXT_YOU") ? _T("LABEL_YOUR_CARDS") : _T("LABEL_CARDS_OF_1", pc.playerName);
+            controls.create(parent, "p", undefined, labelCardsOf);
             let d = controls.createDiv(parent);
             renderCards(d, true, pc.cards, true, undefined, false);
         });
