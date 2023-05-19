@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.3";
+    let version = "2.1.4";
 
     let computerGame = false;
     let computerInternalState;
@@ -2445,6 +2445,7 @@ var skat = (() => {
         const firstCard = m.skatTable.stitch[0];
         const firstCardOrder = getCardOrder(firstCard);
         const forced = isForcedCard(game, firstCard, c);
+        const gamePlayerHitColor = hasGamePlayerHitColor(m, firstCard.color);
         const trump = isTrump(game, c);
         const cardOrder = getCardOrder(c);
         const cardScore = getCardScore(c);
@@ -2453,7 +2454,9 @@ var skat = (() => {
         if (gamePlayerPos == 0) {
             if (canTakeOver) {
                 score += 50;
-                score += cardScore;
+                if (c.value != "Jack") {
+                    score += cardScore + 1;
+                }
             }
             else if (!forced || c.value != "Jack") {
                 score += 12 - cardScore;
@@ -2462,16 +2465,15 @@ var skat = (() => {
         else {
             if (canTakeOver) {
                 if (forced) {
-                    if (cardOrder > highestCardOrder) {
-                        score += 50;
-                        score += cardScore;
+                    if (!gamePlayerHitColor && cardOrder > highestCardOrder) {
+                        score += 50 + cardScore;
                     }
                     else if (cardScore < 10) {
                         score += 30 + cardScore;
                     }
                 }
                 else if (trump) {
-                    if (!hasGamePlayerHitColor(m, firstCard.color)) {
+                    if (!gamePlayerHitColor) {
                         score += 20 + cardScore;
                     }
                     else if (cardScore < 10) {
@@ -2483,12 +2485,17 @@ var skat = (() => {
                 }
             }
             else {
-                if (forced && !trump) {
-                    const remaingColorCards = getRemainingCards(game, false, c.color);
-                    remaingColorCards.push(firstCard);
-                    const highestColorCard = getHighestCard(remaingColorCards);
-                    if (isSameCard(firstCard, highestColorCard) && !hasGamePlayerHitColor(m, c.color)) {
-                        score += 40 + (c.value != "Digit10" ? cardScore : -1);
+                if (!trump) {
+                    if (!gamePlayerHitColor) {
+                        const remaingColorCards = getRemainingCards(game, false, firstCard.color);
+                        remaingColorCards.push(firstCard);
+                        const highestColorCard = getHighestCard(remaingColorCards);
+                        if (isSameCard(firstCard, highestColorCard)) {
+                            score += 41 + (cardScore != 10 ? cardScore : -1);
+                        }
+                        else {
+                            score += 11 - cardScore;
+                        }
                     }
                     else {
                         score += 11 - cardScore;
@@ -2512,17 +2519,16 @@ var skat = (() => {
             !forced && trump && (!isTrump(game, secondCard) || cardOrder > getCardOrder(secondCard));
         let score = 0;
         if (stitchOwnerPos != gamePlayerPos) {
-            if (canTakeOver) {
-                score += 20;
-            }
-            score += 50;
-            if (!forced || c.value != "Jack") {
-                score += cardScore;
+            score += (trump && !forced) ? 20 : 50;
+            if (c.value != "Jack") {
+                score += cardScore + 1;
             }
         }
         else if (canTakeOver) {
             score += 30;
-            score += cardScore;
+            if (c.value != "Jack") {
+                score += cardScore + 1;
+            }
         }
         else if (!forced || c.value != "Jack") {
             score += 12 - cardScore;
