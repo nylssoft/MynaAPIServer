@@ -2311,6 +2311,7 @@ var skat = (() => {
     };
 
     const chooseComputerPlayCard = (m, playerName) => {
+        analyseMyCards(m);
         let bestCards = m.skatTable.playableCards;
         if (m.skatTable.gamePlayer.name != playerName) {
             const pos = getCurrentPlayerPosition(m);
@@ -2536,6 +2537,204 @@ var skat = (() => {
         return score;
     };
 
+    const analyseMyCards = (m) => {
+        const ret = {
+            game: undefined,
+
+            myPlayerName: undefined,
+            gamePlayerName: undefined,
+            partnerPlayerName: undefined,
+
+            myPosition: undefined,
+            gamePlayerPosition: undefined,
+            stitchOwnerPosition: undefined,
+
+            myCards: [],
+            //myTrumpCards: [],
+            // myColorCardsMap: new Map(),
+
+            firstCard: undefined,
+            secondCard: undefined,
+
+            //remainingTrumpCards: [],
+            //remainingOtherTrumpCards: [],
+
+            //remainingColorCardsMap: new Map(),
+            //remainingOtherColorCardsMap: new Map(),
+
+            //highestRemainigTrumpCardDetails: undefined,
+            //highestRemainingColorCardDetailsMap: new Map(),
+
+            //gamePlayerNoTrumps: false,
+            //gamePlayerNoColorMap: new Map(),
+
+            cardInfo: {
+                "Trump": {
+                    remainingCards: [],
+                    myCards:[],
+                    playerNamesWithoutCards: []
+                },
+                "Diamonds": {
+                    remainingCards: [],
+                    myCards: [],
+                    playerNamesWithoutCards: []
+                },
+                "Hearts": {
+                    remainingCards: [],
+                    myCards: [],
+                    playerNamesWithoutCards: []
+                },
+                "Spades": {
+                    remainingCards: [],
+                    myCards: [],
+                    playerNamesWithoutCards: []
+                },
+                "Clubs": {
+                    remainingCards: [],
+                    myCards: [],
+                    playerNamesWithoutCards: []
+                }
+            }
+        };
+
+        ret.game = m.skatTable.gamePlayer.game;
+
+        let colors = getAllColors();
+        if (ret.game.type != "Grand") {
+            colors = colors.filter(color => color != ret.game.color);
+        }
+        
+        ret.myCards = m.skatTable.cards;
+        // ret.myTrumpCards = ret.myCards.filter(c => isTrump(ret.game, c));
+        // colors.forEach(color => ret.myCards.filter(c => c.color == color).forEach(c => ret.myColorCardsMap.set(color, c)));
+
+        ret.myPosition = getCurrentPlayerPosition(m);
+        ret.gamePlayerPosition = getGamePlayerPosition(m);
+        ret.stitchOwnerPosition = getStitchOwnerPosition(m);
+
+        const cards = [];
+        ret.myCards.forEach(c => cards.push(c));
+        if (m.skatTable.stitch.length > 0) {
+            ret.firstCard = m.skatTable.stitch[0];
+            cards.push(ret.firstCard);
+            if (m.skatTable.stitch.length > 1) {
+                ret.secondCard = m.skatTable.stitch[1];
+                cards.push(ret.secondCard);
+            }
+        }        
+
+        ret.gamePlayerName = m.skatTable.gamePlayer.name;
+        ret.myPlayerName = m.skatTable.currentPlayer.name;
+        m.skatTable.players.forEach(playerInfo => {
+            if (playerInfo.name != ret.gamePlayerName && playerInfo.name != ret.myPlayerName) {
+                ret.partnerPlayerName = playerInfo.name;
+            }
+        });
+        const cardInfoKeys = ["Trump"];
+        const cardInfoPlayerNames = m.skatTable.players.map(playerInfo => playerInfo.name);
+        colors.forEach(color => cardInfoKeys.push(color));
+        cardInfoKeys.forEach(key => {
+            if (key == "Trump") {
+                ret.cardInfo[key].myCards = ret.myCards.filter(c => isTrump(ret.game, c));
+                ret.cardInfo[key].remainingCards = getRemainingCards(ret.game, true, undefined, cards);
+                cardInfoPlayerNames.forEach(playerName => {
+                    if (hasPlayerNoTrumpOrNoColor(m, playerName)) {
+                        ret.cardInfo[key].playerNamesWithoutCards.push(playerName);
+                    }
+                });
+            }
+            else {
+                ret.cardInfo[key].myCards = ret.myCards.filter(c => c.color == key);
+                ret.cardInfo[key].remainingCards = getRemainingCards(ret.game, false, key, cards);
+                cardInfoPlayerNames.forEach(playerName => {
+                    if (hasPlayerNoTrumpOrNoColor(m, playerName, key)) {
+                        ret.cardInfo[key].playerNamesWithoutCards.push(playerName);
+                    }
+                });
+            }
+        });
+
+        //ret.remainingTrumpCards = getRemainingCards(ret.game, true, undefined, cards);
+        //ret.remainingOtherTrumpCards = subtractCards(ret.remainingTrumpCards, ret.myCards);
+
+        //ret.highestRemainigTrumpCardDetails = getHighestCardDetails(ret.remainingTrumpCards);
+
+        //colors.forEach(color => {
+        //    const remaining = getRemainingCards(ret.game, false, color, cards);
+        //    ret.remainingColorCardsMap.set(color, remaining);
+        //    ret.remainingOtherColorCardsMap.set(color, subtractCards(remaining, ret.myCards));
+        //    ret.highestRemainingColorCardDetailsMap.set(color, getHighestCardDetails(remaining));
+        //});
+
+        //colors.forEach(color => ret.gamePlayerHitColorsMap.set(color, hasGamePlayerHitColor(m, color)));
+
+        //ret.gamePlayerNoTrumps = hasGamePlayerNoTrumps(m);
+
+
+        // modelkarten der mitspieler? welche karten können sie noch haben? würfel einfach die rest karten aus?
+        // otherRemainingCards
+        // playerx.canHaveCard => other - card, add to player model
+        // playery....
+        // simuliere dann den zug
+        // playerx => trumps?, playerx = colors?
+
+        console.log(ret);
+        /*
+        let trumpCount = 0;
+        let aceCount = 0;
+        let tenCount = 0;
+        let jackCount = 0;
+        let highestTrumpCount;
+        let colorCountMap = new Map();
+        let highestColorCountMap = new Map();
+        colors.forEach(color => {
+            colorCountMap.set(color, 0);
+            highestColorCountMap.set(color, 0);
+        });
+        ret.myCards.forEach(c => {
+            if (isTrump(ret.game, c)) {
+                trumpCount++;
+                if (c == "Jack") {
+                    jackCount++;
+                }
+                if (isHighestTrump(c, ret)) {
+                    highestTrumpCount++;
+                }
+            }
+            else {
+                colorCountMap.set(c.color, colorCountMap.get(c.color) + 1);
+                if (isHighestColor(c, ret)) {
+                    highestColorCountMap.set(c.color, highestColorCountMap.get(c.color) + 1);
+                }
+            }
+            if (c.value == "Ace") {
+                aceCount++;
+            }
+            else if (c.value == "Digit10") {
+                tenCount++;
+            }
+        });
+        let missingColors = colorCountMap.values().filter(v => v == 0).length;
+        let highestColorCounts = highestColorCountMap.values().reduce((prev, current) => prev + current, 0);
+        */
+        return ret;
+    };
+
+    const isHighestTrump = (card, analyseModel) => {
+        const cardOrder = getCardOrder(card);
+        return !analyseModel.remainingOtherTrumpCards.some(c => getCardOrder(c) > cardOrder);
+    };
+
+    const isHighestColor = (card, analyseModel) => {
+        const cardOrder = getCardOrder(card);
+        const remaining = analyseModel.remainingOtherColorCardsMap.get(card.color);
+        return !remaining.some(c => getCardOrder(c) > cardOrder);
+    };
+
+    const subtractCards = (cardset1, cardset2) => {
+        return cardset1.filter(c => !containsCard(cardset2, c));
+    };
+
     const isForcedCard = (game, first, c) => {
         return isTrump(game, first) && isTrump(game, c) ||
             !isTrump(game, first) && !isTrump(game, c) && first.color == c.color;
@@ -2574,6 +2773,22 @@ var skat = (() => {
         return gamePlayerStitches.some((pc, idx) => idx % 3 == 0 && pc.color == color && pc.player != gamePlayerName);
     };
 
+    const hasPlayerNoTrumpOrNoColor = (m, player, color) => {
+        const game = m.skatTable.gamePlayer.game;
+        for (let idx = 0; idx < computerPlayedCards.length; idx += 3) {
+            const pc = computerPlayedCards[idx];
+            if (pc && pc.player != player && (color && !isTrump(game, pc.card) && pc.card.color == color || !color && isTrump(game, pc.card))) {
+                for (let j = 1; j <= 2; j++) {
+                    const next = computerPlayedCards[idx + j];
+                    if (next && next.player == player && (color && (isTrump(game, next) || next.card.color != color) || !color && !isTrump(game, next.card))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
     const hasGamePlayerNoTrumps = (m) => {
         const game = m.skatTable.gamePlayer.game;
         const remainingTrumps = getRemainingCards(game, true, undefined, m.skatTable.cards);
@@ -2588,8 +2803,8 @@ var skat = (() => {
                 pc.player != gamePlayerName) {
                 const next1 = computerPlayedCards[idx + 1];
                 const next2 = computerPlayedCards[idx + 2];
-                return next1.player == gamePlayerName && !isTrump(game, next1.card) ||
-                    next2.player == gamePlayerName && !isTrump(game, next2.card);
+                return next1 && next1.player == gamePlayerName && !isTrump(game, next1.card) ||
+                    next2 && next2.player == gamePlayerName && !isTrump(game, next2.card);
             }
         }
         return false;
@@ -2618,11 +2833,13 @@ var skat = (() => {
 
     const isSameCard = (c1, c2) => c1 != undefined && c2 != undefined && c1.value == c2.value && c1.color == c2.color;
 
+    const getAllColors = () => ["Diamonds", "Hearts", "Spades", "Clubs"];
+
+    const getAllValues = () => ["Digit7", "Digit8", "Digit9", "Digit10", "Jack", "Queen", "King", "Ace"];
+
     const getAllCards = () => {
         const cards = [];
-        const colors = ["Diamonds", "Hearts", "Spades", "Clubs"];
-        const values = ["Digit7", "Digit8", "Digit9", "Digit10", "Jack", "Queen", "King", "Ace"];
-        colors.forEach(color => values.forEach(value => cards.push({ color: color, value: value })));
+        getAllColors().forEach(color => getAllValues().forEach(value => cards.push({ color: color, value: value })));
         return cards;
     };
 
