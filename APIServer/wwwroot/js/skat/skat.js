@@ -1563,7 +1563,7 @@ var skat = (() => {
                         return;
                     }
                     if (m.skatTable.playableCards.length > 0) {
-                        const card = chooseComputerPlayCard(m, m.skatTable.currentPlayer.name);
+                        const card = chooseComputerPlayCardNew(m, m.skatTable.currentPlayer.name);
                         storeComputerPlayCard(m, m.skatTable.currentPlayer.name, card);
                         utils.fetch_api_call("api/skat/computer/playcard",
                             {
@@ -2310,8 +2310,57 @@ var skat = (() => {
         }
     };
 
+    const chooseComputerPlayCardNew = (m) => {
+        const am = analyseMyCards(m);
+        let bestCards;
+        if (am.gamePlayerName != am.myPlayerName) {
+            let bestScore = -1;
+            m.skatTable.playableCards.forEach(c => {
+                const score = getComputerPlayScoreNew(am, c);
+                if (score >= bestScore) {
+                    if (score > bestScore) {
+                        bestCards = [];
+                    }
+                    bestCards.push(c);
+                    bestScore = score;
+                }
+                if (utils.is_debug()) utils.debug(`card:${getCardDescription(c)}, score:${score}, best score:${bestScore}`);
+            });
+        }
+        if (!bestCards) {
+            bestCards = m.skatTable.playableCards;
+        }
+        return bestCards[getRandom(0, bestCards.length - 1)];
+    };
+
+    const getComputerPlayScoreNew = (am, card) => {
+        switch (am.myPosition) {
+            case 0:
+                return getComputerPlayScoreNewVorhand(am, card);
+            case 1:
+                return getComputerPlayScoreNewMittelhand(am, card);
+            case 2:
+                return getComputerPlayScoreNewHinterhand(am, card);
+            default:
+                break;
+        }
+        return -2;
+    };
+
+    const getComputerPlayScoreNewVorhand = (am, card) => {
+        return -2;
+
+    };
+
+    const getComputerPlayScoreNewMittelhand = (am, card) => {
+        return -2;
+    };
+
+    const getComputerPlayScoreNewHinterhand = (am, card) => {
+        return -2;
+    };
+
     const chooseComputerPlayCard = (m, playerName) => {
-        analyseMyCards(m);
         let bestCards = m.skatTable.playableCards;
         if (m.skatTable.gamePlayer.name != playerName) {
             const pos = getCurrentPlayerPosition(m);
