@@ -1563,7 +1563,7 @@ var skat = (() => {
                         return;
                     }
                     if (m.skatTable.playableCards.length > 0) {
-                        const card = chooseComputerPlayCardNew(m, m.skatTable.currentPlayer.name);
+                        const card = chooseComputerPlayCard(m, m.skatTable.currentPlayer.name);
                         storeComputerPlayCard(m, m.skatTable.currentPlayer.name, card);
                         utils.fetch_api_call("api/skat/computer/playcard",
                             {
@@ -2310,13 +2310,13 @@ var skat = (() => {
         }
     };
 
-    const chooseComputerPlayCardNew = (m) => {
+    const chooseComputerPlayCard = (m) => {
         const am = analyseMyCards(m);
         let bestCards;
         if (am.gamePlayerName != am.myPlayerName) {
             let bestScore = -1;
             m.skatTable.playableCards.forEach(c => {
-                const score = getComputerPlayScoreNew(am, c);
+                const score = getComputerPlayScore(am, c);
                 if (score >= bestScore) {
                     if (score > bestScore) {
                         bestCards = [];
@@ -2333,128 +2333,31 @@ var skat = (() => {
         return bestCards[getRandom(0, bestCards.length - 1)];
     };
 
-    const getComputerPlayScoreNew = (am, card) => {
+    const getComputerPlayScore = (am, card) => {
         switch (am.myPosition) {
             case 0:
-                return getComputerPlayScoreNewVorhand(am, card);
+                return getComputerPlayScoreVorhand(am, card);
             case 1:
-                return getComputerPlayScoreNewMittelhand(am, card);
+                return getComputerPlayScoreMittelhand(am, card);
             case 2:
-                return getComputerPlayScoreNewHinterhand(am, card);
+                return getComputerPlayScoreHinterhand(am, card);
             default:
                 break;
         }
         return -2;
     };
 
-    const getComputerPlayScoreNewVorhand = (am, card) => {
-        return -2;
-
-    };
-
-    const getComputerPlayScoreNewMittelhand = (am, card) => {
-        return -2;
-    };
-
-    const getComputerPlayScoreNewHinterhand = (am, card) => {
-        return -2;
-    };
-
-    const chooseComputerPlayCard = (m, playerName) => {
-        let bestCards = m.skatTable.playableCards;
-        if (m.skatTable.gamePlayer.name != playerName) {
-            const pos = getCurrentPlayerPosition(m);
-            if (pos == 0) {
-                bestCards = chooseComputerCardVorhand(m);
-            }
-            else if (pos == 1) {
-                bestCards = chooseComputerCardMittelhand(m);
-            }
-            else {
-                bestCards = chooseComputerCardHinterhand(m);
-            }
-        }
-        return bestCards[getRandom(0, bestCards.length - 1)];
-    };
-
-    const chooseComputerCardVorhand = (m) => {
-        if (utils.is_debug()) utils.debug("Vorhand");
-        const game = m.skatTable.gamePlayer.game;
-        const noTrumps = hasGamePlayerNoTrumps(m);
-        const remainingTrumpCards = getRemainingCards(game, true);
-        const remainingOtherTrumpCards = getRemainingCards(game, true, undefined, m.skatTable.cards);
-        const myTrumpCards = m.skatTable.cards.filter(c => isTrump(game, c));
-        let bestCards;
-        let bestScore = -1;
-        m.skatTable.playableCards.forEach(c => {
-            const score = getComputerVorhandScore(m, game, c, noTrumps, myTrumpCards, remainingTrumpCards, remainingOtherTrumpCards);
-            if (score >= bestScore) {
-                if (score > bestScore) {
-                    bestCards = [];
-                }
-                bestCards.push(c);
-                bestScore = score;
-            }
-            if (utils.is_debug()) utils.debug(`card:${getCardDescription(c)}, score:${score}, best score:${bestScore}`);
-        });
-        return bestCards;
-    };
-
-    const chooseComputerCardMittelhand = (m) => {
-        if (utils.is_debug()) utils.debug("Mittelhand");
-        const game = m.skatTable.gamePlayer.game;
-        const gamePlayerPos = getGamePlayerPosition(m);
-        const firstCard = m.skatTable.stitch[0];
-        const myCards = m.skatTable.cards;
-        const remainingCards = isTrump(game, firstCard) ? getRemainingCards(game, true, undefined, myCards) : getRemainingCards(game, false, firstCard.color, myCards);
-        const highestCardOrder = getHighestCardOrder(remainingCards);
-        let bestCards;
-        let bestScore = -1;
-        m.skatTable.playableCards.forEach(c => {
-            const score = getComputerMittelhandScore(m, game, c, gamePlayerPos, highestCardOrder);
-            if (score >= bestScore) {
-                if (score > bestScore) {
-                    bestCards = [];
-                }
-                bestCards.push(c);
-                bestScore = score;
-            }
-            if (utils.is_debug()) utils.debug(`card:${getCardDescription(c)}, score:${score}, best score:${bestScore}`);
-        });
-        return bestCards;
-    };
-
-    const chooseComputerCardHinterhand = (m) => {
-        if (utils.is_debug()) utils.debug("Hinterhand");
-        const game = m.skatTable.gamePlayer.game;
-        const gamePlayerPos = getGamePlayerPosition(m);
-        const stitchOwnerPos = getStitchOwnerPosition(m);
-        const highestCardOrder = getHighestCardOrder(m.skatTable.stitch);
-        let bestCards;
-        let bestScore = -1;
-        m.skatTable.playableCards.forEach(c => {
-            const score = getComputerHinterhandScore(m, game, c, gamePlayerPos, stitchOwnerPos, highestCardOrder);
-            if (score >= bestScore) {
-                if (score > bestScore) {
-                    bestCards = [];
-                }
-                bestCards.push(c);
-                bestScore = score;
-            }
-            if (utils.is_debug()) utils.debug(`card:${getCardDescription(c)}, score:${score}, best score:${bestScore}`);
-        });
-        return bestCards;
-    };
-
-    const getComputerVorhandScore = (m, game, c, noTrumps, myTrumpCards, remainingTrumpCards, remainingOtherTrumpCards) => {
+    const getComputerPlayScoreVorhand = (am, card) => {
         let score = 0;
-        const cardScore = getCardScore(c);
-        if (!isTrump(game, c)) {
-            const hit = hasGamePlayerHitColor(m, c.color);
+        const cardScore = getCardScore(card);
+        const game = am.game;
+        const noTrumps = am.cardInfo["Trump"].playerNamesWithoutCards.includes(am.gamePlayerName);
+        if (!isTrump(game, card)) {
+            const hit = am.cardInfo[card.color].playerNamesWithoutCards.includes(am.gamePlayerName);
             score += 50;
-            const remaingColorCards = getRemainingCards(game, false, c.color);
+            const remaingColorCards = addCards(am.cardInfo[card.color].remainingCards, am.cardInfo[card.color].myCards);
             const highestColorCard = getHighestCard(remaingColorCards);
-            if (isSameCard(highestColorCard, c)) {
+            if (isSameCard(highestColorCard, card)) {
                 score += 20;
                 if (!hit) {
                     score += 20;
@@ -2476,11 +2379,14 @@ var skat = (() => {
             }
         }
         else {
+            const remainingOtherTrumpCards = am.cardInfo["Trump"].remainingCards;
+            const myTrumpCards = am.cardInfo["Trump"].myCards;
+            const remainingTrumpCards = addCards(remainingOtherTrumpCards, myTrumpCards);
             if (!noTrumps && myTrumpCards.length > remainingOtherTrumpCards.length) {
                 score += 70;
             }
             const highestTrumpCard = getHighestCard(remainingTrumpCards);
-            if (isSameCard(highestTrumpCard, c)) {
+            if (isSameCard(highestTrumpCard, card)) {
                 score += 20;
                 score += cardScore;
             }
@@ -2491,24 +2397,27 @@ var skat = (() => {
         return score;
     };
 
-    const getComputerMittelhandScore = (m, game, c, gamePlayerPos, highestCardOrder) => {
-        const firstCard = m.skatTable.stitch[0];
+    const getComputerPlayScoreMittelhand = (am, card) => {
+        const game = am.game;
+        const firstCard = am.firstCard;
         const firstCardOrder = getCardOrder(firstCard);
-        const forced = isForcedCard(game, firstCard, c);
-        const gamePlayerHitColor = hasGamePlayerHitColor(m, firstCard.color);
-        const trump = isTrump(game, c);
-        const cardOrder = getCardOrder(c);
-        const cardScore = getCardScore(c);
+        const key = isTrump(game, firstCard) ? "Trump" : firstCard.color;
+        const forced = isForcedCard(game, firstCard, card);
+        const gamePlayerHitColor = !isTrump(game, firstCard) && am.cardInfo[key].playerNamesWithoutCards.includes(am.gamePlayerName);
+        const trump = isTrump(game, card);
+        const cardOrder = getCardOrder(card);
+        const cardScore = getCardScore(card);
         const canTakeOver = forced && cardOrder > firstCardOrder || !forced && trump;
+        const highestCardOrder = getHighestCardOrder(am.cardInfo[key].remainingCards);
         let score = 0;
-        if (gamePlayerPos == 0) {
+        if (am.gamePlayerPosition == 0) {
             if (canTakeOver) {
                 score += 50;
-                if (c.value != "Jack") {
+                if (card.value != "Jack") {
                     score += cardScore + 1;
                 }
             }
-            else if (!forced || c.value != "Jack") {
+            else if (!forced || card.value != "Jack") {
                 score += 12 - cardScore;
             }
         }
@@ -2537,10 +2446,9 @@ var skat = (() => {
             else {
                 if (!trump) {
                     if (!gamePlayerHitColor) {
-                        const remaingColorCards = getRemainingCards(game, false, firstCard.color);
-                        remaingColorCards.push(firstCard);
-                        const highestColorCard = getHighestCard(remaingColorCards);
-                        if (isSameCard(firstCard, highestColorCard)) {
+                        const remaingCards = addCards(am.cardInfo[key].remainingCards, [firstCard]);
+                        const highestCard = getHighestCard(remaingCards);
+                        if (isSameCard(firstCard, highestCard)) {
                             score += 41 + (cardScore != 10 ? cardScore : -1);
                         }
                         else {
@@ -2551,7 +2459,7 @@ var skat = (() => {
                         score += 11 - cardScore;
                     }
                 }
-                else if (!forced || c.value != "Jack") {
+                else if (!forced || card.value != "Jack") {
                     score += 12 - cardScore;
                 }
             }
@@ -2559,28 +2467,29 @@ var skat = (() => {
         return score;
     };
 
-    const getComputerHinterhandScore = (m, game, c, gamePlayerPos, stitchOwnerPos, highestCardOrder) => {
-        const forced = isForcedCard(game, m.skatTable.stitch[0], c);
-        const cardOrder = getCardOrder(c);
-        const cardScore = getCardScore(c);
-        const trump = isTrump(game, c);
-        const secondCard = m.skatTable.stitch[1];
+    const getComputerPlayScoreHinterhand = (am, card) => {
+        const game = am.game;
+        const forced = isForcedCard(game, am.firstCard, card);
+        const cardOrder = getCardOrder(card);
+        const cardScore = getCardScore(card);
+        const trump = isTrump(game, card);
+        const highestCardOrder = getHighestCardOrder([am.firstCard, am.secondCard]);
         const canTakeOver = forced && cardOrder > highestCardOrder ||
-            !forced && trump && (!isTrump(game, secondCard) || cardOrder > getCardOrder(secondCard));
+            !forced && trump && (!isTrump(game, am.secondCard) || cardOrder > getCardOrder(am.secondCard));
         let score = 0;
-        if (stitchOwnerPos != gamePlayerPos) {
+        if (am.stitchOwnerPosition != am.gamePlayerPosition) {
             score += (trump && !forced) ? 20 : 50;
-            if (c.value != "Jack") {
+            if (card.value != "Jack") {
                 score += cardScore + 1;
             }
         }
         else if (canTakeOver) {
             score += 30;
-            if (c.value != "Jack") {
+            if (card.value != "Jack") {
                 score += cardScore + 1;
             }
         }
-        else if (!forced || c.value != "Jack") {
+        else if (!forced || card.value != "Jack") {
             score += 12 - cardScore;
         }
         return score;
@@ -2589,34 +2498,15 @@ var skat = (() => {
     const analyseMyCards = (m) => {
         const ret = {
             game: undefined,
-
             myPlayerName: undefined,
             gamePlayerName: undefined,
             partnerPlayerName: undefined,
-
             myPosition: undefined,
             gamePlayerPosition: undefined,
             stitchOwnerPosition: undefined,
-
             myCards: [],
-            //myTrumpCards: [],
-            // myColorCardsMap: new Map(),
-
             firstCard: undefined,
             secondCard: undefined,
-
-            //remainingTrumpCards: [],
-            //remainingOtherTrumpCards: [],
-
-            //remainingColorCardsMap: new Map(),
-            //remainingOtherColorCardsMap: new Map(),
-
-            //highestRemainigTrumpCardDetails: undefined,
-            //highestRemainingColorCardDetailsMap: new Map(),
-
-            //gamePlayerNoTrumps: false,
-            //gamePlayerNoColorMap: new Map(),
-
             cardInfo: {
                 "Trump": {
                     remainingCards: [],
@@ -2645,22 +2535,15 @@ var skat = (() => {
                 }
             }
         };
-
         ret.game = m.skatTable.gamePlayer.game;
-
         let colors = getAllColors();
         if (ret.game.type != "Grand") {
             colors = colors.filter(color => color != ret.game.color);
-        }
-        
+        }        
         ret.myCards = m.skatTable.cards;
-        // ret.myTrumpCards = ret.myCards.filter(c => isTrump(ret.game, c));
-        // colors.forEach(color => ret.myCards.filter(c => c.color == color).forEach(c => ret.myColorCardsMap.set(color, c)));
-
         ret.myPosition = getCurrentPlayerPosition(m);
         ret.gamePlayerPosition = getGamePlayerPosition(m);
         ret.stitchOwnerPosition = getStitchOwnerPosition(m);
-
         const cards = [];
         ret.myCards.forEach(c => cards.push(c));
         if (m.skatTable.stitch.length > 0) {
@@ -2671,7 +2554,6 @@ var skat = (() => {
                 cards.push(ret.secondCard);
             }
         }        
-
         ret.gamePlayerName = m.skatTable.gamePlayer.name;
         ret.myPlayerName = m.skatTable.currentPlayer.name;
         m.skatTable.players.forEach(playerInfo => {
@@ -2702,86 +2584,8 @@ var skat = (() => {
                 });
             }
         });
-
-        //ret.remainingTrumpCards = getRemainingCards(ret.game, true, undefined, cards);
-        //ret.remainingOtherTrumpCards = subtractCards(ret.remainingTrumpCards, ret.myCards);
-
-        //ret.highestRemainigTrumpCardDetails = getHighestCardDetails(ret.remainingTrumpCards);
-
-        //colors.forEach(color => {
-        //    const remaining = getRemainingCards(ret.game, false, color, cards);
-        //    ret.remainingColorCardsMap.set(color, remaining);
-        //    ret.remainingOtherColorCardsMap.set(color, subtractCards(remaining, ret.myCards));
-        //    ret.highestRemainingColorCardDetailsMap.set(color, getHighestCardDetails(remaining));
-        //});
-
-        //colors.forEach(color => ret.gamePlayerHitColorsMap.set(color, hasGamePlayerHitColor(m, color)));
-
-        //ret.gamePlayerNoTrumps = hasGamePlayerNoTrumps(m);
-
-
-        // modelkarten der mitspieler? welche karten können sie noch haben? würfel einfach die rest karten aus?
-        // otherRemainingCards
-        // playerx.canHaveCard => other - card, add to player model
-        // playery....
-        // simuliere dann den zug
-        // playerx => trumps?, playerx = colors?
-
         console.log(ret);
-        /*
-        let trumpCount = 0;
-        let aceCount = 0;
-        let tenCount = 0;
-        let jackCount = 0;
-        let highestTrumpCount;
-        let colorCountMap = new Map();
-        let highestColorCountMap = new Map();
-        colors.forEach(color => {
-            colorCountMap.set(color, 0);
-            highestColorCountMap.set(color, 0);
-        });
-        ret.myCards.forEach(c => {
-            if (isTrump(ret.game, c)) {
-                trumpCount++;
-                if (c == "Jack") {
-                    jackCount++;
-                }
-                if (isHighestTrump(c, ret)) {
-                    highestTrumpCount++;
-                }
-            }
-            else {
-                colorCountMap.set(c.color, colorCountMap.get(c.color) + 1);
-                if (isHighestColor(c, ret)) {
-                    highestColorCountMap.set(c.color, highestColorCountMap.get(c.color) + 1);
-                }
-            }
-            if (c.value == "Ace") {
-                aceCount++;
-            }
-            else if (c.value == "Digit10") {
-                tenCount++;
-            }
-        });
-        let missingColors = colorCountMap.values().filter(v => v == 0).length;
-        let highestColorCounts = highestColorCountMap.values().reduce((prev, current) => prev + current, 0);
-        */
         return ret;
-    };
-
-    const isHighestTrump = (card, analyseModel) => {
-        const cardOrder = getCardOrder(card);
-        return !analyseModel.remainingOtherTrumpCards.some(c => getCardOrder(c) > cardOrder);
-    };
-
-    const isHighestColor = (card, analyseModel) => {
-        const cardOrder = getCardOrder(card);
-        const remaining = analyseModel.remainingOtherColorCardsMap.get(card.color);
-        return !remaining.some(c => getCardOrder(c) > cardOrder);
-    };
-
-    const subtractCards = (cardset1, cardset2) => {
-        return cardset1.filter(c => !containsCard(cardset2, c));
     };
 
     const isForcedCard = (game, first, c) => {
@@ -2816,12 +2620,6 @@ var skat = (() => {
         return undefined;
     };
 
-    const hasGamePlayerHitColor = (m, color) => {
-        const gamePlayerName = m.skatTable.gamePlayer.name;
-        const gamePlayerStitches = computerStitches.get(gamePlayerName);
-        return gamePlayerStitches.some((pc, idx) => idx % 3 == 0 && pc.color == color && pc.player != gamePlayerName);
-    };
-
     const hasPlayerNoTrumpOrNoColor = (m, player, color) => {
         const game = m.skatTable.gamePlayer.game;
         for (let idx = 0; idx < computerPlayedCards.length; idx += 3) {
@@ -2833,27 +2631,6 @@ var skat = (() => {
                         return true;
                     }
                 }
-            }
-        }
-        return false;
-    };
-
-    const hasGamePlayerNoTrumps = (m) => {
-        const game = m.skatTable.gamePlayer.game;
-        const remainingTrumps = getRemainingCards(game, true, undefined, m.skatTable.cards);
-        if (remainingTrumps.length == 0) {
-            return true;
-        }
-        const gamePlayerName = m.skatTable.gamePlayer.name;
-        for (let idx = 0; idx < computerPlayedCards.length; idx++) {
-            const pc = computerPlayedCards[idx];
-            if (idx % 3 == 0 &&
-                isTrump(game, pc.card) &&
-                pc.player != gamePlayerName) {
-                const next1 = computerPlayedCards[idx + 1];
-                const next2 = computerPlayedCards[idx + 2];
-                return next1 && next1.player == gamePlayerName && !isTrump(game, next1.card) ||
-                    next2 && next2.player == gamePlayerName && !isTrump(game, next2.card);
             }
         }
         return false;
@@ -2878,6 +2655,13 @@ var skat = (() => {
             }
         });
         return { card: highestCard, order: highestCardOrder };
+    };
+
+    const addCards = (set1, set2) => {
+        const cards = [];
+        set1.forEach(c => cards.push(c));
+        set2.forEach(c => cards.push(c));
+        return cards;
     };
 
     const isSameCard = (c1, c2) => c1 != undefined && c2 != undefined && c1.value == c2.value && c1.color == c2.color;
