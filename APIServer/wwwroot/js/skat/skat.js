@@ -41,7 +41,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.4";
+    let version = "2.1.5";
 
     let computerGame = false;
     let computerInternalState;
@@ -1044,6 +1044,7 @@ var skat = (() => {
             showChat = !showChat;
             render();
         });
+        imgMessage.style.visibility = "hidden";
         let token = utils.get_authentication_token();
         if (token) {
             let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
@@ -1091,6 +1092,7 @@ var skat = (() => {
     };
 
     const renderResults = (results, skatadmin) => {
+        disableTimer();
         controls.removeAllChildren(document.body);
         const backButtonDiv = controls.createDiv(document.body);
         controls.createButton(backButtonDiv, _T("BUTTON_BACK"), () => render());
@@ -1149,6 +1151,7 @@ var skat = (() => {
     };
 
     const renderResult = (result) => {
+        disableTimer();
         renderResultTable(document.body, result);
     };
 
@@ -1254,6 +1257,7 @@ var skat = (() => {
     };
 
     const renderGameHistory = (parent, result, gameHistory) => {
+        disableTimer();
         const p = document.getElementById("results-overview-id");
         if (p) {
             p.style.display = "none";
@@ -2351,7 +2355,7 @@ var skat = (() => {
         let score = 0;
         const cardScore = getCardScore(card);
         const game = am.game;
-        const noTrumps = am.cardInfo["Trump"].playerNamesWithoutCards.includes(am.gamePlayerName);
+        const noTrumps = am.cardInfo.Trump.playerNamesWithoutCards.includes(am.gamePlayerName);
         if (!isTrump(game, card)) {
             const hit = am.cardInfo[card.color].playerNamesWithoutCards.includes(am.gamePlayerName);
             score += 50;
@@ -2379,8 +2383,8 @@ var skat = (() => {
             }
         }
         else {
-            const remainingOtherTrumpCards = am.cardInfo["Trump"].remainingCards;
-            const myTrumpCards = am.cardInfo["Trump"].myCards;
+            const remainingOtherTrumpCards = am.cardInfo.Trump.remainingCards;
+            const myTrumpCards = am.cardInfo.Trump.myCards;
             const remainingTrumpCards = addCards(remainingOtherTrumpCards, myTrumpCards);
             if (!noTrumps && myTrumpCards.length > remainingOtherTrumpCards.length) {
                 score += 70;
