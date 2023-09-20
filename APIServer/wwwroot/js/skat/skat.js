@@ -1641,7 +1641,7 @@ var skat = (() => {
             onShowResult();
         }
         else {
-            window.open("/skat?result", "_blank")
+            window.open("/skat?result", "_blank");
         }
     };
 
@@ -1684,9 +1684,9 @@ var skat = (() => {
             onShowResults();
         }
         else {
-            window.open("/skat?results", "_blank")
+            window.open("/skat?results", "_blank");
         }
-    }
+    };
     
     const onShowResults = () => {
         if (currentUser) {
