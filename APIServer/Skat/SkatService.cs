@@ -413,7 +413,7 @@ namespace APIServer.Skat
                 {
                     ret.PlayerNames.Add(skatResult.Player4);
                 }
-                foreach (var h in skatResult.SkatGameHistories)
+                foreach (var h in skatResult.SkatGameHistories.OrderBy(h => h.Id))
                 {
                     ret.History.Add(JsonSerializer.Deserialize<GameHistoryModel>(h.History));
                 }

@@ -28,6 +28,7 @@ var skat = (() => {
     let specialSortOption = true;
     let showChat = false;
     let showReservations = false;
+    let showResultInWindow = false;
     let lastChatText = "";
     let currentSkatResultId;
 
@@ -41,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.5";
+    let version = "2.1.7";
 
     let computerGame = false;
     let computerInternalState;
@@ -768,7 +769,7 @@ var skat = (() => {
                         controls.createButton(parent, _T("BUTTON_OK"), btnConfirmStartGame_click, "ConfirmStartGame");
                     }
                     controls.createButton(parent, _T("BUTTON_GAME_HISTORY"), () => onShowGameHistory());
-                    controls.createButton(parent, _T("BUTTON_RESULT_TABLE"), () => onShowResult());
+                    controls.createButton(parent, _T("BUTTON_RESULT_TABLE"), () => dispatchShowResult());
                     active = true;
                 }
                 else if (model.skatTable.player) {
@@ -1048,7 +1049,7 @@ var skat = (() => {
         let token = utils.get_authentication_token();
         if (token) {
             let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
-            imgResults.addEventListener("click", () => onShowResults());
+            imgResults.addEventListener("click", () => dispatchShowResults());
         }
         divChat = controls.createDiv(parent, "layout-right");
         let chatState = utils.get_session_storage("chatstate");
@@ -1094,8 +1095,10 @@ var skat = (() => {
     const renderResults = (results, skatadmin) => {
         disableTimer();
         controls.removeAllChildren(document.body);
-        const backButtonDiv = controls.createDiv(document.body);
-        controls.createButton(backButtonDiv, _T("BUTTON_BACK"), () => render());
+        if (!showResultInWindow) {
+            const backButtonDiv = controls.createDiv(document.body);
+            controls.createButton(backButtonDiv, _T("BUTTON_BACK"), () => render());
+        }
         let parent = document.body;
         if (results.length == 0) {
             controls.createLabel(parent, undefined, _T("INFO_MISSING_GAME_RESULTS"));            
@@ -1157,7 +1160,7 @@ var skat = (() => {
 
     const renderResultTable = (parent, result, hideBackButton) => {
         controls.removeAllChildren(parent);
-        if (!hideBackButton) {
+        if (!hideBackButton && !showResultInWindow) {
             const backButtonDiv = controls.createDiv(parent);
             controls.createButton(backButtonDiv, _T("BUTTON_BACK"), () => render());
         }
@@ -1435,6 +1438,18 @@ var skat = (() => {
             return;
         }
         ticket = !computerGame ? getTicket() : undefined;
+        if ((params.has("result") || params.has("results")) && currentUser) {
+            showResultInWindow = true;
+            const parent = document.body;
+            parent.className = "inactive-background";
+            if (params.has("results")) {
+                onShowResults();
+            }
+            else if (ticket) {
+                onShowResult();
+            }
+            return;
+        }
         if (params.has("admin")) {
             if (currentUser && currentUser.roles.includes("skatadmin")) {
                 let parent = document.body;
@@ -1621,6 +1636,15 @@ var skat = (() => {
         }
     };
 
+    const dispatchShowResult = () => {
+        if (utils.is_mobile()) {
+            onShowResult();
+        }
+        else {
+            window.open("/skat?result", "_blank")
+        }
+    };
+
     const onShowResult = () => {
         if (!ticket) {
             if (computerInternalState) {
@@ -1655,6 +1679,15 @@ var skat = (() => {
         }
     };
 
+    const dispatchShowResults = () => {
+        if (utils.is_mobile()) {
+            onShowResults();
+        }
+        else {
+            window.open("/skat?results", "_blank")
+        }
+    }
+    
     const onShowResults = () => {
         if (currentUser) {
             let token = utils.get_authentication_token();
