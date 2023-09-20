@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.7";
+    let version = "2.1.8";
 
     let computerGame = false;
     let computerInternalState;
@@ -1438,7 +1438,7 @@ var skat = (() => {
             return;
         }
         ticket = !computerGame ? getTicket() : undefined;
-        if ((params.has("result") || params.has("results")) && currentUser) {
+        if (!computerGame && currentUser && (params.has("result") || params.has("results"))) {
             showResultInWindow = true;
             const parent = document.body;
             parent.className = "inactive-background";
@@ -1637,7 +1637,7 @@ var skat = (() => {
     };
 
     const dispatchShowResult = () => {
-        if (utils.is_mobile()) {
+        if (computerGame || utils.is_mobile()) {
             onShowResult();
         }
         else {
@@ -1680,7 +1680,7 @@ var skat = (() => {
     };
 
     const dispatchShowResults = () => {
-        if (utils.is_mobile()) {
+        if (computerGame || utils.is_mobile()) {
             onShowResults();
         }
         else {
