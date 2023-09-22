@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.8";
+    let version = "2.1.9";
 
     let computerGame = false;
     let computerInternalState;
@@ -1092,6 +1092,126 @@ var skat = (() => {
         }
     };
 
+    const onStatistics = (parent, playerNames) => {
+        const token = utils.get_authentication_token();
+        utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
+            (results) => analyseResults(parent, results, playerNames),
+            handleError);
+    };
+
+    const renderStatistics = (parent, acc, playerNames) => {
+        controls.removeAllChildren(parent);
+        const table = controls.create(parent, "table");
+        controls.create(table, "caption", undefined, _T("INFO_TOURNAMENTS_TOTAL_1", acc.tournamentCount));
+        const theader = controls.create(table, "thead");
+        const tr = controls.create(theader, "tr");
+        controls.create(tr, "th", undefined, _T("COLUMN_PLAYER"));
+        controls.create(tr, "th", undefined, _T("COLUMN_TOURNAMENTS_WON"));
+        controls.create(tr, "th", undefined, _T("COLUMN_GAMES_PLAYED"));
+        controls.create(tr, "th", undefined, _T("COLUMN_GAMES_WON"));
+        controls.create(tr, "th", undefined, _T("COLUMN_GAMES_LOST"));
+        const tbody = controls.create(table, "tbody");
+        playerNames.forEach(playerName => {
+            const data = acc.players[playerName];
+            const tr = controls.create(tbody, "tr");
+            controls.create(tr, "td", undefined, `${playerName}`);
+            controls.create(tr, "td", undefined, `${data.tournamentsWon}`);
+            controls.create(tr, "td", undefined, `${data.gamesPlayed}`);
+            controls.create(tr, "td", undefined, `${data.gamesWon}`);
+            controls.create(tr, "td", undefined, `${data.gamesLost}`);
+        });
+    };
+
+    const analyseResults = (parent, results, playerNames) => {
+        const acc = { tournamentCount: 0, players: [] };
+        playerNames.forEach(playerName => acc.players[playerName] = { tournamentsWon: 0, gamesPlayed: 0, gamesWon: 0, gamesLost: 0 });
+        doAnalyseResults(parent, results, acc, playerNames);
+    };
+
+    const doAnalyseResults = (parent, results, acc, playerNames) => {
+        if (results.length > 0) {
+            const result = results.pop();
+            const token = utils.get_authentication_token();
+            utils.fetch_api_call(`api/skat/resultbyid?id=${result.id}`, { headers: { "token": token } },
+                (historyResult) => {
+                    doAnalyseResult(historyResult, acc, playerNames);
+                    doAnalyseResults(parent, results, acc, playerNames);
+                },
+                handleError);
+            return;
+        }
+        renderStatistics(parent, acc, playerNames);
+    };
+
+    const doAnalyseResult = (result, acc, playerNames) => {
+        if (playerNames.length != result.playerNames.length) {
+            return;
+        }
+        for (let idx = 0; idx < playerNames.length; idx++) {
+            if (!result.playerNames.includes(playerNames[idx])) {
+                return;
+            }
+        }
+        acc.tournamentCount += 1;
+        const scores = [0, 0, 0, 0];
+        const playerWins = [0, 0, 0, 0];
+        const playerLoss = [0, 0, 0, 0];
+        const otherWins = [0, 0, 0, 0];
+        result.history.forEach((h) => {
+            const idx = result.playerNames.findIndex((e) => e == h.gamePlayerName);
+            scores[idx] += h.gameValue;
+            const opponentPlayerNames = [];
+            const opponentPlayerIndex = [];
+            h.playerCards.forEach((pc) => {
+                if (pc.playerName != h.gamePlayerName) {
+                    opponentPlayerNames.push(pc.playerName);
+                }
+            });
+            for (let col = 0; col < result.playerNames.length; col++) {
+                if (col != idx && opponentPlayerNames.includes(result.playerNames[col])) {
+                    opponentPlayerIndex.push(col);
+                }
+            }
+            if (h.gameValue > 0) {
+                playerWins[idx] += 1;
+            }
+            else if (h.gameValue < 0) {
+                playerLoss[idx] += 1;
+                otherWins[opponentPlayerIndex[0]] += 1;
+                otherWins[opponentPlayerIndex[1]] += 1;
+            }
+        });
+        const otherScore = result.playerNames.length == 4 ? 30 : 40;
+        let maxPoints;
+        let winnerIdx = [];
+        for (let idx = 0; idx < result.playerNames.length; idx++) {
+            const points = scores[idx] + playerWins[idx] * 50 - playerLoss[idx] * 50 + otherWins[idx] * otherScore;
+            if (maxPoints == undefined || points > maxPoints) {
+                winnerIdx = [];
+                winnerIdx.push(idx);
+                maxPoints = points;
+            }
+            else if (points == maxPoints) {
+                winnerIdx.push(idx);
+            }
+        }
+        winnerIdx.forEach(idx => {
+            acc.players[result.playerNames[idx]].tournamentsWon += 1;
+        });
+        for (let idx = 0; idx < playerWins.length; idx++) {
+            if (playerWins[idx] > 0) {
+                acc.players[result.playerNames[idx]].gamesPlayed += playerWins[idx];
+                acc.players[result.playerNames[idx]].gamesWon += playerWins[idx];
+            }
+        }
+        for (let idx = 0; idx < playerLoss.length; idx++) {
+            if (playerLoss[idx] > 0) {
+                acc.players[result.playerNames[idx]].gamesPlayed += playerLoss[idx];
+                acc.players[result.playerNames[idx]].gamesLost += playerLoss[idx];
+            }
+        }
+    };
+
     const renderResults = (results, skatadmin) => {
         disableTimer();
         controls.removeAllChildren(document.body);
@@ -1256,6 +1376,10 @@ var skat = (() => {
             controls.create(td, "div", undefined, `- ${playerLoss[idx]} * 50`);
             controls.create(td, "div", undefined, `+ ${otherWins[idx]} * ${otherScore}`);
             controls.create(td, "div", undefined, `= ${points}`);
+        }
+        if (!computerGame) {
+            const div = controls.createDiv(parent);
+            controls.createButton(div, _T("BUTTON_STATISTICS"), () => onStatistics(div, result.playerNames));
         }
     };
 
