@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.1.9";
+    let version = "2.2.0";
 
     let computerGame = false;
     let computerInternalState;
@@ -1093,6 +1093,8 @@ var skat = (() => {
     };
 
     const onStatistics = (parent, playerNames) => {
+        controls.removeAllChildren(parent);
+        controls.create(parent, "p", undefined, _T("INFO_CALCULATE_STATISTICS"));
         const token = utils.get_authentication_token();
         utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
             (results) => analyseResults(parent, results, playerNames),
