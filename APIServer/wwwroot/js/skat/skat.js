@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.1";
+    let version = "2.2.2";
 
     let computerGame = false;
     let computerInternalState;
@@ -1383,7 +1383,7 @@ var skat = (() => {
             controls.create(td, "div", undefined, `+ ${otherWins[idx]} * ${otherScore}`);
             controls.create(td, "div", undefined, `= ${points}`);
         }
-        if (!computerGame) {
+        if (!computerGame && currentUser) {
             const div = controls.createDiv(parent);
             controls.createButton(div, _T("BUTTON_STATISTICS"), () => onStatistics(div, result.playerNames));
         }
@@ -1568,7 +1568,7 @@ var skat = (() => {
             return;
         }
         ticket = !computerGame ? getTicket() : undefined;
-        if (!computerGame && currentUser && (params.has("result") || params.has("results"))) {
+        if (params.has("result") || params.has("results")) {
             showResultInWindow = true;
             const parent = document.body;
             parent.className = "inactive-background";
