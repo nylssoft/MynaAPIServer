@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.0";
+    let version = "2.2.1";
 
     let computerGame = false;
     let computerInternalState;
@@ -1109,24 +1109,26 @@ var skat = (() => {
         const tr = controls.create(theader, "tr");
         controls.create(tr, "th", undefined, _T("COLUMN_PLAYER"));
         controls.create(tr, "th", undefined, _T("COLUMN_TOURNAMENTS_WON"));
-        controls.create(tr, "th", undefined, _T("COLUMN_GAMES_PLAYED"));
         controls.create(tr, "th", undefined, _T("COLUMN_GAMES_WON"));
         controls.create(tr, "th", undefined, _T("COLUMN_GAMES_LOST"));
+        controls.create(tr, "th", undefined, _T("COLUMN_AVG_GAME_VALUE"));
         const tbody = controls.create(table, "tbody");
         playerNames.forEach(playerName => {
             const data = acc.players[playerName];
+            const gamesTotal = data.gamesWon + data.gamesLost;
+            const gameAvgValue = gamesTotal > 0 ? data.sumGameValue / gamesTotal : 0;
             const tr = controls.create(tbody, "tr");
             controls.create(tr, "td", undefined, `${playerName}`);
             controls.create(tr, "td", undefined, `${data.tournamentsWon}`);
-            controls.create(tr, "td", undefined, `${data.gamesPlayed}`);
             controls.create(tr, "td", undefined, `${data.gamesWon}`);
             controls.create(tr, "td", undefined, `${data.gamesLost}`);
+            controls.create(tr, "td", undefined, `${gameAvgValue.toFixed(1)}`);
         });
     };
 
     const analyseResults = (parent, results, playerNames) => {
         const acc = { tournamentCount: 0, players: [] };
-        playerNames.forEach(playerName => acc.players[playerName] = { tournamentsWon: 0, gamesPlayed: 0, gamesWon: 0, gamesLost: 0 });
+        playerNames.forEach(playerName => acc.players[playerName] = { tournamentsWon: 0, gamesWon: 0, gamesLost: 0, sumGameValue: 0 });
         doAnalyseResults(parent, results, acc, playerNames);
     };
 
@@ -1159,6 +1161,7 @@ var skat = (() => {
         const playerWins = [0, 0, 0, 0];
         const playerLoss = [0, 0, 0, 0];
         const otherWins = [0, 0, 0, 0];
+        const sumGameValues = [0, 0, 0, 0];
         result.history.forEach((h) => {
             const idx = result.playerNames.findIndex((e) => e == h.gamePlayerName);
             scores[idx] += h.gameValue;
@@ -1176,11 +1179,13 @@ var skat = (() => {
             }
             if (h.gameValue > 0) {
                 playerWins[idx] += 1;
+                sumGameValues[idx] += h.gameValue;
             }
             else if (h.gameValue < 0) {
                 playerLoss[idx] += 1;
                 otherWins[opponentPlayerIndex[0]] += 1;
                 otherWins[opponentPlayerIndex[1]] += 1;
+                sumGameValues[idx] += -(h.gameValue / 2);
             }
         });
         const otherScore = result.playerNames.length == 4 ? 30 : 40;
@@ -1196,19 +1201,18 @@ var skat = (() => {
             else if (points == maxPoints) {
                 winnerIdx.push(idx);
             }
+            acc.players[result.playerNames[idx]].sumGameValue += sumGameValues[idx];
         }
         winnerIdx.forEach(idx => {
             acc.players[result.playerNames[idx]].tournamentsWon += 1;
         });
         for (let idx = 0; idx < playerWins.length; idx++) {
             if (playerWins[idx] > 0) {
-                acc.players[result.playerNames[idx]].gamesPlayed += playerWins[idx];
                 acc.players[result.playerNames[idx]].gamesWon += playerWins[idx];
             }
         }
         for (let idx = 0; idx < playerLoss.length; idx++) {
             if (playerLoss[idx] > 0) {
-                acc.players[result.playerNames[idx]].gamesPlayed += playerLoss[idx];
                 acc.players[result.playerNames[idx]].gamesLost += playerLoss[idx];
             }
         }
