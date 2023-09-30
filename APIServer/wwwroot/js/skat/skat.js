@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.2";
+    let version = "2.2.3";
 
     let computerGame = false;
     let computerInternalState;
@@ -1104,26 +1104,58 @@ var skat = (() => {
     const renderStatistics = (parent, acc, playerNames) => {
         controls.removeAllChildren(parent);
         const table = controls.create(parent, "table");
-        controls.create(table, "caption", undefined, _T("INFO_TOURNAMENTS_TOTAL_1", acc.tournamentCount));
+        controls.create(table, "caption", undefined, _T("INFO_TOURNAMENT_STATISTIC"));
         const theader = controls.create(table, "thead");
         const tr = controls.create(theader, "tr");
         controls.create(tr, "th", undefined, _T("COLUMN_PLAYER"));
         controls.create(tr, "th", undefined, _T("COLUMN_TOURNAMENTS_WON"));
+        controls.create(tr, "th", undefined, _T("COLUMN_GAMES_PLAYED"));
         controls.create(tr, "th", undefined, _T("COLUMN_GAMES_WON"));
         controls.create(tr, "th", undefined, _T("COLUMN_GAMES_LOST"));
         controls.create(tr, "th", undefined, _T("COLUMN_AVG_GAME_VALUE"));
         const tbody = controls.create(table, "tbody");
+        let totalWon = 0;
+        let totalLost = 0;
+        let totalSumGameValue = 0;
+        playerNames.sort((p1, p2) => {
+            const data1 = acc.players[p1];
+            const data2 = acc.players[p2];
+            return data2.tournamentsWon - data1.tournamentsWon;
+        });
+        let pos = 1;
+        let prevData;
         playerNames.forEach(playerName => {
             const data = acc.players[playerName];
             const gamesTotal = data.gamesWon + data.gamesLost;
             const gameAvgValue = gamesTotal > 0 ? data.sumGameValue / gamesTotal : 0;
+            if (prevData && data.tournamentsWon < prevData.tournamentsWon) {
+                pos++;
+            }
             const tr = controls.create(tbody, "tr");
-            controls.create(tr, "td", undefined, `${playerName}`);
+            controls.create(tr, "td", undefined, `${pos}. ${playerName}`);
             controls.create(tr, "td", undefined, `${data.tournamentsWon}`);
+            controls.create(tr, "td", undefined, `${data.gamesWon + data.gamesLost}`);
             controls.create(tr, "td", undefined, `${data.gamesWon}`);
             controls.create(tr, "td", undefined, `${data.gamesLost}`);
             controls.create(tr, "td", undefined, `${gameAvgValue.toFixed(1)}`);
+            totalWon += data.gamesWon;
+            totalLost += data.gamesLost;
+            totalSumGameValue += data.sumGameValue;
+            prevData = data;
         });
+        const total = totalWon + totalLost;
+        const totalAvgGameValue = total > 0 ? totalSumGameValue / total : 0;
+        const tfooter = controls.create(table, "tfoot");
+        const trfoot = controls.create(tfooter, "tr");
+        controls.create(trfoot, "td", undefined, _T("COLUMN_TOTAL"));
+        controls.create(trfoot, "td", undefined, `${acc.tournamentCount}`);
+        controls.create(trfoot, "td", undefined, `${total}`);
+        controls.create(trfoot, "td", undefined, `${totalWon}`);
+        controls.create(trfoot, "td", undefined, `${totalLost}`);
+        controls.create(trfoot, "td", undefined, `${totalAvgGameValue.toFixed(1)}`);
+        const p = controls.create(parent, "p");
+        controls.createButton(p, _T("BUTTON_BACK"), () => onShowResults());
+
     };
 
     const analyseResults = (parent, results, playerNames) => {
@@ -1385,7 +1417,7 @@ var skat = (() => {
         }
         if (!computerGame && currentUser) {
             const div = controls.createDiv(parent);
-            controls.createButton(div, _T("BUTTON_STATISTICS"), () => onStatistics(div, result.playerNames));
+            controls.createButton(div, _T("BUTTON_STATISTICS"), () => onStatistics(document.body, result.playerNames));
         }
     };
 
