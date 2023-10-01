@@ -229,7 +229,6 @@
   "INFO_ALL_PLAYER_PASS": "Alle Spieler haben gepasst.",
   "INFO_BACKGAMMON": "Backgammon!",
   "INFO_BOARD_FULL": "Das Brett ist leider schon belegt!",
-  "INFO_CALCULATE_STATISTICS": "Turnierstatistik wird berechnet...",
   "INFO_CHANGE_PWD": "Gib dein altes und neues Kennwort ein.",
   "INFO_CHECK": "Schach!",
   "INFO_CHECK_MATE_WINNER_1": "Schach Matt! Das Spiel ist zu Ende. Gewinner ist {0}.",

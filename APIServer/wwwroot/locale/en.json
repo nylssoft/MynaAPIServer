@@ -229,7 +229,6 @@
   "INFO_ALL_PLAYER_PASS": "All players have passed.",
   "INFO_BACKGAMMON": "Backgammon!",
   "INFO_BOARD_FULL": "The board is already occupied!",
-  "INFO_CALCULATE_STATISTICS": "Calculate tournament statistics...",
   "INFO_CHANGE_PWD": "Enter your old and new password.",
   "INFO_CHECK": "Check!",
   "INFO_CHECK_MATE_WINNER_1": "Checkmate! The game is over. Winner is {0}.",

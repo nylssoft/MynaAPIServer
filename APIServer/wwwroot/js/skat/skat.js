@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.3";
+    let version = "2.2.4";
 
     let computerGame = false;
     let computerInternalState;
@@ -1093,11 +1093,22 @@ var skat = (() => {
     };
 
     const onStatistics = (parent, playerNames) => {
-        controls.removeAllChildren(parent);
-        controls.create(parent, "p", undefined, _T("INFO_CALCULATE_STATISTICS"));
         const token = utils.get_authentication_token();
-        utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
-            (results) => analyseResults(parent, results, playerNames),
+        utils.fetch_api_call("api/skat/statistics",
+            {
+                method: "POST",
+                headers: { "token": token, "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify(playerNames)
+            },
+            r => {
+                if (utils.is_debug()) {
+                    utils.debug("STATISTICS RETRIEVED.");
+                    utils.debug(r);
+                }
+                const acc = { tournamentCount: r.tournaments, players: [] };
+                r.statistics.forEach(m => acc.players[m.playerName] = m);
+                renderStatistics(parent, acc, playerNames);
+            },
             handleError);
     };
 
@@ -1158,97 +1169,6 @@ var skat = (() => {
 
     };
 
-    const analyseResults = (parent, results, playerNames) => {
-        const acc = { tournamentCount: 0, players: [] };
-        playerNames.forEach(playerName => acc.players[playerName] = { tournamentsWon: 0, gamesWon: 0, gamesLost: 0, sumGameValue: 0 });
-        doAnalyseResults(parent, results, acc, playerNames);
-    };
-
-    const doAnalyseResults = (parent, results, acc, playerNames) => {
-        if (results.length > 0) {
-            const result = results.pop();
-            const token = utils.get_authentication_token();
-            utils.fetch_api_call(`api/skat/resultbyid?id=${result.id}`, { headers: { "token": token } },
-                (historyResult) => {
-                    doAnalyseResult(historyResult, acc, playerNames);
-                    doAnalyseResults(parent, results, acc, playerNames);
-                },
-                handleError);
-            return;
-        }
-        renderStatistics(parent, acc, playerNames);
-    };
-
-    const doAnalyseResult = (result, acc, playerNames) => {
-        if (playerNames.length != result.playerNames.length) {
-            return;
-        }
-        for (let idx = 0; idx < playerNames.length; idx++) {
-            if (!result.playerNames.includes(playerNames[idx])) {
-                return;
-            }
-        }
-        acc.tournamentCount += 1;
-        const scores = [0, 0, 0, 0];
-        const playerWins = [0, 0, 0, 0];
-        const playerLoss = [0, 0, 0, 0];
-        const otherWins = [0, 0, 0, 0];
-        const sumGameValues = [0, 0, 0, 0];
-        result.history.forEach((h) => {
-            const idx = result.playerNames.findIndex((e) => e == h.gamePlayerName);
-            scores[idx] += h.gameValue;
-            const opponentPlayerNames = [];
-            const opponentPlayerIndex = [];
-            h.playerCards.forEach((pc) => {
-                if (pc.playerName != h.gamePlayerName) {
-                    opponentPlayerNames.push(pc.playerName);
-                }
-            });
-            for (let col = 0; col < result.playerNames.length; col++) {
-                if (col != idx && opponentPlayerNames.includes(result.playerNames[col])) {
-                    opponentPlayerIndex.push(col);
-                }
-            }
-            if (h.gameValue > 0) {
-                playerWins[idx] += 1;
-                sumGameValues[idx] += h.gameValue;
-            }
-            else if (h.gameValue < 0) {
-                playerLoss[idx] += 1;
-                otherWins[opponentPlayerIndex[0]] += 1;
-                otherWins[opponentPlayerIndex[1]] += 1;
-                sumGameValues[idx] += -(h.gameValue / 2);
-            }
-        });
-        const otherScore = result.playerNames.length == 4 ? 30 : 40;
-        let maxPoints;
-        let winnerIdx = [];
-        for (let idx = 0; idx < result.playerNames.length; idx++) {
-            const points = scores[idx] + playerWins[idx] * 50 - playerLoss[idx] * 50 + otherWins[idx] * otherScore;
-            if (maxPoints == undefined || points > maxPoints) {
-                winnerIdx = [];
-                winnerIdx.push(idx);
-                maxPoints = points;
-            }
-            else if (points == maxPoints) {
-                winnerIdx.push(idx);
-            }
-            acc.players[result.playerNames[idx]].sumGameValue += sumGameValues[idx];
-        }
-        winnerIdx.forEach(idx => {
-            acc.players[result.playerNames[idx]].tournamentsWon += 1;
-        });
-        for (let idx = 0; idx < playerWins.length; idx++) {
-            if (playerWins[idx] > 0) {
-                acc.players[result.playerNames[idx]].gamesWon += playerWins[idx];
-            }
-        }
-        for (let idx = 0; idx < playerLoss.length; idx++) {
-            if (playerLoss[idx] > 0) {
-                acc.players[result.playerNames[idx]].gamesLost += playerLoss[idx];
-            }
-        }
-    };
 
     const renderResults = (results, skatadmin) => {
         disableTimer();

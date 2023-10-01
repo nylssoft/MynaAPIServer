@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Mvc;
 
 using APIServer.Skat.Model;
 using APIServer.PwdMan;
+using System.Collections.Generic;
 
 namespace APIServer.Skat
 {
@@ -297,6 +298,13 @@ namespace APIServer.Skat
         public IActionResult GetResultByid([FromQuery]long id)
         {
             return new JsonResult(SkatService.GetResultModelById(PwdManService, GetToken(), id));
+        }
+
+        [HttpPost]
+        [Route("api/skat/statistics")]
+        public IActionResult CalculateStatistics([FromBody] List<string> playerNames)
+        {
+            return new JsonResult(SkatService.CalculateStatistics(PwdManService, GetToken(), playerNames));
         }
 
         // --- authenticated users with skatadmin role

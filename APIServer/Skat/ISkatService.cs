@@ -68,7 +68,9 @@ namespace APIServer.Skat
         ResultModel GetResultModelById(IPwdManService pwdManService, string authenticationToken, long skatResultId);
 
         List<ResultModel> GetResultModels(IPwdManService pwdManService, string authenticationToken);
-    
+
+        StatisticModel CalculateStatistics(IPwdManService pwdManService, string authenticationToken, List<string> playerNames);
+
         bool PerformBidAction(IPwdManService pwdManService, string ticket, string bidAction);
 
         bool StartNewGame(IPwdManService pwdManService, string ticket);

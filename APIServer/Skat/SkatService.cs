@@ -464,6 +464,148 @@ namespace APIServer.Skat
             return ret;
         }
 
+        public StatisticModel CalculateStatistics(IPwdManService pwdManService, string authenticationToken, List<string> playerNames)
+        {
+            var user = pwdManService.GetUserFromToken(authenticationToken);
+            var dbContext = pwdManService.GetDbContext();
+            List<DbSkatResult> skatResults;
+            if (pwdManService.HasRole(user, "skatadmin"))
+            {
+                skatResults = dbContext.DbSkatResults
+                    .Include(r => r.SkatGameHistories)
+                    .OrderByDescending(r => r.StartedUtc)
+                    .ToList();
+            }
+            else
+            {
+                var userSkatResults = dbContext.DbUserSkatResults
+                    .Include(u => u.DbSkatResult)
+                        .ThenInclude(g => g.SkatGameHistories)
+                    .Where(u => u.DbUserId == user.Id)
+                    .OrderByDescending(u => u.DbSkatResult.StartedUtc);
+                skatResults = new List<DbSkatResult>();
+                foreach (var userSkatResult in userSkatResults)
+                {
+                    skatResults.Add(userSkatResult.DbSkatResult);
+                }
+            }
+            var filterSkatResults = skatResults.Where(r =>
+                playerNames.Contains(r.Player1) &&
+                playerNames.Contains(r.Player2) &&
+                playerNames.Contains(r.Player3) &&
+                (string.IsNullOrEmpty(r.Player4) || playerNames.Contains(r.Player4)));
+            var playerName2StatisticModel = new Dictionary<string, PlayerStatisticModel>();
+            foreach (var playerName in playerNames)
+            {
+                playerName2StatisticModel.Add(playerName, new PlayerStatisticModel() { PlayerName = playerName });
+            }
+            foreach (var skatResult in filterSkatResults)
+            {
+                CalculateStatisticsForSkatResult(playerName2StatisticModel, skatResult);
+            }
+            var ret = new StatisticModel();
+            ret.Tournaments = filterSkatResults.Count();
+            ret.Statistics.AddRange(playerName2StatisticModel.Values);
+            return ret;
+        }
+
+        private void CalculateStatisticsForSkatResult(Dictionary<string, PlayerStatisticModel> playerName2StatisticModel, DbSkatResult skatResult)
+        {
+            var playerNames = playerName2StatisticModel.Keys.ToList();
+            var playerName2StatisticItem = CalculateStatisticForGameHistories(playerNames, skatResult.SkatGameHistories);
+            int otherScore = playerNames.Count == 4 ? 30 : 40;
+            int? maxPoints = null;
+            var winnersPlayerNames = new List<string>();
+            foreach (var playerName in playerNames)
+            {
+                var item = playerName2StatisticItem[playerName];
+                int points = item.score + item.playerWins * 50 - item.playerLoss * 50 + item.otherWins * otherScore;
+                if (maxPoints == null || points > maxPoints)
+                {
+                    winnersPlayerNames = new List<string>
+                        {
+                            playerName
+                        };
+                    maxPoints = points;
+                }
+                else if (points == maxPoints)
+                {
+                    winnersPlayerNames.Add(playerName);
+                }
+                var model = playerName2StatisticModel[playerName];
+                model.SumGameValue += item.sumGameValues;
+            }
+            foreach (var playerName in playerNames)
+            {
+                var item = playerName2StatisticItem[playerName];
+                var model = playerName2StatisticModel[playerName];
+                if (winnersPlayerNames.Contains(playerName))
+                {
+                    model.TournamentsWon += 1;
+                }
+                if (item.playerWins > 0)
+                {
+                    model.GamesWon += item.playerWins;
+                }
+                if (item.playerLoss > 0)
+                {
+                    model.GamesLost += item.playerLoss;
+                }
+            }
+        }
+
+        private Dictionary<string, StatisticItem> CalculateStatisticForGameHistories(List<string> playerNames, List<DbSkatGameHistory> skatGameHistories)
+        {
+            var playerName2StatisticItem = new Dictionary<string, StatisticItem>();
+            foreach (var playerName in playerNames)
+            {
+                playerName2StatisticItem.Add(playerName, new StatisticItem());
+            }
+            foreach (var gameHistory in skatGameHistories)
+            {
+                var h = JsonSerializer.Deserialize<GameHistoryModel>(gameHistory.History);
+                if (h.GameValue == 0)
+                {
+                    continue;
+                }
+                var item = playerName2StatisticItem[h.GamePlayerName];
+                item.score += h.GameValue;
+                var opponentPlayerNames = new List<string>();
+                foreach (var pc in h.PlayerCards)
+                {
+                    if (pc.PlayerName != h.GamePlayerName)
+                    {
+                        opponentPlayerNames.Add(pc.PlayerName);
+                    }
+                }
+                if (h.GameValue > 0)
+                {
+                    item.playerWins += 1;
+                    item.sumGameValues += h.GameValue;
+                }
+                else if (h.GameValue < 0)
+                {
+                    item.playerLoss += 1;
+                    item.sumGameValues += -(h.GameValue / 2);
+                    foreach (var opponentPlayerName in opponentPlayerNames)
+                    {
+                        var opponentItem = playerName2StatisticItem[opponentPlayerName];
+                        opponentItem.otherWins += 1;
+                    }
+                }
+            }
+            return playerName2StatisticItem;
+        }
+
+        private class StatisticItem
+        {
+            public int score;
+            public int playerWins;
+            public int playerLoss;
+            public int otherWins;
+            public int sumGameValues;
+        }
+
         public bool ConfirmStartGame(string ticket)
         {
             var ret = false;
@@ -592,7 +734,7 @@ namespace APIServer.Skat
                         {
                             var users = userTickets.Values.OrderBy(ctx => ctx.Created).ToList();
                             var inactivePlayerName = userTickets.Count == 4 ? users[3].Name : null;
-                            if (!VerifyReservation(pwdManService, new [] { users[0].Name, users[1].Name, users[2].Name, inactivePlayerName }))
+                            if (!VerifyReservation(pwdManService, new[] { users[0].Name, users[1].Name, users[2].Name, inactivePlayerName }))
                             {
                                 userTickets.Clear();
                                 stateChanged = DateTime.UtcNow;
@@ -1064,11 +1206,13 @@ namespace APIServer.Skat
             if (player != null)
             {
                 var game = GetSkatGameModel(player.Game);
-                ret = new PlayerModel {
+                ret = new PlayerModel
+                {
                     Name = player.Name,
                     Game = game,
                     SummaryLabel = summary,
-                    BidStatus = player.BidStatus };
+                    BidStatus = player.BidStatus
+                };
             }
             return ret;
         }
@@ -1182,7 +1326,7 @@ namespace APIServer.Skat
                 {
                     model.Stitch.Add(GetSkatCardModel(card));
                 }
-                if (player != skatTable.GamePlayer && 
+                if (player != skatTable.GamePlayer &&
                     (skatTable.GamePlayer.Game.Option.HasFlag(GameOption.Ouvert) || skatTable.IsSpeedUp))
                 {
                     skatTable.GamePlayer.SortCards();
