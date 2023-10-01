@@ -42,7 +42,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.4";
+    let version = "2.2.5";
 
     let computerGame = false;
     let computerInternalState;
@@ -2593,7 +2593,7 @@ var skat = (() => {
         const cardScore = getCardScore(card);
         const trump = isTrump(game, card);
         const highestCardOrder = getHighestCardOrder([am.firstCard, am.secondCard]);
-        const canTakeOver = forced && cardOrder > highestCardOrder ||
+        const canTakeOver = forced && cardOrder > highestCardOrder && (isTrump(game, am.firstCard) || !isTrump(game, am.secondCard)) ||
             !forced && trump && (!isTrump(game, am.secondCard) || cardOrder > getCardOrder(am.secondCard));
         let score = 0;
         if (am.stitchOwnerPosition != am.gamePlayerPosition) {
@@ -2717,7 +2717,7 @@ var skat = (() => {
     const getGamePlayerPosition = (m) => {
         let pos = (m.skatTable.stitch.length + 1) % 3;
         if (m.skatTable.gamePlayer.name != getNextPlayer(m.skatTable.currentPlayer).name) {
-            pos++;
+            pos = (pos + 1) % 3;
         }
         return pos;
     };
