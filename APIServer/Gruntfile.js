@@ -23,6 +23,10 @@ module.exports = function (grunt) {
                 src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/documents/documents.js"],
                 dest: "temp/documents.js"
             },
+            makeadate: {
+                src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/makeadate/makeadate.js"],
+                dest: "temp/makeadate.js"
+            },
             markdown: {
                 src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/markdown/markdown.js"],
                 dest: "temp/markdown.js"
@@ -67,6 +71,7 @@ module.exports = function (grunt) {
                 "temp/contacts.js",
                 "temp/diary.js",
                 "temp/documents.js",
+                "temp/makeadate.js",
                 "temp/markdown.js",
                 "temp/notes.js",
                 "temp/password.js",
@@ -100,6 +105,10 @@ module.exports = function (grunt) {
             documents: {
                 src: ["temp/documents.js"],
                 dest: "wwwroot/js/documents/documents.min.js"
+            },
+            makeadate: {
+                src: ["temp/makeadate.js"],
+                dest: "wwwroot/js/makeadate/makeadate.min.js"
             },
             markdown: {
                 src: ["temp/markdown.js"],
@@ -147,6 +156,7 @@ module.exports = function (grunt) {
                 "wwwroot/js/contacts/contacts.js",
                 "wwwroot/js/diary/diary.js",
                 "wwwroot/js/documents/documents.js",
+                "wwwroot/js/makeadate/makeadate.js",
                 "wwwroot/js/markdown/markdown.js",
                 "wwwroot/js/notes/notes.js",
                 "wwwroot/js/password/password.js",
@@ -166,6 +176,7 @@ module.exports = function (grunt) {
                     "wwwroot/css/contacts/contacts.min.css": ["wwwroot/css/contacts/contacts.css"],
                     "wwwroot/css/diary/diary.min.css": ["wwwroot/css/diary/diary.css"],
                     "wwwroot/css/documents/documents.min.css": ["wwwroot/css/documents/documents.css"],
+                    "wwwroot/css/markdown/makeadate.min.css": ["wwwroot/css/makeadate/makeadate.css"],
                     "wwwroot/css/markdown/markdown.min.css": ["wwwroot/css/markdown/markdown.css"],
                     "wwwroot/css/notes/notes.min.css": ["wwwroot/css/notes/notes.css"],
                     "wwwroot/css/password/password.min.css": ["wwwroot/css/password/password.css"],

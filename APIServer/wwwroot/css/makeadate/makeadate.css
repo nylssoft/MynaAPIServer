@@ -1,0 +1,35 @@
+﻿body {
+    margin: 0pt;
+    border: none;
+    background-color: black;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14pt;
+}
+p, span {
+    margin: 5pt;
+}
+
+canvas {
+    margin: 5pt;
+}
+
+.button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 14pt;
+    margin-top: 5pt;
+    margin-right: 10pt;
+    padding: 5pt;
+}
+
+.button:hover {
+    background-color: #008CBA;
+    color: darkblue;
+}
