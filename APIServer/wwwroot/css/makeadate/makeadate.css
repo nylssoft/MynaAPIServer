@@ -1,5 +1,5 @@
 ﻿body {
-    margin: 0pt;
+    margin: 5pt;
     border: none;
     background-color: black;
     color: white;
@@ -7,11 +7,14 @@
     font-size: 14pt;
 }
 p, span {
-    margin: 5pt;
+    margin-left: 5pt;
+    margin-top: 0pt;
+    margin-bottom: 3pt;
 }
 
 canvas {
-    margin: 5pt;
+    margin-left: 5pt;
+    margin-right: 5pt;
 }
 
 .button {
@@ -23,7 +26,7 @@ canvas {
     display: inline-block;
     transition-duration: 0.4s;
     cursor: pointer;
-    font-size: 14pt;
+    font-size: 11pt;
     margin-top: 5pt;
     margin-right: 10pt;
     padding: 5pt;
@@ -32,4 +35,10 @@ canvas {
 .button:hover {
     background-color: #008CBA;
     color: darkblue;
+}
+
+h2 {
+    margin-left: 5pt;
+    margin-top: 5pt;
+    margin-bottom: 0pt;
 }

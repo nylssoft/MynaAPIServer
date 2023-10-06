@@ -15,10 +15,10 @@ var makeadate = (() => {
     let myName;
     let data;
     let currentOptionIdx;
-    let showDetails;
+    let listView = false;
 
     let sampledata = {
-        "description": "Doppelkopf bei Barbara",
+        "description": "Doppelkopf bei Barbara um 19 Uhr",
         "participants": ["Niels", "Detlef", "Barbara", "Andreas", "Stefan"],
         "options": [
             {
@@ -30,6 +30,28 @@ var makeadate = (() => {
                     { "day": 15, "accepted": ["Detlef", "Stefan"] },
                     { "day": 22, "accepted": ["Niels", "Stefan"] },
                     { "day": 30, "accepted": [] },
+                ]
+            },
+            {
+                "year": 2023,
+                "month": 11,
+                "votes": [
+                    { "day": 11, "accepted": [] },
+                    { "day": 12, "accepted": [] },
+                    { "day": 13, "accepted": [] },
+                    { "day": 18, "accepted": [] },
+                    { "day": 19, "accepted": [] },
+                ]
+            },
+            {
+                "year": 2023,
+                "month": 12,
+                "votes": [
+                    { "day": 1, "accepted": [] },
+                    { "day": 2, "accepted": [] },
+                    { "day": 7, "accepted": [] },
+                    { "day": 8, "accepted": [] },
+                    { "day": 9, "accepted": [] },
                 ]
             },
         ]
@@ -52,8 +74,12 @@ var makeadate = (() => {
     let fontSmall = "18px serif";
 
     const draw = () => {
+        if (listView) {
+            return;
+        }
+        const canvas = document.getElementById("calendar-id");
         window.requestAnimationFrame(draw);
-        if (!dirty || !acceptImg || !acceptImg.complete || !myName) {
+        if (!canvas || !dirty || !acceptImg || !acceptImg.complete || !myName) {
             return;
         }
         dirty = false;
@@ -76,7 +102,6 @@ var makeadate = (() => {
             }
         });
 
-        const canvas = document.getElementById("calendar-id");
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = dayNameColor;
@@ -99,7 +124,7 @@ var makeadate = (() => {
                     dayMatrix[y][x] = day;
                     if (myAcceptedDays.has(day)) {
                         ctx.drawImage(acceptImg, xstart + x * dayWidth, ystart + y * dayHeight, dayWidth, dayHeight);
-                        ctx.fillStyle = acceptedColor;
+                        ctx.fillStyle = selectableDayColor;
                     }
                     else {
                         ctx.fillStyle = selectableDays.has(day) ? selectableDayColor : disabledDayColor;
@@ -117,8 +142,27 @@ var makeadate = (() => {
         }
     };
 
-    const render = () => {
-        load();
+    // storage and initialization
+
+    const KEY_MYNAME = "makeadate-myname";
+    const KEY_DATA = "makeadate-data";
+
+    const save = () => {
+        utils.set_session_storage(KEY_MYNAME, myName);
+        utils.set_local_storage(KEY_MYNAME, myName);
+        utils.set_session_storage(KEY_DATA, JSON.stringify(data));
+        utils.set_local_storage(KEY_DATA, JSON.stringify(data));
+    };
+
+    const logout = () => {
+        myName = undefined;
+        utils.remove_session_storage(KEY_MYNAME);
+        utils.remove_local_storage(KEY_MYNAME);
+    };
+   
+    const init = () => {
+        acceptImg = new Image();
+        acceptImg.src = "/images/buttons/check-lg.svg";
         dayMatrix = Array(6);
         for (let row = 0; row < 6; row++) {
             const arr = Array(7);
@@ -129,76 +173,179 @@ var makeadate = (() => {
         }
         xmin = utils.is_mobile() ? 330 : 400;
         ymin = xmin;
+        myName = utils.get_session_storage(KEY_MYNAME);
+        if (!myName) {
+            myName = utils.get_local_storage(KEY_MYNAME);
+        }
+        let json = utils.get_session_storage(KEY_DATA);
+        if (!json) {
+            json = utils.get_local_storage(KEY_DATA);
+        }
+        if (json) {
+            data = JSON.parse(json);
+        }
+        if (!data) {
+            data = sampledata;
+        }
+    };
+
+    const setCanvasSize = (canvas) => {
+        const wh = window.innerHeight - window.innerHeight / 2;
+        const w = Math.max(xmin, window.innerWidth - 20);
+        const h = Math.max(ymin, wh);
+        dayWidth = Math.min(100, Math.floor(w / 7));
+        dayHeight = Math.min(100, Math.floor(h / 6));
+        dayWidth = Math.min(dayWidth, dayHeight);
+        dayHeight = dayWidth;
+        canvas.width = dayWidth * 7;
+        canvas.height = dayHeight * 6 + headerHeight + 10;
+    };
+
+    // rendering
+
+    const render = () => {
+        init();
         const parent = document.body;
         controls.removeAllChildren(parent);
         if (!myName) {
-            controls.create(parent, "h1", undefined, "Make a date!");
-            controls.create(parent, "h2", undefined, data.description);
-            controls.create(parent, "p", undefined, "Wie lautet dein Name?");
-            data.participants.sort();
-            data.participants.forEach(name => {
-                const p = controls.create(parent, "p");
-                controls.createButton(p, name, () => {
-                    myName = name;
-                    save();
-                    render();
-                });
-            });
+            renderSelectName(parent);
             return;
         }
-        const date = new Date();
-        const datestr = utils.format_date(date, { year: "numeric", month: "long" });
+        if (!currentOptionIdx) {
+            currentOptionIdx = 0;
+        }
+        if (data.options.length == 0) {
+            controls.create(parent, "p", undefined, "Keine Termine!");
+            return;
+        }
         controls.create(parent, "p", undefined, `Hallo ${myName}!`);
-        controls.create(parent, "p", undefined, data.description);
-        controls.create(parent, "p", undefined, datestr);
-        const canvas = controls.create(parent, "canvas");
-        canvas.id = "calendar-id";
-        canvas.addEventListener("mouseup", onCanvasMouseUp);
-        setCanvasSize(canvas);
-        controls.createDiv(parent).id = "accepted-id";
+        controls.create(parent, "p", undefined, `Wann hast du Zeit f\u00FCr ${data.description}?`);
         const p = controls.create(parent, "p");
         if (data.options.length == 0) {
             controls.create(parent, "p", undefined, "Keine Termine!");
         }
         else {
-            if (!currentOptionIdx) {
-                currentOptionIdx = 0;
+            if (currentOptionIdx > 0) {
+                controls.createButton(p, _T("BUTTON_BACK"), onBackButton);
             }
-            if (data.options.length - 1 > currentOptionIdx) {
-                controls.createButton(p, "Weitere Termine", () => {
-                    currentOptionIdx += 1;
-                    render();
-                });
+            if (currentOptionIdx < data.options.length - 1) {
+                controls.createButton(p, _T("BUTTON_CONTINUE"), onContinueButton);
             }
-            controls.createButton(p, "Abmelden", () => {
-                logout();
+            if (listView) {
+                controls.createButton(p, "Kalendar", onCalendarViewButton);
+            }
+            else {
+                controls.createButton(p, "Liste", onListViewButton);
+            }
+        }
+        const option = data.options[currentOptionIdx];
+        const date = new Date(option.year, option.month - 1, 1);
+        const datestr = utils.format_date(date, { year: "numeric", month: "long" });
+        controls.create(parent, "h2", undefined, datestr);
+        const calendarDiv = controls.createDiv(parent);
+        calendarDiv.id = "calendar-div-id";
+        const listViewDiv = controls.createDiv(parent);
+        listViewDiv.id = "listview-div-id";
+        renderListView();
+        renderCalendarView();
+        const divLogout = controls.create(parent, "p");
+        controls.createButton(divLogout, _T("BUTTON_LOGOUT"), onLogoutButton);
+    };
+
+    const renderSelectName = (parent) => {
+        controls.create(parent, "h1", undefined, "Make a date!");
+        controls.create(parent, "h2", undefined, data.description);
+        controls.create(parent, "p", undefined, "Wie lautet dein Name?");
+        data.participants.sort();
+        data.participants.forEach(name => {
+            const p = controls.create(parent, "p");
+            controls.createButton(p, name, () => {
+                myName = name;
+                save();
                 render();
             });
-            controls.createButton(p, "Details", () => {
-                showDetails = !showDetails;
-                renderAcceptedDays();
+        });
+    };
+
+    const renderListView = (option) => {
+        const listViewDiv = document.getElementById("listview-div-id");
+        controls.removeAllChildren(listViewDiv);
+        if (listView) {
+            const dateoptions = {
+                weekday: "long",
+                day: "numeric",
+            };
+            const option = data.options[currentOptionIdx];
+            option.votes.forEach(v => {
+                const p = controls.create(listViewDiv, "p");
+                const div = controls.createSpan(p);
+                if (v.accepted.includes(myName)) {
+                    controls.createButton(div, "-", () => onMinusButton(v));
+                }
+                else {
+                    controls.createButton(div, "+", () => onPlusButton(v));
+                }
+                const date = new Date(option.year, option.month - 1, v.day);
+                const datestr = utils.format_date(date, dateoptions);
+                controls.create(p, "span", undefined, `${datestr}: ${v.accepted.join(', ')}`);
             });
-            renderAcceptedDays();
+            dirty = false;
+        }
+    };
+
+    const renderCalendarView = () => {
+        const calendarDiv = document.getElementById("calendar-div-id");
+        controls.removeAllChildren(calendarDiv);
+        if (!listView) {
+            const canvas = controls.create(calendarDiv, "canvas");
+            canvas.id = "calendar-id";
+            canvas.addEventListener("mouseup", onCanvasMouseUp);
+            setCanvasSize(canvas);
             window.requestAnimationFrame(draw);
             dirty = true;
         }
     };
 
-    const loadImages = () => {
-        acceptImg = new Image();
-        acceptImg.src = "/images/buttons/check-lg.svg";// dialog-clean.png";
+    // callbacks
+
+    const onMinusButton = (v) => {
+        v.accepted = v.accepted.filter(name => name != myName);
+        save();
+        renderListView();
     };
 
-    const setCanvasSize = (canvas) => {
-        const w = Math.max(xmin, window.innerWidth - headerHeight);
-        const h = Math.max(ymin, window.innerHeight - headerHeight);
-        dayWidth = Math.min(100, Math.floor(w / 7));
-        dayHeight = Math.min(Math.floor(h / 6), dayWidth);
-        canvas.width = dayWidth * 7;
-        canvas.height = dayHeight * 6 + headerHeight + 10;
+    const onPlusButton = (v) => {
+        v.accepted.push(myName);
+        save();
+        renderListView();
     };
 
-    const resize = () => {
+    const onCalendarViewButton = () => {
+        listView = false;
+        render();
+    };
+
+    const onListViewButton = () => {
+        listView = true;
+        render();
+    };
+
+    const onBackButton = () => {
+        currentOptionIdx -= 1;
+        render();
+    };
+
+    const onContinueButton = () => {
+        currentOptionIdx += 1;
+        render();
+    };
+
+    const onLogoutButton = () => {
+        logout();
+        render();
+    };
+
+    const onResize = () => {
         const canvas = document.getElementById("calendar-id");
         if (canvas) {
             setCanvasSize(canvas);
@@ -222,72 +369,22 @@ var makeadate = (() => {
                 }
                 vote.accepted.sort();
                 dirty = true;
-                renderAcceptedDays();
                 save();
             }
         }
-    };
-
-    const renderAcceptedDays = () => {
-        const parent = document.getElementById("accepted-id");
-        if (!parent) {
-            return;
-        }
-        controls.removeAllChildren(parent);
-        if (showDetails) {
-            const option = data.options[currentOptionIdx];
-            option.votes.filter(v => v.accepted.length > 0).forEach(v => {
-                controls.create(parent, "p", undefined, `${v.day}: ${v.accepted.join(', ')}`);
-            });
-        }
-    };
-
-    const KEY_MYNAME = "makeadate-myname";
-    const KEY_DATA = "makeadate-data";
-
-    const load = () => {
-        loadImages();
-        myName = utils.get_session_storage(KEY_MYNAME);
-        if (!myName) {
-            myName = utils.get_local_storage(KEY_MYNAME);
-        }
-        let json = utils.get_session_storage(KEY_DATA);
-        if (!json) {
-            json = utils.get_local_storage(KEY_DATA);
-        }
-        if (json) {
-            data = JSON.parse(json);
-        }
-        if (!data) {
-            data = sampledata;
-        }
-    };
-
-    const save = () => {
-        utils.set_session_storage(KEY_MYNAME, myName);
-        utils.set_local_storage(KEY_MYNAME, myName);
-        utils.set_session_storage(KEY_DATA, JSON.stringify(data));
-        utils.set_local_storage(KEY_DATA, JSON.stringify(data));
-    };
-
-    const logout = () => {
-        myName = undefined;
-        showDetails = false;
-        utils.remove_session_storage(KEY_MYNAME);
-        utils.remove_local_storage(KEY_MYNAME);
     };
 
     // --- public API
 
     return {
         render: render,
-        resize: resize,
+        onResize: onResize,
     };
 })();
 
 // --- window loaded event
 
 window.onload = () => {
-    window.addEventListener("resize", makeadate.resize);
+    window.addEventListener("resize", makeadate.onResize);
     utils.auth_lltoken(() => utils.set_locale(() => makeadate.render()));
 };
