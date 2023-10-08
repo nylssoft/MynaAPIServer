@@ -285,14 +285,14 @@ var makeadate = (() => {
         utils.set_menu_items(currentUser);
     };
 
-    const renderEditAppointment = (appointment) => {
+    const renderEditAppointment = () => {
+        const appointment = getAppointment();
         const parent = document.body;
         controls.removeAllChildren(parent);
         utils.create_menu(parent);
         renderHeader(parent);
         controls.createDiv(parent, "gap");
         editAppointment = true;
-        currentAppointmentId = appointment.id;
         currentOptionIdx = 0;
         const option = appointment.options[currentOptionIdx];
         // edit description
@@ -302,7 +302,7 @@ var makeadate = (() => {
         const descriptionInput = controls.createInputField(descriptionP, _T("TEXT_DESCRIPTION"), undefined, undefined, 50, 255);
         descriptionInput.id = "description-id";
         descriptionInput.value = appointment.description;
-        descriptionInput.addEventListener("input", () => onChange());
+        descriptionInput.addEventListener("input", onChange);
         // edit participants
         const participantsP = controls.create(parent, "p");
         const participantsLabel = controls.createLabel(participantsP, undefined, "Teilnehmer:");
@@ -321,7 +321,7 @@ var makeadate = (() => {
         if (!canChangeParticipants) {
             participantsInput.setAttribute("readonly", "readonly");
         }
-        participantsInput.addEventListener("input", () => onChange());
+        participantsInput.addEventListener("input", onChange);
         // show URL
         const urlP = controls.create(parent, "p");
         const urlLabel = controls.createLabel(urlP, undefined, "URL:");
@@ -334,52 +334,31 @@ var makeadate = (() => {
         const date = new Date(option.year, option.month - 1, 1);
         const datestr = utils.format_date(date, { year: "numeric", month: "long" });
         const optionsP = controls.create(parent, "p", undefined, "Optionen f\u00FCr:\u00A0");
-        const prevButton = controls.createButton(optionsP, "<", () => onDatePrevious(appointment));
+        const prevButton = controls.createButton(optionsP, "<", onDatePrevious);
         prevButton.id = "prev-button-id";
         controls.hide(prevButton);
         const dateSpan = controls.create(optionsP, "span", "date", datestr);
         dateSpan.id = "date-span-id";
-        const nextButton = controls.createButton(optionsP, ">", () => onDateNext(appointment));
+        const nextButton = controls.createButton(optionsP, ">", onDateNext);
         nextButton.id = "next-button-id";
         const calendarDiv = controls.createDiv(optionsP);
         calendarDiv.id = "calendar-div-id";
         renderCalendarView();
         // action buttons
-        const saveButton = controls.createButton(parent, _T("BUTTON_SAVE"), () => onUpdateAppointment(appointment));
+        const saveButton = controls.createButton(parent, _T("BUTTON_SAVE"), onUpdateAppointment);
         saveButton.id = "save-button-id";
         if (!changed) {
             controls.hide(saveButton);
         }
-        controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteApppointment(appointment));
-        controls.createButton(parent, _T("BUTTON_BACK"), () => renderCancelEditApppointment(appointment));
+        controls.createButton(parent, _T("BUTTON_DELETE"), renderDeleteApppointment);
+        controls.createButton(parent, _T("BUTTON_BACK"), renderCancelEditApppointment);
         // footer and menu
         renderCopyright(parent);
         utils.set_menu_items(currentUser);
     };
 
-    const renderConfirmHeader = (appointment) => {
-        const parent = document.body;
-        controls.removeAllChildren(parent);
-        utils.create_menu(parent);
-        renderHeader(parent);
-        controls.createDiv(parent, "gap");
-        const descriptionP = controls.create(parent, "p");
-        const descriptionLabel = controls.createLabel(descriptionP, undefined, _T("LABEL_DESCRIPTION"));
-        descriptionLabel.htmlFor = "description-id";
-        const descriptionInput = controls.createInputField(descriptionP, _T("TEXT_DESCRIPTION"), undefined, undefined, 50, 255);
-        descriptionInput.id = "description-id";
-        descriptionInput.value = appointment.description;
-        descriptionInput.setAttribute("readonly", "readonly");
-        const participantsP = controls.create(parent, "p");
-        const participantsLabel = controls.createLabel(participantsP, undefined, "Teilnehmer:");
-        participantsLabel.htmlFor = "participants-id";
-        const participantsInput = controls.createInputField(participantsP, "Teilnehmer", undefined, undefined, 50, 255);
-        participantsInput.id = "participants-id";
-        participantsInput.value = appointment.participants.join(", ");
-        participantsInput.setAttribute("readonly", "readonly");
-    };
-
-    const renderDeleteApppointment = (appointment) => {
+    const renderDeleteApppointment = () => {
+        const appointment = getAppointment();
         const parent = document.body;
         controls.removeAllChildren(parent);
         utils.create_menu(parent);
@@ -387,14 +366,15 @@ var makeadate = (() => {
         controls.createDiv(parent, "gap");
         const pConfirm = controls.create(parent, "p");
         controls.create(pConfirm, "span", "confirmation", `M\u00F6chtest du den Termin '${appointment.description}' wirklich l\u00F6schen?\u00a0`);
-        controls.createButton(pConfirm, _T("BUTTON_YES"), () => onDeleteAppointment(appointment));
-        controls.createButton(pConfirm, _T("BUTTON_NO"), () => renderEditAppointment(appointment));
+        controls.createButton(pConfirm, _T("BUTTON_YES"), onDeleteAppointment);
+        controls.createButton(pConfirm, _T("BUTTON_NO"), renderEditAppointment);
         renderCopyright(parent);
         utils.set_menu_items(currentUser);
     };
 
-    const renderCancelEditApppointment = (appointment) => {
+    const renderCancelEditApppointment = () => {
         if (changed) {
+            const appointment = getAppointment();
             const parent = document.body;
             controls.removeAllChildren(parent);
             utils.create_menu(parent);
@@ -402,8 +382,8 @@ var makeadate = (() => {
             controls.createDiv(parent, "gap");
             const pConfirm = controls.create(parent, "p");
             controls.create(pConfirm, "span", "confirmation", `Deine \u00C4nderungen f\u00FCr '${appointment.description}' wurden nicht gespeichert. M\u00F6chtest du die Seite wirklich verlassen?\u00a0`);
-            controls.createButton(pConfirm, _T("BUTTON_YES"), () => renderManageAppointments());
-            controls.createButton(pConfirm, _T("BUTTON_NO"), () => renderEditAppointment(appointment));
+            controls.createButton(pConfirm, _T("BUTTON_YES"), renderManageAppointments);
+            controls.createButton(pConfirm, _T("BUTTON_NO"), renderEditAppointment);
             renderCopyright(parent);
             utils.set_menu_items(currentUser);
             return;
@@ -537,7 +517,8 @@ var makeadate = (() => {
         }
     };
 
-    const onDateNext = (appointment) => {
+    const onDateNext = () => {
+        const appointment = getAppointment();
         if (currentOptionIdx >= 2) {
             return;
         }
@@ -566,7 +547,8 @@ var makeadate = (() => {
         }
     };
 
-    const onDatePrevious = (appointment) => {
+    const onDatePrevious = () => {
+        const appointment = getAppointment();
         if (currentOptionIdx == 0) {
             return;
         }
@@ -609,13 +591,15 @@ var makeadate = (() => {
         renderManageAppointments();
     };
 
-    const onDeleteAppointment = (appointment) => {
+    const onDeleteAppointment = () => {
+        const appointment = getAppointment();
         appointments = appointments.filter(a => a.id != appointment.id);
         save();
         renderManageAppointments();
     };
 
-    const onUpdateAppointment = (appointment) => {
+    const onUpdateAppointment = () => {
+        const appointment = getAppointment();
         const descriptionInput = document.getElementById("description-id");
         const participantsInput = document.getElementById("participants-id");
         appointment.description = descriptionInput.value;
@@ -645,7 +629,8 @@ var makeadate = (() => {
     };
 
     const onEditAppointment = (appointment) => {
-        renderEditAppointment(appointment);
+        currentAppointmentId = appointment.id;
+        renderEditAppointment();
     };
 
     const onVoteAppointment = (appointment) => {

@@ -259,7 +259,7 @@ var pwdman = (() => {
     const cancel = () => {
         lastErrorMessage = "";
         if (nexturl && nexturl.length > 0) {
-            if (nexturl == "/diary" || nexturl == "/notes" || nexturl == "/documents" || nexturl == "/password" || nexturl == "/contacts") {
+            if (nexturl == "/diary" || nexturl == "/notes" || nexturl == "/documents" || nexturl == "/password" || nexturl == "/contacts" || nexturl == "/makeadate") {
                 nexturl = "/view";
             }
             utils.replace_window_location(nexturl);
