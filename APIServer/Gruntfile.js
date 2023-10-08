@@ -176,7 +176,7 @@ module.exports = function (grunt) {
                     "wwwroot/css/contacts/contacts.min.css": ["wwwroot/css/contacts/contacts.css"],
                     "wwwroot/css/diary/diary.min.css": ["wwwroot/css/diary/diary.css"],
                     "wwwroot/css/documents/documents.min.css": ["wwwroot/css/documents/documents.css"],
-                    "wwwroot/css/markdown/makeadate.min.css": ["wwwroot/css/makeadate/makeadate.css"],
+                    "wwwroot/css/makeadate/makeadate.min.css": ["wwwroot/css/makeadate/makeadate.css"],
                     "wwwroot/css/markdown/markdown.min.css": ["wwwroot/css/markdown/markdown.css"],
                     "wwwroot/css/notes/notes.min.css": ["wwwroot/css/notes/notes.css"],
                     "wwwroot/css/password/password.min.css": ["wwwroot/css/password/password.css"],

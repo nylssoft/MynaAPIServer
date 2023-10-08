@@ -73,7 +73,7 @@ var makeadate = (() => {
         for (let y = 0; y < 6; y++) {
             for (let x = 0; x < 7; x++) {
                 if ((y != 0 || x >= firstDay) && day <= daysInMonth) {
-                    const dc = d;
+                    const dc = day;
                     const isBestVote = !editAppointment && bestVotes.some(v => v.year == option.year && v.month == option.month && v.day == dc);
                     if (isBestVote) {
                         ctx.fillStyle = bestDayColor;
