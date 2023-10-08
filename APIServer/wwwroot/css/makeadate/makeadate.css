@@ -1,21 +1,213 @@
 ﻿body {
-    margin: 5pt;
-    border: none;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14pt;
     background-color: black;
     color: white;
+    margin-left: 5pt;
+    margin-right: 5pt;
+    margin-top: 0pt;
+    margin-bottom: 0pt;
+}
+
+input {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 14pt;
 }
-p, span {
-    margin-left: 5pt;
-    margin-top: 0pt;
+
+    input:read-only {
+        color: black;
+        background-color: lightgray;
+    }
+
+label {
+    display: block;
+    text-align: left;
     margin-bottom: 3pt;
 }
 
-canvas {
-    margin-left: 5pt;
-    margin-right: 5pt;
+.gap {
+    margin-top: 20pt;
 }
+
+p {
+    margin-top: 5pt;
+    margin-bottom: 5pt;
+}
+
+canvas {
+}
+
+/*
+#calendar-div-id {
+    border: solid;
+}
+*/
+
+table {
+    min-width: 300pt;
+    border-collapse: collapse;
+    border: 3px solid blue;
+    background-color: blue;
+}
+
+    table caption {
+        margin: 5pt;
+    }
+
+        table caption a {
+            color: white;
+        }
+
+td {
+    padding: 20px;
+    letter-spacing: 1px;
+}
+
+tbody td {
+    text-align: left;
+}
+
+tbody tr:nth-child(odd) {
+    background-color: dodgerblue;
+}
+
+tbody tr:nth-child(even) {
+    background-color: cornflowerblue;
+}
+
+td a {
+    color: white;
+}
+
+a {
+    color: lightgreen;
+}
+
+h1 {
+    padding: 2pt;
+    color: white;
+    position: absolute;
+    top: 5pt;
+    left: 40pt;
+    font-size: 18pt;
+    margin: 0pt;
+}
+
+textarea {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18pt;
+    background-color: yellow;
+    padding: 10px;
+    line-height: 1.5;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    box-shadow: 1px 1px 1px #999;
+    margin-bottom: 10pt;
+}
+
+h2 {
+    color: lightyellow;
+}
+
+h3 {
+    color: darkgoldenrod;
+}
+
+.help-button {
+    margin-left: 10pt;
+}
+
+    .help-button:hover {
+        background-color: lightblue;
+    }
+
+.help-div {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0.9;
+    z-index: 10;
+}
+
+.help-content {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    right: 20px;
+}
+
+.encryptkey-notice {
+    color: red;
+}
+
+.img-status {
+    margin-left: 10pt;
+}
+
+.selected {
+    color: yellow;
+}
+
+.filled {
+    color: yellow;
+}
+
+.transparent {
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+.box {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.calendar-column {
+    margin: 5pt;
+    /*    flex: 1 1 auto; */
+}
+
+.text-column {
+    margin: 5pt;
+    /*    flex: 1 1 auto; */
+}
+
+.caption {
+    margin: 5pt;
+}
+
+.copyright {
+    font-size: 8pt;
+    font-family: Arial, Helvetica, sans-serif;
+    color: lightgreen;
+}
+
+.error {
+    margin-top: 10pt;
+    color: red;
+}
+
+.small-button {
+    background-color: blue;
+    border: 2px solid #008CBA;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    font-size: 8pt;
+    margin-right: 8pt;
+}
+
+    .small-button:hover {
+        background-color: #008CBA;
+        color: darkblue;
+    }
 
 .button {
     background-color: blue;
@@ -26,19 +218,316 @@ canvas {
     display: inline-block;
     transition-duration: 0.4s;
     cursor: pointer;
-    font-size: 11pt;
-    margin-top: 5pt;
+    font-size: 14pt;
+    margin-top: 2pt;
+    margin-bottom: 2pt;
     margin-right: 10pt;
     padding: 5pt;
 }
 
-.button:hover {
-    background-color: #008CBA;
-    color: darkblue;
+    .button:hover {
+        background-color: #008CBA;
+        color: darkblue;
+    }
+
+/* from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_checkbox */
+/* The container */
+.container-checkbox {
+    display: inline;
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
+    font-size: 18pt;
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
-h2 {
-    margin-left: 5pt;
-    margin-top: 5pt;
-    margin-bottom: 0pt;
+    /* Hide the browser's default checkbox */
+    .container-checkbox input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+
+/* Create a custom checkbox */
+.checkmark-checkbox {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+}
+
+/* On mouse-over, add a grey background color */
+.container-checkbox:hover input ~ .checkmark-checkbox {
+    background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container-checkbox input:checked ~ .checkmark-checkbox {
+    background-color: #2196F3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark-checkbox:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.container-checkbox input:checked ~ .checkmark-checkbox:after {
+    display: block;
+}
+
+/* Style the checkmark/indicator */
+.container-checkbox .checkmark-checkbox:after {
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+/* The container */
+.container-radiobutton {
+    display: inline;
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 13pt;
+    font-family: Arial, Helvetica, sans-serif;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+    /* Hide the browser's default radio button */
+    .container-radiobutton input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+/* Create a custom radio button */
+.checkmark-radiobutton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #eee;
+    border-radius: 50%;
+}
+
+/* On mouse-over, add a grey background color */
+.container-radiobutton:hover input ~ .checkmark-radiobutton {
+    background-color: #ccc;
+}
+
+/* When the radio button is checked, add a blue background */
+.container-radiobutton input:checked ~ .checkmark-radiobutton {
+    background-color: #2196F3;
+}
+
+/* Create the indicator (the dot/circle - hidden when not checked) */
+.checkmark-radiobutton:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Show the indicator (dot/circle) when checked */
+.container-radiobutton input:checked ~ .checkmark-radiobutton:after {
+    display: block;
+}
+
+/* Style the indicator (dot/circle) */
+.container-radiobutton .checkmark-radiobutton:after {
+    top: 7px;
+    left: 8px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: white;
+}
+
+.header-profile-photo {
+    border-radius: 50%;
+    position: fixed;
+    top: 2pt;
+    right: 2pt;
+}
+
+/* from https://www.w3schools.com/howto/howto_js_dropdown.asp Dropdown Button */
+.dropbtn {
+    position: fixed;
+    top: 5pt;
+    left: 5pt;
+    background-color: lightgrey;
+    color: white;
+    padding: 3px;
+    border: none;
+    cursor: pointer;
+    z-index: 1;
+}
+
+    /* Dropdown button on hover & focus */
+    .dropbtn:hover, .dropbtn:focus {
+        background-color: #2980B9;
+    }
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: fixed;
+    top: 40pt;
+    left: 5pt;
+    max-width: 300px;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    right: 5pt;
+    font-size: 11pt;
+}
+
+    /* Links inside the dropdown */
+    .dropdown-content a {
+        color: black;
+        padding: 6px 8px;
+        text-decoration: none;
+        display: block;
+    }
+
+        /* Change color of dropdown links on hover */
+        .dropdown-content a:hover {
+            background-color: #ddd
+        }
+
+.hide {
+    display: none;
+}
+
+.show {
+    display: block;
+}
+
+.date {
+    margin-right: 10pt;
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 11pt;
+        margin-top: 10pt;
+        margin-left: 2pt;
+        margin-right: 2pt;
+    }
+
+    p, canvas {
+        margin: 3pt;
+    }
+
+    input {
+        font-size: 11pt;
+        width: 200pt;
+    }
+
+    table {
+        min-width: 150pt;
+        width: 150pt;
+        font-size: 11pt;
+    }
+
+    td, th {
+        padding: 7px;
+        letter-spacing: 1px;
+    }
+
+    textarea {
+        font-size: 11pt;
+    }
+
+    .container-checkbox {
+        font-size: 11pt;
+    }
+
+    .button {
+        font-size: 11pt;
+    }
+
+    h1 {
+        top: 0;
+        padding: 0;
+        font-size: 11pt;
+        left: 32pt;
+    }
+
+    .dropbtn {
+        width: 16px;
+        height: 16px;
+    }
+
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+    }
+
+        .dropdown-content a {
+            padding: 6px 8px;
+        }
+
+    .help-button {
+        margin-left: 10pt;
+        transform: translateY(4pt);
+    }
+
+    .checkmark-checkbox {
+        top: 0px;
+        height: 15px;
+        width: 15px;
+    }
+
+    .container-checkbox .checkmark-checkbox:after {
+        left: 5px;
+        top: 1px;
+        width: 3px;
+        height: 8px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        -webkit-transform: rotate(45deg);
+        -ms-transform: rotate(45deg);
+        transform: rotate(45deg);
+    }    
+}
+
+@media (max-height: 800px) {
+    .dropdown-content {
+        top: 30pt;
+        max-width: 200px;
+        font-size: 11pt;
+    }
+
+        .dropdown-content a {
+            padding: 6px 8px;
+        }
 }

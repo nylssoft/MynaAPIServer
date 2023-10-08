@@ -668,7 +668,7 @@ var utils = (() => {
                 }
                 const validurls = [
                     "/backgammon", "/chess", "/contacts", "/diary", "/documents", "/notes", "/password",
-                    "/pwdman", "/skat", "/skatticket", "/slideshow", "/tetris", "/usermgmt", "/view"];
+                    "/pwdman", "/skat", "/skatticket", "/slideshow", "/tetris", "/usermgmt", "/view", "/makeadate"];
                 if (validurls.includes(testurl)) {
                     return url;
                 }
