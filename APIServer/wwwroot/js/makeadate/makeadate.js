@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.0.2";
+    let version = "0.0.3";
     let currentUser;
     let helpDiv;
 
@@ -25,11 +25,13 @@ var makeadate = (() => {
     let rowColorEven = "#FFFFFF";
     let rowColorOdd = "#EEEEEE";
     let dayNameColor = "#FFFFFF";
-    let selectableDayColor = "#000000";
-    let disabledDayColor = "#DDDDDD";
-    let bestDayColor = "#FFFFE0";
-    let fontLarge = "24px serif";
-    let fontSmall = "18px serif";
+    let selectableDayColor = "#FF0000";
+    let disabledDayColor = "#D8D8D8";
+    let bestDayColor = "#FFD700";
+    let acceptedDayColor = "#000000";
+    let fontLarge = "24px Arial, Helvetica, sans-serif";
+    let fontSmall = "14px Arial, Helvetica, sans-serif";
+    let fontSmaller = "11px Arial, Helvetica, sans-serif";
 
     const draw = () => {
         if (!editAppointment && listView) {
@@ -62,7 +64,7 @@ var makeadate = (() => {
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = dayNameColor;
-        ctx.font = dayWidth < 100 ? fontSmall : fontLarge;
+        ctx.font = utils.is_mobile() ? fontSmall : fontLarge;
         let xstart = 0;
         let ystart = 30;
         let days = ["Mon", "Die", "Mit", "Don", "Fre", "Sam", "Son"];
@@ -97,13 +99,15 @@ var makeadate = (() => {
                     }
                     else if (myAcceptedDays.has(day)) {
                         ctx.drawImage(acceptImg, xstart + x * dayWidth, ystart + y * dayHeight, dayWidth, dayHeight);
-                        ctx.fillStyle = selectableDayColor;
+                        ctx.fillStyle = acceptedDayColor;
                     }
                     else {
                         ctx.fillStyle = selectableDays.has(day) ? selectableDayColor : disabledDayColor;
                     }
+                    ctx.font = utils.is_mobile() ? fontSmall : fontLarge;
                     ctx.fillText(`${day}`, xstart + x * dayWidth + dayWidth / 3, ystart + y * dayHeight + dayHeight / 2);
                     if (acceptedCount.has(day)) {
+                        ctx.font = utils.is_mobile() ? fontSmaller : fontSmall;
                         ctx.fillText(`+${acceptedCount.get(day)}`, xstart + x * dayWidth + 5, ystart + y * dayHeight + dayHeight - 8);
                     }
                     day++;
@@ -365,7 +369,7 @@ var makeadate = (() => {
         renderHeader(parent);
         controls.createDiv(parent, "gap");
         const pConfirm = controls.create(parent, "p");
-        controls.create(pConfirm, "span", "confirmation", `M\u00F6chtest du den Termin '${appointment.description}' wirklich l\u00F6schen?\u00a0`);
+        controls.create(pConfirm, "span", "confirmation", `M\u00F6chtest du den Termin f\u00FCr ${appointment.description} wirklich l\u00F6schen?\u00a0`);
         controls.createButton(pConfirm, _T("BUTTON_YES"), onDeleteAppointment);
         controls.createButton(pConfirm, _T("BUTTON_NO"), renderEditAppointment);
         renderCopyright(parent);
@@ -381,7 +385,7 @@ var makeadate = (() => {
             renderHeader(parent);
             controls.createDiv(parent, "gap");
             const pConfirm = controls.create(parent, "p");
-            controls.create(pConfirm, "span", "confirmation", `Deine \u00C4nderungen f\u00FCr '${appointment.description}' wurden nicht gespeichert. M\u00F6chtest du die Seite wirklich verlassen?\u00a0`);
+            controls.create(pConfirm, "span", "confirmation", `Deine \u00C4nderungen f\u00FCr ${appointment.description} wurden nicht gespeichert. M\u00F6chtest du die Seite wirklich verlassen?\u00a0`);
             controls.createButton(pConfirm, _T("BUTTON_YES"), renderManageAppointments);
             controls.createButton(pConfirm, _T("BUTTON_NO"), renderEditAppointment);
             renderCopyright(parent);
@@ -405,7 +409,7 @@ var makeadate = (() => {
         const parent = document.body;
         controls.removeAllChildren(parent);
         controls.create(parent, "h2", undefined, "Terminplaner");
-        controls.create(parent, "p", undefined, `Finde einen Termin f\u00FCr '${appointment.description}'.`);
+        controls.create(parent, "p", undefined, `Finde einen Termin f\u00FCr ${appointment.description}.`);
         controls.create(parent, "p", undefined, "Wie lautet dein Name?");
         appointment.participants.sort();
         appointment.participants.forEach(name => {
@@ -420,7 +424,7 @@ var makeadate = (() => {
         const parent = document.body;
         controls.removeAllChildren(parent);
         controls.create(parent, "h2", undefined, `Hallo ${myName}!`);
-        controls.create(parent, "p", undefined, `Wann hast du Zeit f\u00FCr '${appointment.description}'?`);
+        controls.create(parent, "p", undefined, `Wann hast du Zeit f\u00FCr ${appointment.description}?`);
         const option = appointment.options[currentOptionIdx];
         const date = new Date(option.year, option.month - 1, 1);
         const datestr = utils.format_date(date, { year: "numeric", month: "long" });
@@ -482,7 +486,7 @@ var makeadate = (() => {
         if (!listView) {
             const canvas = controls.create(calendarDiv, "canvas");
             canvas.id = "calendar-id";
-            canvas.addEventListener("mouseup", onCanvasMouseUp);
+            canvas.addEventListener("mousedown", onCanvasMouseDown);
             setCanvasSize(canvas);
             window.requestAnimationFrame(draw);
             dirty = true;
@@ -691,7 +695,7 @@ var makeadate = (() => {
         }
     };
 
-    const onCanvasMouseUp = (evt) => {
+    const onCanvasMouseDown = (evt) => {
         const appointment = getAppointment();
         const x = Math.floor(evt.offsetX / dayWidth);
         const y = Math.floor((evt.offsetY - headerHeight) / dayHeight);
