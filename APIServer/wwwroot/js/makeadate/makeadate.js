@@ -2,8 +2,9 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.0.3";
+    let version = "0.0.4";
     let currentUser;
+    let cryptoKey;
     let helpDiv;
 
     let acceptImg;
@@ -206,31 +207,29 @@ var makeadate = (() => {
     // rendering
 
     const renderInit = () => {
-        const params = new URLSearchParams(window.location.search);
-        currentAppointmentId = params.get("id");
-        if (currentAppointmentId) {
-            render();
-            return;
-        }
-        const token = utils.get_authentication_token();
-        if (!token) {
-            const nexturl = "/makeadate";
-            utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl));
-            return;
-        }
-        if (currentUser) {
-            render();
-            return;
-        }
         const parent = document.body;
         controls.removeAllChildren(parent);
-        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
-            (user) => {
-                currentUser = user;
-                render();
-            },
-            (errMsg) => renderError(parent, errMsg)
-        );
+        const params = new URLSearchParams(window.location.search);
+        currentAppointmentId = params.get("id");
+        if (!currentAppointmentId) {
+            const token = utils.get_authentication_token();
+            if (!token) {
+                const nexturl = "/makeadate";
+                utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl));
+                return;
+            }
+            if (!currentUser) {
+                utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+                    (user) => {
+                        currentUser = user;
+                        renderPageAsync(parent);
+                    },
+                    (errMsg) => renderError(parent, errMsg)
+                );
+                return;
+            }
+        }
+        renderPageAsync(parent);
         return;
     };
 
@@ -239,24 +238,25 @@ var makeadate = (() => {
     };
 
     const render = () => {
-        init();
         const params = new URLSearchParams(window.location.search);
         currentAppointmentId = params.get("id");
         if (!currentAppointmentId) {
             renderManageAppointments();
             return;
         }
+        init();
+        const parent = document.getElementById("content-id");
         const appointment = getAppointment();
         if (!appointment) {
-            controls.create(document.body, "p", undefined, "Unbekannter Termin.");
+            controls.create(parent, "p", undefined, "Unbekannter Termin.");
             return;
         }
         if (appointment.participants.length == 0) {
-            controls.create(document.body, "p", undefined, "Der Termin hat noch keine Teilnehmer.");
+            controls.create(parent, "p", undefined, "Der Termin hat noch keine Teilnehmer.");
             return;
         }
         if (appointment.options.length == 0 || appointment.options[0].votes.length == 0) {
-            controls.create(document.body, "p", undefined, "Der Termin hat noch keine Auswahlm\u00F6glichkeiten.");
+            controls.create(parent, "p", undefined, "Der Termin hat noch keine Auswahlm\u00F6glichkeiten.");
             return;
         }
         if (!currentOptionIdx || currentOptionIdx >= appointment.options.length) {
@@ -270,12 +270,14 @@ var makeadate = (() => {
     };
 
     const renderManageAppointments = () => {
-        init();
-        const parent = document.body;
+        const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
-        utils.create_menu(parent);
-        renderHeader(parent);
         controls.createDiv(parent, "gap");
+        if (!hasEncryptKey()) {
+            renderError(parent, "ERROR_MISSING_KEY_DECODE_APPOINTMENT");
+            return;
+        }   
+        init();
         controls.createButton(parent, "Neuer Termin", onNewAppointment);
         controls.create(parent, "p", undefined, "Termine:");
         const li = controls.create(parent, "ul");
@@ -285,16 +287,12 @@ var makeadate = (() => {
             controls.createButton(ul, "Bearbeiten", () => onEditAppointment(a));
             controls.createButton(ul, "Abstimmen", () => onVoteAppointment(a));
         });
-        renderCopyright(parent);
-        utils.set_menu_items(currentUser);
     };
 
     const renderEditAppointment = () => {
         const appointment = getAppointment();
-        const parent = document.body;
+        const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
-        utils.create_menu(parent);
-        renderHeader(parent);
         controls.createDiv(parent, "gap");
         editAppointment = true;
         currentOptionIdx = 0;
@@ -356,57 +354,45 @@ var makeadate = (() => {
         }
         controls.createButton(parent, _T("BUTTON_DELETE"), renderDeleteApppointment);
         controls.createButton(parent, _T("BUTTON_BACK"), renderCancelEditApppointment);
-        // footer and menu
-        renderCopyright(parent);
-        utils.set_menu_items(currentUser);
     };
 
     const renderDeleteApppointment = () => {
         const appointment = getAppointment();
-        const parent = document.body;
+        const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
-        utils.create_menu(parent);
-        renderHeader(parent);
         controls.createDiv(parent, "gap");
         const pConfirm = controls.create(parent, "p");
         controls.create(pConfirm, "span", "confirmation", `M\u00F6chtest du den Termin f\u00FCr ${appointment.description} wirklich l\u00F6schen?\u00a0`);
         controls.createButton(pConfirm, _T("BUTTON_YES"), onDeleteAppointment);
         controls.createButton(pConfirm, _T("BUTTON_NO"), renderEditAppointment);
-        renderCopyright(parent);
-        utils.set_menu_items(currentUser);
     };
 
     const renderCancelEditApppointment = () => {
         if (changed) {
             const appointment = getAppointment();
-            const parent = document.body;
+            const parent = document.getElementById("content-id");
             controls.removeAllChildren(parent);
-            utils.create_menu(parent);
-            renderHeader(parent);
             controls.createDiv(parent, "gap");
             const pConfirm = controls.create(parent, "p");
             controls.create(pConfirm, "span", "confirmation", `Deine \u00C4nderungen f\u00FCr ${appointment.description} wurden nicht gespeichert. M\u00F6chtest du die Seite wirklich verlassen?\u00a0`);
             controls.createButton(pConfirm, _T("BUTTON_YES"), renderManageAppointments);
             controls.createButton(pConfirm, _T("BUTTON_NO"), renderEditAppointment);
-            renderCopyright(parent);
-            utils.set_menu_items(currentUser);
             return;
         }
         renderManageAppointments();
     };
 
     const renderLogout = () => {
-        const parent = document.body;
+        const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.create(parent, "h2", undefined, "Terminplaner");
         controls.create(parent, "p", undefined, "Vielen Dank f\u00FCr deine Teilnahme!");
         controls.create(parent, "p", undefined, "Du bist jetzt abgemeldet.");
-        renderCopyright(parent);
     };
 
     const renderSelectName = () => {
         const appointment = getAppointment();
-        const parent = document.body;
+        const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.create(parent, "h2", undefined, "Terminplaner");
         controls.create(parent, "p", undefined, `Finde einen Termin f\u00FCr ${appointment.description}.`);
@@ -416,12 +402,11 @@ var makeadate = (() => {
             const p = controls.create(parent, "p");
             controls.createButton(p, name, () => onChooseNameButton(name));
         });
-        renderCopyright(parent);        
     };
 
     const renderVoteAppointment = () => {
         const appointment = getAppointment();
-        const parent = document.body;
+        const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.create(parent, "h2", undefined, `Hallo ${myName}!`);
         controls.create(parent, "p", undefined, `Wann hast du Zeit f\u00FCr ${appointment.description}?`);
@@ -455,7 +440,6 @@ var makeadate = (() => {
             controls.createButton(divFooter, "Liste", onListViewButton);
         }
         controls.createButton(divFooter, _T("BUTTON_LOGOUT"), onLogoutButton);
-        renderCopyright(parent);
     };
 
     const renderListView = () => {
@@ -509,6 +493,43 @@ var makeadate = (() => {
         controls.create(div, "span", "copyright", `Terminplaner ${version}. ${_T("TEXT_COPYRIGHT")} 2023 `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
+    };
+
+    const renderPageAsync = async (parent) => {
+        if (!currentAppointmentId) {
+            await renderEncryptKeyAsync(parent);
+        }
+        const contentDiv = controls.createDiv(parent, "content");
+        contentDiv.id = "content-id";
+        render();
+        renderCopyright(parent);
+    };
+
+    const renderEncryptKeyAsync = async () => {
+        const parent = document.body;
+        utils.create_menu(parent);
+        renderHeader(parent);
+        const encryptKey = await utils.get_encryption_key_async(currentUser);
+        const div = controls.createDiv(parent, "hide");
+        div.id = "div-encryptkey-id";
+        const encryptP = controls.create(div, "p");
+        encryptP.id = "p-encryptkey-appointment-id";
+        controls.create(encryptP, "p", "encryptkey-appointment", _T("INFO_ENCRYPTION_APPOINTMENT"));
+        const keyP = controls.create(div, "p");
+        const keyLabel = controls.createLabel(keyP, undefined, _T("LABEL_KEY"));
+        keyLabel.htmlFor = "input-encryptkey-id";
+        const inputKey = controls.createInputField(keyP, _T("TEXT_KEY"), () => onChangeEncryptKeyAsync(), undefined, 32, 32);
+        inputKey.id = "input-encryptkey-id";
+        inputKey.addEventListener("change", () => onChangeEncryptKeyAsync());
+        if (encryptKey) {
+            inputKey.value = encryptKey;
+        }
+        const saveP = controls.create(div, "p");
+        const show = encryptKey == undefined;
+        controls.createCheckbox(saveP, "checkbox-save-encryptkey-id", undefined, undefined, !show, () => onChangeEncryptKeyAsync());
+        controls.create(saveP, "span", undefined, _T("OPTION_SAVE_KEY_IN_BROWSER"));
+        utils.show_encrypt_key(currentUser, show);
+        utils.set_menu_items(currentUser);
     };
 
     // callbacks
@@ -729,7 +750,52 @@ var makeadate = (() => {
         }
     };
 
-    // --- public API
+    const onChangeEncryptKeyAsync = async () => {
+        const saveInBrowser = document.getElementById("checkbox-save-encryptkey-id").checked;
+        const val = document.getElementById("input-encryptkey-id").value.trim();
+        if (val.length === 0 || !saveInBrowser) {
+            await utils.set_encryption_key_async(currentUser);
+        }
+        else {
+            await utils.set_encryption_key_async(currentUser, val);
+        }
+        cryptoKey = undefined;
+        render();
+    };
+
+    // encryption key hanndling
+
+    const hasEncryptKey = () => {
+        let elem = document.getElementById("input-encryptkey-id");
+        return elem && elem.value.trim().length > 0;
+    };
+
+    const initCryptoKey = (resolve, reject) => {
+        if (!cryptoKey) {
+            let elem = document.getElementById("input-encryptkey-id");
+            if (elem && elem.value.trim().length > 0) {
+                utils.create_crypto_key(elem.value.trim(), currentUser.passwordManagerSalt,
+                    (ck) => {
+                        cryptoKey = ck;
+                        resolve();
+                    },
+                    reject
+                );
+                return;
+            }
+        }
+        resolve();
+    };
+
+    const encodeText = (text, resolve, reject) => {
+        initCryptoKey(() => utils.encode_message(cryptoKey, text, resolve, reject), reject);
+    };
+
+    const decodeText = (text, resolve, reject) => {
+        initCryptoKey(() => utils.decode_message(cryptoKey, text, resolve, reject), reject);
+    };
+
+    // public API
 
     return {
         renderInit: renderInit,
@@ -743,3 +809,5 @@ window.onload = () => {
     window.addEventListener("resize", makeadate.onResize);
     utils.auth_lltoken(() => utils.set_locale(() => makeadate.renderInit()));
 };
+
+window.onclick = (event) => utils.hide_menu(event);
