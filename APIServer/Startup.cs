@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using APIServer.Appointment;
 using APIServer.Chess;
 using APIServer.Backgammon;
 using APIServer.Database;
@@ -60,6 +61,7 @@ namespace APIServer
             services.AddScoped<IDiaryService, DiaryService>();
             services.AddScoped<INotesService, NotesService>();
             services.AddScoped<IDocumentService, DocumentService>();
+            services.AddScoped<IAppointmentService, AppointmentService>();
             // singletons
             services.AddSingleton<ISkatService, SkatService>();
             services.AddSingleton<IChessService, ChessService>();

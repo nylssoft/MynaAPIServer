@@ -22,6 +22,42 @@ namespace APIServer.Migrations.DbPostgres
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("APIServer.Database.DbAppointment", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("DbUserId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("ModifiedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OwnerKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Uuid")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbUserId");
+
+                    b.HasIndex("Uuid")
+                        .IsUnique();
+
+                    b.ToTable("Appointment");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbAudit", b =>
                 {
                     b.Property<long>("Id")
@@ -632,6 +668,41 @@ namespace APIServer.Migrations.DbPostgres
                     b.ToTable("UserSkatResults");
                 });
 
+            modelBuilder.Entity("APIServer.Database.DbVote", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<long>("DbAppointmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("UserUuid")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DbAppointmentId");
+
+                    b.ToTable("Vote");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbAppointment", b =>
+                {
+                    b.HasOne("APIServer.Database.DbUser", "DbUser")
+                        .WithMany()
+                        .HasForeignKey("DbUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DbUser");
+                });
+
             modelBuilder.Entity("APIServer.Database.DbAudit", b =>
                 {
                     b.HasOne("APIServer.Database.DbUser", "DbUser")
@@ -785,6 +856,20 @@ namespace APIServer.Migrations.DbPostgres
                     b.Navigation("DbSkatResult");
 
                     b.Navigation("DbUser");
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbVote", b =>
+                {
+                    b.HasOne("APIServer.Database.DbAppointment", null)
+                        .WithMany("Votes")
+                        .HasForeignKey("DbAppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("APIServer.Database.DbAppointment", b =>
+                {
+                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbSkatResult", b =>

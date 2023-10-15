@@ -37,6 +37,8 @@ namespace APIServer
         public const int MAX_DOCUMENT_UPLOAD = 1024 * 1024 * 20; // upload at most 20 MB
         public const int MAX_DOCUMENT_TITLE = 300;
         public const int MAX_CONTACTS_CONTENT = 1024 * 1024 * 10; // hex encoded string
+        public const int MAX_APPOINTMENT_BATCH = 100;
+        public const int MAX_APPOINTMENT_UUID = 100;
     }
 
     public class InputValueTooLargeException : APIException

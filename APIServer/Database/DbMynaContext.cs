@@ -66,6 +66,8 @@ namespace APIServer.Database
 
         public DbSet<DbAudit> DbAuditItems { get; set; }
 
+        public DbSet<DbAppointment> DbAppointments { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             _ = builder.Entity<DbRegistration>()
@@ -102,6 +104,11 @@ namespace APIServer.Database
                 .IsUnique();
             _ = builder.Entity<DbAudit>()
                 .HasIndex(a => new { a.DbUserId, a.PerformedUtc });
+            _ = builder.Entity<DbAppointment>()
+                .HasIndex(a => a.Uuid)
+                .IsUnique();
+            _ = builder.Entity<DbAppointment>()
+                .HasIndex(a => a.DbUserId);
         }
 
         public static DateTime? GetUtcDateTime(DateTime? dbDateTime)
