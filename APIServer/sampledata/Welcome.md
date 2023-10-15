@@ -23,6 +23,7 @@ See [Example](/view?page=example) how to configure pages and the portal server.
 
 ### Applications
 
+[![Appointments](/images/buttons/view-calendar-tasks-48.png "Appointments")](/makeadate)
 [![Contacts](/images/buttons/user-new-3-48.png "Contacts")](/contacts)
 [![Diary](/images/buttons/gnome-blog-48.png "Diary")](/diary)
 [![Documents](/images/buttons/gftp-48.png "Documents")](/documents)
