@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.9.3";
+    let version = "0.9.4";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -166,7 +166,9 @@ var makeadate = (() => {
         }
         xmin = utils.is_mobile() ? 330 : 400;
         ymin = xmin;
-        myName = utils.get_local_storage(KEY_MYNAME);
+        if (!myName) {
+            myName = utils.get_local_storage(KEY_MYNAME);
+        }
         if (appointment && myName) {
             const participantNames = appointment.definition.participants.map(p => p.username);
             if (!participantNames.includes(myName)) {
