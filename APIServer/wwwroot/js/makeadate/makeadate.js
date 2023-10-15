@@ -621,7 +621,7 @@ var makeadate = (() => {
         controls.removeAllChildren(parent);
         controls.create(parent, "h2", undefined, _T("HEADER_MAKEADATE"));
         controls.create(parent, "p", undefined, _T("INFO_FIND_APPOINTMENT_1", appointment.definition.description));
-        controls.create(parent, "p", undefined, _T("INFO_QUESTION_YOuR_NAME"));
+        controls.create(parent, "p", undefined, _T("INFO_QUESTION_YOUR_NAME"));
         appointment.definition.participants.forEach(p => {
             const para = controls.create(parent, "p");
             controls.createButton(para, p.username, () => onChooseNameButton(p.username));
