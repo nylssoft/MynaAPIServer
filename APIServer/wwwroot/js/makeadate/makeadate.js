@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.9.2";
+    let version = "0.9.3";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -21,6 +21,7 @@ var makeadate = (() => {
     let changed = false;
     let editAppointment = false;
     let drawAppointment;
+    let voteRendered;
     
     let rowColorEven = "#FFFFFF";
     let rowColorOdd = "#EEEEEE";
@@ -251,6 +252,13 @@ var makeadate = (() => {
         return !appointment.votes.some(v => v.accepted.some(opt => opt.days.length > 0));
     };
 
+    const cleanOptions = (appointment) => {
+        if (appointment.definition.options.length > 1 && appointment.definition.options[appointment.definition.options.length - 1].days.length == 0) {
+            appointment.definition.options.pop();
+            cleanOptions(appointment);
+        }
+    };
+
     // async service calls
 
     const fetchCurrentUserAsync = (parent, token) => {
@@ -474,14 +482,20 @@ var makeadate = (() => {
                 securityKey,
                 (appointment) => {
                     appointment.securityKey = securityKey;
+                    if (utils.is_debug()) {
+                        utils.debug("Appointment retrieved.");
+                        utils.debug(appointment);
+                    }
                     init(appointment);
                     const parent = document.getElementById("content-id");
                     if (appointment.definition.participants.length == 0) {
                         controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_PARTICIPANTS_1", appointment.definition.description));
+                        renderCopyright(parent);
                         return;
                     }
                     if (!appointment.definition.options.some(opt => opt.days.length > 0)) {
                         controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_OPTIONS_1", appointment.definition.description));
+                        renderCopyright(parent);
                         return;
                     }
                     if (!currentOptionIdx || currentOptionIdx >= appointment.definition.options.length) {
@@ -512,6 +526,10 @@ var makeadate = (() => {
         const li = controls.create(parent, "ul");
         getAppointmentDetailsAsync(
             (all) => {
+                if (utils.is_debug()) {
+                    utils.debug("Appointments retrieved.");
+                    utils.debug(all);
+                }
                 all.sort((a, b) => a.definition.description.localeCompare(b.definition.description));
                 all.forEach(a => {
                     const ul = controls.create(li, "li");
@@ -519,6 +537,7 @@ var makeadate = (() => {
                     controls.createButton(ul, _T("BUTTON_EDIT"), () => onEditAppointment(a.uuid));
                     controls.createButton(ul, _T("BUTTON_VOTE"), () => onVoteAppointment(a));
                 });
+                renderCopyright(parent);
             },
             handleError);
     };
@@ -567,7 +586,7 @@ var makeadate = (() => {
         // edit options
         const date = new Date(option.year, option.month - 1, 1);
         const datestr = utils.format_date(date, { year: "numeric", month: "long" });
-        const optionsP = controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_OPTIONS"));
+        const optionsP = controls.create(parent, "p", undefined, utils.is_mobile() ? "" : _T("INFO_APPOINTMENT_OPTIONS"));
         const prevButton = controls.createButton(optionsP, "<", () => onDatePrevious(appointment));
         prevButton.id = "prev-button-id";
         controls.hide(prevButton);
@@ -586,6 +605,7 @@ var makeadate = (() => {
         }
         controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteApppointment(appointment));
         controls.createButton(parent, _T("BUTTON_BACK"), () => renderCancelEditApppointment(appointment));
+        renderCopyright(parent);
     };
 
     const renderDeleteApppointment = (appointment) => {
@@ -596,6 +616,7 @@ var makeadate = (() => {
         controls.create(pConfirm, "span", "confirmation", _T("INFO_REALLY_DELETE_APPOINTMENT_1", appointment.definition.description));
         controls.createButton(pConfirm, _T("BUTTON_YES"), () => onDeleteAppointment(appointment));
         controls.createButton(pConfirm, _T("BUTTON_NO"), () => renderEditAppointment(appointment));
+        renderCopyright(parent);
     };
 
     const renderCancelEditApppointment = (appointment) => {
@@ -607,6 +628,7 @@ var makeadate = (() => {
             controls.create(pConfirm, "span", "confirmation", _T("INFO_REALLY_CANCEL_EDIT_APPOINTMENT_1", appointment.definition.description));
             controls.createButton(pConfirm, _T("BUTTON_YES"), () => renderManageAppointments());
             controls.createButton(pConfirm, _T("BUTTON_NO"), () => renderEditAppointment(appointment));
+            renderCopyright(parent);
             return;
         }
         renderManageAppointments();
@@ -618,6 +640,7 @@ var makeadate = (() => {
         controls.create(parent, "h2", undefined, _T("HEADER_MAKEADATE"));
         controls.create(parent, "p", undefined, _T("INFO_THANK_YOU"));
         controls.create(parent, "p", undefined, _T("INFO_LOGGED_OUT"));
+        renderCopyright(parent);
     };
 
     const renderSelectName = (appointment) => {
@@ -630,9 +653,17 @@ var makeadate = (() => {
             const para = controls.create(parent, "p");
             controls.createButton(para, p.username, () => onChooseNameButton(p.username));
         });
+        renderCopyright(parent);
     };
 
     const renderVoteAppointment = (appointment) => {
+        // initially render first option with selectable days
+        if (!voteRendered) {
+            voteRendered = true;
+            while (currentOptionIdx < appointment.definition.options.length - 1 && appointment.definition.options[currentOptionIdx].days.length == 0) {
+                currentOptionIdx += 1;
+            }
+        }
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.create(parent, "h2", undefined, _T("INFO_HELLO_1", myName));
@@ -667,6 +698,7 @@ var makeadate = (() => {
             controls.createButton(divFooter, _T("BUTTON_VIEW_LIST"), () => onListViewButton());
         }
         controls.createButton(divFooter, _T("BUTTON_LOGOUT"), () => onLogoutButton());
+        renderCopyright(parent);
     };
 
     const renderListView = (appointment) => {
@@ -716,6 +748,7 @@ var makeadate = (() => {
     };
 
     const renderHeader = (parent) => {
+        document.title = _T("HEADER_MAKEADATE");
         helpDiv = controls.createDiv(document.body);
         const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_MAKEADATE")}`);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
@@ -731,7 +764,6 @@ var makeadate = (() => {
         controls.create(div, "span", "copyright", `${_T("HEADER_MAKEADATE")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
-        controls.createDiv(parent, "gap");
     };
 
     const renderPageAsync = async (parent, manage) => {
@@ -741,7 +773,6 @@ var makeadate = (() => {
         const contentDiv = controls.createDiv(parent, "content");
         contentDiv.id = "content-id";
         render();
-        renderCopyright(parent);
     };
 
     const renderEncryptKeyAsync = async () => {
@@ -896,13 +927,6 @@ var makeadate = (() => {
                 renderManageAppointments();
             },
             handleError);
-    };
-
-    const cleanOptions = (appointment) => {
-        if (appointment.definition.options.length > 1 && appointment.definition.options[appointment.definition.options.length - 1].days.length == 0) {
-            appointment.definition.options.pop();
-            cleanOptions(appointment);
-        }        
     };
 
     const onEditAppointment = (uuid) => {
@@ -1095,7 +1119,7 @@ var makeadate = (() => {
 
     const buildAppointmentUrl = (appointment) => {
         const requestId = buildAppointmentIdRequestParam(appointment);
-        const port = location.port == "443" ? "" : `:${location.port}`;
+        const port = location.port.length > 0 ? `:${location.port}` : '';
         return `${location.protocol}//${location.hostname}${port}/makeadate?id=${requestId}`;
     };
 
