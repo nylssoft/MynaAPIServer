@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.9.1";
+    let version = "0.9.2";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -245,6 +245,10 @@ var makeadate = (() => {
             utils.debug(bestVotes);
         }
         return bestVotes;
+    };
+
+    const isEditAppointmentAllowed = (appointment) => {
+        return !appointment.votes.some(v => v.accepted.some(opt => opt.days.length > 0));
     };
 
     // async service calls
@@ -512,7 +516,7 @@ var makeadate = (() => {
                 all.forEach(a => {
                     const ul = controls.create(li, "li");
                     controls.create(ul, "p", undefined, `${a.definition.description}\u00a0\u00a0\u00a0`);
-                    controls.createButton(ul, _T("BUTTON_EDIT"), () => onEditAppointment(a));
+                    controls.createButton(ul, _T("BUTTON_EDIT"), () => onEditAppointment(a.uuid));
                     controls.createButton(ul, _T("BUTTON_VOTE"), () => onVoteAppointment(a));
                 });
             },
@@ -520,7 +524,7 @@ var makeadate = (() => {
     };
 
     const renderEditAppointment = (appointment) => {
-        const canChange = !appointment.votes.some(v => v.accepted.length > 0);
+        const canChange = isEditAppointmentAllowed(appointment);
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.createDiv(parent, "gap");
@@ -901,9 +905,16 @@ var makeadate = (() => {
         }        
     };
 
-    const onEditAppointment = (appointment) => {
-        drawAppointment = appointment;
-        renderEditAppointment(appointment);
+    const onEditAppointment = (uuid) => {
+        getAppointmentDetailsAsync(
+            (all) => {
+                const appointment = all.find(a => a.uuid == uuid);
+                if (appointment) {
+                    drawAppointment = appointment;
+                    renderEditAppointment(appointment);                    
+                }
+            },
+            handleError);
     };
 
     const onVoteAppointment = (appointment) => {        
@@ -983,8 +994,7 @@ var makeadate = (() => {
     const onCanvasMouseDown = (evt, appointment) => {
         const x = Math.floor(evt.offsetX / dayWidth);
         const y = Math.floor((evt.offsetY - headerHeight) / dayHeight);
-        const canChange = !appointment.votes.some(v => v.accepted.length > 0);
-        if (editAppointment && !canChange) {
+        if (editAppointment && !isEditAppointmentAllowed(appointment)) {
             return;
         }
         if (x >= 0 && x < 7 && y >= 0 && y < 6) {

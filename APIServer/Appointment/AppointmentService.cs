@@ -127,7 +127,7 @@ namespace APIServer.Appointment
                 .Include(a => a.Votes)
                 .SingleOrDefault() ?? throw new InvalidParameterException();
             var appointment = ConvertDbAppointment(dbAppointment, securityKey);
-            if (appointment.Votes.All(v => !v.Accepted.Any()))
+            if (appointment.Votes.All(v => v.Accepted.All(opt => !opt.Days.Any())))
             {
                 var currentContent = JsonSerializer.Serialize(appointment.Definition);
                 var newContent = JsonSerializer.Serialize(definition);
