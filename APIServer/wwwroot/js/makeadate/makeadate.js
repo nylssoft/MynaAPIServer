@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.9.5";
+    let version = "0.9.6";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -658,13 +658,23 @@ var makeadate = (() => {
         renderCopyright(parent);
     };
 
+    const getSelectableOptionIdx = (appointment, optionIdx, direction) => {
+        const options = appointment.definition.options;
+        let idx = optionIdx;
+        while (idx >= 0 && idx < options.length) {
+            if (options[idx].days.length > 0) {
+                return idx;
+            }
+            idx += direction;
+        }
+        return undefined;
+    };
+
     const renderVoteAppointment = (appointment) => {
         // initially render first option with selectable days
         if (!voteRendered) {
             voteRendered = true;
-            while (currentOptionIdx < appointment.definition.options.length - 1 && appointment.definition.options[currentOptionIdx].days.length == 0) {
-                currentOptionIdx += 1;
-            }
+            currentOptionIdx = getSelectableOptionIdx(appointment, currentOptionIdx, 1);
         }
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
@@ -676,14 +686,16 @@ var makeadate = (() => {
         const optionsP = controls.create(parent, "p");
         const prevButton = controls.createButton(optionsP, "<", () => onBackButton(appointment));
         prevButton.id = "prev-button-id";
-        if (currentOptionIdx == 0) {
+        const prevIdx = getSelectableOptionIdx(appointment, currentOptionIdx - 1, -1);
+        if (prevIdx == undefined) {
             controls.hide(prevButton);
         }
         const dateSpan = controls.create(optionsP, "span", "date", datestr);
         dateSpan.id = "date-span-id";
         const nextButton = controls.createButton(optionsP, ">", () => onContinueButton(appointment));
         nextButton.id = "next-button-id";
-        if (currentOptionIdx == appointment.definition.options.length - 1) {
+        const nextIdx = getSelectableOptionIdx(appointment, currentOptionIdx + 1, 1);
+        if (nextIdx == undefined) {
             controls.hide(nextButton);
         }
         const calendarDiv = controls.createDiv(parent);
@@ -993,14 +1005,20 @@ var makeadate = (() => {
         render();
     };
 
-    const onBackButton = () => {
-        currentOptionIdx -= 1;
-        render();
+    const onBackButton = (appointment) => {
+        const prevIdx = getSelectableOptionIdx(appointment, currentOptionIdx - 1, -1);
+        if (prevIdx != undefined) {
+            currentOptionIdx = prevIdx;
+            render();
+        }
     };
 
-    const onContinueButton = () => {
-        currentOptionIdx += 1;
-        render();
+    const onContinueButton = (appointment) => {
+        const nextIdx = getSelectableOptionIdx(appointment, currentOptionIdx + 1, 1);
+        if (nextIdx != undefined) {
+            currentOptionIdx = nextIdx;
+            render();
+        }
     };
 
     const onLogoutButton = () => {
