@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.9.7";
+    let version = "0.9.8";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -484,6 +484,17 @@ var makeadate = (() => {
         controls.createDiv(parent, "error").textContent = _T(errMsg);
     };
 
+    const renderInvalidAppointment = (errMsg) => {
+        let parent = document.getElementById("content-id");
+        if (!parent) {
+            parent = document.body;
+        }
+        controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_INVALID"));
+        if (errMsg) {
+            renderError(parent);
+        }
+    };
+
     const render = () => {
         disableTimer();
         const params = new URLSearchParams(window.location.search);
@@ -492,10 +503,16 @@ var makeadate = (() => {
             renderManageAppointments();
             return;
         }
-        const accessToken = atob(idparam);
+        let accessToken = '';
+        try {
+            accessToken = atob(idparam);
+        }
+        catch (err) {
+            console.error(err);
+        }
         const arr = accessToken.split("#");
-        console.log(arr);
         if (arr.length != 3) {
+            renderInvalidAppointment();
             return;
         }
         const uuid = arr[1];
@@ -529,7 +546,7 @@ var makeadate = (() => {
                 }
                 renderVoteAppointment(appointment);
             },
-            handleError
+            (errMsg) => renderInvalidAppointment(errMsg)
         );
     };
 
