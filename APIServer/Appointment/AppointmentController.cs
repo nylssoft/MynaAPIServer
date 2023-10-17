@@ -36,22 +36,14 @@ namespace APIServer.Appointment
             PwdManService = pwdManService;
         }
 
+        // end points for authenticated users (appointment owners)
+
         [HttpGet]
         [Route("api/appointment")]
         public IActionResult GetApppointments()
         {
             return new JsonResult(AppointmentService.GetAppointments(PwdManService, GetToken()));
         }
-
-        [HttpGet]
-        [Route("api/appointment/{uuid}")]
-        public IActionResult GetAppointment(string uuid)
-        {
-            if (uuid.IsNullOrEmpty()) throw new MissingParameterException();
-            if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
-            return new JsonResult(AppointmentService.GetAppointment(PwdManService, uuid, GetSecurityKey()));
-        }
-
 
         [HttpDelete]
         [Route("api/appointment/{uuid}")]
@@ -68,7 +60,7 @@ namespace APIServer.Appointment
         {
             if (uuid.IsNullOrEmpty() || definition == null) throw new MissingParameterException();
             if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
-            return new JsonResult(AppointmentService.UpdateAppointment(PwdManService, GetToken(), uuid, definition, GetSecurityKey()));
+            return new JsonResult(AppointmentService.UpdateAppointment(PwdManService, GetToken(), uuid, definition, GetSecurityKey(uuid)));
         }
 
         [HttpPost]
@@ -77,23 +69,16 @@ namespace APIServer.Appointment
         {
             if (uuid.IsNullOrEmpty() || appointment == null) throw new MissingParameterException();
             if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
-            return new JsonResult(AppointmentService.AddAppointment(PwdManService, GetToken(), uuid, appointment, GetSecurityKey()));
-        }
-
-        [HttpPut]
-        [Route("api/appointment/{uuid}/vote")]
-        public IActionResult UpdateVote(string uuid, [FromBody] AppointmentVoteModel vote)
-        {
-            if (uuid.IsNullOrEmpty() || vote == null || vote.UserUuid.IsNullOrEmpty()) throw new MissingParameterException();
-            if (vote.UserUuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
-            return new JsonResult(AppointmentService.UpdateVote(PwdManService, uuid, vote, GetSecurityKey()));
+            return new JsonResult(AppointmentService.AddAppointment(PwdManService, GetToken(), uuid, appointment, GetSecurityKey(uuid)));
         }
 
         [HttpGet]
-        [Route("api/appointment/randomkey")]
-        public IActionResult GenerateRandomKey()
+        [Route("api/appointment/{uuid}/accesstoken")]
+        public IActionResult GenerateAccessToken(string uuid)
         {
-            return new JsonResult(AppointmentService.GenerateRandomKey(PwdManService, GetToken()));
+            if (uuid.IsNullOrEmpty()) throw new MissingParameterException();
+            if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
+            return new JsonResult(AppointmentService.GenerateAccessToken(PwdManService, GetToken(), uuid));
         }
 
         [HttpPost]
@@ -107,10 +92,11 @@ namespace APIServer.Appointment
             {
                 if (request.Uuid.IsNullOrEmpty()) throw new MissingParameterException();
                 if (request.Uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
-                if (request.SecurityKey.IsNullOrEmpty()) throw new MissingParameterException();
+                if (request.AccessToken.IsNullOrEmpty()) throw new MissingParameterException();
                 if (request.Method == "GET")
                 {
-                    ret.Add(AppointmentService.GetAppointment(PwdManService, request.Uuid, request.SecurityKey));
+                    var securityKey = AppointmentService.GetSecurityKey(request.Uuid, request.AccessToken);
+                    ret.Add(AppointmentService.GetAppointment(PwdManService, request.Uuid, securityKey));
                 }
                 else if (request.Method == "DELETE")
                 {
@@ -124,10 +110,42 @@ namespace APIServer.Appointment
             return new JsonResult(ret);
         }
 
+        // endpoint for users with appointment access token
+
+        [HttpGet]
+        [Route("api/appointment/{uuid}")]
+        public IActionResult GetAppointment(string uuid)
+        {
+            if (uuid.IsNullOrEmpty()) throw new MissingParameterException();
+            if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
+            return new JsonResult(AppointmentService.GetAppointment(PwdManService, uuid, GetSecurityKey(uuid)));
+        }
+
+        [HttpPut]
+        [Route("api/appointment/{uuid}/vote")]
+        public IActionResult UpdateVote(string uuid, [FromBody] AppointmentVoteModel vote)
+        {
+            if (uuid.IsNullOrEmpty() || vote == null || vote.UserUuid.IsNullOrEmpty()) throw new MissingParameterException();
+            if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
+            if (vote.UserUuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
+            return new JsonResult(AppointmentService.UpdateVote(PwdManService, uuid, vote, GetSecurityKey(uuid)));
+        }
+
+        [HttpGet]
+        [Route("api/appointment/{uuid}/lastmodified")]
+        public IActionResult GetLastModified(string uuid)
+        {
+            if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
+            // verify token
+            GetSecurityKey(uuid);
+            return new JsonResult(AppointmentService.GetLastModified(PwdManService, uuid));
+        }
+
         // --- private
 
         private string GetToken() => HttpContext.Request.Headers["token"];
 
-        private string GetSecurityKey() => HttpContext.Request.Headers["securitykey"];
+        private string GetSecurityKey(string uuid) => AppointmentService.GetSecurityKey(uuid, HttpContext.Request.Headers["accesstoken"]);
+
     }
 }

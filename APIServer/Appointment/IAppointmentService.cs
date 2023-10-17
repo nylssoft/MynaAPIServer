@@ -32,10 +32,14 @@ namespace APIServer.Appointment
 
         AppointmentModel GetAppointment(IPwdManService pwdManService, string uuid, string securityKey);
 
+        DateTime? GetLastModified(IPwdManService pwdManService, string uuid);
+
         DateTime? UpdateAppointment(IPwdManService pwdManService, string authenticationToken, string uuid, AppointmentDefinitionModel definition, string securityKey);
 
         DateTime? UpdateVote(IPwdManService pwdManService, string uuid, AppointmentVoteModel vote, string securityKey);
 
-        string GenerateRandomKey(IPwdManService pwdManService, string authenticationToken);
+        string GenerateAccessToken(IPwdManService pwdManService, string authenticationToken, string uuid);
+
+        public string GetSecurityKey(string uuid, string accessToken);
     }
 }

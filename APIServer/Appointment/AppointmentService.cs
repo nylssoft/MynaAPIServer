@@ -19,6 +19,7 @@ using APIServer.Appointment.Model;
 using APIServer.Database;
 using APIServer.PwdMan;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -34,8 +35,11 @@ namespace APIServer.Appointment
     {
         private readonly ILogger logger;
 
-        public AppointmentService(ILogger<AppointmentService> logger)
+        private IConfiguration Configuration { get; }
+
+        public AppointmentService(IConfiguration configuration, ILogger<AppointmentService> logger)
         {
+            Configuration = configuration;
             this.logger = logger;
         }
 
@@ -97,6 +101,17 @@ namespace APIServer.Appointment
                 return ConvertDbAppointment(appointment, securityKey);
             }
             return null;
+        }
+
+        public DateTime? GetLastModified(IPwdManService pwdManService, string uuid)
+        {
+            logger.LogDebug("Get last modified...");
+            var dbContext = pwdManService.GetDbContext();
+            var modifiedUtc = dbContext.DbAppointments
+                .Where(a => a.Uuid == uuid)
+                .Select(a => a.ModifiedUtc)
+                .SingleOrDefault();
+            return DbMynaContext.GetUtcDateTime(modifiedUtc);
         }
 
         public List<AppointmentModel> GetAppointments(IPwdManService pwdManService, string authenticationToken)
@@ -170,11 +185,45 @@ namespace APIServer.Appointment
             return null;
         }
 
-        public string GenerateRandomKey(IPwdManService pwdManService, string authenticationToken)
+        public string GenerateAccessToken(IPwdManService pwdManService, string authenticationToken, string uuid)
         {
-            logger.LogDebug("Generate random key...");
+            logger.LogDebug("Generate access token...");
             pwdManService.GetUserFromToken(authenticationToken);
-            return Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            string securityKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            string hash = Hash(uuid, securityKey);
+            return $"{hash}#{uuid}#{securityKey}";
+        }
+
+        public string GetSecurityKey(string uuid, string accessToken)
+        {
+            try
+            {
+                var arr = accessToken?.Split('#');
+                if (arr?.Length == 3 && arr[0] == Hash(arr[1], arr[2]) && arr[1] == uuid)
+                {
+                    return arr[2];
+                }
+            }
+            catch
+            {
+                // ignored
+            }
+            throw new InvalidTokenException();
+        }
+
+        private string Hash(string uuid, string securityKey)
+        {
+            using var hmac = new HMACSHA256(Encoding.ASCII.GetBytes(GetOptions().SignKey));
+            byte[] hashBytes = hmac.ComputeHash(Combine(Encoding.ASCII.GetBytes(uuid), Convert.FromBase64String(securityKey)));
+            return Convert.ToBase64String(hashBytes);
+        }
+
+        private static byte[] Combine(byte[] first, byte[] second)
+        {
+            byte[] ret = new byte[first.Length + second.Length];
+            Buffer.BlockCopy(first, 0, ret, 0, first.Length);
+            Buffer.BlockCopy(second, 0, ret, first.Length, second.Length);
+            return ret;
         }
 
         private static DbAppointment GetDbAppointmentByUuid(DbMynaContext dbContext, string uuid)
@@ -384,6 +433,12 @@ namespace APIServer.Appointment
                 cipher.Decrypt(iv, chipherText, tag, plainText);
             }
             return plainText;
+        }
+
+        private AppointmentOptions GetOptions()
+        {
+            var opt = Configuration.GetSection("Appointment").Get<AppointmentOptions>();
+            return opt ?? new AppointmentOptions();
         }
     }
 }

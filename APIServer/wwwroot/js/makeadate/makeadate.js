@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.9.6";
+    let version = "0.9.7";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -22,7 +22,8 @@ var makeadate = (() => {
     let editAppointment = false;
     let drawAppointment;
     let voteRendered;
-    
+    let timerEnabled = false;
+
     let rowColorEven = "#FFFFFF";
     let rowColorOdd = "#EEEEEE";
     let dayNameColor = "#FFFFFF";
@@ -190,9 +191,12 @@ var makeadate = (() => {
     };
 
     const handleError = (errMsg) => {
-        const parent = document.getElementById("content-id");
-        controls.removeAllChildren(parent);
-        renderError(parent, errMsg);
+        console.error(errMsg);
+        let parent = document.getElementById("content-id");
+        if (parent) {
+            controls.removeAllChildren(parent);
+            renderError(parent, errMsg);
+        }
     };
 
     const getUserUuid = (appointment, name) => {
@@ -288,28 +292,31 @@ var makeadate = (() => {
             "Participants": [],
             "Options": [{ "Year": year, "Month": month, "Days": [] }]
         };
-        getRandomKeyAsync(token, (securityKey) => {
-            if (utils.is_debug()) utils.debug(`Security key generated: ${securityKey}.`);
-            encodeTextAsync(
-                securityKey,
-                (ownerKey) => {
-                    if (utils.is_debug()) utils.debug(`Encoded security key (owner key): ${ownerKey}.`);
-                    const appointment = { "OwnerKey": ownerKey, "Definition": definition };
-                    const headers = { "Accept": "application/json", "Content-Type": "application/json", "token": token, "securitykey": securityKey };
-                    if (utils.is_debug()) utils.debug("Create new appointment...");
-                    utils.fetch_api_call(
-                        `api/appointment/${uuid}`,
-                        { method: "POST", headers: headers, body: JSON.stringify(appointment) },
-                        resolve,
-                        reject);
-                },
-                reject);
-        },
+        generateAccessTokenAsync(
+            token,
+            uuid,
+            (accessToken) => {
+                if (utils.is_debug()) utils.debug(`Access token generated: ${accessToken}.`);
+                encodeTextAsync(
+                    accessToken,
+                    (ownerKey) => {
+                        if (utils.is_debug()) utils.debug(`Encoded access token (owner key): ${ownerKey}.`);
+                        const appointment = { "OwnerKey": ownerKey, "Definition": definition };
+                        const headers = { "Accept": "application/json", "Content-Type": "application/json", "token": token, "accesstoken": accessToken };
+                        if (utils.is_debug()) utils.debug("Create new appointment...");
+                        utils.fetch_api_call(
+                            `api/appointment/${uuid}`,
+                            { method: "POST", headers: headers, body: JSON.stringify(appointment) },
+                            resolve,
+                            reject);
+                    },
+                    reject);
+            },
             reject);
     };
 
     const updateAppointmentAsync = (token, appointment, resolve, reject) => {
-        const headers = { "Accept": "application/json", "Content-Type": "application/json", "token": token, "securitykey": appointment.securityKey };
+        const headers = { "Accept": "application/json", "Content-Type": "application/json", "token": token, "accesstoken": appointment.accessToken };
         if (utils.is_debug()) utils.debug("Update appointment...");
         const definition = {
             "Description": appointment.definition.description,
@@ -340,28 +347,11 @@ var makeadate = (() => {
                 }
                 const batch = [];
                 uuidKeys.forEach(uuidKey => {
-                    batch.push({ "Method": "GET", "Uuid": uuidKey.uuid, "SecurityKey": uuidKey.securityKey });
+                    batch.push({ "Method": "GET", "Uuid": uuidKey.uuid, "accessToken": uuidKey.accessToken });
                 });
                 batchGetAppointmentsAsync(token, batch, uuidKeys, resolve, reject);
             },
             reject);
-    };
-
-    const batchGetAppointmentsAsync = (token, batch, uuidKeys, resolve, reject) => {
-        const headers = { "Accept": "application/json", "Content-Type": "application/json", "token": token};
-        if (utils.is_debug()) utils.debug("Batch fetch appointment details...");
-        utils.fetch_api_call(
-            `api/appointment/batch`,
-            { method: "POST", headers: headers, body: JSON.stringify(batch) },
-            (appointments) => {
-                appointments.forEach(appointment => {
-                    const uuidKey = uuidKeys.find(uuidKey => uuidKey.uuid == appointment.uuid);
-                    appointment.securityKey = uuidKey.securityKey;
-                });
-                resolve(appointments);
-            },
-            reject);
-
     };
 
     const getAppointmentsAsync = (token, resolve, reject) => {
@@ -385,14 +375,31 @@ var makeadate = (() => {
             const app = rest.pop();
             decodeTextAsync(
                 app.ownerKey,
-                (securityKey) => {
-                    app.securityKey = securityKey;
+                (accessToken) => {
+                    app.accessToken = accessToken;
                     decodeOwnerKeyAsync(uuidKeys, rest, resolve, reject);
                 },
                 reject);
             return;
         }
         resolve(uuidKeys);
+    };
+
+    const batchGetAppointmentsAsync = (token, batch, uuidKeys, resolve, reject) => {
+        const headers = { "Accept": "application/json", "Content-Type": "application/json", "token": token };
+        if (utils.is_debug()) utils.debug("Batch fetch appointment details...");
+        utils.fetch_api_call(
+            `api/appointment/batch`,
+            { method: "POST", headers: headers, body: JSON.stringify(batch) },
+            (appointments) => {
+                appointments.forEach(appointment => {
+                    const uuidKey = uuidKeys.find(uuidKey => uuidKey.uuid == appointment.uuid);
+                    appointment.accessToken = uuidKey.accessToken;
+                });
+                resolve(appointments);
+            },
+            reject);
+
     };
 
     const deleteAppointmentAsync = (token, uuid, resolve, reject) => {
@@ -405,26 +412,26 @@ var makeadate = (() => {
             reject);
     };
 
-    const getRandomKeyAsync = (token, resolve, reject) => {
-        if (utils.is_debug()) utils.debug("Fetch random key...");
+    const generateAccessTokenAsync = (token, uuid, resolve, reject) => {
+        if (utils.is_debug()) utils.debug("Generate access token...");
         utils.fetch_api_call(
-            "api/appointment/randomkey",
+            `api/appointment/${uuid}/accesstoken`,
             { headers: { "token": token } },
             resolve,
             reject);
     };
 
-    const getAppointmentAsync = (uuid, securityKey, resolve, reject) => {
+    const getAppointmentAsync = (uuid, accessToken, resolve, reject) => {
         if (utils.is_debug()) utils.debug("Fetch appointment...");
         utils.fetch_api_call(
             `api/appointment/${uuid}`,
-            { headers: { "securitykey": securityKey } },
+            { headers: { "accesstoken": accessToken } },
             resolve,
             reject);
     };
 
     const updateVoteAsync = (appointment, v, resolve, reject) => {
-        const headers = { "Accept": "application/json", "Content-Type": "application/json", "securitykey": appointment.securityKey };
+        const headers = { "Accept": "application/json", "Content-Type": "application/json", "accesstoken": appointment.accessToken };
         if (utils.is_debug()) utils.debug("Update vote...");
         const vote = { "UserUUid": v.userUuid, "Accepted": [] };
         v.accepted.forEach(opt => {
@@ -437,11 +444,21 @@ var makeadate = (() => {
             reject);
     };
 
+    const getLastModifiedAsync = (uuid, accessToken, resolve, reject) => {
+        if (utils.is_debug()) utils.debug("Get last modified...");
+        utils.fetch_api_call(
+            `api/appointment/${uuid}/lastmodified`,
+            { headers: { "accesstoken": accessToken } },
+            resolve,
+            reject);
+    };
+
     // rendering
 
     const renderInit = () => {
         const parent = document.body;
         controls.removeAllChildren(parent);
+        document.title = _T("HEADER_MAKEADATE");
         const params = new URLSearchParams(window.location.search);
         if (params.has("debug")) {
             utils.enable_debug(true);
@@ -468,50 +485,52 @@ var makeadate = (() => {
     };
 
     const render = () => {
+        disableTimer();
         const params = new URLSearchParams(window.location.search);
         const idparam = params.get("id");
         if (!idparam) {
             renderManageAppointments();
             return;
         }
-        const idstr = atob(idparam);
-        const arr = idstr.split("#");
-        if (arr.length == 2) {
-            const uuid = arr[0];
-            const securityKey = arr[1];
-            getAppointmentAsync(
-                uuid,
-                securityKey,
-                (appointment) => {
-                    appointment.securityKey = securityKey;
-                    if (utils.is_debug()) {
-                        utils.debug("Appointment retrieved.");
-                        utils.debug(appointment);
-                    }
-                    init(appointment);
-                    const parent = document.getElementById("content-id");
-                    if (appointment.definition.participants.length == 0) {
-                        controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_PARTICIPANTS_1", appointment.definition.description));
-                        renderCopyright(parent);
-                        return;
-                    }
-                    if (!appointment.definition.options.some(opt => opt.days.length > 0)) {
-                        controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_OPTIONS_1", appointment.definition.description));
-                        renderCopyright(parent);
-                        return;
-                    }
-                    if (!currentOptionIdx || currentOptionIdx >= appointment.definition.options.length) {
-                        currentOptionIdx = 0;
-                    }
-                    if (!myName) {
-                        renderSelectName(appointment);
-                        return;
-                    }
-                    renderVoteAppointment(appointment);
-                },
-                handleError
-            );
+        const accessToken = atob(idparam);
+        const arr = accessToken.split("#");
+        console.log(arr);
+        if (arr.length != 3) {
+            return;
         }
+        const uuid = arr[1];
+        getAppointmentAsync(
+            uuid,
+            accessToken,
+            (appointment) => {
+                appointment.accessToken = accessToken;
+                if (utils.is_debug()) {
+                    utils.debug("Appointment retrieved.");
+                    utils.debug(appointment);
+                }
+                init(appointment);
+                const parent = document.getElementById("content-id");
+                if (appointment.definition.participants.length == 0) {
+                    controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_PARTICIPANTS_1", appointment.definition.description));
+                    renderCopyright(parent);
+                    return;
+                }
+                if (!appointment.definition.options.some(opt => opt.days.length > 0)) {
+                    controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_OPTIONS_1", appointment.definition.description));
+                    renderCopyright(parent);
+                    return;
+                }
+                if (!currentOptionIdx || currentOptionIdx >= appointment.definition.options.length) {
+                    currentOptionIdx = 0;
+                }
+                if (!myName) {
+                    renderSelectName(appointment);
+                    return;
+                }
+                renderVoteAppointment(appointment);
+            },
+            handleError
+        );
     };
 
     const renderManageAppointments = () => {
@@ -713,6 +732,9 @@ var makeadate = (() => {
         }
         controls.createButton(divFooter, _T("BUTTON_LOGOUT"), () => onLogoutButton());
         renderCopyright(parent);
+        if (!listView) {
+            enableTimer();
+        }
     };
 
     const renderListView = (appointment) => {
@@ -762,7 +784,6 @@ var makeadate = (() => {
     };
 
     const renderHeader = (parent) => {
-        document.title = _T("HEADER_MAKEADATE");
         helpDiv = controls.createDiv(document.body);
         const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_MAKEADATE")}`);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
@@ -1072,12 +1093,14 @@ var makeadate = (() => {
                         else {
                             acceptedOption.days.push(day);
                         }
+                        disableTimer();
                         updateVoteAsync(
                             appointment,
                             vote,
                             (modifiedUtc) => {
                                 if (utils.is_debug()) utils.debug(`Vote updated. Last modified: ${modifiedUtc}.`);
                                 dirty = true;
+                                enableTimer();
                             },
                             handleError
                         );
@@ -1133,7 +1156,7 @@ var makeadate = (() => {
     };
 
     const buildAppointmentIdRequestParam = (appointment) => {
-        const idparam = btoa(`${appointment.uuid}#${appointment.securityKey}`);
+        const idparam = btoa(appointment.accessToken);
         return encodeURI(idparam);
     };
 
@@ -1143,11 +1166,50 @@ var makeadate = (() => {
         return `${location.protocol}//${location.hostname}${port}/makeadate?id=${requestId}`;
     };
 
+    // timer
+
+    const onTimer = () => {
+        if (!timerEnabled || !voteRendered || !drawAppointment || editAppointment || listView) {
+            return;
+        }
+        disableTimer();
+        const uuid = drawAppointment.uuid;
+        const modifiedUtc = drawAppointment.modifiedUtc;
+        getLastModifiedAsync(
+            uuid,
+            (dt) => {
+                if (utils.is_debug()) utils.debug(`Last modified: ${dt}`);
+                if (dt > modifiedUtc) {
+                    if (utils.is_debug()) utils.debug("Refresh page.");
+                    render();
+                }
+                else {
+                    enableTimer();
+                }
+            },
+            handleError);
+    };
+
+    const enableTimer = () => {
+        if (!timerEnabled) {
+            if (utils.is_debug()) utils.debug("TIMER ENABLED.");
+            timerEnabled = true;
+        }
+    };
+
+    const disableTimer = () => {
+        if (timerEnabled) {
+            if (utils.is_debug()) utils.debug("TIMER DISABLED.");
+            timerEnabled = false;
+        }
+    };
+
     // public API
 
     return {
         renderInit: renderInit,
         onResize: onResize,
+        onTimer: onTimer
     };
 })();
 
@@ -1155,6 +1217,7 @@ var makeadate = (() => {
 
 window.onload = () => {
     window.addEventListener("resize", makeadate.onResize);
+    window.setInterval(makeadate.onTimer, 10000);
     utils.auth_lltoken(() => utils.set_locale(() => makeadate.renderInit()));
 };
 

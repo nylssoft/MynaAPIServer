@@ -15,14 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-namespace APIServer.Appointment.Model
+namespace APIServer.Appointment
 {
-    public class AppointmentGetRequest
+    public class AppointmentOptions
     {
-        public string Method { get; set; }
-
-        public string Uuid { get;set; }
-
-        public string AccessToken { get; set; }
+        public string SignKey { get; set; }
     }
 }
