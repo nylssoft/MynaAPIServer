@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.0";
+    let version = "1.0.1";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -563,6 +563,7 @@ var makeadate = (() => {
     };
 
     const renderManageAppointments = () => {
+        changed = false;
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.createDiv(parent, "gap");
@@ -580,7 +581,11 @@ var makeadate = (() => {
                     utils.debug("Appointments retrieved.");
                     utils.debug(all);
                 }
-                all.sort((a, b) => a.definition.description.localeCompare(b.definition.description));
+                all.sort((a, b) => {
+                    const d1 = new Date(a.modifiedUtc);
+                    const d2 = new Date(b.modifiedUtc);
+                    return d2 - d1;
+                });
                 all.forEach(a => {
                     const ul = controls.create(li, "li");
                     controls.create(ul, "p", undefined, `${a.definition.description}\u00a0\u00a0\u00a0`);
@@ -607,7 +612,7 @@ var makeadate = (() => {
         const descriptionInput = controls.createInputField(descriptionP, _T("TEXT_DESCRIPTION"), undefined, undefined, 50, 255);
         descriptionInput.id = "description-id";
         descriptionInput.value = appointment.definition.description;
-        descriptionInput.addEventListener("input", onChange);
+        descriptionInput.addEventListener("input", () => onChange(appointment));
         if (!canChange) {
             descriptionInput.setAttribute("readonly", "readonly");
         }
@@ -622,7 +627,7 @@ var makeadate = (() => {
         if (!canChange) {
             participantsInput.setAttribute("readonly", "readonly");
         }
-        participantsInput.addEventListener("input", onChange);
+        participantsInput.addEventListener("input", () => onChange(appointment));
         // show URL
         const urlP = controls.create(parent, "p");
         const urlLabel = controls.createLabel(urlP, undefined, _T("LABEL_URL"));
@@ -870,7 +875,10 @@ var makeadate = (() => {
 
     // callbacks
 
-    const onChange = () => {
+    const onChange = (appointment) => {
+        if (appointment) {
+            setAppointmentData(appointment);
+        }
         if (!changed) {
             const saveButton = document.getElementById("save-button-id");
             controls.show(saveButton, true);
@@ -962,10 +970,12 @@ var makeadate = (() => {
             handleError);
     };
 
-    const onUpdateAppointment = (appointment) => {
+    const setAppointmentData = (appointment) => {
         const descriptionInput = document.getElementById("description-id");
+        if (descriptionInput.value.trim().length > 0) {
+            appointment.definition.description = descriptionInput.value;
+        }
         const participantsInput = document.getElementById("participants-id");
-        appointment.definition.description = descriptionInput.value;
         appointment.definition.participants = [];
         const arr = participantsInput.value.replaceAll(",", " ").replaceAll(";", " ").split(" ");
         const nameSet = new Set();
@@ -981,6 +991,10 @@ var makeadate = (() => {
                 "userUuid": crypto.randomUUID()
             }));
         appointment.definition.participants.sort((p1, p2) => p1.username.localeCompare(p2.username));
+    };
+
+    const onUpdateAppointment = (appointment) => {
+        setAppointmentData(appointment);
         cleanOptions(appointment);
         const token = utils.get_authentication_token();
         updateAppointmentAsync(
@@ -1208,6 +1222,7 @@ var makeadate = (() => {
         const modifiedUtc = drawAppointment.modifiedUtc;
         getLastModifiedAsync(
             uuid,
+            drawAppointment.accessToken,
             (dt) => {
                 if (utils.is_debug()) utils.debug(`Last modified: ${dt}`);
                 if (dt > modifiedUtc) {

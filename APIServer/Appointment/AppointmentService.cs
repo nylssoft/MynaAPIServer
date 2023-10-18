@@ -208,7 +208,7 @@ namespace APIServer.Appointment
             {
                 // ignored
             }
-            throw new InvalidTokenException();
+            throw new InvalidParameterException();
         }
 
         private string Hash(string uuid, string securityKey)
