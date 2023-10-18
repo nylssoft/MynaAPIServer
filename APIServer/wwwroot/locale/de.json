@@ -233,6 +233,7 @@
   "INFO_ACTIVATE_TWO_FACTOR": "Aktiviere die Zwei-Faktor-Authentisierung, indem du den Sicherheitscode aus der App eingibst.",
   "INFO_ALL_LOGGED_IN_START_GAME": "Alle sind angemeldet! Starte das Spiel!",
   "INFO_ALL_PLAYER_PASS": "Alle Spieler haben gepasst.",
+  "INFO_APPOINTMENT_INVALID": "Die Terminplanung ist nicht mehr verfügbar für diesen Termin.",
   "INFO_APPOINTMENT_NO_OPTIONS_1": "Es gibt noch keine Auswahlmöglichkeiten für {0}.",
   "INFO_APPOINTMENT_NO_PARTICIPANTS_1": "Es gibt noch keine Teilnehmer für {0}.",
   "INFO_APPOINTMENT_OPTIONS": "Auswahlmöglichkeiten für ",

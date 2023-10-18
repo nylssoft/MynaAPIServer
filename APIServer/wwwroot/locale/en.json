@@ -233,6 +233,7 @@
   "INFO_ACTIVATE_TWO_FACTOR": "Activate the two factor authentication. Enter the security code.",
   "INFO_ALL_LOGGED_IN_START_GAME": "Everybody is logged in! Start the game!",
   "INFO_ALL_PLAYER_PASS": "All players have passed.",
+  "INFO_APPOINTMENT_INVALID": "Scheduling for this event is no longer available.",
   "INFO_APPOINTMENT_NO_OPTIONS_1": "No options are available yet for {0}.",
   "INFO_APPOINTMENT_NO_PARTICIPANTS_1": "No participants are available yet for {0}.",
   "INFO_APPOINTMENT_OPTIONS": "Options for ",
