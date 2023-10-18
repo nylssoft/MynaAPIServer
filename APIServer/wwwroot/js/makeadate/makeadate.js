@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "0.9.8";
+    let version = "1.0.0";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -192,11 +192,17 @@ var makeadate = (() => {
 
     const handleError = (errMsg) => {
         console.error(errMsg);
+        const parent = getContentElement();
+        controls.removeAllChildren(parent);
+        renderError(parent, errMsg);
+    };
+
+    const getContentElement = () => {
         let parent = document.getElementById("content-id");
-        if (parent) {
-            controls.removeAllChildren(parent);
-            renderError(parent, errMsg);
+        if (!parent) {
+            parent = document.body;
         }
+        return parent;
     };
 
     const getUserUuid = (appointment, name) => {
@@ -341,14 +347,13 @@ var makeadate = (() => {
         getAppointmentsAsync(
             token,
             (uuidKeys) => {
-                if (uuidKeys.length == 0) {
+                uuidKeys = uuidKeys.filter(uuidKey => uuidKey.accessToken && uuidKey.accessToken.length > 0);
+                const batch = [];
+                uuidKeys.forEach(uuidKey => batch.push({ "Method": "GET", "Uuid": uuidKey.uuid, "accessToken": uuidKey.accessToken }));
+                if (batch.length == 0) {
                     resolve([]);
                     return;
                 }
-                const batch = [];
-                uuidKeys.forEach(uuidKey => {
-                    batch.push({ "Method": "GET", "Uuid": uuidKey.uuid, "accessToken": uuidKey.accessToken });
-                });
                 batchGetAppointmentsAsync(token, batch, uuidKeys, resolve, reject);
             },
             reject);
@@ -379,7 +384,13 @@ var makeadate = (() => {
                     app.accessToken = accessToken;
                     decodeOwnerKeyAsync(uuidKeys, rest, resolve, reject);
                 },
-                reject);
+                (errMsg) => {
+                    console.error(errMsg);
+                    const parent = getContentElement();
+                    controls.create(parent, "p", undefined, _T("ERROR_WRONG_KEY_DECODE_APPOINTMENTS"));
+                    controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteApppointment(app));
+                    decodeOwnerKeyAsync(uuidKeys, rest, resolve, reject);
+                });
             return;
         }
         resolve(uuidKeys);
@@ -481,6 +492,7 @@ var makeadate = (() => {
     };
 
     const renderError = (parent, errMsg) => {
+        controls.createDiv(parent, "gap");
         controls.createDiv(parent, "error").textContent = _T(errMsg);
     };
 
@@ -651,9 +663,11 @@ var makeadate = (() => {
         controls.removeAllChildren(parent);
         controls.createDiv(parent, "gap");
         const pConfirm = controls.create(parent, "p");
-        controls.create(pConfirm, "span", "confirmation", _T("INFO_REALLY_DELETE_APPOINTMENT_1", appointment.definition.description));
+        const deleteInManageView = appointment.definition == undefined;
+        const confirmMsg = deleteInManageView ? _T("INFO_REALLY_DELETE_APPOINTMENT") : _T("INFO_REALLY_DELETE_APPOINTMENT_1", appointment.definition.description);
+        controls.create(pConfirm, "span", "confirmation", confirmMsg);
         controls.createButton(pConfirm, _T("BUTTON_YES"), () => onDeleteAppointment(appointment));
-        controls.createButton(pConfirm, _T("BUTTON_NO"), () => renderEditAppointment(appointment));
+        controls.createButton(pConfirm, _T("BUTTON_NO"), () => deleteInManageView ? renderManageAppointments() : renderEditAppointment(appointment));
         renderCopyright(parent);
     };
 
