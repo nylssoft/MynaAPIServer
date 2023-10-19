@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.4";
+    let version = "1.0.5";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -1236,7 +1236,10 @@ var makeadate = (() => {
                     enableTimer();
                 }
             },
-            handleError);
+            (errMsg) => {
+                if (utils.is_debug()) utils.debug(errMsg);
+                enableTimer();
+            });
     };
 
     const enableTimer = () => {
@@ -1266,7 +1269,7 @@ var makeadate = (() => {
 
 window.onload = () => {
     window.addEventListener("resize", makeadate.onResize);
-    window.setInterval(makeadate.onTimer, 10000);
+    window.setInterval(makeadate.onTimer, 30000);
     utils.auth_lltoken(() => utils.set_locale(() => makeadate.renderInit()));
 };
 
