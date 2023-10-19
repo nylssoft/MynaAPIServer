@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.1";
+    let version = "1.0.4";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -20,7 +20,7 @@ var makeadate = (() => {
     let listView = false;
     let changed = false;
     let editAppointment = false;
-    let drawAppointment;
+    let currentAppointment;
     let voteRendered;
     let timerEnabled = false;
 
@@ -41,11 +41,11 @@ var makeadate = (() => {
         }
         const canvas = document.getElementById("calendar-id");
         window.requestAnimationFrame(draw);
-        if (!canvas || !drawAppointment || !dirty || !acceptImg || !acceptImg.complete || !editAppointment && !myName) {
+        if (!canvas || !currentAppointment || !dirty || !acceptImg || !acceptImg.complete || !editAppointment && !myName) {
             return;
         }
         dirty = false;
-        const appointment = drawAppointment;
+        const appointment = currentAppointment;
         const option = appointment.definition.options[currentOptionIdx];
         const date = new Date(option.year, option.month - 1);
         const firstDay = (date.getDay() + 6) % 7;
@@ -598,6 +598,7 @@ var makeadate = (() => {
     };
 
     const renderEditAppointment = (appointment) => {
+        currentAppointment = appointment;
         const canChange = isEditAppointmentAllowed(appointment);
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
@@ -726,6 +727,7 @@ var makeadate = (() => {
     };
 
     const renderVoteAppointment = (appointment) => {
+        currentAppointment = appointment;
         // initially render first option with selectable days
         if (!voteRendered) {
             voteRendered = true;
@@ -768,9 +770,7 @@ var makeadate = (() => {
         }
         controls.createButton(divFooter, _T("BUTTON_LOGOUT"), () => onLogoutButton());
         renderCopyright(parent);
-        if (!listView) {
-            enableTimer();
-        }
+        enableTimer();
     };
 
     const renderListView = (appointment) => {
@@ -809,7 +809,6 @@ var makeadate = (() => {
         const calendarDiv = document.getElementById("calendar-div-id");
         controls.removeAllChildren(calendarDiv);
         if (!listView) {
-            drawAppointment = appointment;
             const canvas = controls.create(calendarDiv, "canvas");
             canvas.id = "calendar-id";
             canvas.addEventListener("mousedown", (evt) => onCanvasMouseDown(evt, appointment));
@@ -1002,6 +1001,7 @@ var makeadate = (() => {
             appointment,
             (modifiedUtc) => {
                 if (utils.is_debug()) utils.debug(`Appointment updated. Last modfified: ${modifiedUtc}.`);
+                appointment.modifiedUtc = modifiedUtc;
                 currentOptionIdx = 0;
                 changed = false;
                 renderManageAppointments();
@@ -1014,7 +1014,6 @@ var makeadate = (() => {
             (all) => {
                 const appointment = all.find(a => a.uuid == uuid);
                 if (appointment) {
-                    drawAppointment = appointment;
                     renderEditAppointment(appointment);                    
                 }
             },
@@ -1055,6 +1054,7 @@ var makeadate = (() => {
             myVote,
             (modifiedUtc) => {
                 if (utils.is_debug()) utils.debug(`Vote updated. Last modified: ${modifiedUtc}.`);
+                appointment.modifiedUtc = modifiedUtc;
                 renderListView(appointment);
             },
             handleError
@@ -1144,6 +1144,7 @@ var makeadate = (() => {
                             vote,
                             (modifiedUtc) => {
                                 if (utils.is_debug()) utils.debug(`Vote updated. Last modified: ${modifiedUtc}.`);
+                                appointment.modifiedUtc = modifiedUtc;
                                 dirty = true;
                                 enableTimer();
                             },
@@ -1214,18 +1215,20 @@ var makeadate = (() => {
     // timer
 
     const onTimer = () => {
-        if (!timerEnabled || !voteRendered || !drawAppointment || editAppointment || listView) {
+        if (!timerEnabled || !voteRendered || !currentAppointment || editAppointment) {
             return;
         }
         disableTimer();
-        const uuid = drawAppointment.uuid;
-        const modifiedUtc = drawAppointment.modifiedUtc;
+        const uuid = currentAppointment.uuid;
+        const modifiedUtc = currentAppointment.modifiedUtc;
         getLastModifiedAsync(
             uuid,
-            drawAppointment.accessToken,
+            currentAppointment.accessToken,
             (dt) => {
-                if (utils.is_debug()) utils.debug(`Last modified: ${dt}`);
-                if (dt > modifiedUtc) {
+                const d1 = new Date(dt);
+                const d2 = new Date(modifiedUtc);
+                if (utils.is_debug()) utils.debug(`Last modified: ${dt}, difference: ${d1.getTime() - d2.getTime()}.`);
+                if (d1.getTime() - d2.getTime() > 1000) {
                     if (utils.is_debug()) utils.debug("Refresh page.");
                     render();
                 }

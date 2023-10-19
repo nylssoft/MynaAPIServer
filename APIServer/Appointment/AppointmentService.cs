@@ -68,7 +68,7 @@ namespace APIServer.Appointment
             });
             dbContext.DbAppointments.Add(dbAppointment);
             dbContext.SaveChanges();
-            return DbMynaContext.GetUtcDateTime(dbAppointment.ModifiedUtc).Value;
+            return now;
         }
 
         public bool DeleteAppointment(IPwdManService pwdManService, string authenticationToken, string uuid)
@@ -148,15 +148,16 @@ namespace APIServer.Appointment
                 var newContent = JsonSerializer.Serialize(definition);
                 if (currentContent != newContent)
                 {
+                    var now = DateTime.UtcNow;
                     dbAppointment.Content = Encrypt(newContent, securityKey);
-                    dbAppointment.ModifiedUtc = DateTime.UtcNow;
+                    dbAppointment.ModifiedUtc = now;
                     dbAppointment.Votes = new();
                     definition.Participants.ForEach(p =>
                     {
                         dbAppointment.Votes.Add(new DbVote { UserUuid = p.UserUuid, Content = Encrypt("[]", securityKey) });
                     });
                     dbContext.SaveChanges();
-                    return DbMynaContext.GetUtcDateTime(dbAppointment.ModifiedUtc).Value;
+                    return now;
                 }
             }
             return null;
@@ -176,10 +177,11 @@ namespace APIServer.Appointment
                 var newContent = JsonSerializer.Serialize(vote.Accepted);
                 if (currentContent != newContent)
                 {
+                    var now = DateTime.UtcNow;
                     dbVote.Content = Encrypt(newContent, securityKey);
-                    dbAppointment.ModifiedUtc = DateTime.UtcNow;
+                    dbAppointment.ModifiedUtc = now;
                     dbContext.SaveChanges();
-                    return dbAppointment.ModifiedUtc;
+                    return now;
                 }
             }
             return null;
