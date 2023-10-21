@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.6";
+    let version = "1.0.7";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -838,6 +838,11 @@ var makeadate = (() => {
         controls.create(div, "span", "copyright", `${_T("HEADER_MAKEADATE")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
+        const languageContainer = controls.create(div, "span", "language-container");
+        const ico = utils.get_locale().startsWith("en-") ? "de" : "gb";
+        const title = ico == "de" ? "German" : "Englisch";
+        const img = controls.createImg(languageContainer, "language-flag", 32, 32, `/images/buttons/flag-${ico}.png`, title, title);
+        img.addEventListener("click", () => utils.set_locale(render, ico == "de" ? "de-DE" : "en-US"));
     };
 
     const renderPageAsync = async (parent, manage) => {

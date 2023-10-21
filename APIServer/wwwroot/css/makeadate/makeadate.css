@@ -34,54 +34,28 @@ label {
     margin-top: 20pt;
 }
 
+.language-container {
+    margin-left: 10pt;
+    background-color: blue;
+    border: 1px solid #008CBA;
+    width: 30px;
+    height: 32px;
+}
+
+    .language-container:hover {
+        background-color: #008CBA;
+        color: darkblue;
+    }
+
+.language-flag {
+    top: 10px;
+    position: relative;
+    transform: scale(0.7);
+}
+
 p {
     margin-top: 5pt;
     margin-bottom: 5pt;
-}
-
-canvas {
-}
-
-/*
-#calendar-div-id {
-    border: solid;
-}
-*/
-
-table {
-    min-width: 300pt;
-    border-collapse: collapse;
-    border: 3px solid blue;
-    background-color: blue;
-}
-
-    table caption {
-        margin: 5pt;
-    }
-
-        table caption a {
-            color: white;
-        }
-
-td {
-    padding: 20px;
-    letter-spacing: 1px;
-}
-
-tbody td {
-    text-align: left;
-}
-
-tbody tr:nth-child(odd) {
-    background-color: dodgerblue;
-}
-
-tbody tr:nth-child(even) {
-    background-color: cornflowerblue;
-}
-
-td a {
-    color: white;
 }
 
 a {
@@ -96,18 +70,6 @@ h1 {
     left: 40pt;
     font-size: 18pt;
     margin: 0pt;
-}
-
-textarea {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 18pt;
-    background-color: yellow;
-    padding: 10px;
-    line-height: 1.5;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    box-shadow: 1px 1px 1px #999;
-    margin-bottom: 10pt;
 }
 
 h2 {
@@ -166,25 +128,6 @@ h3 {
     outline: none;
 }
 
-.box {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.calendar-column {
-    margin: 5pt;
-    /*    flex: 1 1 auto; */
-}
-
-.text-column {
-    margin: 5pt;
-    /*    flex: 1 1 auto; */
-}
-
-.caption {
-    margin: 5pt;
-}
-
 .copyright {
     font-size: 8pt;
     font-family: Arial, Helvetica, sans-serif;
@@ -195,24 +138,6 @@ h3 {
     margin-top: 10pt;
     color: red;
 }
-
-.small-button {
-    background-color: blue;
-    border: 2px solid #008CBA;
-    color: white;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    transition-duration: 0.4s;
-    cursor: pointer;
-    font-size: 8pt;
-    margin-right: 8pt;
-}
-
-    .small-button:hover {
-        background-color: #008CBA;
-        color: darkblue;
-    }
 
 .button {
     background-color: blue;
@@ -532,6 +457,10 @@ h3 {
 
     .date {
         width: 130px;
+    }
+
+    .language-flag {
+        top: 11px;
     }
 }
 
