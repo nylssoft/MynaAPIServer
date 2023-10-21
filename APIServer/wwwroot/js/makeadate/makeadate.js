@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.5";
+    let version = "1.0.6";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -645,11 +645,13 @@ var makeadate = (() => {
         const optionsP = controls.create(parent, "p", undefined, utils.is_mobile() ? "" : _T("INFO_APPOINTMENT_OPTIONS"));
         const prevButton = controls.createButton(optionsP, "<", () => onDatePrevious(appointment));
         prevButton.id = "prev-button-id";
-        controls.hide(prevButton);
+        prevButton.disabled = true;
+        prevButton.title = "";
         const dateSpan = controls.create(optionsP, "span", "date", datestr);
         dateSpan.id = "date-span-id";
         const nextButton = controls.createButton(optionsP, ">", () => onDateNext(appointment));
         nextButton.id = "next-button-id";
+        nextButton.title = "";
         const calendarDiv = controls.createDiv(optionsP);
         calendarDiv.id = "calendar-div-id";
         renderCalendarView(appointment);
@@ -657,7 +659,7 @@ var makeadate = (() => {
         const saveButton = controls.createButton(parent, _T("BUTTON_SAVE"), () => onUpdateAppointment(appointment));
         saveButton.id = "save-button-id";
         if (!changed) {
-            controls.hide(saveButton);
+            saveButton.disabled = true;
         }
         controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteApppointment(appointment));
         controls.createButton(parent, _T("BUTTON_BACK"), () => renderCancelEditApppointment(appointment));
@@ -743,17 +745,19 @@ var makeadate = (() => {
         const optionsP = controls.create(parent, "p");
         const prevButton = controls.createButton(optionsP, "<", () => onBackButton(appointment));
         prevButton.id = "prev-button-id";
+        prevButton.title = "";
         const prevIdx = getSelectableOptionIdx(appointment, currentOptionIdx - 1, -1);
         if (prevIdx == undefined) {
-            controls.hide(prevButton);
+            prevButton.disabled = true;
         }
         const dateSpan = controls.create(optionsP, "span", "date", datestr);
         dateSpan.id = "date-span-id";
         const nextButton = controls.createButton(optionsP, ">", () => onContinueButton(appointment));
         nextButton.id = "next-button-id";
+        nextButton.title = "";
         const nextIdx = getSelectableOptionIdx(appointment, currentOptionIdx + 1, 1);
         if (nextIdx == undefined) {
-            controls.hide(nextButton);
+            nextButton.disabled = true;
         }
         const calendarDiv = controls.createDiv(parent);
         calendarDiv.id = "calendar-div-id";
@@ -878,15 +882,25 @@ var makeadate = (() => {
         if (appointment) {
             setAppointmentData(appointment);
         }
+        const saveButton = document.getElementById("save-button-id");
         if (!changed) {
-            const saveButton = document.getElementById("save-button-id");
-            controls.show(saveButton, true);
             changed = true;
+        }
+        if (changed) {
+            if (saveButton.disabled == true && isValidEditData()) {
+                saveButton.disabled = false;
+            }
+            else if (saveButton.disabled == false && !isValidEditData()) {
+                saveButton.disabled = true;
+            }
+        }
+        else if (saveButton.disabled == false) {
+            saveButton.disabled = true;
         }
     };
 
     const onDateNext = (appointment) => {
-        if (currentOptionIdx >= 2) {
+        if (currentOptionIdx > 11) {
             return;
         }
         if (currentOptionIdx + 1 >= appointment.definition.options.length) {
@@ -907,10 +921,10 @@ var makeadate = (() => {
         span.textContent = datestr;
         dirty = true;
         const prevButton = document.getElementById("prev-button-id");
-        controls.show(prevButton, true);
-        if (currentOptionIdx > 1) {
+        prevButton.disabled = false;
+        if (currentOptionIdx > 11) {
             const nextButton = document.getElementById("next-button-id");
-            controls.hide(nextButton);
+            nextButton.disabled = true;
         }
     };
 
@@ -926,10 +940,10 @@ var makeadate = (() => {
         span.textContent = datestr;
         dirty = true;
         const nextButton = document.getElementById("next-button-id");
-        controls.show(nextButton, true);
+        nextButton.disabled = false;
         if (currentOptionIdx == 0) {
             const prevButton = document.getElementById("prev-button-id");
-            controls.hide(prevButton);
+            prevButton.disabled = true;
         }
     };
 
@@ -968,6 +982,8 @@ var makeadate = (() => {
             },
             handleError);
     };
+
+    const isValidEditData = () => document.getElementById("description-id").value.trim().length > 0;
 
     const setAppointmentData = (appointment) => {
         const descriptionInput = document.getElementById("description-id");

@@ -230,9 +230,14 @@ h3 {
     padding: 5pt;
 }
 
-    .button:hover {
+    .button:hover:enabled {
         background-color: #008CBA;
         color: darkblue;
+    }
+
+    .button:disabled {
+        cursor: default;
+        opacity: 0.4;
     }
 
 /* from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_custom_checkbox */
@@ -437,7 +442,8 @@ h3 {
 }
 
 .date {
-    margin-right: 10pt;
+    width: 150px;
+    display: inline-block;
 }
 
 @media (max-width: 480px) {
@@ -522,7 +528,11 @@ h3 {
         -webkit-transform: rotate(45deg);
         -ms-transform: rotate(45deg);
         transform: rotate(45deg);
-    }    
+    }
+
+    .date {
+        width: 130px;
+    }
 }
 
 @media (max-height: 800px) {

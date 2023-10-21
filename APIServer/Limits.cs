@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2023 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@ namespace APIServer
         public const int MAX_CONTACTS_CONTENT = 1024 * 1024 * 10; // hex encoded string
         public const int MAX_APPOINTMENT_BATCH = 100;
         public const int MAX_APPOINTMENT_UUID = 100;
+        public const int MAX_APPOINTMENT_OPTIONS = 13;
+        public const int MAX_APPOINTMENT_PARTICIPANTS = 30;
     }
 
     public class InputValueTooLargeException : APIException

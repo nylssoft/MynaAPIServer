@@ -279,8 +279,8 @@ namespace APIServer.Appointment
                 return false;
             }
             definition.Participants = definition.Participants.Distinct().ToList();
-            if (definition.Participants.Count > 20 ||
-                definition.Options.Count > 3)
+            if (definition.Participants.Count > Limits.MAX_APPOINTMENT_PARTICIPANTS ||
+                definition.Options.Count > Limits.MAX_APPOINTMENT_OPTIONS)
             {
                 return false;
             }
@@ -293,7 +293,7 @@ namespace APIServer.Appointment
                 {
                     return false;
                 }
-                if (opt.Days.Any(d => d < 1 || d > 31))
+                if (opt.Days.Any(d => d is < 1 or > 31))
                 {
                     return false;
                 }
