@@ -131,7 +131,7 @@ namespace APIServer.Appointment
             return ret;
         }
 
-        public DateTime? UpdateAppointment(IPwdManService pwdManService, string authenticationToken, string uuid, AppointmentDefinitionModel definition, string securityKey)
+        public DateTime UpdateAppointment(IPwdManService pwdManService, string authenticationToken, string uuid, AppointmentDefinitionModel definition, string securityKey)
         {
             logger.LogDebug("Update appointment...");
             var user = pwdManService.GetUserFromToken(authenticationToken);
@@ -142,25 +142,58 @@ namespace APIServer.Appointment
                 .Include(a => a.Votes)
                 .SingleOrDefault() ?? throw new InvalidParameterException();
             var appointment = ConvertDbAppointment(dbAppointment, securityKey);
-            if (appointment.Votes.All(v => v.Accepted.All(opt => !opt.Days.Any())))
+            // all dates with existing votes have to be specified in the selectable dates
+            var voteDateTimes = GetVoteDateTimes(appointment.Votes);
+            var exisingOptionDateTimes = GetOptionDateTimes(appointment.Definition.Options);
+            var optionDateTimes = GetOptionDateTimes(definition.Options);
+            var commonDateTimes = optionDateTimes.Intersect(voteDateTimes);
+            if (commonDateTimes.Count() != voteDateTimes.Count || !optionDateTimes.Any())
             {
-                var currentContent = JsonSerializer.Serialize(appointment.Definition);
-                var newContent = JsonSerializer.Serialize(definition);
-                if (currentContent != newContent)
+                throw new InvalidParameterException();
+            }
+            appointment.Definition.Options = definition.Options;
+            // description has to be specified
+            if (definition.Description.Trim().Length == 0)
+            {
+                throw new InvalidParameterException();
+            }
+            appointment.Definition.Description = definition.Description;
+            // if no votes exist any participants can be changed
+            if (!voteDateTimes.Any())
+            {
+                appointment.Definition.Participants = definition.Participants;
+                dbAppointment.Votes = new();
+                definition.Participants.ForEach(p =>
                 {
-                    var now = DateTime.UtcNow;
-                    dbAppointment.Content = Encrypt(newContent, securityKey);
-                    dbAppointment.ModifiedUtc = now;
-                    dbAppointment.Votes = new();
-                    definition.Participants.ForEach(p =>
+                    dbAppointment.Votes.Add(new DbVote { UserUuid = p.UserUuid, Content = Encrypt("[]", securityKey) });
+                });
+            }
+            // participans can only be extended if votes already exist
+            else
+            {
+                var existingNames = appointment.Definition.Participants.Select(p => p.Username).ToHashSet();
+                var updateNames = definition.Participants.Select(p => p.Username).ToHashSet();
+                var commonNames = existingNames.Intersect(updateNames);
+                if (commonNames.Count() != existingNames.Count)
+                {
+                    throw new InvalidParameterException();
+                }
+                var addNames = updateNames.Except(commonNames);
+                if (addNames.Any())
+                {
+                    appointment.Definition.Participants = definition.Participants;
+                    foreach (var add in addNames)
                     {
+                        var p = definition.Participants.Where(p => p.Username == add).First();
                         dbAppointment.Votes.Add(new DbVote { UserUuid = p.UserUuid, Content = Encrypt("[]", securityKey) });
-                    });
-                    dbContext.SaveChanges();
-                    return now;
+                    }
                 }
             }
-            return null;
+            var now = DateTime.UtcNow;
+            dbAppointment.Content = Encrypt(JsonSerializer.Serialize(appointment.Definition), securityKey);
+            dbAppointment.ModifiedUtc = now;
+            dbContext.SaveChanges();
+            return now;
         }
 
         public DateTime? UpdateVote(IPwdManService pwdManService, string uuid, AppointmentVoteModel vote, string securityKey)
@@ -441,6 +474,32 @@ namespace APIServer.Appointment
         {
             var opt = Configuration.GetSection("Appointment").Get<AppointmentOptions>();
             return opt ?? new AppointmentOptions();
+        }
+
+        private static HashSet<DateTime> GetOptionDateTimes(List<AppointmentOptionModel> options)
+        {
+            var ret = new HashSet<DateTime>();
+            foreach (var option in options)
+            {
+                foreach (var day in option.Days)
+                {
+                    ret.Add(new DateTime(option.Year, option.Month, day));
+                }
+            }
+            return ret;
+        }
+
+        private static HashSet<DateTime> GetVoteDateTimes(List<AppointmentVoteModel> votes)
+        {
+            var ret = new HashSet<DateTime>();
+            foreach (var vote in votes)
+            {
+                foreach (var dateTime in GetOptionDateTimes(vote.Accepted))
+                {
+                    ret.Add(dateTime);
+                }
+            }
+            return ret;
         }
     }
 }

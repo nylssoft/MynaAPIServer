@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.7";
+    let version = "1.0.8";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -21,6 +21,7 @@ var makeadate = (() => {
     let changed = false;
     let editAppointment = false;
     let currentAppointment;
+    let currentParticipants;
     let voteRendered;
     let timerEnabled = false;
 
@@ -260,8 +261,12 @@ var makeadate = (() => {
         return bestVotes;
     };
 
-    const isEditAppointmentAllowed = (appointment) => {
-        return !appointment.votes.some(v => v.accepted.some(opt => opt.days.length > 0));
+    const hasVotesWithAcceptedDays = (appointment) => {
+        return appointment.votes.some(v => v.accepted.some(opt => opt.days.length > 0));
+    };
+
+    const canEditDay = (appointment, year, month, day) => {
+        return !appointment.votes.some(v => v.accepted.some(opt => opt.year == year && opt.month == month && opt.days.includes(day)));
     };
 
     const cleanOptions = (appointment) => {
@@ -469,7 +474,6 @@ var makeadate = (() => {
     const renderInit = () => {
         const parent = document.body;
         controls.removeAllChildren(parent);
-        document.title = _T("HEADER_MAKEADATE");
         const params = new URLSearchParams(window.location.search);
         if (params.has("debug")) {
             utils.enable_debug(true);
@@ -509,6 +513,7 @@ var makeadate = (() => {
 
     const render = () => {
         disableTimer();
+        document.title = _T("HEADER_MAKEADATE");
         const params = new URLSearchParams(window.location.search);
         const idparam = params.get("id");
         if (!idparam) {
@@ -599,7 +604,6 @@ var makeadate = (() => {
 
     const renderEditAppointment = (appointment) => {
         currentAppointment = appointment;
-        const canChange = isEditAppointmentAllowed(appointment);
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.createDiv(parent, "gap");
@@ -614,9 +618,6 @@ var makeadate = (() => {
         descriptionInput.id = "description-id";
         descriptionInput.value = appointment.definition.description;
         descriptionInput.addEventListener("input", () => onChange(appointment));
-        if (!canChange) {
-            descriptionInput.setAttribute("readonly", "readonly");
-        }
         // edit participants
         const participantsP = controls.create(parent, "p");
         const participantsLabel = controls.createLabel(participantsP, undefined, _T("LABEL_PARTICIPANTS"));
@@ -625,9 +626,6 @@ var makeadate = (() => {
         participantsInput.id = "participants-id";
         const participantNames = appointment.definition.participants.map(p => p.username);
         participantsInput.value = participantNames.join(", ");
-        if (!canChange) {
-            participantsInput.setAttribute("readonly", "readonly");
-        }
         participantsInput.addEventListener("input", () => onChange(appointment));
         // show URL
         const urlP = controls.create(parent, "p");
@@ -884,18 +882,16 @@ var makeadate = (() => {
     // callbacks
 
     const onChange = (appointment) => {
-        if (appointment) {
-            setAppointmentData(appointment);
-        }
+        const isValid = setAppointmentData(appointment);
         const saveButton = document.getElementById("save-button-id");
         if (!changed) {
             changed = true;
         }
         if (changed) {
-            if (saveButton.disabled == true && isValidEditData()) {
+            if (saveButton.disabled == true && isValid) {
                 saveButton.disabled = false;
             }
-            else if (saveButton.disabled == false && !isValidEditData()) {
+            else if (saveButton.disabled == false && !isValid) {
                 saveButton.disabled = true;
             }
         }
@@ -988,15 +984,14 @@ var makeadate = (() => {
             handleError);
     };
 
-    const isValidEditData = () => document.getElementById("description-id").value.trim().length > 0;
-
     const setAppointmentData = (appointment) => {
+        let canChangeDescription = true;
         const descriptionInput = document.getElementById("description-id");
-        if (descriptionInput.value.trim().length > 0) {
+        canChangeDescription = descriptionInput.value.trim().length > 0;
+        if (canChangeDescription) {
             appointment.definition.description = descriptionInput.value;
         }
         const participantsInput = document.getElementById("participants-id");
-        appointment.definition.participants = [];
         const arr = participantsInput.value.replaceAll(",", " ").replaceAll(";", " ").split(" ");
         const nameSet = new Set();
         arr.forEach(elem => {
@@ -1005,16 +1000,24 @@ var makeadate = (() => {
                 nameSet.add(str);
             }
         });
-        nameSet.forEach(name => appointment.definition.participants.push(
-            {
-                "username": name,
-                "userUuid": crypto.randomUUID()
-            }));
-        appointment.definition.participants.sort((p1, p2) => p1.username.localeCompare(p2.username));
+        let canChangeParticipants = nameSet.size > 0;
+        if (canChangeParticipants && hasVotesWithAcceptedDays(appointment)) {
+            canChangeParticipants = currentParticipants.every(name => nameSet.has(name));
+        }
+        if (canChangeParticipants) {
+            appointment.definition.participants = [];
+            nameSet.forEach(name => appointment.definition.participants.push(
+                {
+                    "username": name,
+                    "userUuid": crypto.randomUUID()
+                }));
+            appointment.definition.participants.sort((p1, p2) => p1.username.localeCompare(p2.username));
+        }
+        const hasSelectedDays = appointment.definition.options.some(opt => opt.days.length > 0);
+        return canChangeDescription && canChangeParticipants && hasSelectedDays;
     };
 
     const onUpdateAppointment = (appointment) => {
-        setAppointmentData(appointment);
         cleanOptions(appointment);
         const token = utils.get_authentication_token();
         updateAppointmentAsync(
@@ -1035,6 +1038,8 @@ var makeadate = (() => {
             (all) => {
                 const appointment = all.find(a => a.uuid == uuid);
                 if (appointment) {
+                    currentParticipants = [];
+                    appointment.definition.participants.map(p => p.username).forEach(name => currentParticipants.push(name));
                     renderEditAppointment(appointment);                    
                 }
             },
@@ -1125,14 +1130,14 @@ var makeadate = (() => {
     const onCanvasMouseDown = (evt, appointment) => {
         const x = Math.floor(evt.offsetX / dayWidth);
         const y = Math.floor((evt.offsetY - headerHeight) / dayHeight);
-        if (editAppointment && !isEditAppointmentAllowed(appointment)) {
-            return;
-        }
         if (x >= 0 && x < 7 && y >= 0 && y < 6) {
             const option = appointment.definition.options[currentOptionIdx];
             const day = dayMatrix[y][x];
-            if (option && day) {
-                if (editAppointment) {
+            if (option == undefined || day == undefined) {
+                return;
+            }
+            if (editAppointment) {
+                if (canEditDay(appointment, option.year, option.month, day)) {
                     if (option.days.includes(day)) {
                         option.days = option.days.filter(d => d != day);
                     }
@@ -1140,38 +1145,40 @@ var makeadate = (() => {
                         option.days.push(day);
                     }
                     option.days.sort((a, b) => a - b);
-                    onChange();
+                    onChange(appointment);
                     dirty = true;
                 }
-                else if (option.days.includes(day)) {
-                    const myUserUuid = getUserUuid(appointment, myName);
-                    const vote = appointment.votes.find(v => v.userUuid == myUserUuid);
-                    if (vote && myUserUuid) {
-                        let acceptedOption = vote.accepted.find(o => o.year == option.year && o.month == option.month);
-                        if (!acceptedOption) {
-                            acceptedOption = { "year": option.year, "month": option.month, "days": [] };
-                            vote.accepted.push(acceptedOption);
-                            vote.accepted.sort((a, b) => (a.year - b.year) * 1000 + (a.month - b.month));
-                        }
-                        if (acceptedOption.days.includes(day)) {
-                            acceptedOption.days = acceptedOption.days.filter(d => d != day);
-                        }
-                        else {
-                            acceptedOption.days.push(day);
-                        }
-                        disableTimer();
-                        updateVoteAsync(
-                            appointment,
-                            vote,
-                            (modifiedUtc) => {
-                                if (utils.is_debug()) utils.debug(`Vote updated. Last modified: ${modifiedUtc}.`);
-                                appointment.modifiedUtc = modifiedUtc;
-                                dirty = true;
-                                enableTimer();
-                            },
-                            handleError
-                        );
+                return;
+            }
+            // vote appointment
+            if (option.days.includes(day)) {
+                const myUserUuid = getUserUuid(appointment, myName);
+                const vote = appointment.votes.find(v => v.userUuid == myUserUuid);
+                if (vote && myUserUuid) {
+                    let acceptedOption = vote.accepted.find(o => o.year == option.year && o.month == option.month);
+                    if (!acceptedOption) {
+                        acceptedOption = { "year": option.year, "month": option.month, "days": [] };
+                        vote.accepted.push(acceptedOption);
+                        vote.accepted.sort((a, b) => (a.year - b.year) * 1000 + (a.month - b.month));
                     }
+                    if (acceptedOption.days.includes(day)) {
+                        acceptedOption.days = acceptedOption.days.filter(d => d != day);
+                    }
+                    else {
+                        acceptedOption.days.push(day);
+                    }
+                    disableTimer();
+                    updateVoteAsync(
+                        appointment,
+                        vote,
+                        (modifiedUtc) => {
+                            if (utils.is_debug()) utils.debug(`Vote updated. Last modified: ${modifiedUtc}.`);
+                            appointment.modifiedUtc = modifiedUtc;
+                            dirty = true;
+                            enableTimer();
+                        },
+                        handleError
+                    );
                 }
             }
         }

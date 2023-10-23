@@ -34,7 +34,7 @@ namespace APIServer.Appointment
 
         DateTime? GetLastModified(IPwdManService pwdManService, string uuid);
 
-        DateTime? UpdateAppointment(IPwdManService pwdManService, string authenticationToken, string uuid, AppointmentDefinitionModel definition, string securityKey);
+        DateTime UpdateAppointment(IPwdManService pwdManService, string authenticationToken, string uuid, AppointmentDefinitionModel definition, string securityKey);
 
         DateTime? UpdateVote(IPwdManService pwdManService, string uuid, AppointmentVoteModel vote, string securityKey);
 
