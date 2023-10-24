@@ -204,6 +204,7 @@
   "ERROR_WRONG_KEY_DECODE_PASSWORD_FILE": "Der Schlüssel zum Dekodieren der Kennwortdatei ist nicht richtig.",
   "ERROR_1_2": "Fehler für {0}: {1}",
 
+  "HEADER_APPOINTMENTS": "Terminplaner",
   "HEADER_AUDIT": "Anmelde-Aktivitäten",
   "HEADER_ARKANOID": "Arkanoid",
   "HEADER_BACKGAMMON": "Backgammon",
@@ -216,7 +217,6 @@
   "HEADER_ERROR": "Fehler",
   "HEADER_LOGIN": "Anmelden",
   "HEADER_LOGOUT": "Abmelden",
-  "HEADER_MAKEADATE": "Terminplaner",
   "HEADER_NEW_PWD": "Kennwort neu vergeben",
   "HEADER_NOTES": "Notizen",
   "HEADER_PROFILE": "Profil",
@@ -461,6 +461,7 @@
   "LABEL_URL": "URL:",
   "LABEL_YOUR_CARDS": "Deine Spielkarten:",
 
+  "MENU_APPOINTMENTS": "Terminplaner",
   "MENU_ARKANOID": "Arkanoid",
   "MENU_BACKGAMMON": "Backgammon",
   "MENU_CHESS": "Schach",

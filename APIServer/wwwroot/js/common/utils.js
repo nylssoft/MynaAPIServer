@@ -449,6 +449,7 @@ var utils = (() => {
             controls.createA(parent, undefined, "/contacts", _T("MENU_CONTACTS"));
             controls.createA(parent, undefined, "/notes", _T("MENU_NOTES"));
             controls.createA(parent, undefined, "/diary", _T("MENU_DIARY"));
+            controls.createA(parent, undefined, "/makeadate", _T("MENU_APPOINTMENTS"));
             controls.create(parent, "hr");
             controls.createA(parent, undefined, "/arkanoid", _T("MENU_ARKANOID"));
             controls.createA(parent, undefined, "/backgammon", _T("MENU_BACKGAMMON"));

@@ -204,6 +204,7 @@
   "ERROR_WRONG_KEY_DECODE_PASSWORD_FILE": "The encryption key used to decode the password file is invalid.",
   "ERROR_1_2": "Error for {0}: {1}",
 
+  "HEADER_APPOINTMENTS": "Appointments",
   "HEADER_AUDIT": "Login activities",
   "HEADER_ARKANOID": "Arkanoid",
   "HEADER_BACKGAMMON": "Backgammon",
@@ -216,7 +217,6 @@
   "HEADER_ERROR": "Error",
   "HEADER_LOGIN": "Login",
   "HEADER_LOGOUT": "Logout",
-  "HEADER_MAKEADATE": "Make a date",
   "HEADER_NEW_PWD": "Set new password",
   "HEADER_NOTES": "Notes",
   "HEADER_PROFILE": "Profile",
@@ -461,6 +461,7 @@
   "LABEL_URL": "URL:",
   "LABEL_YOUR_CARDS": "Your cards:",
 
+  "MENU_APPOINTMENTS": "Appointments",
   "MENU_ARKANOID": "Arkanoid",
   "MENU_BACKGAMMON": "Backgammon",
   "MENU_CHESS": "Chess",

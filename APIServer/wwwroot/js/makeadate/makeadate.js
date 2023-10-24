@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.9";
+    let version = "1.1.0";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -513,7 +513,7 @@ var makeadate = (() => {
 
     const render = () => {
         disableTimer();
-        document.title = _T("HEADER_MAKEADATE");
+        document.title = _T("HEADER_APPOINTMENTS");
         const params = new URLSearchParams(window.location.search);
         const idparam = params.get("id");
         if (!idparam) {
@@ -695,7 +695,7 @@ var makeadate = (() => {
     const renderLogout = () => {
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
-        controls.create(parent, "h2", undefined, _T("HEADER_MAKEADATE"));
+        controls.create(parent, "h2", undefined, _T("HEADER_APPOINTMENTS"));
         controls.create(parent, "p", undefined, _T("INFO_THANK_YOU"));
         controls.create(parent, "p", undefined, _T("INFO_LOGGED_OUT"));
         renderCopyright(parent, renderLogout);
@@ -704,7 +704,7 @@ var makeadate = (() => {
     const renderSelectName = (appointment) => {
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
-        controls.create(parent, "h2", undefined, _T("HEADER_MAKEADATE"));
+        controls.create(parent, "h2", undefined, _T("HEADER_APPOINTMENTS"));
         controls.create(parent, "p", undefined, _T("INFO_FIND_APPOINTMENT_1", appointment.definition.description));
         controls.create(parent, "p", undefined, _T("INFO_QUESTION_YOUR_NAME"));
         appointment.definition.participants.forEach(p => {
@@ -822,7 +822,7 @@ var makeadate = (() => {
 
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
-        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_MAKEADATE")}`);
+        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_APPOINTMENTS")}`);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
         if (currentUser && currentUser.photo) {
@@ -833,7 +833,7 @@ var makeadate = (() => {
 
     const renderCopyright = (parent, languageCallback) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_MAKEADATE")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_APPOINTMENTS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
         const languageContainer = controls.create(div, "span", "language-container");
