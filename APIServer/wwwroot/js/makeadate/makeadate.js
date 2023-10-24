@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.0.8";
+    let version = "1.0.9";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -393,7 +393,7 @@ var makeadate = (() => {
                     console.error(errMsg);
                     const parent = getContentElement();
                     controls.create(parent, "p", undefined, _T("ERROR_WRONG_KEY_DECODE_APPOINTMENTS"));
-                    controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteApppointment(app));
+                    controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteAppointment(app));
                     decodeOwnerKeyAsync(uuidKeys, rest, resolve, reject);
                 });
             return;
@@ -546,12 +546,12 @@ var makeadate = (() => {
                 const parent = document.getElementById("content-id");
                 if (appointment.definition.participants.length == 0) {
                     controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_PARTICIPANTS_1", appointment.definition.description));
-                    renderCopyright(parent);
+                    renderCopyright(parent, render);
                     return;
                 }
                 if (!appointment.definition.options.some(opt => opt.days.length > 0)) {
                     controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_OPTIONS_1", appointment.definition.description));
-                    renderCopyright(parent);
+                    renderCopyright(parent, render);
                     return;
                 }
                 if (!currentOptionIdx || currentOptionIdx >= appointment.definition.options.length) {
@@ -597,7 +597,7 @@ var makeadate = (() => {
                     controls.createButton(ul, _T("BUTTON_EDIT"), () => onEditAppointment(a.uuid));
                     controls.createButton(ul, _T("BUTTON_VOTE"), () => onVoteAppointment(a));
                 });
-                renderCopyright(parent);
+                renderCopyright(parent, renderInit);
             },
             handleError);
     };
@@ -659,12 +659,12 @@ var makeadate = (() => {
         if (!changed) {
             saveButton.disabled = true;
         }
-        controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteApppointment(appointment));
-        controls.createButton(parent, _T("BUTTON_BACK"), () => renderCancelEditApppointment(appointment));
-        renderCopyright(parent);
+        controls.createButton(parent, _T("BUTTON_DELETE"), () => renderDeleteAppointment(appointment));
+        controls.createButton(parent, _T("BUTTON_BACK"), () => renderCancelEditAppointment(appointment));
+        renderCopyright(parent, () => renderEditAppointment(appointment));
     };
 
-    const renderDeleteApppointment = (appointment) => {
+    const renderDeleteAppointment = (appointment) => {
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
         controls.createDiv(parent, "gap");
@@ -674,10 +674,10 @@ var makeadate = (() => {
         controls.create(pConfirm, "span", "confirmation", confirmMsg);
         controls.createButton(pConfirm, _T("BUTTON_YES"), () => onDeleteAppointment(appointment));
         controls.createButton(pConfirm, _T("BUTTON_NO"), () => deleteInManageView ? renderManageAppointments() : renderEditAppointment(appointment));
-        renderCopyright(parent);
+        renderCopyright(parent, () => renderDeleteAppointment(appointment));
     };
 
-    const renderCancelEditApppointment = (appointment) => {
+    const renderCancelEditAppointment = (appointment) => {
         if (changed) {
             const parent = document.getElementById("content-id");
             controls.removeAllChildren(parent);
@@ -686,7 +686,7 @@ var makeadate = (() => {
             controls.create(pConfirm, "span", "confirmation", _T("INFO_REALLY_CANCEL_EDIT_APPOINTMENT_1", appointment.definition.description));
             controls.createButton(pConfirm, _T("BUTTON_YES"), () => renderManageAppointments());
             controls.createButton(pConfirm, _T("BUTTON_NO"), () => renderEditAppointment(appointment));
-            renderCopyright(parent);
+            renderCopyright(parent, () => renderCancelEditAppointment(appointment));
             return;
         }
         renderManageAppointments();
@@ -698,7 +698,7 @@ var makeadate = (() => {
         controls.create(parent, "h2", undefined, _T("HEADER_MAKEADATE"));
         controls.create(parent, "p", undefined, _T("INFO_THANK_YOU"));
         controls.create(parent, "p", undefined, _T("INFO_LOGGED_OUT"));
-        renderCopyright(parent);
+        renderCopyright(parent, renderLogout);
     };
 
     const renderSelectName = (appointment) => {
@@ -711,7 +711,7 @@ var makeadate = (() => {
             const para = controls.create(parent, "p");
             controls.createButton(para, p.username, () => onChooseNameButton(p.username));
         });
-        renderCopyright(parent);
+        renderCopyright(parent, () => renderSelectName(appointment));
     };
 
     const getSelectableOptionIdx = (appointment, optionIdx, direction) => {
@@ -771,7 +771,7 @@ var makeadate = (() => {
             controls.createButton(divFooter, _T("BUTTON_VIEW_LIST"), () => onListViewButton());
         }
         controls.createButton(divFooter, _T("BUTTON_LOGOUT"), () => onLogoutButton());
-        renderCopyright(parent);
+        renderCopyright(parent, () => renderVoteAppointment(appointment));
         enableTimer();
     };
 
@@ -831,7 +831,7 @@ var makeadate = (() => {
         }
     };
 
-    const renderCopyright = (parent) => {
+    const renderCopyright = (parent, languageCallback) => {
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_MAKEADATE")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
@@ -840,7 +840,9 @@ var makeadate = (() => {
         const ico = utils.get_locale().startsWith("en-") ? "de" : "gb";
         const title = ico == "de" ? "German" : "Englisch";
         const img = controls.createImg(languageContainer, "language-flag", 32, 32, `/images/buttons/flag-${ico}.png`, title, title);
-        img.addEventListener("click", () => utils.set_locale(render, ico == "de" ? "de-DE" : "en-US"));
+        if (languageCallback) {
+            img.addEventListener("click", () => utils.set_locale(languageCallback, ico == "de" ? "de-DE" : "en-US"));
+        }
     };
 
     const renderPageAsync = async (parent, manage) => {
