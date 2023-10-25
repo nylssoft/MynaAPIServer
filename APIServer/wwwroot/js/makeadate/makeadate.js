@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.0";
+    let version = "1.1.1";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -957,7 +957,7 @@ var makeadate = (() => {
             if (show) {
                 let contentDiv = controls.createDiv(helpDiv, "help-content");
                 let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call(`/api/pwdman/markdown/help-makeadate?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
+                utils.fetch_api_call(`/api/pwdman/markdown/help-appointments?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
