@@ -19,6 +19,7 @@ The following applications are provided:
 - Notes, a secure online system to manage simple notes
 - Password, a secure online password reader for passwords published with [MynaPasswordManager](https://github.com/nylssoft/MynaPasswordManager)
 - Slideshow, an online picture galery
+- Appointments, an app to schedule appointments securely
 
 Visit [stockfleth.eu](https://www.stockfleth.eu) to see a customized version of the website.
 
