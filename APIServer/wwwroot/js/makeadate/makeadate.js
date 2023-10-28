@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.1";
+    let version = "1.1.2";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -472,6 +472,7 @@ var makeadate = (() => {
     // rendering
 
     const renderInit = () => {
+        document.title = _T("HEADER_APPOINTMENTS");
         const parent = document.body;
         controls.removeAllChildren(parent);
         const params = new URLSearchParams(window.location.search);
@@ -513,7 +514,6 @@ var makeadate = (() => {
 
     const render = () => {
         disableTimer();
-        document.title = _T("HEADER_APPOINTMENTS");
         const params = new URLSearchParams(window.location.search);
         const idparam = params.get("id");
         if (!idparam) {
@@ -841,7 +841,15 @@ var makeadate = (() => {
         const title = ico == "de" ? "German" : "Englisch";
         const img = controls.createImg(languageContainer, "language-flag", 32, 32, `/images/buttons/flag-${ico}.png`, title, title);
         if (languageCallback) {
-            img.addEventListener("click", () => utils.set_locale(languageCallback, ico == "de" ? "de-DE" : "en-US"));
+            img.addEventListener("click", () => utils.set_locale(
+                () => {
+                    document.title = _T("HEADER_APPOINTMENTS");
+                    if (currentUser) {
+                        utils.set_menu_items(currentUser);
+                    }
+                    languageCallback();
+                },
+                ico == "de" ? "de-DE" : "en-US"));
         }
     };
 
