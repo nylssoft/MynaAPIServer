@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.3";
+    let version = "1.1.4";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -793,6 +793,7 @@ var makeadate = (() => {
                         acceptedUsernames.push(getUsername(appointment, vote.userUuid));
                     }
                 });
+                acceptedUsernames.sort();
                 const p = controls.create(listViewDiv, "p");
                 const checked = acceptedUsernames.includes(myName);
                 controls.createCheckbox(p, `day-checkbox-${d}`, undefined, undefined, checked, () => onDayCheckbox(appointment, d));
