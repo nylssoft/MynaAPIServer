@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.2";
+    let version = "1.1.3";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -20,6 +20,7 @@ var makeadate = (() => {
     let listView = false;
     let changed = false;
     let editAppointment = false;
+    let manageAppointment = false;
     let currentAppointment;
     let currentParticipants;
     let voteRendered;
@@ -822,11 +823,9 @@ var makeadate = (() => {
 
     const renderHeader = (parent) => {
         helpDiv = controls.createDiv(document.body);
-        const h1 = controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_APPOINTMENTS")}`);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
-        helpImg.addEventListener("click", () => onUpdateHelp(true));
+        controls.create(parent, "h1", undefined, `${currentUser.name} - ${_T("HEADER_APPOINTMENTS")}`);
         if (currentUser && currentUser.photo) {
-            let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
+            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
     };
@@ -836,10 +835,10 @@ var makeadate = (() => {
         controls.create(div, "span", "copyright", `${_T("HEADER_APPOINTMENTS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
-        const languageContainer = controls.create(div, "span", "language-container");
+        const languageContainer = controls.create(div, "span", "imgbutton-container");
         const ico = utils.get_locale().startsWith("en-") ? "de" : "gb";
         const title = ico == "de" ? "German" : "Englisch";
-        const img = controls.createImg(languageContainer, "language-flag", 32, 32, `/images/buttons/flag-${ico}.png`, title, title);
+        const img = controls.createImg(languageContainer, "imgbutton", 32, 32, `/images/buttons/flag-${ico}.png`, title);
         if (languageCallback) {
             img.addEventListener("click", () => utils.set_locale(
                 () => {
@@ -851,9 +850,14 @@ var makeadate = (() => {
                 },
                 ico == "de" ? "de-DE" : "en-US"));
         }
+        const helpContainer = controls.create(div, "span", "imgbutton-container");
+        const helpImg = controls.createImg(helpContainer, "imgbutton", 32, 32, "/images/buttons/help.png", _T("BUTTON_HELP"));
+        helpImg.addEventListener("click", () => onUpdateHelp(true));
     };
 
     const renderPageAsync = async (parent, manage) => {
+        helpDiv = controls.createDiv(document.body);
+        manageAppointment = manage;
         if (manage) {
             await renderEncryptKeyAsync(parent);
         }
@@ -963,9 +967,10 @@ var makeadate = (() => {
             helpDiv.className = show ? "help-div" : undefined;
             controls.removeAllChildren(helpDiv);
             if (show) {
-                let contentDiv = controls.createDiv(helpDiv, "help-content");
-                let mdDiv = controls.createDiv(contentDiv, "help-item");
-                utils.fetch_api_call(`/api/pwdman/markdown/help-appointments?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
+                const contentDiv = controls.createDiv(helpDiv, "help-content");
+                const mdDiv = controls.createDiv(contentDiv, "help-item");
+                const helpPage = manageAppointment ? "help-appointments" : "help-appointments-vote";
+                utils.fetch_api_call(`/api/pwdman/markdown/${helpPage}?locale=${utils.get_locale()}`, undefined, (html) => mdDiv.innerHTML = html);
                 controls.createButton(contentDiv, _T("BUTTON_OK"), () => onUpdateHelp(false)).focus();
             }
         }
