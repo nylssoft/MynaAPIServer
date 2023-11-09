@@ -337,7 +337,7 @@
   "INFO_QUESTION_YOUR_NAME": "Wie lautet dein Name?",
   "INFO_REALLY_BACK_NOT_SAVED_1": "Der Kontakt '{0}' wurde geändert aber bisher nicht gespeichert. Willst du die Seite wirklich verlassen? ",
   "INFO_REALLY_CANCEL_EDIT_APPOINTMENT_1": "Der Termin '{0}' wurde geändert aber bisher nicht gespeichert. Willst du die Seite wirklich verlassen? ",
-  "INFO_REALLY_CANCEL_EDIT_PWDITEM_1": "Der Kennworteintrag '{0}' wurde geändert abder bisher nicht gespeichert. Willst du die Seite wirklich verlassen? ",
+  "INFO_REALLY_CANCEL_EDIT_PWDITEM_1": "Der Kennworteintrag '{0}' wurde geändert aber bisher nicht gespeichert. Willst du die Seite wirklich verlassen? ",
   "INFO_REALLY_DEACTIVATE_TWO_FACTOR": "Willst du die Zwei-Faktor-Authentisierung wirklich deaktivieren? ",
   "INFO_REALLY_DELETE_ACCOUNT": "Willst du dein Konto wirklich löschen? ",
   "INFO_REALLY_DELETE_APPOINTMENT": "Willst du den Termin für wirklich löschen? ",
