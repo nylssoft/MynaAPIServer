@@ -4,12 +4,14 @@ var password = (() => {
 
     // state
 
-    let version = "2.0.7";
+    let version = "2.1.0";
     let cryptoKey;
     let currentUser;
     let helpDiv;
     let filterInput;
     let pwdItemsDiv;
+    let changed = false;
+    let showPwd = false;
 
     // helper
 
@@ -39,6 +41,10 @@ var password = (() => {
         initCryptoKey(() => utils.decode_message(cryptoKey, text, resolve, reject), reject);
     };
 
+    const encodeText = (text, resolve, reject) => {
+        initCryptoKey(() => utils.encode_message(cryptoKey, text, resolve, reject), reject);
+    };
+
     // rendering
 
     const renderHeader = (parent) => {
@@ -54,7 +60,7 @@ var password = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_PASSWORDS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_PASSWORDS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
@@ -99,6 +105,115 @@ var password = (() => {
         utils.set_menu_items(currentUser);
     };
 
+    const renderActions = (pwdItems, pwdItem, editMode) => {
+        const elem = document.getElementById("action-id");
+        controls.removeAllChildren(elem);
+        if (pwdItem == undefined) {
+            controls.createButton(elem, _T("BUTTON_NEW_PASSWORD"), () => onNewPwdItem(pwdItems));
+        }
+        else if (editMode) {
+            const saveButton = controls.createButton(elem, _T("BUTTON_SAVE"), () => onSavePwdItem(pwdItems, pwdItem));
+            saveButton.id = "save-button-id";
+            if (!changed) {
+                saveButton.disabled = true;
+            }
+            controls.createButton(elem, _T("BUTTON_DELETE"), () => renderDeletePwdItem(pwdItems, pwdItem));
+            controls.createButton(elem, _T("BUTTON_BACK"), () => renderCancelEditPwdItem(pwdItems, pwdItem));
+        }
+        else {
+            controls.createButton(elem, _T("BUTTON_EDIT"), () => onEditPwdItem(pwdItems, pwdItem));
+            controls.createButton(elem, _T("BUTTON_BACK"), () => onBackViewPwdItem(pwdItems));
+        }
+    };
+
+    const renderDeletePwdItem = (pwdItems, pwdItem) => {
+        const detailsDiv = document.getElementById("details-id");
+        controls.hide(detailsDiv);
+        const elem = document.getElementById("action-id");
+        controls.removeAllChildren(elem);
+        const parent = elem;
+        const pConfirm = controls.create(parent, "p");
+        const confirmMsg = _T("INFO_REALLY_DELETE_PWDITEM_1", pwdItem.Name);
+        controls.create(pConfirm, "span", "confirmation", confirmMsg);
+        controls.createButton(pConfirm, _T("BUTTON_YES"), () => onDeletePwdItem(pwdItems, pwdItem));
+        controls.createButton(pConfirm, _T("BUTTON_NO"), () => onCancelDeletePwdItem(pwdItems, pwdItem));
+    };
+
+    const renderCancelEditPwdItem = (pwdItems, pwdItem) => {
+        if (changed) {
+            const detailsDiv = document.getElementById("details-id");
+            controls.hide(detailsDiv);
+            const elem = document.getElementById("action-id");
+            controls.removeAllChildren(elem);
+            const parent = elem;
+            const pConfirm = controls.create(parent, "p");
+            controls.create(pConfirm, "span", "confirmation", _T("INFO_REALLY_CANCEL_EDIT_PWDITEM_1", pwdItem.Name));
+            controls.createButton(pConfirm, _T("BUTTON_YES"), () => onCancelEditPwdItem());
+            controls.createButton(pConfirm, _T("BUTTON_NO"), () => onContinueEditPwdItem(pwdItems, pwdItem));
+            return;
+        }
+        render();
+    };
+
+    const renderEditPasswordItem = (pwdItems, pwdItem, decodedPassword) => {
+        const detailsDiv = document.getElementById("details-id");
+        controls.removeAllChildren(detailsDiv);
+        const parent = detailsDiv;
+        // edit name
+        const nameP = controls.create(parent, "p");
+        const nameLabel = controls.createLabel(nameP, "editlabel", _T("LABEL_NAME"));
+        nameLabel.htmlFor = "name-id";
+        const nameInput = controls.createInputField(nameP, _T("TEXT_NAME"), undefined, "editinput", 40, 255);
+        nameInput.id = "name-id";
+        nameInput.value = pwdItem.Name;
+        nameInput.addEventListener("input", () => onChange());
+        // edit URL
+        const urlP = controls.create(parent, "p");
+        const urlLabel = controls.createLabel(urlP, "editlabel", _T("LABEL_URL"));
+        urlLabel.htmlFor = "url-id";
+        const urlInput = controls.createInputField(urlP, _T("TEXT_URL"), undefined, "editinput", 40, 255);
+        urlInput.id = "url-id";
+        urlInput.value = pwdItem.Url;
+        urlInput.addEventListener("input", () => onChange());
+        // edit username
+        const usernameP = controls.create(parent, "p");
+        const usernameLabel = controls.createLabel(usernameP, "editlabel", _T("LABEL_USERNAME"));
+        usernameLabel.htmlFor = "username-id";
+        const usernameInput = controls.createInputField(usernameP, _T("TEXT_USERNAME"), undefined, "editinput", 40, 255);
+        usernameInput.id = "username-id";
+        usernameInput.value = pwdItem.Login;
+        usernameInput.addEventListener("input", () => onChange());
+        // edit password
+        const passwordP = controls.create(parent, "p");
+        const passwordLabel = controls.createLabel(passwordP, "editlabel", _T("LABEL_PASSWORD"));
+        passwordLabel.id = "password-label-id";
+        passwordLabel.htmlFor = "password-id";
+        const passwordPwd = controls.createPasswordField(passwordP, _T("TEXT_PASSWORD"), undefined, "editinput", 37, 255);
+        passwordPwd.id = "password-id";
+        passwordPwd.value = decodedPassword;
+        passwordPwd.addEventListener("input", () => onPasswordPwdChange());
+        const passwordInput = controls.createInputField(passwordP, _T("TEXT_PASSWORD"), undefined, "editinput", 37, 255);
+        passwordInput.id = "password-input-id";
+        passwordInput.value = decodedPassword;
+        passwordInput.addEventListener("input", () => onPasswordInputChange());
+        controls.hide(passwordInput);
+        const showButton = controls.createImg(passwordP, "showhideimg", 22, 22, "/images/buttons/document-decrypt-3.png", _T("BUTTON_SHOW_1", _T("TEXT_PASSWORD")));
+        showButton.id = "showeditpassword-button-id";
+        showButton.addEventListener("click", () => onShowEditPassword());
+        // edit description
+        const descriptionP = controls.create(parent, "p");
+        const descriptionLabel = controls.createLabel(descriptionP, "editlabel", _T("LABEL_DESCRIPTION"));
+        descriptionLabel.htmlFor = "description-id";
+        const descriptionInput = controls.create(descriptionP, "textarea");
+        descriptionInput.id = "description-id";
+        descriptionInput.value = pwdItem.Description;
+        descriptionInput.rows = 4;
+        descriptionInput.maxLength = 1000;
+        descriptionInput.cols = 40;
+        descriptionInput.addEventListener("input", () => onChange());
+        renderActions(pwdItems, pwdItem, true /*editMode*/);
+    };
+
     const renderPasswordItem = (parent, txt, desc, decode) => {
         if (txt.length == 0) return;
         if (decode) {
@@ -129,7 +244,7 @@ var password = (() => {
         });
     };
 
-    const renderPasswordItemDetails = (pwdItem) => {
+    const renderPasswordItemDetails = (pwdItems, pwdItem) => {
         const parent = document.getElementById("details-id");
         const content = document.getElementById("content-id");
         parent.style.display = "block";
@@ -152,8 +267,8 @@ var password = (() => {
         }
         if (pwdItem.Login.length) {
             let detailsLoginDiv = controls.createDiv(parent);
-            controls.createLabel(detailsLoginDiv, "details-label", _T("LABEL_LOGIN"));
-            renderPasswordItem(detailsLoginDiv, pwdItem.Login, _T("TEXT_LOGIN"));
+            controls.createLabel(detailsLoginDiv, "details-label", _T("LABEL_USERNAME"));
+            renderPasswordItem(detailsLoginDiv, pwdItem.Login, _T("TEXT_USERNAME"));
         }
         let detailsPasswordDiv = controls.createDiv(parent);
         controls.createLabel(detailsPasswordDiv, "details-label", _T("LABEL_PASSWORD"));
@@ -163,12 +278,7 @@ var password = (() => {
             controls.createLabel(detailsDescriptionDiv, "details-label", _T("LABEL_DESCRIPTION"));
             renderPasswordItem(detailsDescriptionDiv, pwdItem.Description, _T("TEXT_DESCRIPTION"));
         }
-        const buttonBackDiv = controls.createDiv(parent);
-        controls.createButton(buttonBackDiv, _T("BUTTON_OK"), () => {
-            controls.removeAllChildren(parent);
-            parent.style.display = "none";
-            content.style.display = "block";
-        }, undefined, "button");
+        renderActions(pwdItems, pwdItem);
     };
 
     const renderPasswordTable = (parent, pwdItems, filteredPwdItems) => {
@@ -184,24 +294,25 @@ var password = (() => {
                 controls.createImg(tdname, "favicon", 16, 16, `https://www.google.com/s2/favicons?domain=${host}`, pwdItem.Name);
             }
             controls.createA(tdname, undefined, "#open", pwdItem.Name,
-                () => renderPasswordItemDetails(pwdItem));
+                () => renderPasswordItemDetails(pwdItems, pwdItem));
         });
     };
 
     const renderPasswordItems = (pwdItems) => {
         const parent = document.getElementById("content-id");
         controls.removeAllChildren(parent);
+        const filterDiv = controls.createDiv(parent);
+        const searchLabel = controls.createLabel(filterDiv, "filterlabel", _T("LABEL_FILTER"));
+        searchLabel.htmlFor = "filter-id";
+        filterInput = controls.createInputField(filterDiv, _T("TEXT_FILTER"), undefined, undefined, 30, 32);
+        filterInput.id = "filter-id";
+        filterInput.addEventListener("input", () => onFilterItems(pwdItems));
+        if (!utils.is_mobile()) {
+            filterInput.focus();
+        }
+        pwdItemsDiv = controls.createDiv(parent);
+        renderActions(pwdItems);
         if (pwdItems.length > 0) {
-            const filterDiv = controls.createDiv(parent);
-            const searchLabel = controls.createLabel(filterDiv, undefined, _T("LABEL_FILTER"));
-            searchLabel.htmlFor = "filter-id";
-            filterInput = controls.createInputField(filterDiv, _T("TEXT_FILTER"), undefined, undefined, 20, 32);
-            filterInput.id = "filter-id";
-            filterInput.addEventListener("input", () => onFilterItems(pwdItems));
-            if (!utils.is_mobile()) {
-                filterInput.focus();
-            }
-            pwdItemsDiv = controls.createDiv(parent);
             renderPasswordTable(pwdItemsDiv, pwdItems);
         }
     };
@@ -209,13 +320,10 @@ var password = (() => {
     const renderPasswordFile = () => {
         renderError("");
         renderPasswordItems([]);
-        if (!currentUser.hasPasswordManagerFile) {
-            renderError("ERROR_NO_PASSWORD_FILE_UPLOADED");
-        }
-        else if (!hasEncryptKey()) {
+        if (!hasEncryptKey()) {
             renderError("ERROR_MISSING_KEY_DECODE_PASSWORD_FILE");
         }
-        else {
+        else if (currentUser.hasPasswordManagerFile) {
             const token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/file", { headers: { "token": token } },
                 (pwdfile) => {
@@ -239,6 +347,7 @@ var password = (() => {
         controls.createDiv(parent, "details").id = "details-id";
         controls.createDiv(parent, "content").id = "content-id";
         controls.createDiv(parent, "error").id = "error-id";
+        controls.createDiv(parent, "action").id = "action-id";
         renderCopyright(parent);
         renderPasswordFile();
     };
@@ -272,6 +381,154 @@ var password = (() => {
     };
 
     // --- callbacks
+
+    const onNewPwdItem = (pwdItems) => {
+        const parent = document.getElementById("details-id");
+        const content = document.getElementById("content-id");
+        controls.removeAllChildren(parent);
+        controls.show(parent, true);
+        controls.hide(content);
+        const randomPwd = utils.generate_encryption_key(16);
+        encodeText(randomPwd, (pwdEncoded) => {
+            const pwdItem = { "Name": _T("TEXT_NEW"), "Url": "", "Login": "", "Description": "", Password: pwdEncoded };
+            pwdItems.push(pwdItem);
+            changed = true;
+            onEditPwdItem(pwdItems, pwdItem);
+        });
+    };
+
+    const onEditPwdItem = (pwdItems, pwdItem) => {
+        if (pwdItem.Password.length == 0) {
+            renderEditPasswordItem(pwdItems, pwdItem, "");
+        }
+        else {
+            decodeText(pwdItem.Password, (decoded) => renderEditPasswordItem(pwdItems, pwdItem, decoded), renderError);
+        }
+    };
+
+    const onCancelEditPwdItem = () => {
+        changed = false;
+        render();
+    };
+
+    const onContinueEditPwdItem = (pwdItems, pwdItem) => {
+        const detailsDiv = document.getElementById("details-id");
+        controls.show(detailsDiv, true);
+        renderActions(pwdItems, pwdItem, true);
+    };
+
+    const onCancelDeletePwdItem = (pwdItems, pwdItem) => {
+        const detailsDiv = document.getElementById("details-id");
+        controls.show(detailsDiv, true);
+        renderActions(pwdItems, pwdItem, true);
+    };
+
+    const onDeletePwdItem = (pwdItems, pwdItem) => {
+        const idx = pwdItems.findIndex(elem => elem === pwdItem);
+        if (idx >= 0) {
+            changed = false;
+            pwdItems.splice(idx, 1);
+            onSavePwdItems(pwdItems);
+        }
+    };
+
+    const onSavePwdItem = (pwdItems, pwdItem) => {
+        const nameInput = document.getElementById("name-id");
+        const urlInput = document.getElementById("url-id");
+        const usernameInput = document.getElementById("username-id");
+        const passwordPwd = document.getElementById("password-id");
+        const descriptionInput = document.getElementById("description-id");
+        pwdItem.Name = nameInput.value;
+        pwdItem.Url = urlInput.value;
+        pwdItem.Login = usernameInput.value;
+        pwdItem.Description = descriptionInput.value;
+        if (passwordPwd.value.length > 0) {
+            encodeText(passwordPwd.value,
+                (pwdEncoded) => {
+                    pwdItem.Password = pwdEncoded;
+                    onSavePwdItems(pwdItems);
+                },
+                renderError);
+        }
+        else {
+            onSavePwdItems(pwdItems);
+        }
+    };
+
+    const onSavePwdItems = (pwdItems) => {
+        pwdItems.sort((a, b) => a.Name.localeCompare(b.Name));
+        const token = utils.get_authentication_token();
+        const headers = { "Accept": "application/json", "Content-Type": "application/json", "token": token };
+        encodeText(
+            JSON.stringify(pwdItems),
+            (encodedData) => 
+                utils.fetch_api_call(
+                    "api/pwdman/file",
+                    { method: "POST", headers: headers, body: JSON.stringify(encodedData) },
+                    () => onCancelEditPwdItem(),
+                    renderError),
+            renderError);
+    };
+
+    const onBackViewPwdItem = (pwdItems) => {
+        const contentDiv = document.getElementById("content-id");
+        const detailsDiv = document.getElementById("details-id");
+        controls.removeAllChildren(detailsDiv);
+        detailsDiv.style.display = "none";
+        contentDiv.style.display = "block";
+        changed = false;
+        renderActions(pwdItems);
+    };
+
+    const onShowEditPassword = () => {
+        const showButton = document.getElementById("showeditpassword-button-id");
+        const passwordLabel = document.getElementById("password-label-id");
+        const passwordInput = document.getElementById("password-input-id");
+        const passwordPwd = document.getElementById("password-id");
+        const desc = _T("TEXT_PASSWORD");
+        if (showPwd) {
+            showButton.title = _T("BUTTON_SHOW_1", desc);
+            showButton.src = "/images/buttons/document-decrypt-3.png";
+            controls.hide(passwordInput);
+            controls.show(passwordPwd, true);
+            passwordLabel.htmlFor = "password-id";
+        }
+        else {
+            showButton.title = _T("BUTTON_HIDE_1", desc);
+            showButton.src = "/images/buttons/document-encrypt-3.png";
+            controls.hide(passwordPwd);
+            controls.show(passwordInput, true);
+            passwordLabel.htmlFor = "password-input-id";
+        }
+        showPwd = !showPwd;
+    };
+
+    const onPasswordPwdChange = () => {
+        const passwordInput = document.getElementById("password-input-id");
+        const passwordPwd = document.getElementById("password-id");
+        passwordInput.value = passwordPwd.value;
+        onChange();
+    };
+
+    const onPasswordInputChange = () => {
+        const passwordInput = document.getElementById("password-input-id");
+        const passwordPwd = document.getElementById("password-id");
+        passwordPwd.value = passwordInput.value;
+        onChange();
+    };
+
+    const onChange = () => {
+        const saveButton = document.getElementById("save-button-id");
+        if (!changed) {
+            changed = true;
+        }
+        if (changed && saveButton.disabled == true) {
+            saveButton.disabled = false;
+        }
+        else if (!changed && saveButton.disabled == false) {
+            saveButton.disabled = true;
+        }
+    };
 
     const onFilterItems = (pwdItems) => {
         const v = filterInput.value.toLowerCase();
