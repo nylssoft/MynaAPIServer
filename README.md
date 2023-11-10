@@ -17,7 +17,7 @@ The following applications are provided:
 - Diary, a secure online diary
 - Documents, a simple and secure online document management system
 - Notes, a secure online system to manage simple notes
-- Password, a secure online password reader for passwords published with [MynaPasswordManager](https://github.com/nylssoft/MynaPasswordManager)
+- Password, a secure online password manager
 - Slideshow, an online picture galery
 - Appointments, an app to schedule appointments securely
 
