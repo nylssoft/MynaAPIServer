@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.4";
+    let version = "1.1.5";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -550,6 +550,21 @@ var makeadate = (() => {
                     renderCopyright(parent, render);
                     return;
                 }
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth() + 1;
+                const day = today.getDate();
+                appointment.definition.options = appointment.definition.options
+                    .filter(opt => opt.year > year || opt.year == year && opt.month >= month);
+                appointment.definition.options
+                    .filter(opt => opt.year == year && opt.month == month)
+                    .forEach(opt => opt.days = opt.days.filter(d => d >= day));
+                appointment.votes.forEach(v => {
+                    v.accepted = v.accepted.filter(opt => opt.year > year || opt.year == year && opt.month >= month);
+                    v.accepted
+                        .filter(opt => opt.year == year && opt.month == month)
+                        .forEach(opt => opt.days = opt.days.filter(d => d >= day));
+                });
                 if (!appointment.definition.options.some(opt => opt.days.length > 0)) {
                     controls.create(parent, "p", undefined, _T("INFO_APPOINTMENT_NO_OPTIONS_1", appointment.definition.description));
                     renderCopyright(parent, render);
