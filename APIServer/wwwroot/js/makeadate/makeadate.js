@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.5";
+    let version = "1.1.6";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -1036,12 +1036,19 @@ var makeadate = (() => {
             canChangeParticipants = currentParticipants.every(name => nameSet.has(name));
         }
         if (canChangeParticipants) {
-            appointment.definition.participants = [];
-            nameSet.forEach(name => appointment.definition.participants.push(
-                {
-                    "username": name,
-                    "userUuid": crypto.randomUUID()
-                }));
+            const newParticipants = [];
+            nameSet.forEach(name => {
+                let userUuid = getUserUuid(appointment, name);
+                if (userUuid == undefined) {
+                    userUuid = crypto.randomUUID();
+                }
+                newParticipants.push(
+                    {
+                        "username": name,
+                        "userUuid": userUuid
+                    });
+            });
+            appointment.definition.participants = newParticipants;
             appointment.definition.participants.sort((p1, p2) => p1.username.localeCompare(p2.username));
         }
         const hasSelectedDays = appointment.definition.options.some(opt => opt.days.length > 0);
