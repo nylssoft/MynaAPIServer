@@ -1,6 +1,6 @@
 # MynaAPIServer
 
-Provides a website with games and applications. The website runs on Unix or Windows using .NET 6 as backend server (Kestrel web server).
+Provides a website with games and applications. The website runs on Unix or Windows using .NET 8 as backend server (Kestrel web server).
 
 The following games are provided:
 - [Skat](https://www.stockfleth.eu/skat), a german card game
@@ -25,7 +25,7 @@ Visit [stockfleth.eu](https://www.stockfleth.eu) to see a customized version of 
 
 The main goal of the applications is data protection. Nobody except the logged in user can access, read and manage the content.
 
-The appliations store any content encrypted on the server.
+The applications store any content encrypted on the server.
 The encryption key is stored locally in the client application, i.e. in the local storage of the web browser.
 The key value itself is also encrypted in the browser storage and can only be decrypted after successfull login.
 The server cannot decrypt the content, all decryption is done in the browser using the locally stored encryption key.
@@ -49,7 +49,7 @@ manage notes, diary, contacts and download documents, see
 ## Setup
 
 The project can be compiled with Visual Studio 2022.
-If you run the .NET 6 server you will see sample pages.
+If you run the .NET 8 server you will see sample pages.
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
