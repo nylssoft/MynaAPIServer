@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.6";
+    let version = "1.1.7";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -46,6 +46,7 @@ var makeadate = (() => {
         if (!canvas || !currentAppointment || !dirty || !acceptImg || !acceptImg.complete || !editAppointment && !myName) {
             return;
         }
+        const today = new Date();
         dirty = false;
         const appointment = currentAppointment;
         const option = appointment.definition.options[currentOptionIdx];
@@ -117,10 +118,14 @@ var makeadate = (() => {
                     ctx.fillRect(xstart + x * dayWidth, ystart + y * dayHeight, dayWidth - 2, dayHeight - 2);
                     dayMatrix[y][x] = day;
                     if (editAppointment) {
+                        const isInPast = isOptionDayInPast(today, option, day);
                         if (selectableDays.has(day)) {
                             ctx.drawImage(acceptImg, xstart + x * dayWidth, ystart + y * dayHeight, dayWidth, dayHeight);
                         }
-                        ctx.fillStyle = acceptedDayColor;
+                        else if (isInPast) {
+                            dayMatrix[y][x] = undefined; // not selectable
+                        }
+                        ctx.fillStyle = isInPast ? disabledDayColor : acceptedDayColor;
                     }
                     else if (myAcceptedDays.has(day)) {
                         ctx.drawImage(acceptImg, xstart + x * dayWidth, ystart + y * dayHeight, dayWidth, dayHeight);
@@ -275,6 +280,15 @@ var makeadate = (() => {
             appointment.definition.options.pop();
             cleanOptions(appointment);
         }
+    };
+
+    const isOptionDayInPast = (today, option, day) => {
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1;
+        const currentDay = today.getDate();
+        return option.year < currentYear ||
+            option.year == currentYear && option.month < currentMonth ||
+            option.year == currentYear && option.month == currentMonth && day < currentDay;
     };
 
     // async service calls
