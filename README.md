@@ -49,7 +49,7 @@ manage notes, diary, contacts and download documents, see
 ## Setup
 
 The project can be compiled with Visual Studio 2022.
-If you run the .NET 6 server you will see sample pages.
+If you run the .NET 8 server you will see sample pages.
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
