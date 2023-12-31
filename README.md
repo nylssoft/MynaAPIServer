@@ -25,7 +25,7 @@ Visit [stockfleth.eu](https://www.stockfleth.eu) to see a customized version of 
 
 The main goal of the applications is data protection. Nobody except the logged in user can access, read and manage the content.
 
-The appliations store any content encrypted on the server.
+The applications store any content encrypted on the server.
 The encryption key is stored locally in the client application, i.e. in the local storage of the web browser.
 The key value itself is also encrypted in the browser storage and can only be decrypted after successfull login.
 The server cannot decrypt the content, all decryption is done in the browser using the locally stored encryption key.
