@@ -35,6 +35,8 @@ using SendGrid.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Hosting;
 using System.Text;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 
 namespace APIServer
 {
@@ -118,7 +120,7 @@ namespace APIServer
                     csp.Append(" www.google.com *.gstatic.com");
                 }
                 csp.Append(';');
-                context.Response.Headers.Add("Content-Security-Policy", csp.ToString());
+                context.Response.Headers.Append("Content-Security-Policy", csp.ToString());
                 await next();
             });
 

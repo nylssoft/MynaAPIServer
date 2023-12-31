@@ -446,7 +446,7 @@ namespace APIServer.Appointment
             }
             var encoded = new byte[data.Length];
             var tag = new byte[16];
-            using (var cipher = new AesGcm(key))
+            using (var cipher = new AesGcm(key, 16))
             {
                 cipher.Encrypt(iv, data, encoded, tag);
             }
@@ -463,7 +463,7 @@ namespace APIServer.Appointment
             byte[] chipherText = data[12..^16];
             byte[] tag = data[^16..];
             byte[] plainText = new byte[chipherText.Length];
-            using (var cipher = new AesGcm(key))
+            using (var cipher = new AesGcm(key, 16))
             {
                 cipher.Decrypt(iv, chipherText, tag, plainText);
             }

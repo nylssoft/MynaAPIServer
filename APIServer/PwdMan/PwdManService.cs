@@ -972,11 +972,8 @@ namespace APIServer.PwdMan
             var dbContext = GetDbContext();
             var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
             var hasher = new PasswordHasher<string>();
-            hasher.HashPassword(user.Name, authentication.Password);
-            if (hasher.VerifyHashedPassword(
-                user.Name,
-                user.PasswordHash,
-                authentication.Password) != PasswordVerificationResult.Success)
+            var verifyResult = hasher.VerifyHashedPassword(user.Name, user.PasswordHash, authentication.Password);
+            if (verifyResult == PasswordVerificationResult.Failed)
             {
                 loginIpAddress.Failed += 1;
                 dbContext.SaveChanges();
@@ -985,6 +982,10 @@ namespace APIServer.PwdMan
                     throw new UnauthorizedAndLockedException();
                 }
                 throw new UnauthorizedException();
+            }
+            else if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                user.PasswordHash = hasher.HashPassword(user.Name, authentication.Password);
             }
             // migration scenario, disable 2FA if TOTPKey is missing
             if (user.Requires2FA && string.IsNullOrEmpty(user.TOTPKey))
@@ -1164,7 +1165,6 @@ namespace APIServer.PwdMan
                 logger.LogDebug("User not configured for long lived token usage.");
                 throw new InvalidTokenException();
             }
-            var hasher = new PasswordHasher<string>();
             var dbContext = GetDbContext();
             var loginIpAddress = dbContext.DbLoginIpAddresses
                 .SingleOrDefault(ip => ip.DbUserId == user.Id && ip.IpAddress == ipAddress);
@@ -1175,7 +1175,9 @@ namespace APIServer.PwdMan
                 dbContext.DbLoginIpAddresses.Add(loginIpAddress);
             }
             var opt = GetOptions();
-            if (hasher.VerifyHashedPassword(user.Name, user.PinHash, pin) != PasswordVerificationResult.Success)
+            var hasher = new PasswordHasher<string>();
+            var verifyResult = hasher.VerifyHashedPassword(user.Name, user.PinHash, pin);
+            if (verifyResult == PasswordVerificationResult.Failed)
             {
                 bool logout = false;
                 loginIpAddress.Failed += 1;
@@ -1192,6 +1194,10 @@ namespace APIServer.PwdMan
                     throw new InvalidPinLogoutException();
                 }
                 throw new InvalidPinException();
+            }
+            else if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                user.PinHash = hasher.HashPassword(user.Name, pin);
             }
             loginIpAddress.LastUsedUtc = DateTime.UtcNow;
             user.LastLoginTryUtc = loginIpAddress.LastUsedUtc;
@@ -1215,11 +1221,8 @@ namespace APIServer.PwdMan
             logger.LogDebug("Change user password...");
             var user = GetUserFromToken(authenticationToken);
             var hasher = new PasswordHasher<string>();
-            hasher.HashPassword(user.Name, userPassswordChange.OldPassword);
-            if (hasher.VerifyHashedPassword(
-                user.Name,
-                user.PasswordHash,
-                userPassswordChange.OldPassword) != PasswordVerificationResult.Success)
+            var verifyResult = hasher.VerifyHashedPassword(user.Name, user.PasswordHash, userPassswordChange.OldPassword);
+            if (verifyResult == PasswordVerificationResult.Failed)
             {
                 throw new InvalidOldPasswordException();
             }
@@ -1231,8 +1234,7 @@ namespace APIServer.PwdMan
             {
                 throw new ChangedPasswordNotStrongEnoughException();
             }
-            var newhash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
-            user.PasswordHash = newhash;
+            user.PasswordHash = hasher.HashPassword(user.Name, userPassswordChange.NewPassword);
             user.LogoutUtc = DateTime.UtcNow;
             var dbContext = GetDbContext();
             dbContext.SaveChanges();
@@ -1653,7 +1655,7 @@ namespace APIServer.PwdMan
         private bool ValidateToken(string token, PwdManOptions opt, bool useLongLived = false)
         {
             var signKey = useLongLived ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
-            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(signKey));
+            var securityKey = GetSymmetricSecurityKey(signKey);
             var tokenHandler = new JwtSecurityTokenHandler();
             try
             {
@@ -1951,17 +1953,31 @@ namespace APIServer.PwdMan
             return GenerateTokenPerType(true, username, opt);
         }
 
+        private static SymmetricSecurityKey GetSymmetricSecurityKey(string signKey)
+        {
+            // using HmacSha256Signature => 32 bytes key length required since .net 8
+            byte[] signKeyBytes = Encoding.ASCII.GetBytes(signKey);
+            // see workaround https://github.com/dotnet/aspnetcore/issues/52369#issuecomment-1872286954
+            // to avoid invalid JSON web tokens on upgrade
+            if (signKeyBytes.Length < 32)
+            {
+                var newKey = new byte[32]; // zeros by default
+                signKeyBytes.CopyTo(newKey, 0);
+                return new SymmetricSecurityKey(newKey);
+            }
+            return new SymmetricSecurityKey(signKeyBytes);
+        }
+
         private static string GenerateTokenPerType(bool useLongLivedToken, string username, PwdManOptions opt, bool requires2FA = false)
         {
             var signKey = useLongLivedToken ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
             if (string.IsNullOrEmpty(signKey)) throw new ArgumentException("Token signing key configuration is missing.");
-            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(signKey));
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 NotBefore = DateTime.UtcNow,
                 Issuer = opt.TokenConfig.Issuer,
                 Audience = opt.TokenConfig.Audience,
-                SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(GetSymmetricSecurityKey(signKey), SecurityAlgorithms.HmacSha256Signature)
             };
             if (useLongLivedToken)
             {
