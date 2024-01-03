@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.4";
+    let version = "2.0.5";
 
     let block;
     let nextBlock;
@@ -440,7 +440,6 @@ var tetris = (() => {
     let speed;
     let clearPoints;
     let moveDownFrameCount;
-    let lastMoveDown;
     let keyPressedCount;
     let keyPressedMax;
     let keyPressed;
@@ -575,18 +574,13 @@ var tetris = (() => {
             dirtyBlock = true;
             return;
         }
-        if (state == StateEnums.SOFTDROP) {
+        if (state == StateEnums.SOFTDROP && keyPressed != "ArrowDown") {
             moveDownFrameCount++;
             if (moveDownFrameCount < speed[Math.min(29, level)]) {
                 return;
             }
             moveDownFrameCount = 0;
         }
-        if (!lastMoveDown) {
-            lastMoveDown = true;
-            return;
-        }
-        lastMoveDown = false;
         keyPressed = undefined;
         block.stop(playground);
         block = undefined;
@@ -649,42 +643,30 @@ var tetris = (() => {
             if (keyPressed) {
                 keyPressedCount++;
                 if (keyPressedCount >= keyPressedMax) {
+                    let update = false;
                     if (keyPressed === "ArrowLeft") {
-                        if (block.moveLeft(playground)) {
-                            dirtyBlock = true;
-                            if (keyPressedMax > 16) {
-                                keyPressedMax = 16;
-                            }
-                            else {
-                                keyPressedMax = 6;
-                            }
-                            keyPressedCount = 0;
-                            skipMoveDown = true;
-                        }
+                        update = block.moveLeft(playground);
                     }
                     else if (keyPressed === "ArrowRight") {
-                        if (block.moveRight(playground)) {
-                            dirtyBlock = true;
-                            if (keyPressedMax > 16) {
-                                keyPressedMax = 16;
-                            }
-                            else {
-                                keyPressedMax = 6;
-                            }
-                            keyPressedCount = 0;
-                            skipMoveDown = true;
+                        update = block.moveRight(playground);
+                    }
+                    else if (keyPressed === "ArrowUp" || keyPressed === "a") {
+                        update = block.rotateRight(playground);
+                    }
+                    if (update) {
+                        dirtyBlock = true;
+                        if (keyPressedMax > 16) {
+                            keyPressedMax = 16;
                         }
+                        else {
+                            keyPressedMax = 6;
+                        }
+                        keyPressedCount = 0;
+                        skipMoveDown = true;
                     }
                 }
                 if (keyPressed === "ArrowDown" || keyPressed === " ") {
                     state = StateEnums.SOFTDROP;
-                    keyPressed = undefined;
-                    skipMoveDown = true;
-                }
-                else if (keyPressed === "ArrowUp" || keyPressed === "a") {
-                    if (block.rotateRight(playground)) {
-                        dirtyBlock = true;
-                    }
                     keyPressed = undefined;
                     skipMoveDown = true;
                 }
@@ -833,8 +815,8 @@ var tetris = (() => {
     };
 
     const renderCopyright = (parent) => {
-        let div = controls.createDiv(parent, "copyright");
-        controls.create(div, "span", undefined, `${_T("HEADER_TETRIS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
+        const div = controls.createDiv(parent, "copyright");
+        controls.create(div, "span", undefined, `${_T("HEADER_TETRIS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, undefined, "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", undefined, ".");
     };
