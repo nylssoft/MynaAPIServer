@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.5";
+    let version = "2.0.6";
 
     let block;
     let nextBlock;
@@ -958,7 +958,7 @@ var tetris = (() => {
         gameOverDiv = controls.createDiv(parent, "gameover");
         gameOverDiv.style.visibility = "hidden";
 
-        newGameButton = controls.createButton(parent, _T("BUTTON_NEW_GAME"), () => { render(); }, "newgame", "newgame");
+        newGameButton = controls.createButton(parent, _T("BUTTON_NEW_GAME"), () => { render(StateEnums.NEWBLOCK); }, "newgame", "newgame");
         newGameButton.style.visibility = "hidden";
         
         controls.createDiv(parent, "arrow-div");
@@ -985,7 +985,7 @@ var tetris = (() => {
         canvasNextBlock.height = pixelPerField * 6;                
     };
 
-    const render = () => {
+    const render = (startState) => {
         playground = new Playground(10, 20);
 
         colorMap = {};
@@ -1031,7 +1031,7 @@ var tetris = (() => {
             2, 2, 2, 2, 2, 2, 2, 2, 2, 2, // level 19-28
             1]; // level 29+
 
-        state = StateEnums.NEWBLOCK;
+        state = startState;
         score = 0;
         level = 0;
         lines = 0;
@@ -1062,26 +1062,44 @@ var tetris = (() => {
         utils.set_menu_items(currentUser);
 
         setBackgroundPicture();
+
+        if (startState === StateEnums.GAMEOVER) {
+            showStartScreen();
+        }
+    };
+
+    const showStartScreen = () => {
+        nextBlock = createNewBlock();
+        const colors = [ColorEnums.BLUE, ColorEnums.CYAN, ColorEnums.GREEN, ColorEnums.ORANGE, ColorEnums.PURBLE, ColorEnums.RED, ColorEnums.YELLOW];
+        for (let y = 0; y < playground.height; y++) {
+            const t = Math.floor(Math.random() * colors.length);
+            const x = Math.floor(Math.random() * playground.width);
+            playground.setColor(x, y, colors[t]);
+        }
+        newGameButton.style.visibility = "visible";
+        dirtyPlayground = true;
+        dirtyNextBlock = true;
     };
 
     const renderInit = () => {
+        const startState = StateEnums.GAMEOVER;
         currentUser = undefined;
         let token = utils.get_authentication_token();
         if (!token) {
-            render();
+            render(startState);
             window.requestAnimationFrame(draw);
             return;
         }
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
-                render();
+                render(startState);
                 window.requestAnimationFrame(draw);
             },
             (errmsg) => {
                 console.error(errmsg);
                 utils.logout();
-                render();
+                render(startState);
                 window.requestAnimationFrame(draw);
             });
     };
@@ -1129,7 +1147,7 @@ var tetris = (() => {
                 onUpdateHelp(false);
                 return;
             }
-            if (e.key == "h") {
+            if (e.key == "h" && addHighScoreDiv && addHighScoreDiv.style.visibility === "hidden") {
                 onUpdateHelp(true);
                 return;
             }
