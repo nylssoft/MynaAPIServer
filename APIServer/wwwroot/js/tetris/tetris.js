@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.6";
+    let version = "2.0.7";
 
     let block;
     let nextBlock;
@@ -440,6 +440,7 @@ var tetris = (() => {
     let speed;
     let clearPoints;
     let moveDownFrameCount;
+    let canvasArrowUp;
     let keyPressedCount;
     let keyPressedMax;
     let keyPressed;
@@ -652,6 +653,10 @@ var tetris = (() => {
                     }
                     else if (keyPressed === "ArrowUp" || keyPressed === "a") {
                         update = block.rotateRight(playground);
+                        if (canvasArrowUp) {
+                            keyPressed = undefined;
+                            canvasArrowUp = undefined;
+                        }
                     }
                     if (update) {
                         dirtyBlock = true;
@@ -929,6 +934,7 @@ var tetris = (() => {
             const touch = touches[0];
             const diff = touch.clientY - blockTouchY;
             if (diff < pixelPerField) {
+                canvasArrowUp = true;
                 keyPressed = "ArrowUp";
             }
             else if (diff > 3 * pixelPerField) {
