@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2024 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -254,6 +254,13 @@ namespace APIServer.PwdMan
         public IActionResult GetSlideShow()
         {
             return new JsonResult(PwdManService.GetSlideShow(GetToken()));
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/photoframe")]
+        public IActionResult GetPhotoFrameUrls()
+        {
+            return new JsonResult(PwdManService.GetPhotoFrameUrls(GetToken()));
         }
 
         [HttpGet]

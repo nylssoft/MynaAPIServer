@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2024 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -1371,6 +1371,46 @@ namespace APIServer.PwdMan
                 }
             }
             return model;
+        }
+
+        // --- photo frame URLs
+
+        public List<string> GetPhotoFrameUrls(string authenticationToken)
+        {
+            logger.LogDebug("Get photo frame URLs...");
+            List<string> urls = new();
+            var opt = GetOptions();
+            try
+            {
+                if (!string.IsNullOrEmpty(authenticationToken) && authenticationToken != "undefined")
+                {
+                    var user = GetUserFromToken(authenticationToken);
+                    if (HasRole(user, "family"))
+                    {
+                        if (!string.IsNullOrEmpty(opt.PhotoFrameFamilyUrls) && File.Exists(opt.PhotoFrameFamilyUrls))
+                        {
+                            var familyUrls = JsonSerializer.Deserialize<List<string>>(File.ReadAllText(opt.PhotoFrameFamilyUrls, Encoding.UTF8));
+                            if (familyUrls != null)
+                            {
+                                urls.AddRange(familyUrls);
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                logger.LogDebug("Invalid token.");
+            }
+            if (!string.IsNullOrEmpty(opt.PhotoFramePublicUrls) && File.Exists(opt.PhotoFramePublicUrls))
+            {
+                var publicUrls = JsonSerializer.Deserialize<List<string>>(File.ReadAllText(opt.PhotoFramePublicUrls, Encoding.UTF8));
+                if (publicUrls != null)
+                {
+                    urls.AddRange(publicUrls);
+                }
+            }
+            return urls;
         }
 
         // --- markdown

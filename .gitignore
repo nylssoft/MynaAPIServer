@@ -53,10 +53,12 @@ Temporary Items
 /APIServer/chessengine
 /bin
 /APIServer/wwwroot/images/profiles
+/APIServer/wwwroot/images/photoframe
 /APIServer/wwwroot/images/skat/profiles
 /APIServer/wwwroot/images/stammtisch
 /APIServer/wwwroot/images/slideshow/*.jpg
 /APIServer/wwwroot/images/slideshow/family/*.jpg
+/APIServer/wwwroot/webpack
 /APIServer/wwwroot/**/*.min.*
 /APIServer/data
 /APIServer/sampledata/apiserver.db

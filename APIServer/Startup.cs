@@ -120,7 +120,11 @@ namespace APIServer
                     csp.Append(" www.google.com *.gstatic.com");
                 }
                 csp.Append(';');
-                context.Response.Headers.Append("Content-Security-Policy", csp.ToString());
+                // no CSP for webpack bundles (nounce is yet missing, inline CSS cannot be loaded)
+                if (!path.StartsWithSegments("/webpack"))
+                {
+                    context.Response.Headers.Append("Content-Security-Policy", csp.ToString());
+                }
                 await next();
             });
 
