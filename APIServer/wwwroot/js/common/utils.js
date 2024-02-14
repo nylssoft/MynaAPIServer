@@ -661,6 +661,9 @@ var utils = (() => {
                     }
                 }
             }
+            if (url.startsWith("/webpack/")) {
+                return url;
+            }
             if (url.charAt(0) == "/") {
                 let testurl = url;
                 idx = testurl.indexOf("?");
