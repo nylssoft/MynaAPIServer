@@ -1384,8 +1384,13 @@ namespace APIServer.PwdMan
             {
                 if (!string.IsNullOrEmpty(authenticationToken) && authenticationToken != "undefined")
                 {
-                    var user = GetUserFromToken(authenticationToken);
-                    if (HasRole(user, "family"))
+                    bool isFamily = authenticationToken == opt.FamilyAccessToken;
+                    if (!isFamily)
+                    {
+                        var user = GetUserFromToken(authenticationToken);
+                        isFamily = HasRole(user, "family");
+                    }
+                    if (isFamily)
                     {
                         if (!string.IsNullOrEmpty(opt.PhotoFrameFamilyUrls) && File.Exists(opt.PhotoFrameFamilyUrls))
                         {
@@ -1411,6 +1416,18 @@ namespace APIServer.PwdMan
                 }
             }
             return urls;
+        }
+
+        public string GetFamilyAccessToken(string authenticationToken)
+        {
+            logger.LogDebug("Get family access token...");
+            var user = GetUserFromToken(authenticationToken);
+            if (HasRole(user, "family"))
+            {
+                var opt = GetOptions();
+                return opt.FamilyAccessToken;
+            }
+            return null;
         }
 
         // --- markdown

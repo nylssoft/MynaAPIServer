@@ -264,6 +264,13 @@ namespace APIServer.PwdMan
         }
 
         [HttpGet]
+        [Route("api/pwdman/familyaccesstoken")]
+        public IActionResult GetFamilyAccessToken()
+        {
+            return new JsonResult(PwdManService.GetFamilyAccessToken(GetToken()));
+        }
+
+        [HttpGet]
         [Route("api/pwdman/markdown/{id}")]
         public IActionResult GetMarkdown(string id, [FromQuery] string locale)
         {

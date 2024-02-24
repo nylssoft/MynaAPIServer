@@ -116,6 +116,8 @@ namespace APIServer.PwdMan
 
         // --- photo frame
 
+        string GetFamilyAccessToken(string authenticationToken);
+
         List<string> GetPhotoFrameUrls(string authenticationToken);
 
         // --- markdown

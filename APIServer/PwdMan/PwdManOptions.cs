@@ -43,6 +43,8 @@ namespace APIServer.PwdMan
 
         public string PhotoFrameFamilyUrls { get; set; }
 
+        public string FamilyAccessToken { get; set; }
+
         public List<ContentConfig> Markdown { get; set; }
 
         public string StartPage { get; set; }
