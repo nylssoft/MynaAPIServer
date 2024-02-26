@@ -59,6 +59,8 @@ var arkanoid = (() => {
 
     // --- state
 
+    let embedded;
+
     let currentLevel;
     let levels;
     let score;
@@ -144,7 +146,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.2.2";
+    const version = "1.2.3";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1988,16 +1990,22 @@ var arkanoid = (() => {
         wrapBody.id = "wrap-body-id";
         utils.create_cookies_banner(wrapBody);
         const all = controls.createDiv(wrapBody);
-        utils.create_menu(all);
-        renderHeader(all);
+        if (!embedded) {
+            utils.create_menu(all);
+            renderHeader(all);
+        }
         renderSoundButton(all);
         renderHelp(all);
         renderHighScores(all);
-        renderCopyright(all);
+        if (!embedded) {
+            renderCopyright(all);
+        }
         startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), async () => await startNewGame(true), "newgame", "newgame");
         continueGameButton = controls.createButton(all, _T("BUTTON_CONTINUE_GAME"), async () => await startNewGame(true, true), "continuegame", "continuegame");
         await renderArkanoid(all);
-        utils.set_menu_items(currentUser);
+        if (!embedded) {
+            utils.set_menu_items(currentUser);
+        }
         document.addEventListener("mousedown", onMouseDown);
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("keydown", onKeyDown);
@@ -2036,6 +2044,7 @@ var arkanoid = (() => {
             utils.enable_debug(true);
             utils.debug("DEBUG enabled.");
         }
+        embedded = params.has("embedded");
         fetch(`/js/arkanoid/levels.json?v=${version}`)
             .then(resp => {
                 resp.json()
