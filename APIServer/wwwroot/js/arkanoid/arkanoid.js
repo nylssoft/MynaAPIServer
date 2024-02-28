@@ -1988,7 +1988,9 @@ var arkanoid = (() => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
         wrapBody.id = "wrap-body-id";
-        utils.create_cookies_banner(wrapBody);
+        if (!embedded) {
+            utils.create_cookies_banner(wrapBody);
+        }
         const all = controls.createDiv(wrapBody);
         if (!embedded) {
             utils.create_menu(all);
