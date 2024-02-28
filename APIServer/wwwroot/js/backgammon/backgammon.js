@@ -32,6 +32,8 @@ var backgammon = (() => {
 
     // state
 
+    let embedded;
+
     let ticket;
     let model;
     let timerEnabled = false;
@@ -45,7 +47,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.6";
+    let version = "2.1.7";
 
     let dirty;
 
@@ -1016,14 +1018,16 @@ var backgammon = (() => {
 
     const renderUserList = (parent) => {
         helpDiv = controls.createDiv(document.body);
-        utils.create_menu(parent);
-        let title = currentUser ? `${currentUser.name} - ${_T("HEADER_BACKGAMMON")}` : _T("HEADER_BACKGAMMON");
-        const h1 = controls.create(parent, "h1", undefined, title);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
-        helpImg.addEventListener("click", () => onUpdateHelp(true));
-        if (currentUser && currentUser.photo) {
-            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+        if (!embedded) {
+            utils.create_menu(parent);
+            let title = currentUser ? `${currentUser.name} - ${_T("HEADER_BACKGAMMON")}` : _T("HEADER_BACKGAMMON");
+            const h1 = controls.create(parent, "h1", undefined, title);
+            const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
+            helpImg.addEventListener("click", () => onUpdateHelp(true));
+            if (currentUser && currentUser.photo) {
+                const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
+                imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            }
         }
         // draw sample board
         setPointWidth(utils.is_mobile() ? 330 : 400);
@@ -1045,7 +1049,9 @@ var backgammon = (() => {
                 idx++;
             });
         }
-        utils.set_menu_items(currentUser);
+        if (!embedded) {
+            utils.set_menu_items(currentUser);
+        }
     };
 
     const renderLogin = (parent) => {
@@ -1137,6 +1143,7 @@ var backgammon = (() => {
     };
 
     const renderCopyright = (parent) => {
+        if (embedded) return;
         const div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_BACKGAMMON")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
@@ -1229,7 +1236,9 @@ var backgammon = (() => {
     const renderModel = (m) => {
         model = m;
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body);
+        if (!embedded) {
+            utils.create_cookies_banner(document.body);
+        }
         setActive(false);
         if (model.allUsers && model.allUsers.length == 0) {
             clearTicket();
@@ -1240,6 +1249,10 @@ var backgammon = (() => {
             return;
         }
         if (!ticket) {
+            if (embedded) {
+                onStartComputerGame();
+                return;
+            }
             if (guestMode) {
                 document.title = `${_T("HEADER_BACKGAMMON")} - ${_T("INFO_GUEST_VIEW")}`;
                 if (model.board) {
@@ -1429,6 +1442,9 @@ var backgammon = (() => {
         if (params.has("debug")) {
             utils.enable_debug(true);
             utils.debug("DEBUG enabled.");
+        }
+        if (params.has("embedded")) {
+            embedded = true;
         }
         if (params.has("login")) {
             login(params.get("login"));
