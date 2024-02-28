@@ -9,6 +9,8 @@ var chess = (() => {
 
     // state
 
+    let embedded;
+
     let ticket;
     let model;
     let timerEnabled = false;
@@ -47,7 +49,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.5";
+    let version = "2.0.6";
 
     // helper
 
@@ -499,7 +501,7 @@ var chess = (() => {
     const simulateMove = () => {
         let moves = [];
         model.board.figures.forEach(f => {
-            f.moves.forEach(m => moves.push({figure: f, move: m}));
+            f.moves.forEach(m => moves.push({ figure: f, move: m }));
         });
         if (moves.length > 0) {
             const m = moves[Math.floor(Math.random() * moves.length)];
@@ -678,6 +680,7 @@ var chess = (() => {
     };
 
     const renderUserList = (parent) => {
+        if (embedded) return;
         helpDiv = controls.createDiv(document.body);
         utils.create_menu(parent);
         let title = currentUser ? `${currentUser.name} - ${_T("HEADER_CHESS")}` : _T("HEADER_CHESS");
@@ -694,7 +697,7 @@ var chess = (() => {
         sampleBoard.height = 32 * 8;
         let ctx = sampleBoard.getContext("2d");
         drawSampleBoard(ctx, 32);
-        // render content area        
+        // render content area
         const divContent = controls.createDiv(parent, "content");
         if (model.allUsers.length > 0) {
             controls.create(divContent, "p", undefined, _T("LABEL_LOGGED_IN_PLAYERS"));
@@ -860,6 +863,7 @@ var chess = (() => {
     };
 
     const renderCopyright = (parent) => {
+        if (embedded) return;
         const div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_CHESS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2021-2022 `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
@@ -912,13 +916,19 @@ var chess = (() => {
         model = m;
         setState(model.state.state);
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body);
+        if (!embedded) {
+            utils.create_cookies_banner(document.body);
+        }
         document.body.className = "inactive-background";
         if (model.allUsers.length == 0) {
             clearTicket();
         }
         const divMain = controls.createDiv(document.body, "main");
         if (!ticket) {
+            if (embedded) {
+                startEmbeddedComputerGame();
+                return;
+            }
             if (guestMode) {
                 document.title = `${_T("HEADER_CHESS")} - ${_T("INFO_GUEST_VIEW")}`;
                 if (model.board) {
@@ -947,11 +957,32 @@ var chess = (() => {
         enableTimer();
     };
 
+    const startEmbeddedComputerGame = () => {
+        utils.fetch_api_call("api/chess/login",
+            {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify(_T("TEXT_YOU"))
+            },
+            (loginModel) => {
+                setState(loginModel.state);
+                setTicket(loginModel.ticket);
+                btnPlayComputer_click();
+            },
+            (errMsg) => {
+                document.getElementById("login-error-id").textContent = errMsg;
+                enableTimer();
+            });
+    };
+
     const render = () => {
         const params = new URLSearchParams(window.location.search);
         if (params.has("debug")) {
             utils.enable_debug(true);
             utils.debug("DEBUG enabled.");
+        }
+        if (params.has("embedded")) {
+            embedded = true;
         }
         if (params.has("login")) {
             login(params.get("login"));
