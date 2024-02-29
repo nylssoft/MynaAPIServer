@@ -10,6 +10,7 @@ var chess = (() => {
     // state
 
     let embedded;
+    let autoStartComputerGame;
 
     let ticket;
     let model;
@@ -925,7 +926,8 @@ var chess = (() => {
         }
         const divMain = controls.createDiv(document.body, "main");
         if (!ticket) {
-            if (embedded) {
+            if (embedded && !autoStartComputerGame) {
+                autoStartComputerGame = true;
                 startEmbeddedComputerGame();
                 return;
             }
@@ -968,10 +970,6 @@ var chess = (() => {
                 setState(loginModel.state);
                 setTicket(loginModel.ticket);
                 btnPlayComputer_click();
-            },
-            (errMsg) => {
-                document.getElementById("login-error-id").textContent = errMsg;
-                enableTimer();
             });
     };
 
