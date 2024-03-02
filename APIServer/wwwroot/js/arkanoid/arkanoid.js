@@ -146,7 +146,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.2.3";
+    const version = "1.2.4";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -2039,7 +2039,7 @@ var arkanoid = (() => {
             });
     };
 
-    const init = async (sm) => {
+    const init = async (pictures) => {
         debugStatistics = { drawCnt: 0, drawSum: 0, actionCnt: 0, actionSum: 0 };
         const params = new URLSearchParams(window.location.search);
         if (params.has("debug")) {
@@ -2052,7 +2052,7 @@ var arkanoid = (() => {
                 resp.json()
                     .then(json => {
                         levels = json;
-                        initBackgroundPictures(sm.pictures);
+                        initBackgroundPictures(pictures);
                         renderInit();
                     })
                     .catch(err => console.log(err));
@@ -2073,9 +2073,15 @@ window.onload = () => {
     utils.set_locale(() => {
         utils.auth_lltoken(() => {
             const token = utils.get_authentication_token();
-            utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
-                (model) => arkanoid.init(model),
-                (errMsg) => console.error(errMsg));
+            const params = new URLSearchParams(window.location.search);
+            if (params.has("embedded")) {
+                arkanoid.init([]);
+            }
+            else {
+                utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+                    (model) => arkanoid.init(model.pictures),
+                    (errMsg) => console.error(errMsg));
+            }
         });
     });
 };

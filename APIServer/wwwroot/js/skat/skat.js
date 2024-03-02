@@ -16,6 +16,8 @@ var skat = (() => {
 
     // state
 
+    let embedded;
+
     let ticket;
     let model;
     let chatModel;
@@ -42,7 +44,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.5";
+    let version = "2.2.6";
 
     let computerGame = false;
     let computerInternalState;
@@ -327,7 +329,7 @@ var skat = (() => {
         if (ignoreToken || !currentUser) {
             controls.create(parent, "p", undefined, _T("INFO_TABLE_FULL"));
             controls.createButton(parent, _T("BUTTON_GUEST_VIEW"), () => window.open("/skat?guest", "_blank"));
-            document.body.className = "inactive-background";
+            setActive(false);
         }
         else {
             let divParent = controls.createDiv(parent);
@@ -342,15 +344,17 @@ var skat = (() => {
     };
 
     const renderUserList = (parent) => {
-        helpDiv = controls.createDiv(document.body);
-        utils.create_menu(parent);
-        let title = currentUser ? `${currentUser.name} - ${_T("HEADER_SKAT")}` : _T("HEADER_SKAT");
-        const h1 = controls.create(parent, "h1", undefined, title);
-        const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
-        helpImg.addEventListener("click", () => onUpdateHelp(true));
-        if (currentUser && currentUser.photo) {
-            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+        if (!embedded) {
+            helpDiv = controls.createDiv(document.body);
+            utils.create_menu(parent);
+            let title = currentUser ? `${currentUser.name} - ${_T("HEADER_SKAT")}` : _T("HEADER_SKAT");
+            const h1 = controls.create(parent, "h1", undefined, title);
+            const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
+            helpImg.addEventListener("click", () => onUpdateHelp(true));
+            if (currentUser && currentUser.photo) {
+                const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
+                imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            }
         }
         let divInfoImages = controls.createDiv(parent, "infoimages");
         controls.createImg(divInfoImages, "card-img", imgWidth, imgHeight, "/images/skat/28.gif", `${_T("TEXT_CLUBS")} ${_T("TEXT_JACK")}`);
@@ -386,7 +390,9 @@ var skat = (() => {
                 idx++;
             });
         }
-        utils.set_menu_items(currentUser);
+        if (!embedded) {
+            utils.set_menu_items(currentUser);
+        }
     };
 
     const renderReservations = (parent) => {
@@ -581,8 +587,13 @@ var skat = (() => {
         controls.createDiv(parent, "error").id = "reserve-error-id";
     };
 
+    const setActive = (isActive) => {
+        if (embedded) return;
+        document.body.className = isActive ? "active-background" : "inactive-background";
+    };
+
     const renderLogin = (parent) => {
-        document.body.className = "active-background";
+        setActive(true);
         if (!currentUser) {
             controls.create(parent, "p", undefined, _T("INFO_YOU_CAN_PLAY"));
             let label = controls.createLabel(parent, undefined, _T("LABEL_NAME"));
@@ -619,7 +630,7 @@ var skat = (() => {
 
     const renderWaitForUsers = (parent) => {
         controls.create(parent, "p", "activity", _T("INFO_WAIT_FOR_ALL"));
-        document.body.className = "inactive-background";
+        setActive(false);
     };
 
     const renderStartGame = (parent) => {
@@ -630,7 +641,7 @@ var skat = (() => {
             controls.create(parent, "p", undefined, _T("INFO_ALL_LOGGED_IN_START_GAME"));
         }
         controls.createButton(parent, _T("BUTTON_START_GAME"), btnStartGame_click);
-        document.body.className = "active-background";
+        setActive(true);
     };
 
     const renderCards = (parent, overlap, cards, show, action, addspace) => {
@@ -785,7 +796,7 @@ var skat = (() => {
                     }
                     else {
                         controls.create(parent, "p", undefined, _T("INFO_WAIT_CONFIRMATION_OTHER"));
-                        document.body.className = "inactive-background";
+                        setActive(false);
                     }
                 }
             }
@@ -825,7 +836,7 @@ var skat = (() => {
             }
         }
         if (active) {
-            document.body.className = "active-background";
+            setActive(true);
         }
     };
 
@@ -972,6 +983,7 @@ var skat = (() => {
     };
 
     const renderCopyright = (parent) => {
+        if (embedded) return;
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_SKAT")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
@@ -1001,7 +1013,7 @@ var skat = (() => {
                 !model.skatTable.gameStarted &&
                 model.skatTable.gamePlayer &&
                 model.skatTable.gamePlayer.name == model.skatTable.player.name) {
-                document.body.className = "active-background";
+                setActive(true);
             }
         }
         renderSummary(divSummary, divLeft, divRight, divBottom);
@@ -1413,8 +1425,10 @@ var skat = (() => {
         }
         setState(model.state);
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body);
-        document.body.className = "inactive-background";
+        if (!embedded) {
+            utils.create_cookies_banner(document.body);
+        }
+        setActive(false);
         if (model.allUsers.length == 0) {
             clearTicket();
         }
@@ -1515,6 +1529,9 @@ var skat = (() => {
             utils.enable_debug(true);
             utils.debug("DEBUG enabled.");
         }
+        if (params.has("embedded")) {
+            embedded = true;
+        }
         if (params.has("login")) {
             login(params.get("login"));
             return;
@@ -1523,7 +1540,7 @@ var skat = (() => {
         if (params.has("result") || params.has("results")) {
             showResultInWindow = true;
             const parent = document.body;
-            parent.className = "inactive-background";
+            setActive(false);
             if (params.has("results")) {
                 onShowResults();
             }
@@ -1535,7 +1552,7 @@ var skat = (() => {
         if (params.has("admin")) {
             if (currentUser && currentUser.roles.includes("skatadmin")) {
                 let parent = document.body;
-                parent.className = "inactive-background";
+                setActive(false);
                 controls.removeAllChildren(parent);
                 controls.create(parent, "p", undefined, _T("INFO_SKAT_ADMINISTRATION"));
                 let p = controls.create(parent, "p");
@@ -1552,6 +1569,10 @@ var skat = (() => {
             guestMode = true;
         }
         disableTimer();
+        if (embedded && !computerGame) {
+            onStartComputerGame();
+            return;
+        }
         utils.fetch_api_call("api/skat/chat", undefined,
             (cm) => {
                 if (utils.is_debug()) {

@@ -47,7 +47,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.7";
+    let version = "2.1.8";
 
     let dirty;
 
@@ -245,7 +245,9 @@ var backgammon = (() => {
     };
 
     const setActive = (isActive) => {
-        document.body.className = isActive ? "active-background" : "inactive-background";
+        if (!embedded) {
+            document.body.className = isActive ? "active-background" : "inactive-background";
+        }
         const canvas = document.getElementById("player-canvas-id");
         if (canvas) {
             canvas.classList.toggle("hide", !isActive);

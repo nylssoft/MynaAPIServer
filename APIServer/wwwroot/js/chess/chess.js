@@ -50,7 +50,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.6";
+    let version = "2.0.7";
 
     // helper
 
@@ -234,6 +234,10 @@ var chess = (() => {
                 let cnt = capturedFigures[`${t}${c}`];
                 while (cnt > 0) {
                     const image = figureImageMap.get(`${t}${c}`);
+                    if (embedded) {
+                        ctx.fillStyle = colorLight;
+                        ctx.fillRect(fx, fy, fw, fw);
+                    }
                     ctx.drawImage(image, fx, fy, fw, fw);
                     fx += fw;
                     cnt--;
@@ -443,6 +447,11 @@ var chess = (() => {
         return model.board.whitePlayer;
     };
 
+    const setActive = (isActive) => {
+        if (embedded) return;
+        document.body.className = isActive ? "active-background" : "inactive-background";
+    };
+
     const getStateMessage = () => {
         let msg = "";
         const pConfirmNextGame = document.getElementById("confirmnextgame");
@@ -467,18 +476,18 @@ var chess = (() => {
                     if (model.board.nextGameRequested) {
                         if (model.currentUser.startGameConfirmed) {
                             controls.create(pConfirmNextGame, "p", undefined, _T("INFO_WAIT_CONFIRMATION"));
-                            document.body.className = "inactive-background";
+                            setActive(false);
                         }
                         else {
                             controls.create(pConfirmNextGame, "span", "confirmation", _T("INFO_QUESTION_NEXT_GAME"));
                             controls.createButton(pConfirmNextGame, _T("BUTTON_YES"), () => btnConfirmNextGame_click(true));
                             controls.createButton(pConfirmNextGame, _T("BUTTON_NO"), () => btnConfirmNextGame_click(false));
-                            document.body.className = "active-background";
+                            setActive(true);
                         }
                     }
                     else {
                         controls.createButton(pConfirmNextGame, _T("BUTTON_NEXT_GAME"), btnNextGame_click, "newgame").id = "newgame";
-                        document.body.className = "active-background";
+                        setActive(true);
                     }
                 }
             }
@@ -489,10 +498,10 @@ var chess = (() => {
                 }
                 if (isActivePlayer()) {
                     msg += _T("INFO_YOUR_TURN");
-                    document.body.className = "active-background";
+                    setActive(true);
                 }
                 else {
-                    document.body.className = "inactive-background";
+                    setActive(false);
                 }
             }
         }
@@ -666,7 +675,7 @@ var chess = (() => {
         if (ignoreToken || !currentUser) {
             controls.create(parent, "p", undefined, _T("INFO_CHESS_BOARD_FULL"));
             controls.createButton(parent, _T("BUTTON_GUEST_VIEW"), () => window.open("/chess?guest", "_blank"));
-            document.body.className = "inactive-background";
+            setActive(false);
         }
         else {
             let divParent = controls.createDiv(parent);
@@ -733,7 +742,7 @@ var chess = (() => {
     };
 
     const renderLogin = (parent) => {
-        document.body.className = "active-background";
+        setActive(true);
         if (!currentUser) {
             controls.create(parent, "p", undefined, _T("INFO_YOU_CAN_PLAY"));
             let label = controls.createLabel(parent, undefined, _T("LABEL_NAME"));
@@ -763,7 +772,7 @@ var chess = (() => {
         else {
             controls.create(parent, "p", "activity", _T("INFO_WAIT_FOR_OTHER_PLAYER"));
         }
-        document.body.className = "inactive-background";
+        setActive(false);
     };
 
     const renderStartGame = (parent) => {
@@ -825,17 +834,17 @@ var chess = (() => {
                 controls.create(divActions, "span", "confirmation", _T("INFO_QUESTION_START_GAME"));
                 controls.createButton(divActions, _T("BUTTON_YES"), () => btnConfirmStartGame_click(true));
                 controls.createButton(divActions, _T("BUTTON_NO"), () => btnConfirmStartGame_click(false));
-                document.body.className = "active-background";
+                setActive(true);
             }
             else {
                 controls.create(divActions, "p", undefined, _T("INFO_WAIT_CONFIRMATION"));
-                document.body.className = "inactive-background";
+                setActive(false);
             }
         }
         else {
             const txt = model.isComputerGame ? _T("BUTTON_START_COMPUTER_GAME") : _T("BUTTON_START_GAME");
             controls.createButton(divActions, txt, btnStartGame_click);
-            document.body.className = "active-background";
+            setActive(true);
         }
     };
 
@@ -846,14 +855,14 @@ var chess = (() => {
             controls.create(parent, "span", "confirmation", _T("INFO_REALLY_LOGOUT"));
             controls.createButton(parent, _T("BUTTON_YES"), btnEndGame_click, "EndGameYes");
             controls.createButton(parent, _T("BUTTON_NO"), btnEndGame_click, "EndGameNo");
-            document.body.className = "active-background";
+            setActive(true);
             return true;
         }
         if (giveUpClicked) {
             controls.create(parent, "span", "confirmation", _T("INFO_REALLY_GIVE_UP"));
             controls.createButton(parent, _T("BUTTON_YES"), btnGiveUp_click, "GiveUpYes");
             controls.createButton(parent, _T("BUTTON_NO"), btnGiveUp_click, "GiveUpNo");
-            document.body.className = "active-background";
+            setActive(true);
             return true;
         }
         controls.createButton(parent, _T("BUTTON_LAST_MOVE"), btnLastMove_click, "lastmovedbutton").id = "lastmovedbutton";
@@ -866,7 +875,7 @@ var chess = (() => {
     const renderCopyright = (parent) => {
         if (embedded) return;
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_CHESS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2021-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_CHESS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         if (ticket && (!model.board || !model.board.gameStarted)) {
             controls.createButton(div, _T("BUTTON_LOGOUT"), btnLogout_click, "Logout", "logout-button");
@@ -920,7 +929,7 @@ var chess = (() => {
         if (!embedded) {
             utils.create_cookies_banner(document.body);
         }
-        document.body.className = "inactive-background";
+        setActive(false);
         if (model.allUsers.length == 0) {
             clearTicket();
         }
