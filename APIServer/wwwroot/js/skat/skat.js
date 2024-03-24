@@ -44,7 +44,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.7";
+    let version = "2.2.8";
 
     let computerGame = false;
     let computerInternalState;
@@ -1122,15 +1122,15 @@ var skat = (() => {
                 }
                 const acc = { tournamentCount: r.tournaments, players: [] };
                 r.statistics.forEach(m => acc.players[m.playerName] = m);
-                renderStatistics(parent, acc, playerNames);
+                renderStatistics(parent, acc, playerNames, startYear);
             },
             handleError);
     };
 
-    const renderStatistics = (parent, acc, playerNames) => {
+    const renderStatistics = (parent, acc, playerNames, startYear) => {
         controls.removeAllChildren(parent);
         const table = controls.create(parent, "table");
-        controls.create(table, "caption", undefined, _T("INFO_TOURNAMENT_STATISTIC"));
+        controls.create(table, "caption", undefined, `${_T("INFO_TOURNAMENT_STATISTIC")} ${_T("TEXT_FROM")} ${startYear}`);
         const theader = controls.create(table, "thead");
         const tr = controls.create(theader, "tr");
         controls.create(tr, "th", undefined, _T("COLUMN_PLAYER"));
