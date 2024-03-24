@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.7";
+    let version = "1.1.9";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -62,7 +62,7 @@ var makeadate = (() => {
             appointment.votes.forEach(v => {
                 const acceptedOption = v.accepted.find(o => o.year == option.year && o.month == option.month);
                 if (acceptedOption) {
-                    acceptedOption.days.forEach(d => {
+                    acceptedOption.days.filter(d => option.days.includes(d)).forEach(d => {
                         let cnt = acceptedCount.get(d);
                         if (!cnt) {
                             cnt = 0;
@@ -242,7 +242,7 @@ var makeadate = (() => {
             appointment.votes.forEach(v => {
                 const acceptedOption = v.accepted.find(o => o.year == option.year && o.month == option.month);
                 if (acceptedOption) {
-                    acceptedOption.days.forEach(d => {
+                    acceptedOption.days.filter(d => option.days.includes(d)).forEach(d => {
                         let cnt = acceptedCount.get(d);
                         if (!cnt) {
                             cnt = 0;
@@ -1189,17 +1189,15 @@ var makeadate = (() => {
                 return;
             }
             if (editAppointment) {
-                if (canEditDay(appointment, option.year, option.month, day)) {
-                    if (option.days.includes(day)) {
-                        option.days = option.days.filter(d => d != day);
-                    }
-                    else {
-                        option.days.push(day);
-                    }
-                    option.days.sort((a, b) => a - b);
-                    onChange(appointment);
-                    dirty = true;
+                if (option.days.includes(day)) {
+                    option.days = option.days.filter(d => d != day);
                 }
+                else {
+                    option.days.push(day);
+                }
+                option.days.sort((a, b) => a - b);
+                onChange(appointment);
+                dirty = true;
                 return;
             }
             // vote appointment

@@ -136,21 +136,19 @@ namespace APIServer.Appointment
             logger.LogDebug("Update appointment...");
             var user = pwdManService.GetUserFromToken(authenticationToken);
             CheckDefinition(definition);
+            FilterPastOptions(definition);
             var dbContext = pwdManService.GetDbContext();
             var dbAppointment = dbContext.DbAppointments
                 .Where(a => a.Uuid == uuid && a.DbUserId == user.Id)
                 .Include(a => a.Votes)
                 .SingleOrDefault() ?? throw new InvalidParameterException();
             var appointment = ConvertDbAppointment(dbAppointment, securityKey);
-            // all dates with existing votes have to be specified in the selectable dates
-            var voteDateTimes = GetVoteDateTimes(appointment.Votes);
-            var exisingOptionDateTimes = GetOptionDateTimes(appointment.Definition.Options);
             var optionDateTimes = GetOptionDateTimes(definition.Options);
-            var commonDateTimes = optionDateTimes.Intersect(voteDateTimes);
-            if (commonDateTimes.Count() != voteDateTimes.Count || !optionDateTimes.Any())
+            if (optionDateTimes.Count == 0)
             {
                 throw new InvalidParameterException();
             }
+            CleanupInvalidVotes(dbAppointment, appointment, definition, securityKey);
             appointment.Definition.Options = definition.Options;
             // description has to be specified
             if (definition.Description.Trim().Length == 0)
@@ -158,6 +156,7 @@ namespace APIServer.Appointment
                 throw new InvalidParameterException();
             }
             appointment.Definition.Description = definition.Description;
+            var voteDateTimes = GetVoteDateTimes(appointment.Votes);
             // if no votes exist any participants can be changed
             if (!voteDateTimes.Any())
             {
@@ -501,5 +500,46 @@ namespace APIServer.Appointment
             }
             return ret;
         }
+
+        private static void FilterPastOptions(AppointmentDefinitionModel definition)
+        {
+            DateTime now = DateTime.UtcNow;
+            definition.Options = definition.Options.Where(option => option.Year > now.Year || option.Year == now.Year && option.Month >= now.Month).ToList();
+        }
+
+        private static void CleanupInvalidVotes(DbAppointment dbAppointment, AppointmentModel appointment, AppointmentDefinitionModel definition, string securityKey)
+        {
+            var cleanupVoteDateTimes = GetVoteDateTimes(appointment.Votes).Except(GetOptionDateTimes(definition.Options));
+            if (!cleanupVoteDateTimes.Any()) return;
+            foreach (var dbVote in dbAppointment.Votes)
+            {
+                bool updateVote = false;
+                var currentVote = ConvertDbVote(dbVote, securityKey);
+                var newAccepted = new List<AppointmentOptionModel>();
+                foreach (var accepted in currentVote.Accepted)
+                {
+                    foreach (var cleanupDateTime in cleanupVoteDateTimes)
+                    {
+                        if (accepted.Year == cleanupDateTime.Year
+                            && accepted.Month == cleanupDateTime.Month                            
+                            && accepted.Days.Remove(cleanupDateTime.Day))
+                        {
+                            updateVote = true;
+                        }
+                    }
+                    if (accepted.Days.Count > 0)
+                    {
+                        newAccepted.Add(accepted);
+                    }
+                }
+                if (updateVote)
+                {
+                    currentVote.Accepted = newAccepted;
+                    var newContent = JsonSerializer.Serialize(currentVote.Accepted);
+                    dbVote.Content = Encrypt(newContent, securityKey);
+                }
+            }
+        }
+
     }
 }
