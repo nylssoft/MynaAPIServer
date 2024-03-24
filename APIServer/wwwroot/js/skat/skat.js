@@ -44,7 +44,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.6";
+    let version = "2.2.7";
 
     let computerGame = false;
     let computerInternalState;
@@ -1105,8 +1105,11 @@ var skat = (() => {
     };
 
     const onStatistics = (parent, playerNames) => {
+        const startYearElem = document.getElementById("result-statistics-startyear-id");
+        if (!startYearElem || startYearElem.selectedOptions.length == 0) return;
+        const startYear = startYearElem.selectedOptions[0].value;
         const token = utils.get_authentication_token();
-        utils.fetch_api_call("api/skat/statistics",
+        utils.fetch_api_call(`api/skat/statistics/${startYear}`,
             {
                 method: "POST",
                 headers: { "token": token, "Accept": "application/json", "Content-Type": "application/json" },
@@ -1178,7 +1181,6 @@ var skat = (() => {
         controls.create(trfoot, "td", undefined, `${totalAvgGameValue.toFixed(1)}`);
         const p = controls.create(parent, "p");
         controls.createButton(p, _T("BUTTON_BACK"), () => onShowResults());
-
     };
 
 
@@ -1197,9 +1199,13 @@ var skat = (() => {
         const p = controls.create(parent, "p");
         p.id = "results-overview-id";
         const div = controls.createDiv(parent);
-        let options = [];
+        const options = [];
+        const fullYears = [];
         results.forEach((result,index) => {
-            let started = new Date(result.startedUtc);
+            const started = new Date(result.startedUtc);
+            if (!fullYears.includes(started.getFullYear())) {
+                fullYears.unshift(started.getFullYear());
+            }
             options.push({ name: utils.format_date(started), value: `${result.id}` });
             if (index === 0) {
                 let token = utils.get_authentication_token();
@@ -1209,7 +1215,7 @@ var skat = (() => {
                             utils.debug("RESULT RETRIEVED.");
                             utils.debug(result);
                         }
-                        renderResultTable(div, result, true);
+                        renderResultTable(div, result, true, fullYears);
                     },
                     handleError);                    
             }
@@ -1232,7 +1238,7 @@ var skat = (() => {
                         utils.debug("RESULT RETRIEVED.");
                         utils.debug(result);
                     }
-                    renderResultTable(div, result, true);
+                    renderResultTable(div, result, true, fullYears);
                 },
                 handleError);                    
         });
@@ -1248,7 +1254,7 @@ var skat = (() => {
         renderResultTable(document.body, result);
     };
 
-    const renderResultTable = (parent, result, hideBackButton) => {
+    const renderResultTable = (parent, result, hideBackButton, fullYears) => {
         controls.removeAllChildren(parent);
         if (!hideBackButton && !showResultInWindow) {
             const backButtonDiv = controls.createDiv(parent);
@@ -1347,9 +1353,14 @@ var skat = (() => {
             controls.create(td, "div", undefined, `+ ${otherWins[idx]} * ${otherScore}`);
             controls.create(td, "div", undefined, `= ${points}`);
         }
-        if (!computerGame && currentUser) {
-            const div = controls.createDiv(parent);
-            controls.createButton(div, _T("BUTTON_STATISTICS"), () => onStatistics(document.body, result.playerNames));
+        if (!computerGame && currentUser && fullYears) {
+            const statisticsDiv = controls.createDiv(parent);
+            controls.createButton(statisticsDiv, _T("BUTTON_STATISTICS"), () => onStatistics(document.body, result.playerNames));
+            const startYearOptions = fullYears.map(fullYear => { return { name: fullYear, value: fullYear }; });
+            const startYearlabel = controls.createLabel(statisticsDiv, undefined, `${_T("TEXT_FROM")} `);
+            startYearlabel.htmlFor = "result-statistics-startyear-id";
+            const startYearSelect = controls.createSelect(statisticsDiv, "result-statistics-startyear-id", "result-select", startYearOptions);
+            startYearSelect.addEventListener("change", () => onStatistics(document.body, result.playerNames));
         }
     };
 

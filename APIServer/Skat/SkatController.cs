@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2024 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -301,10 +301,10 @@ namespace APIServer.Skat
         }
 
         [HttpPost]
-        [Route("api/skat/statistics")]
-        public IActionResult CalculateStatistics([FromBody] List<string> playerNames)
+        [Route("api/skat/statistics/{startYear}")]
+        public IActionResult CalculateStatistics(int startYear, [FromBody] List<string> playerNames)
         {
-            return new JsonResult(SkatService.CalculateStatistics(PwdManService, GetToken(), playerNames));
+            return new JsonResult(SkatService.CalculateStatistics(PwdManService, GetToken(), playerNames, startYear));
         }
 
         // --- authenticated users with skatadmin role

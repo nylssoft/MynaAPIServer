@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2024 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -464,7 +464,7 @@ namespace APIServer.Skat
             return ret;
         }
 
-        public StatisticModel CalculateStatistics(IPwdManService pwdManService, string authenticationToken, List<string> playerNames)
+        public StatisticModel CalculateStatistics(IPwdManService pwdManService, string authenticationToken, List<string> playerNames, int startYear)
         {
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
@@ -478,10 +478,15 @@ namespace APIServer.Skat
             }
             else
             {
+                DateTime dt = DateTime.MinValue;
+                if (startYear >= dt.Year && startYear <= DateTime.Now.Year)
+                {
+                    dt = new DateTime(startYear, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                }
                 var userSkatResults = dbContext.DbUserSkatResults
                     .Include(u => u.DbSkatResult)
                         .ThenInclude(g => g.SkatGameHistories)
-                    .Where(u => u.DbUserId == user.Id)
+                    .Where(u => u.DbUserId == user.Id && u.DbSkatResult.StartedUtc >= dt)
                     .OrderByDescending(u => u.DbSkatResult.StartedUtc);
                 skatResults = new List<DbSkatResult>();
                 foreach (var userSkatResult in userSkatResults)
