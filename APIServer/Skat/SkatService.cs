@@ -469,20 +469,21 @@ namespace APIServer.Skat
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
             List<DbSkatResult> skatResults;
+            DateTime dt = DateTime.MinValue;
+            if (startYear >= dt.Year && startYear <= DateTime.Now.Year)
+            {
+                dt = new DateTime(startYear, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            }
             if (pwdManService.HasRole(user, "skatadmin"))
             {
                 skatResults = dbContext.DbSkatResults
                     .Include(r => r.SkatGameHistories)
+                    .Where(r => r.StartedUtc >= dt)
                     .OrderByDescending(r => r.StartedUtc)
                     .ToList();
             }
             else
             {
-                DateTime dt = DateTime.MinValue;
-                if (startYear >= dt.Year && startYear <= DateTime.Now.Year)
-                {
-                    dt = new DateTime(startYear, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-                }
                 var userSkatResults = dbContext.DbUserSkatResults
                     .Include(u => u.DbSkatResult)
                         .ThenInclude(g => g.SkatGameHistories)
