@@ -23,6 +23,8 @@ namespace APIServer.HighScore
     {
         const string TETRIS = "tetris";
 
+        const string TSTETRIS = "tstetris";
+
         const string ARKANOID = "arkanoid";
 
         List<HighScore> GetHighScores(string game);

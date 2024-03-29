@@ -79,7 +79,7 @@ namespace APIServer.HighScore
         public bool AddHighScore(string game, HighScore highScore)
         {
             if (highScore == null ||
-                game != IHighScoreService.TETRIS && game != IHighScoreService.ARKANOID ||
+                game != IHighScoreService.TETRIS && game != IHighScoreService.ARKANOID && game != IHighScoreService.TSTETRIS ||
                 highScore.Name == null ||
                 highScore.Name.Length == 0 ||
                 highScore.Name.Length > Limits.MAX_HIGHSCORE_NAME ||

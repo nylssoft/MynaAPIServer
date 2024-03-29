@@ -50,6 +50,20 @@ namespace APIServer.HighScore
         }
 
         [HttpGet]
+        [Route("api/tstetris/highscore")]
+        public IActionResult GetTsTetrisHighScores()
+        {
+            return new JsonResult(TetrisService.GetHighScores(IHighScoreService.TSTETRIS));
+        }
+
+        [HttpPost]
+        [Route("api/tstetris/highscore")]
+        public IActionResult AddTsTetrisHighScore([FromBody] HighScore value)
+        {
+            return new JsonResult(TetrisService.AddHighScore(IHighScoreService.TSTETRIS, value));
+        }
+
+        [HttpGet]
         [Route("api/arkanoid/highscore")]
         public IActionResult GetArkanoidHighScores()
         {
