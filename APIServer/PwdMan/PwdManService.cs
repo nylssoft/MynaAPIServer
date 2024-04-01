@@ -22,6 +22,7 @@ using APIServer.PwdMan.Model;
 using Markdig;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -44,31 +45,25 @@ using System.Threading.Tasks;
 
 namespace APIServer.PwdMan
 {
-    public class PwdManService : IPwdManService
+    public class PwdManService(
+        IConfiguration configuration,
+        ILogger<PwdManService> logger,
+        DbSqliteContext dbSqliteContext,
+        DbPostgresContext dbPostgresContext,
+        ISendGridClient sendGridClient,
+        IMemoryCache memoryCache) : IPwdManService
     {
-        public IConfiguration Configuration { get; }
+        public IConfiguration Configuration { get; } = configuration;
 
-        private readonly ILogger logger;
+        private readonly ILogger logger = logger;
 
-        private readonly DbMynaContext dbSqliteContext;
+        private readonly DbMynaContext dbSqliteContext = dbSqliteContext;
 
-        private readonly DbPostgresContext dbPostgresContext;
+        private readonly DbPostgresContext dbPostgresContext = dbPostgresContext;
 
-        private readonly ISendGridClient sendGridClient;
+        private readonly ISendGridClient sendGridClient = sendGridClient;
 
-        public PwdManService(
-            IConfiguration configuration,
-            ILogger<PwdManService> logger,
-            DbSqliteContext dbSqliteContext,
-            DbPostgresContext dbPostgresContext,
-            ISendGridClient sendGridClient)
-        {
-            Configuration = configuration;
-            this.logger = logger;
-            this.dbSqliteContext = dbSqliteContext;
-            this.dbPostgresContext = dbPostgresContext;
-            this.sendGridClient = sendGridClient;
-        }
+        private readonly IMemoryCache memoryCache = memoryCache;
 
         // --- reset password
 
@@ -92,7 +87,7 @@ namespace APIServer.PwdMan
             }
             var opt = GetOptions();
             var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
-            var lastRequestedUtc = dbContext.DbResetPasswords.Where((r) => r.IpAddress == ipAddress).Max<DbResetPassword,DateTime?>((r) => r.RequestedUtc);
+            var lastRequestedUtc = dbContext.DbResetPasswords.Where((r) => r.IpAddress == ipAddress).Max<DbResetPassword, DateTime?>((r) => r.RequestedUtc);
             if (lastRequestedUtc != null)
             {
                 int min = Convert.ToInt32((DateTime.UtcNow - lastRequestedUtc.Value).TotalMinutes);
@@ -220,9 +215,10 @@ namespace APIServer.PwdMan
                     throw new EmailAddressRegistrationLockedException(opt.ResetPasswordTokenExpireMinutes - min);
                 }
             }
-            dbContext.DbRegistrations.Add(new DbRegistration {
+            dbContext.DbRegistrations.Add(new DbRegistration
+            {
                 Email = email,
-                RequestedUtc = DateTime.UtcNow,               
+                RequestedUtc = DateTime.UtcNow,
                 IpAddress = ipAddress,
                 Locale = GetValidLocale(locale)
             });
@@ -614,7 +610,7 @@ namespace APIServer.PwdMan
             }
             return userModel;
         }
-        
+
         public bool UnlockUser(string authenticationToken, string username)
         {
             logger.LogDebug("Unlock username '{username}'...", username);
@@ -1033,7 +1029,7 @@ namespace APIServer.PwdMan
                 userClient.LastLoginIPAddress = ipAddress;
                 userClient.LastLoginUTC = DateTime.UtcNow;
                 auditParam += $" [{userClient.ClientName},{userClient.ClientUUID}]";
-            }            
+            }
             Audit(dbContext, user, auditAction, auditParam);
             dbContext.SaveChanges();
             var ret = new AuthenticationResponseModel { Token = token, RequiresPass2 = user.Requires2FA };
@@ -1319,6 +1315,12 @@ namespace APIServer.PwdMan
             {
                 language = languages[0];
             }
+            string cacheKey = $"locale-{language}";
+            if (memoryCache.TryGetValue(cacheKey, out string cachedUrl))
+            {
+                logger.LogDebug("Locale url returned from memory cache.");
+                return cachedUrl;
+            }
             var filename = $"wwwroot/locale/{language}.json";
             if (!File.Exists(filename))
             {
@@ -1328,7 +1330,13 @@ namespace APIServer.PwdMan
             using var stream = File.OpenRead(filename);
             var hash = md5.ComputeHash(stream);
             var v = BitConverter.ToString(hash).Replace("-", "");
-            return $"/locale/{language}.json?v={v}";
+            string url = $"/locale/{language}.json?v={v}";
+            var options = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromHours(24))
+                .SetSlidingExpiration(TimeSpan.FromHours(1));
+            memoryCache.Set(cacheKey, url, options);
+            logger.LogDebug("Locale url added to memory cache.");
+            return url;
         }
 
         // --- slideshow
@@ -1651,6 +1659,12 @@ namespace APIServer.PwdMan
 
         private string GetMarkdownByDocumentId(string authenticationToken, int docItemId, string locale)
         {
+            string cacheKey = $"markdown-{docItemId}";
+            if (memoryCache.TryGetValue(cacheKey, out string cachedMarkdown))
+            {
+                logger.LogDebug("Markdown returned from memory cache.");
+                return cachedMarkdown;
+            }
             var dbContext = GetDbContext();
             var docItem = dbContext.DbDocItems.SingleOrDefault(item => item.Type == DbDocItemType.Item && item.Id == docItemId);
             if (docItem != null && docItem.ContentId.HasValue)
@@ -1676,6 +1690,14 @@ namespace APIServer.PwdMan
                         var content = Encoding.UTF8.GetString(docContent.Data);
                         var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
                         var markdown = Markdown.ToHtml(content, pipeline);
+                        if (AccessRole.IsEverbody(docItem.AccessRole))
+                        {
+                            var options = new MemoryCacheEntryOptions()
+                                .SetAbsoluteExpiration(TimeSpan.FromHours(24))
+                                .SetSlidingExpiration(TimeSpan.FromHours(1));
+                            memoryCache.Set(cacheKey, markdown, options);
+                            logger.LogDebug("Markdown added to memory cache.");
+                        }
                         return markdown;
                     }
                 }

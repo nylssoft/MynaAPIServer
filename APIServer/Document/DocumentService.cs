@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021-2022 Niels Stockfleth
+    Copyright (C) 2021-2024 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ using APIServer.Database;
 using APIServer.Document.Model;
 using APIServer.PwdMan;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -28,14 +29,11 @@ using System.Text;
 
 namespace APIServer.Document
 {
-    public class DocumentService : IDocumentService
+    public class DocumentService(ILogger<DocumentService> logger, IMemoryCache memoryCache) : IDocumentService
     {
-        private readonly ILogger logger;
+        private readonly ILogger logger = logger;
 
-        public DocumentService(ILogger<DocumentService> logger)
-        {
-            this.logger = logger;
-        }
+        private readonly IMemoryCache memoryCache = memoryCache;
 
         public ItemModel CreateVolume(IPwdManService pwdManService, string authenticationToken, string name)
         {
@@ -46,7 +44,8 @@ namespace APIServer.Document
             var docItem = GetVolume(dbContext, user);
             if (docItem == null)
             {
-                docItem = new DbDocItem {
+                docItem = new DbDocItem
+                {
                     Name = name,
                     Type = DbDocItemType.Volume,
                     OwnerId = user.Id
@@ -275,6 +274,7 @@ namespace APIServer.Document
             docItem.Size = size;
             docItem.Content.Data = bytes;
             dbContext.SaveChanges();
+            memoryCache.Remove($"markdown-{id}");
             return true;
         }
 
@@ -345,7 +345,7 @@ namespace APIServer.Document
             var dbContext = pwdManService.GetDbContext();
             var item = dbContext.DbDocItems.
                 Include(item => item.Content).
-                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);            
+                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
             if (item == null)
             {
                 return null;
