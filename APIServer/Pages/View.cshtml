@@ -3,12 +3,17 @@
 @{
     var nonce = HttpContext.Items["nonce"];
 }
+@model APIServer.Pages.ViewModel
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="public,max-age=60,must-revalidate" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:title" content="@Model.OgTitle" />
+    <meta property="og:description" content="@Model.OgDescription" />
+    <meta property="og:image" content="@Model.OgImage" />
+    <meta property="og:type" content="@Model.OgType" />
     <title>View Page</title>
     <link rel="icon" type="image/png" href="~/images/buttons/accessories-dictionary-2.png" asp-append-version="true" />
     <environment include="Development">

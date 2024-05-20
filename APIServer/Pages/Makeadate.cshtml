@@ -1,11 +1,16 @@
 ﻿@page
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@model APIServer.Pages.MakeAdateModel
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="Cache-Control" content="public,max-age=60,must-revalidate" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:title" content="@Model.OgTitle" />
+    <meta property="og:description" content="@Model.OgDescription" />
+    <meta property="og:image" content="@Model.OgImage" />
+    <meta property="og:type" content="@Model.OgType" />
     <title></title>
     <link rel="icon" type="image/png" href="~/images/buttons/view-calendar-tasks-32.png" asp-append-version="true" />
     <environment include="Development">
