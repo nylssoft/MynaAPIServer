@@ -92,6 +92,7 @@ namespace APIServer
                 if (env.IsDevelopment())
                 {
                     csp.Append(" ws://localhost:*");
+                    csp.Append(" http://localhost:*");
                 }
                 csp.Append(';');
                 csp.Append("script-src 'self'");
