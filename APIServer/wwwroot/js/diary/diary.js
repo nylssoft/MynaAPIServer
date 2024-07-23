@@ -4,7 +4,7 @@ var diary = (() => {
     
     // state
 
-    let version = "2.0.5";
+    let version = "2.0.6";
 
     let changeDate;
     let inSaveDiary;
@@ -88,12 +88,12 @@ var diary = (() => {
 
     const renderCopyright = (parent) => {
         let div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_DIARY")} ${version}. ${_T("TEXT_COPYRIGHT")} 2020-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_DIARY")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
 
-    const renderCalendar = (calendarDiv, textDiv, month, year) => {
+    const renderCalendar = (parent, calendarDiv, textDiv, month, year) => {
         controls.removeAllChildren(calendarDiv);
         let today = new Date();
         let date = new Date(year, month);
@@ -292,7 +292,7 @@ var diary = (() => {
         let leftDiv = controls.createDiv(boxDiv, "calendar-column");
         let rightDiv = controls.createDiv(boxDiv, "text-column");
         rightDiv.id = "text-column-id";
-        renderCalendar(leftDiv, rightDiv, today.getMonth(), today.getFullYear());
+        renderCalendar(parent, leftDiv, rightDiv, today.getMonth(), today.getFullYear());
         renderCopyright(parent);
         utils.set_menu_items(currentUser);
     };
@@ -330,7 +330,7 @@ var diary = (() => {
         utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
             (days) => {
                 daySet = new Set(days);
-                renderCalendar(calendarDiv, textDiv, month, year);
+                renderCalendar(parent, calendarDiv, textDiv, month, year);
             },
             (errMsg) => renderError(parent, errMsg)
         );
@@ -347,7 +347,7 @@ var diary = (() => {
         utils.fetch_api_call(`api/diary/day?date=${d.toISOString()}`, { headers: { "token": token } },
             (days) => {
                 daySet = new Set(days);
-                renderCalendar(calendarDiv, textDiv, month, year);
+                renderCalendar(parent, calendarDiv, textDiv, month, year);
             },
             (errMsg) => renderError(parent, errMsg)
         );
