@@ -99,6 +99,7 @@ var pwdman = (() => {
                     utils.set_local_storage("pwdman-lltoken", authResult.longLivedToken);
                 }
                 setState({ "token": authToken, "userName": userName, "requiresPass2": requiresPass2 });
+                utils.enable_automatic_logout(authToken);
                 renderPage();
             },
             (errMsg) => errorDiv.textContent = _T(errMsg),
@@ -123,6 +124,7 @@ var pwdman = (() => {
                 let state = getState();
                 state.token = authToken;
                 state.requiresPass2 = requiresPass2;
+                utils.enable_automatic_logout(authToken);
                 setState(state);
                 renderPage();
             },
@@ -152,6 +154,7 @@ var pwdman = (() => {
                 };
                 utils.set_session_storage("pwdman-state", JSON.stringify(state));
                 utils.set_local_storage("pwdman-lltoken", authResult.longLivedToken);
+                utils.enable_automatic_logout(authResult.token);
                 renderPage();
             },
             (errMsg) => {

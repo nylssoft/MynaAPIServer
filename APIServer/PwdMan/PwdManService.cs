@@ -988,7 +988,8 @@ namespace APIServer.PwdMan
             {
                 user.Requires2FA = false;
             }
-            var token = GenerateToken(user.Name, opt, user.Requires2FA);
+            TokenType tokenType = user.UseLongLivedToken ? TokenType.STANDARD_TOKEN : TokenType.SHORT_LIVED_TOKEN;
+            var token = GenerateTokenPerType(tokenType, user.Name, opt, user.Requires2FA);
             loginIpAddress.Succeeded += 1;
             if (loginIpAddress.Failed > 0)
             {
@@ -1210,6 +1211,13 @@ namespace APIServer.PwdMan
                 Username = user.Name
             };
             return ret;
+        }
+
+        public string RefreshToken(string token)
+        {
+            logger.LogDebug("Refresh token...");
+            var user = GetUserFromToken(token, false);
+            return GenerateToken(user.Name, GetOptions(), false);
         }
 
         public void ChangeUserPassword(string authenticationToken, UserPasswordChangeModel userPassswordChange)
@@ -2024,12 +2032,17 @@ namespace APIServer.PwdMan
 
         private static string GenerateToken(string username, PwdManOptions opt, bool requires2FA)
         {
-            return GenerateTokenPerType(false, username, opt, requires2FA);
+            return GenerateTokenPerType(TokenType.STANDARD_TOKEN, username, opt, requires2FA);
         }
 
         private static string GenerateLongLivedToken(string username, PwdManOptions opt)
         {
-            return GenerateTokenPerType(true, username, opt);
+            return GenerateTokenPerType(TokenType.LONG_LIVED_TOKEN, username, opt);
+        }
+
+        private static string GenerateShortLivedToken(string username, PwdManOptions opt, bool requires2FA)
+        {
+            return GenerateTokenPerType(TokenType.SHORT_LIVED_TOKEN, username, opt, requires2FA);
         }
 
         private static SymmetricSecurityKey GetSymmetricSecurityKey(string signKey)
@@ -2047,9 +2060,11 @@ namespace APIServer.PwdMan
             return new SymmetricSecurityKey(signKeyBytes);
         }
 
-        private static string GenerateTokenPerType(bool useLongLivedToken, string username, PwdManOptions opt, bool requires2FA = false)
+        enum TokenType { LONG_LIVED_TOKEN, SHORT_LIVED_TOKEN, STANDARD_TOKEN };
+
+        private static string GenerateTokenPerType(TokenType tokenType, string username, PwdManOptions opt, bool requires2FA = false)
         {
-            var signKey = useLongLivedToken ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
+            var signKey = tokenType == TokenType.LONG_LIVED_TOKEN ? opt.TokenConfig.LongLivedSignKey : opt.TokenConfig.SignKey;
             if (string.IsNullOrEmpty(signKey)) throw new ArgumentException("Token signing key configuration is missing.");
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -2058,9 +2073,13 @@ namespace APIServer.PwdMan
                 Audience = opt.TokenConfig.Audience,
                 SigningCredentials = new SigningCredentials(GetSymmetricSecurityKey(signKey), SecurityAlgorithms.HmacSha256Signature)
             };
-            if (useLongLivedToken)
+            if (tokenType == TokenType.LONG_LIVED_TOKEN)
             {
                 tokenDescriptor.Expires = DateTime.UtcNow.AddDays(60);
+            }
+            else if (tokenType == TokenType.SHORT_LIVED_TOKEN)
+            {
+                tokenDescriptor.Expires = DateTime.UtcNow.AddMinutes(opt.TokenConfig.ShortExpireMinutes);
             }
             else
             {

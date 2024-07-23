@@ -98,6 +98,8 @@ namespace APIServer.PwdMan
 
         AuthenticationResponseModel AuthenticatePin(string longLivedToken, string pin, string ipAddress);
 
+        string RefreshToken(string token);
+
         bool Logout(string token);
 
         // --- password manager

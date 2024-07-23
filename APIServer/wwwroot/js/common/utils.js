@@ -6,6 +6,9 @@ var utils = (() => {
     let translationMap;
     let locale;
     let memoryStorage = new Map();
+    let automaticLogoutTimerId;
+    let expireAtUtc;
+    let mouseMoveCnt = 0;
 
     const is_debug = () => {
         return debug_mode === true;
@@ -176,6 +179,17 @@ var utils = (() => {
         return undefined;
     };
 
+    const get_exp = (token) => {
+        if (token && token.length > 0) {
+            const parts = token.split(".");
+            if (parts.length == 3) {
+                const payload = JSON.parse(atob(parts[1])); // TODO atob does not work with unicode
+                return payload.exp * 1000;
+            }
+        }
+        return undefined;
+    };
+    
     const is_pin_required = () => {
         return get_session_storage("pin-required") === "true";
     };
@@ -272,6 +286,7 @@ var utils = (() => {
 
     const auth_lltoken = (resolve) => {
         const token = get_authentication_token();
+        enable_automatic_logout(token, true /*isNewPage*/);
         if (!token && !is_pin_required()) {
             const lltoken = get_local_storage("pwdman-lltoken");
             if (lltoken) {
@@ -285,6 +300,7 @@ var utils = (() => {
                             };
                             set_session_storage("pwdman-state", JSON.stringify(state));
                             set_local_storage("pwdman-lltoken", authResult.longLivedToken);
+                            enable_automatic_logout(authResult.token);
                             resolve();
                         }
                         else {
@@ -301,6 +317,53 @@ var utils = (() => {
             }
         }
         resolve();
+    };
+
+    const enable_automatic_logout = (token, isNewPage) => {
+        if (!token) return;
+        let urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("logout")) return;
+        console.log("enable_automatic_logout");
+        expireAtUtc = get_exp(token);
+        mouseMoveCnt = isNewPage ? 1 : 0;
+        refresh_token();
+        if (!automaticLogoutTimerId) {
+            automaticLogoutTimerId = window.setInterval(refresh_token, 10000);
+            console.log("created timer for token refresh with timer ID %d.", automaticLogoutTimerId);
+            addEventListener("mousemove", () => mouseMoveCnt++);
+        }
+    };
+
+    const refresh_token = () => {
+        if (!expireAtUtc) return;
+        const ms = expireAtUtc - Date.now();
+        const r = (ms - 30000) / 1000;
+        if (r <= 0) {
+            expireAtUtc = undefined;
+            console.log("send REST call");
+            const token = get_authentication_token();
+            if (!token) return;
+            if (mouseMoveCnt === 0) {                
+                set_window_location("/usermgmt?logout");
+                return;
+            }
+            fetch_api_call("api/pwdman/auth/refreshtoken", { headers: { "token": token } },
+                (newtoken) => {
+                    const str = get_session_storage("pwdman-state");
+                    if (str && str.length > 0) {
+                        const state = JSON.parse(str);
+                        state.token = newtoken;
+                        set_session_storage("pwdman-state", JSON.stringify(state));
+                        expireAtUtc = get_exp(newtoken);
+                        console.log("expireAtUtc", expireAtUtc);
+                        mouseMoveCnt = 0;
+                    }
+                },
+                (errmsg) => console.error(errmsg));
+        }
+        else {
+            console.log("refresh token in %d sec. mouse move counter: %d", r, mouseMoveCnt);
+        }
     };
 
     const verify_password_strength = (pwd) => {
@@ -881,7 +944,9 @@ var utils = (() => {
         get_encryption_key_async: get_encryption_key_async,
         set_encryption_key_async: set_encryption_key_async,
         is_pin_required: is_pin_required,
-        set_pin_required: set_pin_required
+        set_pin_required: set_pin_required,
+        get_exp: get_exp,
+        enable_automatic_logout
     };
 })();
 

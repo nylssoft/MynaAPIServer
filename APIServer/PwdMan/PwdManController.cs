@@ -329,6 +329,13 @@ namespace APIServer.PwdMan
         }
 
         [HttpGet]
+        [Route("api/pwdman/auth/refreshtoken")]
+        public IActionResult RefreshToken()
+        {
+            return new JsonResult(PwdManService.RefreshToken(GetToken()));
+        }
+
+        [HttpGet]
         [Route("api/pwdman/logout")]
         public IActionResult Logout()
         {

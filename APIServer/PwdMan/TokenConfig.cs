@@ -29,5 +29,6 @@ namespace APIServer.PwdMan
 
         public int ExpireMinutes { get; set; }
 
+        public int ShortExpireMinutes { get; set; }
     }
 }
