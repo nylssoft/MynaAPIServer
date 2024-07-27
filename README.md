@@ -48,11 +48,12 @@ manage notes, diary, contacts and download documents, see
 
 ## Setup
 
-The project can be compiled with Visual Studio 2022.
+The project can be compiled with Visual Studio 2022 or from a command-line interpreter, see e.g. [build workflow](https://github.com/nylssoft/MynaAPIServer/actions/runs/10124625755/workflow).
 If you run the .NET 8 server you will see sample pages.
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
+You can also use the provided PowerShell script [New-AppSettings](/APIServer/New-AppSettings.ps1) to create an appsettings.json file with the required keys.
 
 ### Slideshow
 
