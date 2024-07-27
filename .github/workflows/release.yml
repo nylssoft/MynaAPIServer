@@ -1,0 +1,28 @@
+name: Build Myna API Server
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Setup node
+      uses: actions/setup-node@v4
+    - name: Build gruntfile
+      run: |
+        cd APIServer
+        npm ci grunt
+        grunt all
+    - name: Publish
+      run:  dotnet publish /p:PublishProfile=APIServer/Properties/PublishProfiles/FolderProfile.pubxml
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: apiserver
+        path: APIServer/bin/Release/net8.0/publish
