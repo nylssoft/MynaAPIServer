@@ -1,74 +1,19 @@
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
-
-# Folder config file
-Desktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
-# =========================
-# Operating System Files
-# =========================
-
-# OSX
-# =========================
-
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
-.DocumentRevisions-V100
-.fseventsd
-.Spotlight-V100
-.TemporaryItems
-.Trashes
-.VolumeIcon.icns
-
-# Directories potentially created on remote AFP share
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
-/.vs
-/APIServer/.vs
-/APIServer/obj
-/APIServer/bin
-/APIServer/Release
-/APIServer/chessengine
-/bin
-/APIServer/wwwroot/images/profiles
-/APIServer/wwwroot/images/photoframe
-/APIServer/wwwroot/images/skat/profiles
-/APIServer/wwwroot/images/stammtisch
-/APIServer/wwwroot/images/slideshow/*.jpg
-/APIServer/wwwroot/images/slideshow/family/*.jpg
-/APIServer/wwwroot/webpack
-/APIServer/wwwroot/**/*.min.*
-/APIServer/data
-/APIServer/sampledata/apiserver.db
-/APIServer/sampledata/apiserver.db-shm
-/APIServer/sampledata/apiserver.db-wal
-/APIServer/appsettings.Development.json
-/APIServer/node_modules
-/APIServer/temp
-
-# personal user files
-*.user
-
+**/*.csproj.user
+**/*.pubxml.user
+**/*.json.user
+**/*.min.css
+**/*.min.js
+.vs
+chessengine
+data
+node_modules
+APIServer/bin
+APIServer/obj
+APIServer/temp
 APIServer/Readme.txt
+APIServer/appsettings.Development.json
+APIServer/sampledata/apiserver.db*
+APIServer/wwwroot/webpack/**
+APIServer/wwwroot/images/photoframe/**
+APIServer/wwwroot/images/profiles/**
+APIServer/wwwroot/images/slideshow/**
