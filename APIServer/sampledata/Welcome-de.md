@@ -28,5 +28,3 @@ Die Seite [Beispiele](/view?page=example) beschreibt, wie Seiten und der Portal 
 [![Notizen](/images/buttons/notepad-48.png "Notizen")](/notes)
 [![Tagebuch](/images/buttons/gnome-blog-48.png "Tagebuch")](/diary)
 [![Terminplanungen](/images/buttons/view-calendar-tasks-48.png "Terminplanungen")](/makeadate)
-
-

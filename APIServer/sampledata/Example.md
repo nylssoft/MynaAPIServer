@@ -1,5 +1,7 @@
 # Example
+
 ## Heading 2
+
 ### Heading 3
 
 $background(/images/skat/empty.png)
@@ -7,7 +9,7 @@ $background(/images/skat/empty.png)
 Template for a page with examples.
 
 Images
-![](/images/backgammon/roll.png)
+![Dice](/images/backgammon/roll.png)
 
 ## Markdown
 
@@ -25,6 +27,7 @@ Example:
 "Markdown": \[\{"Id": "help-backgammon", "Content": "484"\},...\]
 
 *Note*: Documents have to be marked as *public* to be used in a markdown page or as *family* if used for family-role restricted content.
+
 ## External and internal links
 
 Add additional attributes or a CSS class to a link with \{ and \}.
@@ -72,6 +75,7 @@ The settings **UseUCI** defines whether the engine will use the Universal Chess 
 ## SendGrid configuration
 
 For email notification SendGrid is used. In **appsettings.json** or in user secrets the following parameters have to be set for **SendGridConfig**:
+
 - APIKey: SendGrid API key, requires an account for SendGrid
 - SenderAddress: email address of the sender
 - SenderName: display name of the sender
@@ -82,6 +86,7 @@ For email notification SendGrid is used. In **appsettings.json** or in user secr
 - TemplateIdSecurityWarning: email template ID for the security warning email
 
 The email templates in SendGrid can contain parameters that will be replaced.
+
 - TemplateIdResetPassword: Name, Code, Valid, Hostname, Email, Next
 - TemplateIdRegistrationRequest: Email
 - TemplateIdRegistrationSuccess: Code, Hostname, Email, Next
@@ -92,6 +97,7 @@ The email templates in SendGrid can contain parameters that will be replaced.
 For token generation the **appsettings.json** uses the **TokenConfig** section. The hostname in **PwdMan** is used only for email notification to
 replace the Hostname parameter in the email templates.
 The following data has to be provided either in the file or in user secrets:
+
 - SignKey: used to sign the authentication token for a successfully logged-in user. 28 secure random characters are required.
 - LongLivedSignKey: used to sign a long lived token (stored in local storage of the browser). 28 secure random characters are required.
 - Issuer: issuer of the token, e.g. the website domain

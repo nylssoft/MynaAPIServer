@@ -1,6 +1,6 @@
-## Help
+# Help
 
-### Help Page Template
+## Help Page Template
 
 Template for a help page.
 

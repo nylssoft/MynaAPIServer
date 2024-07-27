@@ -1,10 +1,10 @@
 # Copyright
 
-## Copyright
+## Customize
 
 Customize the copyright here.
 
-Copyright 2020 - 2023 Niels Stockfleth. All rights reserved.
+Copyright 2020 - 2024 Niels Stockfleth. All rights reserved.
 
 ## Open Source
 

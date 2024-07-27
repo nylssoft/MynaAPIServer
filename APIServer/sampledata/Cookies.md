@@ -1,9 +1,9 @@
 # Cookies
 
-## Cookies
+## Customize
 
 Customize the cookies text here.
 
-Copyright 2020 - 2022 Niels Stockfleth. All rights reserved.
+Copyright 2020 - 2024 Niels Stockfleth. All rights reserved.
 
 $backbutton
