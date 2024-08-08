@@ -22,6 +22,7 @@ var slideshow = (() => {
     let backgroundChanged;
     let backgroundIndex = 0;
     let backgroundText;
+    let lastTimelineIndex;
 
     let currentUser;
 
@@ -40,8 +41,6 @@ var slideshow = (() => {
             isSlideshowPlaying = false;
             imgPauseSlideShow.style.visibility = "hidden";
             imgPlaySlideShow.style.visibility = "visible";
-            imgLeftArrow.classList.add("greyed-out");
-            imgRightArrow.classList.add("greyed-out");
         });
         imgPauseSlideShow.style.visibility = isSlideshowPlaying ? "visible" : "hidden";
         imgPlaySlideShow = controls.createImg(parent, "header-pause-img header-img", 24, 24, "/images/buttons/media-playback-start-3.png", _T("BUTTON_PLAY_SLIDESHOW"));
@@ -49,11 +48,9 @@ var slideshow = (() => {
             isSlideshowPlaying = true;
             imgPauseSlideShow.style.visibility = "visible";
             imgPlaySlideShow.style.visibility = "hidden";
-            imgLeftArrow.classList.remove("greyed-out");
-            imgRightArrow.classList.remove("greyed-out");
         });
         imgPlaySlideShow.style.visibility = !isSlideshowPlaying ? "visible" : "hidden";
-        const shuffleTxt = shuffle ? _T("BUTTON_SLIDESHOW_RANDOM_ON") : _T("BUTTON_SLIDESHOW_RANDOM_OFF");
+        const shuffleTxt = shuffle ? _T("BUTTON_SLIDESHOW_RANDOM_OFF") : _T("BUTTON_SLIDESHOW_RANDOM_ON");
         imgShuffle = controls.createImg(parent, "header-shuffle-img header-img", 24, 24, "/images/buttons/media-seek-forward-3.png", shuffleTxt);
         if (!shuffle) {
             imgShuffle.classList.add("greyed-out");
@@ -83,6 +80,30 @@ var slideshow = (() => {
         utils.create_menu(document.body);
         renderHeader(document.body);
         divFooter = controls.createDiv(document.body, "footer");
+        const divFooterDate = controls.createDiv(document.body, "footerdate");
+        const timeline = !shuffle && slideShowPictures.length > 1;
+        divFooter.onclick = evt => {
+            if (timeline) {
+                backgroundIndex = Math.min(Math.round((evt.clientX / window.innerWidth) * slideShowPictures.length), slideShowPictures.length - 1);
+                backgroundChanged = false;
+                ontimer();
+            }
+        };
+        divFooter.addEventListener("mousemove", evt => {
+            if (!utils.is_mobile() && timeline) {
+                const idx = Math.min(Math.round((evt.clientX / window.innerWidth) * slideShowPictures.length), slideShowPictures.length - 1);
+                if (idx != lastTimelineIndex) {
+                    lastTimelineIndex = idx;
+                    const pic = slideShowPictures[idx];
+                    const datestr = utils.format_date(pic.date, { year: "numeric", month: "short", day: "numeric" });
+                    divFooterDate.textContent = datestr;
+                    const box = divFooterDate.getBoundingClientRect();
+                    const x = Math.max(0, Math.min(window.innerWidth - box.width - 120, evt.clientX - box.width / 2));
+                    divFooterDate.style.left = `${x}px`;
+                }
+            }
+        });
+        divFooter.addEventListener("mouseout", () => divFooterDate.textContent = '');
         renderSlideshowInfo(divFooter);
         utils.set_menu_items(currentUser);
         document.addEventListener("keydown", (e) => {
@@ -188,7 +209,7 @@ var slideshow = (() => {
     // --- callbacks
 
     const onPictureLeft = () => {
-        if (isSlideshowPlaying && slideShowPictures.length > 2) {
+        if (slideShowPictures.length > 2) {
             if (backgroundIndex == 1) {
                 backgroundIndex = slideShowPictures.length - 1;
             }
@@ -204,17 +225,17 @@ var slideshow = (() => {
     };
 
     const onPictureRight = () => {
-        if (isSlideshowPlaying && slideShowPictures.length > 1) {
+        if (slideShowPictures.length > 1) {
             backgroundChanged = false;
             ontimer();
         }
     };
 
     const ontimer = () => {
-        if (!slideShowPictures || slideShowPictures.length == 0 || !isSlideshowPlaying) return;
+        if (!slideShowPictures || slideShowPictures.length == 0) return;
         let currentDate = new Date();
         if ((!backgroundChanged ||
-            ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval)) {
+            isSlideshowPlaying && ((currentDate.getTime() - backgroundChanged.getTime()) / 1000) > slideShowInterval)) {
             let pic = slideShowPictures[backgroundIndex];
             const ratio = window.innerWidth / window.innerHeight;
             const url = ratio < 1.7 && pic.url43 ? pic.url43 : pic.url;

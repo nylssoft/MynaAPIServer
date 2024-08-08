@@ -53,6 +53,13 @@ body {
     background-color: black;
 }
 
+.footerdate {
+    position: absolute;
+    bottom: 30pt;    
+    color: white;
+    background-color: black;
+}
+
 .slideshow-info {
     color: white;
     font-size: 18pt;
