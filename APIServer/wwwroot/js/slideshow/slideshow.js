@@ -23,6 +23,7 @@ var slideshow = (() => {
     let backgroundIndex = 0;
     let backgroundText;
     let lastTimelineIndex;
+    let timelineTouched;
 
     let currentUser;
 
@@ -89,8 +90,9 @@ var slideshow = (() => {
                 ontimer();
             }
         };
+        divFooter.addEventListener("touchstart", () => timelineTouched = true);
         divFooter.addEventListener("mousemove", evt => {
-            if (!utils.is_mobile() && timeline) {
+            if (!timelineTouched && timeline) {
                 const idx = Math.min(Math.round((evt.clientX / window.innerWidth) * slideShowPictures.length), slideShowPictures.length - 1);
                 if (idx != lastTimelineIndex) {
                     lastTimelineIndex = idx;
