@@ -146,7 +146,15 @@ a {
     color: darkblue;
 }
 
+.img-width {
+    width: 600px;
+}
+
 @media (max-width: 480px) {
+
+    .img-width {
+        width: 90%;
+    }
 
     .cookie-banner {
         height: 60pt;
