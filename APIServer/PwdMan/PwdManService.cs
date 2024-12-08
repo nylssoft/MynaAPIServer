@@ -1440,13 +1440,13 @@ namespace APIServer.PwdMan
 
         // --- markdown
 
-        public string GetMarkdown(string authenticationToken, string id, string locale)
+        public string GetMarkdown(string authenticationToken, string host, string id, string locale)
         {
             logger.LogDebug("Get markdown for id '{id}' and locale '{locale}'...", id, locale);
             var opt = GetOptions();
             if (id == "startpage")
             {
-                id = opt.StartPage;
+                id = GetStartPage(host);
             }
             if (int.TryParse(id, out int documentId))
             {
@@ -1973,6 +1973,23 @@ namespace APIServer.PwdMan
                 locale = CultureInfo.CreateSpecificCulture(languages[0]).IetfLanguageTag;
             }
             return locale;
+        }
+
+        private string GetStartPage(string host)
+        {
+            string startPage = GetOptions().StartPage;
+            if (host != null && GetOptions().StartPagePerHost != null)
+            {
+                foreach (var cfg in GetOptions().StartPagePerHost)
+                {
+                    if (host.Contains(cfg.Host, StringComparison.OrdinalIgnoreCase))
+                    {
+                        startPage = cfg.StartPage;
+                        break;
+                    }
+                }
+            }
+            return startPage;
         }
 
         // --- private static

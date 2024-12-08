@@ -275,7 +275,7 @@ namespace APIServer.PwdMan
         public IActionResult GetMarkdown(string id, [FromQuery] string locale)
         {
             if (string.IsNullOrEmpty(id)) throw new MissingParameterException();
-            return new JsonResult(PwdManService.GetMarkdown(GetToken(), id, locale));
+            return new JsonResult(PwdManService.GetMarkdown(GetToken(), HttpContext.Request.Headers["host"], id, locale));
         }
 
         [HttpGet]

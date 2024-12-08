@@ -49,6 +49,8 @@ namespace APIServer.PwdMan
 
         public string StartPage { get; set; }
 
+        public List<StartPagePerHostConfig> StartPagePerHost { get; set; }
+
         public List<string> Languages { get; set; } = new List<string>();
     }
 }

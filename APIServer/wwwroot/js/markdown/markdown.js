@@ -7,17 +7,6 @@ var markdown = (() => {
     let hideCookieBanner;
 
     const renderPage = () => {
-        let parent = document.body;
-        controls.removeAllChildren(parent);
-        if (!hideCookieBanner) {
-            utils.create_cookies_banner(parent);
-        }
-        utils.create_menu(parent);
-        if (currentUser && currentUser.photo) {
-            const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
-            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
-        }
-        let div = controls.createDiv(parent);
         let opt;
         const token = utils.get_authentication_token();
         if (token) {
@@ -25,6 +14,22 @@ var markdown = (() => {
         }
         utils.fetch_api_call(`/api/pwdman/markdown/${page}?locale=${utils.get_locale()}`, opt,
             (html) => {
+                const parent = document.body;
+                controls.removeAllChildren(parent);
+                const plainHtml = extractPattern(html, "$plain");
+                if (plainHtml) {
+                    setMarkdownHTML(parent, plainHtml);
+                    return;
+                }
+                if (!hideCookieBanner) {
+                    utils.create_cookies_banner(parent);
+                }
+                utils.create_menu(parent);
+                if (currentUser && currentUser.photo) {
+                    const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
+                    imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+                }
+                const div = controls.createDiv(parent);
                 setMarkdownHTML(div, html);
                 const h1 = document.querySelector("h1");
                 if (h1) {
@@ -33,8 +38,16 @@ var markdown = (() => {
                         h1.textContent = `${currentUser.name} - ` + h1.textContent;
                     }
                 }
+                utils.set_menu_items(currentUser);
             });
-        utils.set_menu_items(currentUser);
+    };
+
+    const extractPattern = (html, pattern) => {
+        const idx = html.indexOf(pattern);
+        if (idx >= 0) {
+            return html.substring(0, idx) + html.substring(idx + pattern.length);
+        }
+        return undefined;
     };
 
     const setMarkdownHTML = (div, html) => {

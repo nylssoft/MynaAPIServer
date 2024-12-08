@@ -122,7 +122,7 @@ namespace APIServer.PwdMan
 
         // --- markdown
 
-        string GetMarkdown(string authenticationToken, string id, string locale);
+        string GetMarkdown(string authenticationToken, string host, string id, string locale);
 
         // --- data deletion
 
