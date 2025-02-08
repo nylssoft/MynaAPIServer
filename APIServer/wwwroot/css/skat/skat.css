@@ -224,14 +224,6 @@ h3 {
     margin-top: 20pt;
 }
 
-.layout-chat-button {
-    position: absolute;
-    top: 2pt;
-    right: 20pt;
-    z-index: 1;
-    margin-right: 5pt;
-}
-
 .layout-left {
     position: absolute;
     top: 0pt;
@@ -266,71 +258,16 @@ h3 {
     overflow-y: auto;
 }
 
-.chat-message {
-    margin: 5pt;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-link {
-    margin: 5pt;
-    color: yellow;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-input {
-    margin-left: 5pt;
-    background-color: blue;
-    color: white;
-    font-size: 18pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-button {
-    background-color: blue;
-    color: white;
-    margin-top: 0pt;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    transition-duration: 0.4s;
-    cursor: pointer;
-    border: 2px solid #008CBA;
-    font-size: 8pt;
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.chat-button:hover {
-    background-color: #008CBA;
-    color: darkblue;
-}
-
-.chat-img-newmessage {
-    position: absolute;
-    top: 5pt;
-    right: 5pt;
-    z-index: -1;
-    transform: translate(25pt,-4pt);
-}
-
-.chat-img-newmessage:hover {
-    background-color: #008CBA;
-    border-radius: 50%;
-}
-
 .results-img-open {
     position: absolute;
     top: 30pt;
-    right: -20pt;
+    right: -16pt;
     z-index: -1;
 }
 
-.results-img-open:hover {
-    background-color: #008CBA;
-    border-radius: 50%;
-}
+    .results-img-open:hover {
+        filter: invert(0.30);
+    }
 
 .header-profile-photo {
     position: absolute;
@@ -339,6 +276,10 @@ h3 {
     z-index: -1;
     border-radius: 50%;
 }
+
+    .header-profile-photo:hover {
+        filter: invert(0.30);
+    }
 
 .active-background {
     background-color: #007400;
@@ -778,10 +719,6 @@ h3 {
         right: 10pt;
     }
 
-    .chat-input {
-        width: 230pt;
-    }
-
     .username-input {
         width: 100pt;
         font-size: 11pt;
@@ -867,10 +804,6 @@ h3 {
     .player-img {
         width: 45px;
         height: 45px;
-    }
-
-    .chat-message, .chat-link, .chat-input {
-        font-size: 11pt;
     }
 
     .copyright {

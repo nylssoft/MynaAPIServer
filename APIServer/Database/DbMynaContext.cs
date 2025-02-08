@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,8 +49,6 @@ namespace APIServer.Database
         public DbSet<DbUserSkatResult> DbUserSkatResults { get; set; }
 
         public DbSet<DbSkatReservation> DbSkatReservations { get; set; }
-
-        public DbSet<DbChat> DbChats { get; set; }
 
         public DbSet<DbTetrisHighScore> DbTetrisHighScore { get; set; }
 

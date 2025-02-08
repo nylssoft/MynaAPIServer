@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2024 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,6 +40,13 @@ namespace APIServer.Skat
         // --- without authentication
 
         [HttpGet]
+        [Route("api/skat/longpollstate/{clientState}")]
+        public IActionResult GetLongPollState(long clientState)
+        {
+            return new JsonResult(SkatService.GetLongPollState(clientState));
+        }
+
+        [HttpGet]
         [Route("api/skat/state")]
         public IActionResult GetState()
         {
@@ -52,13 +59,6 @@ namespace APIServer.Skat
         {
             if (username?.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             return new JsonResult(SkatService.Login(PwdManService, GetToken(), username));
-        }
-
-        [HttpGet]
-        [Route("api/skat/chat")]
-        public IActionResult GetChat()
-        {
-            return new JsonResult(SkatService.GetChatModel(PwdManService));
         }
 
         // --- computer game (stateless)
@@ -165,14 +165,6 @@ namespace APIServer.Skat
         }
 
         // --- with authentication
-
-        [HttpPost]
-        [Route("api/skat/chat")]
-        public IActionResult Chat([FromBody] string message)
-        {
-            if (message?.Length > Limits.MAX_CHAT_MESSAGE) throw new InputValueTooLargeException();
-            return new JsonResult(SkatService.Chat(PwdManService, GetToken(), message));
-        }
 
         [HttpPost]
         [Route("api/skat/logout")]

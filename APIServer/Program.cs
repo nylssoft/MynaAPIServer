@@ -1,6 +1,6 @@
 /*
     Myna API Server
-    Copyright (C) 2020-2021 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -143,19 +143,6 @@ namespace APIServer
                     };
                 }
                 destContext.DbUsers.Add(pgUser);
-            }
-            destContext.SaveChanges();
-            logger.LogInformation("Migrate Chats...");
-            var chats = srcContext.DbChats.Include(c => c.DbUser).OrderBy(c => c.Id);
-            foreach (var chat in chats)
-            {
-                var pgUser = destContext.DbUsers.Single(u => u.Name == chat.DbUser.Name);
-                destContext.DbChats.Add(new DbChat
-                {
-                    DbUser = pgUser,
-                    Message = chat.Message,
-                    CreatedUtc = chat.CreatedUtc
-                });
             }
             destContext.SaveChanges();
             logger.LogInformation("Migrate Diaries...");

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2024 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,13 +25,11 @@ namespace APIServer.Skat
     {
         // --- without authentication
 
+        long GetLongPollState(long clientState);
+
         long GetState();
 
         LoginModel Login(IPwdManService pwdManService, string authenticationToken, string username);
-
-        ChatModel GetChatModel(IPwdManService pwdManService);
-
-        bool Chat(IPwdManService pwdManService, string authenticationToken, string message);
 
         // --- computer game
 

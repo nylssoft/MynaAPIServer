@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2024 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,6 +29,9 @@ using APIServer.Skat.Core;
 using APIServer.PwdMan;
 using APIServer.Database;
 using System.Text;
+using System.Threading.Tasks;
+using Npgsql.NameTranslation;
+using System.Runtime.Intrinsics.Arm;
 
 namespace APIServer.Skat
 {
@@ -41,8 +44,6 @@ namespace APIServer.Skat
         private readonly object mutex = new object();
 
         private readonly Dictionary<string, Context> userTickets = new Dictionary<string, Context>();
-
-        private long chatState;
 
         private readonly ILogger logger;
 
@@ -61,6 +62,22 @@ namespace APIServer.Skat
         }
 
         // --- without authentication
+
+        public long GetLongPollState(long clientState)
+        {
+            long state;
+            var start = DateTime.Now;
+            do
+            {
+                state = GetState();
+                if (clientState != state)
+                {
+                    break;
+                }
+                Task.Delay(100).Wait();                
+            } while ((DateTime.Now - start).TotalSeconds < 45);
+            return state;
+        }
 
         public long GetState()
         {
@@ -172,43 +189,6 @@ namespace APIServer.Skat
                 }
             }
             return ret;
-        }
-
-        public ChatModel GetChatModel(IPwdManService pwdManService)
-        {
-            var dbContext = pwdManService.GetDbContext();
-            var chats = dbContext.DbChats.Include(c => c.DbUser).OrderBy(c => c.CreatedUtc);
-            var chatModel = new ChatModel();
-            lock (mutex)
-            {
-                chatModel.State = chatState;
-            }
-            foreach (var chat in chats)
-            {
-                chatModel.History.Add(new ChatTextModel
-                {
-                    CreatedUtc = DbMynaContext.GetUtcDateTime(chat.CreatedUtc).Value,
-                    Username = chat.DbUser.Name,
-                    Message = chat.Message
-                });
-            }
-            return chatModel;
-        }
-
-        public bool Chat(IPwdManService pwdManService, string authenticationToken, string message)
-        {
-            string msg = message.Trim();
-            if (msg.Length == 0) return false;
-            var user = pwdManService.GetUserFromToken(authenticationToken);
-            var dbContext = pwdManService.GetDbContext();
-            dbContext.DbChats.Add(new DbChat { CreatedUtc = DateTime.UtcNow, DbUserId = user.Id, Message = msg });
-            dbContext.SaveChanges();
-            lock (mutex)
-            {
-                stateChanged = DateTime.UtcNow;
-                chatState = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
-            }
-            return true;
         }
 
         // --- with authentication
@@ -936,15 +916,11 @@ namespace APIServer.Skat
             {
                 throw new AccessDeniedPermissionException();
             }
-            var dbContext = pwdManService.GetDbContext();
-            dbContext.DbChats.RemoveRange(dbContext.DbChats);
-            dbContext.SaveChanges();
             lock (mutex)
             {
                 skatTable = null;
                 userTickets.Clear();
                 stateChanged = DateTime.UtcNow;
-                chatState = (long)(stateChanged.Value - DateTime.UnixEpoch).TotalMilliseconds;
             }
             return true;
         }

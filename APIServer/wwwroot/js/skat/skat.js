@@ -10,9 +10,7 @@ var skat = (() => {
     let checkBoxHand;
     let checkBoxSchneider;
     let checkBoxSchwarz;
-    let divChat;
     let divLayoutLeft;
-    let inputChatText;
 
     // state
 
@@ -20,18 +18,15 @@ var skat = (() => {
 
     let ticket;
     let model;
-    let chatModel;
-    let timerEnabled = false;
+    let pollStateEnabled = false;
     let showLastStitch = false;
     let giveUpClicked = false;
     let speedUpClicked = false;
     let logoutClicked = false;
     let letsStartClicked = false;
     let specialSortOption = true;
-    let showChat = false;
     let showReservations = false;
     let showResultInWindow = false;
-    let lastChatText = "";
     let currentSkatResultId;
 
     let imgHeight = 140;
@@ -44,7 +39,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.8";
+    let version = "2.2.9";
 
     let computerGame = false;
     let computerInternalState;
@@ -60,7 +55,7 @@ var skat = (() => {
     const handleError = (errMsg) => {
         console.error(_T(errMsg));
         utils.remove_session_storage("skatstate");
-        enableTimer();
+        enablePollState();
     };
 
     const clearTicket = () => {
@@ -91,17 +86,17 @@ var skat = (() => {
         utils.set_session_storage("skatstate", state);
     };
 
-    const enableTimer = () => {
-        if (!timerEnabled && !computerGame) {
-            if (utils.is_debug()) utils.debug("TIMER ENABLED.");
-            timerEnabled = true;
+    const enablePollState = () => {
+        if (!pollStateEnabled && !computerGame) {
+            if (utils.is_debug()) utils.debug("POLL STATE ENABLED.");
+            pollStateEnabled = true;
         }
     };
 
-    const disableTimer = () => {
-        if (timerEnabled) {
-            if (utils.is_debug()) utils.debug("TIMER DISABLED.");
-            timerEnabled = false;
+    const disablePollState = () => {
+        if (pollStateEnabled) {
+            if (utils.is_debug()) utils.debug("POLL STATE DISABLED.");
+            pollStateEnabled = false;
         }
     };
 
@@ -351,6 +346,11 @@ var skat = (() => {
             const h1 = controls.create(parent, "h1", undefined, title);
             const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
             helpImg.addEventListener("click", () => onUpdateHelp(true));
+            const token = utils.get_authentication_token();
+            if (token) {
+                const imgResults = controls.createImg(parent, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
+                imgResults.addEventListener("click", () => dispatchShowResults());
+            }
             if (currentUser && currentUser.photo) {
                 const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
                 imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
@@ -417,7 +417,7 @@ var skat = (() => {
                 imgRemove.addEventListener("click", (elem) => {
                     const reservationId = elem.target.id.substring(10);
                     let token = utils.get_authentication_token();
-                    disableTimer();
+                    disablePollState();
                     utils.fetch_api_call("api/skat/reservation",
                         {
                             method: "DELETE",
@@ -567,7 +567,7 @@ var skat = (() => {
                     r.players.push(val);
                 }
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/skat/reservation",
                 {
                     method: "POST",
@@ -580,7 +580,7 @@ var skat = (() => {
                 },
                 (errMsg) => {
                     document.getElementById("reserve-error-id").textContent = _T(errMsg);
-                    enableTimer();
+                    enablePollState();
                 });
         });
         controls.createButton(parent, _T("BUTTON_BACK"), () => renderCalendar(parent, month, year));
@@ -1049,61 +1049,6 @@ var skat = (() => {
         }
     };
 
-    const renderChat = (parent) => {
-        if (computerGame) return;
-        let divChatButton = controls.createDiv(parent, "layout-chat-button");
-        let imgMessage = controls.createImg(divChatButton, "chat-img-newmessage", 32, 32, "/images/buttons/mail-unread-3.png");
-        imgMessage.addEventListener("click", (e) => {
-            showChat = !showChat;
-            render();
-        });
-        imgMessage.style.visibility = "hidden";
-        let token = utils.get_authentication_token();
-        if (token) {
-            let imgResults = controls.createImg(divChatButton, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
-            imgResults.addEventListener("click", () => dispatchShowResults());
-        }
-        divChat = controls.createDiv(parent, "layout-right");
-        let chatState = utils.get_session_storage("chatstate");
-        if (!chatState) {
-            chatState = 0;
-        }
-        let currentChatState = 0;
-        if (showChat && chatModel && chatModel.history) {
-            chatModel.history.forEach((tm) => {
-                let divMsg = controls.createDiv(divChat, "chat-message");
-                divMsg.textContent = `${tm.username}: ${tm.message}`;
-                divMsg.title = utils.format_date_string(tm.createdUtc);
-                if (tm.message.startsWith("https://")) {
-                    controls.createA(divMsg, "chat-link", tm.message, _T("BUTTON_OPEN"), () => window.open(tm.message, "_blank"));
-                }
-            });
-            currentChatState = chatModel.state;
-        }
-        if (token) {
-            inputChatText = controls.createInputField(divChat, _T("TEXT_MESSAGE"), () => btnChat_click(), "chat-input", 36, 200);
-            inputChatText.placeholder = _T("TEXT_MESSAGE");
-            if (lastChatText) {
-                inputChatText.value = lastChatText;
-            }
-        }
-        if (showChat) {
-            imgMessage.title = _T("BUTTON_HIDE_CHAT");
-            utils.set_session_storage("chatstate", currentChatState);
-            divChat.style.visibility = "visible";
-            if (inputChatText && !utils.is_mobile()) {
-                inputChatText.focus();
-            }
-        }
-        else {
-            imgMessage.title = _T("BUTTON_SHOW_CHAT");
-            if (currentChatState > chatState) {
-                imgMessage.src = "/images/buttons/mail-unread-new.png";
-            }
-            divChat.style.visibility = "hidden";
-        }
-    };
-
     const onStatistics = (parent, playerNames) => {
         const startYearElem = document.getElementById("result-statistics-startyear-id");
         if (!startYearElem || startYearElem.selectedOptions.length == 0) return;
@@ -1185,7 +1130,7 @@ var skat = (() => {
 
 
     const renderResults = (results, skatadmin) => {
-        disableTimer();
+        disablePollState();
         controls.removeAllChildren(document.body);
         if (!showResultInWindow) {
             const backButtonDiv = controls.createDiv(document.body);
@@ -1250,7 +1195,7 @@ var skat = (() => {
     };
 
     const renderResult = (result) => {
-        disableTimer();
+        disablePollState();
         renderResultTable(document.body, result);
     };
 
@@ -1365,7 +1310,7 @@ var skat = (() => {
     };
 
     const renderGameHistory = (parent, result, gameHistory) => {
-        disableTimer();
+        disablePollState();
         const p = document.getElementById("results-overview-id");
         if (p) {
             p.style.display = "none";
@@ -1424,9 +1369,6 @@ var skat = (() => {
     };
 
     const renderModel = (m) => {
-        if (inputChatText) {
-            lastChatText = inputChatText.value; // keep old value if rendered again
-        }
         model = m;
         if (computerGame && model) {
             computerInternalState = model.internalState;
@@ -1445,7 +1387,6 @@ var skat = (() => {
         }
         divLayoutLeft = controls.createDiv(document.body, "layout-left");
         divMain = controls.createDiv(divLayoutLeft);
-        renderChat(document.body);
         if (!ticket && !computerGame) {
             if (guestMode) {
                 document.title = `${_T("HEADER_SKAT")} - ${_T("INFO_GUEST_VIEW")}`;
@@ -1473,11 +1414,11 @@ var skat = (() => {
         else {
             renderUsername(divMain);
         }
-        enableTimer();
+        enablePollState();
     };
 
     const fetchModel = (ticket) => {
-        disableTimer();
+        disablePollState();
         if (computerGame) {
             utils.fetch_api_call("api/skat/computer/model",
                 {
@@ -1511,7 +1452,7 @@ var skat = (() => {
             utils.replace_window_location("/skat");
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/login",
             {
                 method: "POST",
@@ -1579,23 +1520,12 @@ var skat = (() => {
         if (params.has("guest")) {
             guestMode = true;
         }
-        disableTimer();
+        disablePollState();
         if (embedded && !computerGame) {
             onStartComputerGame();
             return;
         }
-        utils.fetch_api_call("api/skat/chat", undefined,
-            (cm) => {
-                if (utils.is_debug()) {
-                    utils.debug("CHAT RETRIEVED (render).");
-                }
-                chatModel = cm;
-                fetchModel(ticket);
-            },
-            (errMsg) => {
-                handleError(errMsg);
-                fetchModel(ticket);
-            });
+        fetchModel(ticket);
     };
 
     const renderInit = () => {
@@ -1606,7 +1536,7 @@ var skat = (() => {
             render();
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 if (utils.is_debug()) {
@@ -1630,7 +1560,7 @@ var skat = (() => {
         computerActionCount = 0;
         computerInternalState = undefined;
         initComputerPlayModel();
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/computer/model",
             {
                 method: "POST",
@@ -1837,7 +1767,7 @@ var skat = (() => {
     };
 
     const btnShowReservations_click = () => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/reservation", undefined,
             (r) => {
                 if (utils.is_debug()) {
@@ -1870,7 +1800,7 @@ var skat = (() => {
     };
 
     const btnReserve_click = (parent) => {
-        disableTimer();
+        disablePollState();
         controls.removeAllChildren(parent);
         let today = new Date();
         let div = controls.createDiv(parent);
@@ -1884,7 +1814,7 @@ var skat = (() => {
             if (!token) {
                 token = "";
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/skat/login",
                 {
                     method: "POST",
@@ -1910,7 +1840,7 @@ var skat = (() => {
                 },
                 (errMsg) => {
                     document.getElementById("login-error-id").textContent = _T(errMsg);
-                    enableTimer();
+                    enablePollState();
                 });
         }
     };
@@ -1932,7 +1862,7 @@ var skat = (() => {
                 handleError);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("NEW GAME.");
@@ -1943,7 +1873,7 @@ var skat = (() => {
 
     const btnConfirmStartGame_click = () => {
         if (computerGame) return;
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("CONFIRM START GAME.");
@@ -1955,7 +1885,7 @@ var skat = (() => {
     const btnGiveUp_click = (elem) => {
         if (computerGame) return;
         if (elem.value == "GiveUpYes") {
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } },
                 () => {
                     if (utils.is_debug()) utils.debug("GAVE UP.");
@@ -1977,7 +1907,7 @@ var skat = (() => {
     const btnSpeedUp_click = (elem) => {
         if (computerGame) return;
         if (elem.value == "SpeedUpYes") {
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } },
                 () => {
                     if (utils.is_debug()) utils.debug("SPEED UP.");
@@ -1998,7 +1928,7 @@ var skat = (() => {
 
     const btnSpeedUpConfirm_click = () => {
         if (computerGame) return;
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("SPEED UP CONFIRMED.");
@@ -2009,7 +1939,7 @@ var skat = (() => {
 
     const btnContinuePlay_click = () => {
         if (computerGame) return;
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("CONTINUE PLAY.");
@@ -2045,7 +1975,7 @@ var skat = (() => {
                 handleError);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/game",
             {
                 method: "POST",
@@ -2086,7 +2016,7 @@ var skat = (() => {
             handleError);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/gameoption",
             {
                 method: "POST",
@@ -2127,7 +2057,7 @@ var skat = (() => {
                     handleError);
                 return;
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/skat/bid",
                 {
                     method: "POST",
@@ -2176,7 +2106,7 @@ var skat = (() => {
                 });
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/playcard",
             {
                 method: "POST",
@@ -2211,7 +2141,7 @@ var skat = (() => {
                 handleError);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/skat/pickupskat",
             {
                 method: "POST",
@@ -2235,7 +2165,7 @@ var skat = (() => {
             showLastStitch ||
             !model.skatTable.canCollectStitch ||
             model.skatTable.isSpeedUp) return;
-        disableTimer();
+        disablePollState();
         document.body.style.cursor = "wait";
         if (computerGame) {
             collectComputerPlayStitch(getCurrentUsername());
@@ -2279,7 +2209,7 @@ var skat = (() => {
                 render();
                 return;
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/skat/logout", { method: "POST", headers: { "ticket": ticket } },
                 () => {
                     if (utils.is_debug()) utils.debug("LOGOUT (button).");
@@ -2317,7 +2247,7 @@ var skat = (() => {
                     handleError);
                 return;
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/skat/bid",
                 {
                     method: "POST",
@@ -2340,25 +2270,6 @@ var skat = (() => {
     const btnSpecialSortOption_click = () => {
         specialSortOption = !specialSortOption;
         render();
-    };
-
-    const btnChat_click = () => {
-        if (inputChatText && inputChatText.value.trim().length > 0) {
-            let token = utils.get_authentication_token();
-            disableTimer();
-            utils.fetch_api_call("api/skat/chat",
-                {
-                    method: "POST",
-                    headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
-                    body: JSON.stringify(inputChatText.value)
-                },
-                () => {
-                    if (utils.is_debug()) utils.debug("CHAT ADDED.");
-                    inputChatText.value = "";
-                    render();
-                },
-                handleError);
-        }
     };
 
     const onDeleteSkatResult = (confirm) => {
@@ -2420,18 +2331,35 @@ var skat = (() => {
             handleError);
     };
 
-    const onTimer = () => {
-        if (!timerEnabled || computerGame) return;
-        utils.fetch_api_call("api/skat/state", undefined,
-            (d) => {
-                const statechanged = getState();
-                if (statechanged === undefined || d > statechanged) {
-                    if (utils.is_debug()) utils.debug(`ON TIMER. New state is ${d}.`);
-                    setState(d);
+    const sleep = (interval) => new Promise(r => setTimeout(r, interval));
+
+    const pollState = async () => {
+        if (!pollStateEnabled || computerGame) {
+            if (utils.is_debug()) utils.debug("Poll state disabled or computer game. Retry in 1 second.");
+            await sleep(1000);
+            await pollState();
+        } else {
+            if (utils.is_debug()) utils.debug("Poll state (up to 1 minute).");
+            let clientstate = getState();
+            if (clientstate == undefined) {
+                clientstate = 0;
+            }
+            const response = await fetch(`/api/skat/longpollstate/${clientstate}`);
+            if (response.status != 200) {
+                console.error(`Poll state error: ${response.statusText}. Retry in 5 second.`);
+                await sleep(5000);
+                await pollState();
+            } else {
+                const serverState = await response.json();
+                if (utils.is_debug()) utils.debug(`Received server state ${serverState}.`);
+                if (pollStateEnabled && serverState > clientstate) {
+                    if (utils.is_debug()) utils.debug("State has changed. Rerender.");
+                    setState(serverState);
                     render();
                 }
-            },
-            handleError);
+                await pollState();
+            }
+        }
     };
 
     // --- computer player model
@@ -2866,12 +2794,12 @@ var skat = (() => {
 
     return {
         renderInit: renderInit,
-        onTimer: onTimer
+        pollState: pollState
     };
 })();
 
 window.onload = () => {
-    window.setInterval(skat.onTimer, 1000);
+    skat.pollState();
     utils.auth_lltoken(() => utils.set_locale(skat.renderInit));
 };
 

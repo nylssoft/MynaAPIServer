@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@ namespace APIServer
     {
         public const int MAX_USERNAME = 32;
         public const int MAX_HIGHSCORE_NAME = 10;
-        public const int MAX_CHAT_MESSAGE = 200;
         public const int MAX_DIARY_ENTRY = 100 * 1024 * 2; // hex encoded string
         public const int MAX_NOTE_TITLE = 300 * 2; // hex encoded string
         public const int MAX_NOTE_CONTENT = 100 * 1024 * 2; // hex encoded string
