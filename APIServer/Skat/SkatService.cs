@@ -15,23 +15,21 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
+using APIServer.APIError;
+using APIServer.Database;
+using APIServer.PwdMan;
+using APIServer.Skat.Core;
+using APIServer.Skat.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-
-using APIServer.Skat.Model;
-using APIServer.Skat.Core;
-using APIServer.PwdMan;
-using APIServer.Database;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
-using Npgsql.NameTranslation;
-using System.Runtime.Intrinsics.Arm;
 
 namespace APIServer.Skat
 {
@@ -55,6 +53,8 @@ namespace APIServer.Skat
 
         private DateTime lastCardPlayed;
 
+        private int pollCounter;
+
         public SkatService(IConfiguration configuration, ILogger<SkatService> logger)
         {
             Configuration = configuration;
@@ -65,18 +65,30 @@ namespace APIServer.Skat
 
         public long GetLongPollState(long clientState)
         {
-            long state;
-            var start = DateTime.Now;
-            do
+            int newval = Interlocked.Increment(ref pollCounter);
+            try
             {
-                state = GetState();
-                if (clientState != state)
+                if (newval > 100)
                 {
-                    break;
+                    throw new APIException("Too many requests.", 409);
                 }
-                Task.Delay(100).Wait();                
-            } while ((DateTime.Now - start).TotalSeconds < 45);
-            return state;
+                long state;
+                var start = DateTime.Now;
+                do
+                {
+                    state = GetState();
+                    if (clientState != state)
+                    {
+                        break;
+                    }
+                    Task.Delay(1000).Wait();
+                } while ((DateTime.Now - start).TotalSeconds < 45);
+                return state;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref pollCounter);
+            }
         }
 
         public long GetState()

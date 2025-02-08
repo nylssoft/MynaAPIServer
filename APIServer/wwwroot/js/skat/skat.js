@@ -39,7 +39,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.2.9";
+    let version = "2.3.0";
 
     let computerGame = false;
     let computerInternalState;
@@ -2334,31 +2334,38 @@ var skat = (() => {
     const sleep = (interval) => new Promise(r => setTimeout(r, interval));
 
     const pollState = async () => {
-        if (!pollStateEnabled || computerGame) {
-            if (utils.is_debug()) utils.debug("Poll state disabled or computer game. Retry in 1 second.");
-            await sleep(1000);
-            await pollState();
-        } else {
-            if (utils.is_debug()) utils.debug("Poll state (up to 1 minute).");
-            let clientstate = getState();
-            if (clientstate == undefined) {
-                clientstate = 0;
-            }
-            const response = await fetch(`/api/skat/longpollstate/${clientstate}`);
-            if (response.status != 200) {
-                console.error(`Poll state error: ${response.statusText}. Retry in 5 second.`);
-                await sleep(5000);
+        try {
+            if (!pollStateEnabled || computerGame) {
+                if (utils.is_debug()) utils.debug("Poll state disabled or computer game. Retry in 1 second.");
+                await sleep(1000);
                 await pollState();
             } else {
-                const serverState = await response.json();
-                if (utils.is_debug()) utils.debug(`Received server state ${serverState}.`);
-                if (pollStateEnabled && serverState > clientstate) {
-                    if (utils.is_debug()) utils.debug("State has changed. Rerender.");
-                    setState(serverState);
-                    render();
+                if (utils.is_debug()) utils.debug("Poll state (up to 1 minute).");
+                let clientstate = getState();
+                if (clientstate == undefined) {
+                    clientstate = 0;
                 }
-                await pollState();
+                const response = await fetch(`/api/skat/longpollstate/${clientstate}`);
+                if (response.status != 200) {
+                    const jsonError = await response.json();
+                    console.error(`Poll state error: ${jsonError.title} Retry in 5 seconds.`);
+                    await sleep(5000);
+                    await pollState();
+                } else {
+                    const serverState = await response.json();
+                    if (utils.is_debug()) utils.debug(`Received server state ${serverState}.`);
+                    if (pollStateEnabled && serverState > clientstate) {
+                        if (utils.is_debug()) utils.debug("State has changed. Rerender.");
+                        setState(serverState);
+                        render();
+                    }
+                    await pollState();
+                }
             }
+        } catch (err) {
+            console.error(`Poll state error: ${err} Retry in 10 seconds.`);
+            await sleep(10000);
+            await pollState();
         }
     };
 
