@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2022-2023 Niels Stockfleth
+    Copyright (C) 2022-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.APIError;
 using APIServer.Backgammon.Core;
 using APIServer.Backgammon.Model;
 using APIServer.PwdMan;
@@ -25,6 +26,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace APIServer.Backgammon
 {
@@ -42,6 +45,8 @@ namespace APIServer.Backgammon
 
         private readonly ILogger logger;
 
+        private int pollCounter;
+
         public BackgammonService(IConfiguration configuration, ILogger<BackgammonService> logger)
         {
             Configuration = configuration;
@@ -49,6 +54,34 @@ namespace APIServer.Backgammon
         }
 
         // --- without authentication
+
+        public long GetLongPollState(long clientState)
+        {
+            int newval = Interlocked.Increment(ref pollCounter);
+            try
+            {
+                if (newval > 100)
+                {
+                    throw new APIException("Too many requests.", 409);
+                }
+                long state;
+                var start = DateTime.Now;
+                do
+                {
+                    state = GetState();
+                    if (clientState != state)
+                    {
+                        break;
+                    }
+                    Task.Delay(1000).Wait();
+                } while ((DateTime.Now - start).TotalSeconds < 45);
+                return state;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref pollCounter);
+            }
+        }
 
         public long GetState()
         {

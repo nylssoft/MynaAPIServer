@@ -36,7 +36,7 @@ var backgammon = (() => {
 
     let ticket;
     let model;
-    let timerEnabled = false;
+    let pollStateEnabled = false;
 
     let currentUser;
     let photos = {};
@@ -47,7 +47,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.8";
+    let version = "2.1.9";
 
     let dirty;
 
@@ -146,7 +146,7 @@ var backgammon = (() => {
         utils.remove_session_storage("backgammonstate");
         endGameClicked = false;
         giveUpClicked = false;
-        enableTimer();
+        enablePollState();
     };
 
     const clearTicket = () => {
@@ -180,17 +180,17 @@ var backgammon = (() => {
         utils.set_session_storage("backgammonstate", state);
     };
 
-    const enableTimer = () => {
-        if (!timerEnabled) {
-            if (utils.is_debug()) utils.debug("TIMER ENABLED.");
-            timerEnabled = true;
+    const enablePollState = () => {
+        if (!pollStateEnabled) {
+            if (utils.is_debug()) utils.debug("POLL STATE ENABLED.");
+            pollStateEnabled = true;
         }
     };
 
-    const disableTimer = () => {
-        if (timerEnabled) {
-            if (utils.is_debug()) utils.debug("TIMER DISABLED.");
-            timerEnabled = false;
+    const disablePollState = () => {
+        if (pollStateEnabled) {
+            if (utils.is_debug()) utils.debug("POLL STATE DISABLED.");
+            pollStateEnabled = false;
         }
     };
 
@@ -830,7 +830,7 @@ var backgammon = (() => {
             dirty = true;
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -848,7 +848,7 @@ var backgammon = (() => {
                         updateHighlightItem(to);
                     }
                     dirty = true;
-                    enableTimer();
+                    enablePollState();
                 }
                 else {
                     renderModel(model);
@@ -863,7 +863,7 @@ var backgammon = (() => {
             utils.replace_window_location("/backgammon");
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/login",
             {
                 method: "POST",
@@ -981,7 +981,7 @@ var backgammon = (() => {
                     handleError);
                 return;
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/backgammon/move",
                 {
                     method: "POST",
@@ -992,7 +992,7 @@ var backgammon = (() => {
                     if (utils.is_debug()) utils.debug(`MOVE: new state is ${state}.`);
                     setState(state);
                     update(to);
-                    enableTimer();
+                    enablePollState();
                 },
                 handleError);
         }
@@ -1282,13 +1282,13 @@ var backgammon = (() => {
         else {
             renderUsername(divMain);
         }
-        enableTimer();
+        enablePollState();
     };
 
     const onStartComputerGame = () => {
         computerGame = true;
         const name = currentUser ? currentUser.name : _T("TEXT_YOU");
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/computer/model", {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1456,7 +1456,7 @@ var backgammon = (() => {
         if (params.has("guest")) {
             guestMode = true;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -1479,7 +1479,7 @@ var backgammon = (() => {
             window.requestAnimationFrame(draw);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 if (utils.is_debug()) {
@@ -1605,7 +1605,7 @@ var backgammon = (() => {
         const inputUsername = document.getElementById("username-id");
         const name = inputUsername.value.trim();
         if (name.length > 0) {
-            disableTimer();
+            disablePollState();
             let token = utils.get_authentication_token();
             if (!token) {
                 token = "";
@@ -1634,7 +1634,7 @@ var backgammon = (() => {
                 },
                 (errMsg) => {
                     document.getElementById("login-error-id").textContent = _T(errMsg);
-                    enableTimer();
+                    enablePollState();
                 });
         }
     };
@@ -1661,13 +1661,13 @@ var backgammon = (() => {
                 handleError);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/roll", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`ROLL DICE: new state is ${state}.`);
                 setState(state);
                 update();
-                enableTimer();
+                enablePollState();
             },
             handleError);
     };
@@ -1676,7 +1676,7 @@ var backgammon = (() => {
         if (computerGame) {
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/nextgame", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`NEXT GAME REQUESTED: new state is ${state}.`);
@@ -1687,7 +1687,7 @@ var backgammon = (() => {
     };
 
     const btnConfirmNextGame_click = (ok) => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/confirmnextgame",
             {
                 method: "POST",
@@ -1703,7 +1703,7 @@ var backgammon = (() => {
     };
 
     const btnStartGame_click = () => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/newgame",
             {
                 method: "POST",
@@ -1740,13 +1740,13 @@ var backgammon = (() => {
                 handleError);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/skip", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`SKIP: new state is ${state}.`);
                 setState(state);
                 update();
-                enableTimer();
+                enablePollState();
             },
             handleError);
     };
@@ -1768,7 +1768,7 @@ var backgammon = (() => {
                     handleError);
                 return;
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/backgammon/giveup", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
                     if (utils.is_debug()) utils.debug(`GIVE UP: new state is ${state}.`);
@@ -1796,7 +1796,7 @@ var backgammon = (() => {
                 render();
                 return;
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/backgammon/logout", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
                     if (utils.is_debug()) utils.debug(`LOGOUT (game): new state is ${state}.`);
@@ -1817,7 +1817,7 @@ var backgammon = (() => {
     };
 
     const btnLogout_click = () => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/backgammon/logout", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`LOGOUT (ticket): new state is ${state}.`);
@@ -1842,37 +1842,61 @@ var backgammon = (() => {
         }
     };
 
-    const onTimer = () => {
-        if (!timerEnabled) return;
-        utils.fetch_api_call("api/backgammon/state", undefined,
-            (state) => {
-                const currentState = getState();
-                if (currentState === undefined || state > currentState) {
-                    if (utils.is_debug()) utils.debug(`ON TIMER: new state is ${state}.`);
-                    setState(state);
-                    if (model && model.board) {
-                        update();
-                    }
-                    else {
-                        render();
-                    }
+    const sleep = (interval) => new Promise(r => setTimeout(r, interval));
+
+    const pollState = async () => {
+        try {
+            if (!pollStateEnabled) {
+                if (utils.is_debug()) utils.debug("Poll state disabled. Retry in 1 second.");
+                await sleep(1000);
+                await pollState();
+            } else {
+                if (utils.is_debug()) utils.debug("Poll state (up to 1 minute).");
+                let clientstate = getState();
+                if (clientstate == undefined) {
+                    clientstate = 0;
                 }
-            },
-            (errMsg) => console.error(errMsg));
+                const response = await fetch(`/api/backgammon/longpollstate/${clientstate}`);
+                if (response.status != 200) {
+                    const jsonError = await response.json();
+                    console.error(`Poll state error: ${jsonError.title} Retry in 5 seconds.`);
+                    await sleep(5000);
+                    await pollState();
+                } else {
+                    const serverState = await response.json();
+                    if (utils.is_debug()) utils.debug(`Received server state ${serverState}.`);
+                    if (pollStateEnabled && serverState > clientstate) {
+                        if (utils.is_debug()) utils.debug("State has changed. Rerender.");
+                        setState(serverState);
+                        if (model && model.board) {
+                            update();
+                        }
+                        else {
+                            render();
+                        }
+                    }
+                    await pollState();
+                }
+            }
+        } catch (err) {
+            console.error(`Poll state error: ${err} Retry in 10 seconds.`);
+            await sleep(10000);
+            await pollState();
+        }
     };
 
     // --- public API
 
     return {
         renderInit: renderInit,
-        onTimer: onTimer,
+        pollState: pollState,
         onResize: onResize,
         loadImages: loadImages
     };
 })();
 
 window.onload = () => {
-    window.setInterval(backgammon.onTimer, 1000);
+    backgammon.pollState();
     window.addEventListener("resize", backgammon.onResize);
     utils.auth_lltoken(() => utils.set_locale(() => backgammon.renderInit()));
 };

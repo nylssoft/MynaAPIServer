@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2022-2023 Niels Stockfleth
+    Copyright (C) 2022-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ namespace APIServer.Backgammon
     public interface IBackgammonService
     {
         // --- without authentication
+
+        long GetLongPollState(long clientState);
 
         long GetState();
 
