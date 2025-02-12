@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,6 +35,13 @@ namespace APIServer.Chess
         }
 
         // --- without authentication
+
+        [HttpGet]
+        [Route("api/chess/longpollstate/{clientState}")]
+        public IActionResult GetLongPollState(long clientState)
+        {
+            return new JsonResult(ChessService.GetLongPollState(clientState));
+        }
 
         [HttpGet]
         [Route("api/chess/state")]

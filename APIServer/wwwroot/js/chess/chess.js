@@ -14,7 +14,8 @@ var chess = (() => {
 
     let ticket;
     let model;
-    let timerEnabled = false;
+    let pollStateEnabled = false;
+    let referenceTime;
 
     let dirty;
     let dirtyClock;
@@ -50,7 +51,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.7";
+    let version = "2.0.8";
 
     // helper
 
@@ -59,7 +60,7 @@ var chess = (() => {
         utils.remove_session_storage("chessstate");
         endGameClicked = false;
         giveUpClicked = false;
-        enableTimer();
+        enablePollState();
     };
 
     const clearTicket = () => {
@@ -93,17 +94,17 @@ var chess = (() => {
         utils.set_session_storage("chessstate", state);
     };
 
-    const enableTimer = () => {
-        if (!timerEnabled) {
-            if (utils.is_debug()) utils.debug("TIMER ENABLED.");
-            timerEnabled = true;
+    const enablePollState = () => {
+        if (!pollStateEnabled) {
+            if (utils.is_debug()) utils.debug("POLL STATE ENABLED.");
+            pollStateEnabled = true;
         }
     };
 
-    const disableTimer = () => {
-        if (timerEnabled) {
-            if (utils.is_debug()) utils.debug("TIMER DISABLED.");
-            timerEnabled = false;
+    const disablePollState = () => {
+        if (pollStateEnabled) {
+            if (utils.is_debug()) utils.debug("POLL STATE DISABLED.");
+            pollStateEnabled = false;
         }
     };
 
@@ -521,7 +522,7 @@ var chess = (() => {
 
     const placeFigure = (fromRow, fromColumn, toRow, toColumn) => {
         document.body.style.cursor = "wait";
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/place",
             {
                 method: "POST",
@@ -574,7 +575,7 @@ var chess = (() => {
     };
 
     const update = () => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -591,7 +592,7 @@ var chess = (() => {
                     updateGiveUpButton();
                     updateMessage();
                     dirty = true;
-                    enableTimer();
+                    enablePollState();
                 }
                 else {
                     renderModel(model);
@@ -630,7 +631,7 @@ var chess = (() => {
             utils.replace_window_location("/chess");
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/login",
             {
                 method: "POST",
@@ -965,7 +966,7 @@ var chess = (() => {
         else {
             renderUsername(divMain);
         }
-        enableTimer();
+        enablePollState();
     };
 
     const startEmbeddedComputerGame = () => {
@@ -1016,7 +1017,7 @@ var chess = (() => {
         selectedFigure = undefined;
         lastPos = undefined;
         setPixelPerWidth();
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
@@ -1040,7 +1041,7 @@ var chess = (() => {
             window.requestAnimationFrame(draw);
             return;
         }
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 if (utils.is_debug()) {
@@ -1126,7 +1127,7 @@ var chess = (() => {
     const btnLogin_click = () => {
         const name = inputUsername.value.trim();
         if (name.length > 0) {
-            disableTimer();
+            disablePollState();
             let token = utils.get_authentication_token();
             if (!token) {
                 token = "";
@@ -1155,13 +1156,13 @@ var chess = (() => {
                 },
                 (errMsg) => {
                     document.getElementById("login-error-id").textContent = errMsg;
-                    enableTimer();
+                    enablePollState();
                 });
         }
     };
 
     const btnPlayComputer_click = () => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/computergame", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`COMPUTER GAME. New state is ${state}.`);
@@ -1172,7 +1173,7 @@ var chess = (() => {
     };
 
     const btnNextGame_click = () => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/nextgame", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`NEXT GAME. New state is ${state}.`);
@@ -1183,7 +1184,7 @@ var chess = (() => {
     };
 
     const btnConfirmNextGame_click = (ok) => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/confirmnextgame",
             {
                 method: "POST",
@@ -1217,7 +1218,7 @@ var chess = (() => {
                 }
                 settings.ChessEngineName = document.getElementById("engine").value;
             }
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/chess/newgame",
                 {
                     method: "POST",
@@ -1234,7 +1235,7 @@ var chess = (() => {
     };
 
     const btnConfirmStartGame_click = (ok) => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/confirmstartgame",
             {
                 method: "POST",
@@ -1256,7 +1257,7 @@ var chess = (() => {
 
     const btnGiveUp_click = (elem) => {
         if (elem.value == "GiveUpYes") {
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/chess/giveup", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
                     if (utils.is_debug()) utils.debug(`GIVE UP. New state is ${state}.`);
@@ -1278,7 +1279,7 @@ var chess = (() => {
 
     const btnEndGame_click = (elem) => {
         if (elem.value == "EndGameYes") {
-            disableTimer();
+            disablePollState();
             utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
                     if (utils.is_debug()) utils.debug(`LOGOUT (EndGame). New state is ${state}.`);
@@ -1299,7 +1300,7 @@ var chess = (() => {
     };
 
     const btnLogout_click = () => {
-        disableTimer();
+        disablePollState();
         utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`LOGOUT (Button). New state is ${state}.`);
@@ -1319,43 +1320,79 @@ var chess = (() => {
         }
     };
 
-    const onTimer = () => {
-        if (!timerEnabled) return;
-        utils.fetch_api_call("api/chess/state", undefined,
-            (sm) => {
-                const d = sm.state;
-                const statechanged = getState();
-                if (statechanged === undefined || d > statechanged) {
-                    if (utils.is_debug()) {
-                        utils.debug(`ON TIMER. New state is ${d}.`);
-                        utils.debug(sm);
-                    }
-                    setState(d);
-                    if (model && model.board && model.board.gameStarted) {
-                        update();
-                    }
-                    else {
-                        render();
-                    }
+    const sleep = (interval) => new Promise(r => setTimeout(r, interval));
+
+    const pollState = async () => {
+        try {
+            if (!pollStateEnabled) {
+                if (utils.is_debug()) utils.debug("Poll state disabled. Retry in 1 second.");
+                await sleep(1000);
+                await pollState();
+            } else {
+                if (utils.is_debug()) utils.debug("Poll state (up to 1 minute).");
+                let clientstate = getState();
+                if (clientstate == undefined) {
+                    clientstate = 0;
                 }
-                else if (model && model.board && model.board.gameStarted) {
-                    model.state = sm;
-                    dirtyClock = true;
-                    if (simulate && isPlaying() && isActivePlayer() && simulateCounter > 0) {
-                        simulateCounter--;
-                        if (simulateCounter == 0) {
-                            simulateMove();
+                const response = await fetch(`/api/chess/longpollstate/${clientstate}`);
+                if (response.status != 200) {
+                    const jsonError = await response.json();
+                    console.error(`Poll state error: ${jsonError.title} Retry in 5 seconds.`);
+                    await sleep(5000);
+                    await pollState();
+                } else {
+                    const sm = await response.json();
+                    referenceTime = Date.now();
+                    const d = sm.state;
+                    if (utils.is_debug()) utils.debug(`Received server state ${d}.`);
+                    if (pollStateEnabled && d > clientstate) {
+                        if (utils.is_debug()) utils.debug("State has changed. Rerender.");
+                        setState(d);
+                        if (model && model.board && model.board.gameStarted) {
+                            update();
                         }
+                        else {
+                            render();
+                        }
+                    } else if (model && model.board && model.board.gameStarted) {
+                        model.state = sm;
+                        dirtyClock = true;
                     }
+                    await pollState();
                 }
-            },
-            (errMsg) => console.error(errMsg));
+            }
+        } catch (err) {
+            console.error(`Poll state error: ${err} Retry in 10 seconds.`);
+            await sleep(10000);
+            await pollState();
+        }
+    };
+
+    const onTimer = () => {
+        if (!pollStateEnabled) return;
+        if (model && model.board && model.board.gameStarted && referenceTime) {
+            const elapsed = Date.now() - referenceTime;
+            if (model.board.currentColor === "B") {
+                model.state.blackClock = Math.max(0, model.state.blackClock - elapsed);
+            } else {
+                model.state.whiteClock = Math.max(0, model.state.whiteClock - elapsed);
+            }
+            referenceTime = Date.now();
+            dirtyClock = true;
+            if (simulate && isPlaying() && isActivePlayer() && simulateCounter > 0) {
+                simulateCounter--;
+                if (simulateCounter == 0) {
+                    simulateMove();
+                }
+            }
+        }
     };
 
     // --- public API
 
     return {
         renderInit: renderInit,
+        pollState: pollState,
         onTimer: onTimer,
         onResize: onResize,
         loadFigureImages: loadFigureImages
@@ -1363,6 +1400,7 @@ var chess = (() => {
 })();
 
 window.onload = () => {
+    chess.pollState();
     window.setInterval(chess.onTimer, 1000);
     window.addEventListener("resize", chess.onResize);
     utils.auth_lltoken(() => utils.set_locale(() => chess.loadFigureImages(chess.renderInit)));

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021-2022 Niels Stockfleth
+    Copyright (C) 2021-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.APIError;
 using APIServer.Chess.Core;
 using APIServer.Chess.Model;
 using APIServer.PwdMan;
@@ -23,6 +24,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace APIServer.Chess
@@ -45,6 +47,8 @@ namespace APIServer.Chess
 
         private readonly ILogger logger;
 
+        private int pollCounter;
+
         public ChessService(IConfiguration configuration, ILogger<ChessService> logger)
         {
             Configuration = configuration;
@@ -52,6 +56,34 @@ namespace APIServer.Chess
         }
 
         // --- without authentication
+
+        public StateModel GetLongPollState(long clientState)
+        {
+            int newval = Interlocked.Increment(ref pollCounter);
+            try
+            {
+                if (newval > 100)
+                {
+                    throw new APIException("Too many requests.", 409);
+                }
+                StateModel sm;
+                var start = DateTime.Now;
+                do
+                {
+                    sm = GetState();
+                    if (clientState != sm.State)
+                    {
+                        break;
+                    }
+                    Task.Delay(1000).Wait();
+                } while ((DateTime.Now - start).TotalSeconds < 45);
+                return sm;
+            }
+            finally
+            {
+                Interlocked.Decrement(ref pollCounter);
+            }
+        }
 
         public StateModel GetState()
         {

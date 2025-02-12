@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021-2022 Niels Stockfleth
+    Copyright (C) 2021-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ namespace APIServer.Chess
     public interface IChessService
     {
         // --- without authentication
+
+        StateModel GetLongPollState(long clientState);
 
         StateModel GetState();
 
