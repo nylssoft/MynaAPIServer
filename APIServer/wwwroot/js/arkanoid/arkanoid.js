@@ -99,6 +99,9 @@ var arkanoid = (() => {
 
     let lastHit;
 
+    let lastActionTime;
+    let lastActionElapsed;
+
     // dimensions
 
     let innerWidth;
@@ -146,7 +149,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.2.4";
+    const version = "1.2.5";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1597,8 +1600,23 @@ var arkanoid = (() => {
     };
 
     const draw = () => {
-        let start = performance.now();
         window.requestAnimationFrame(draw);
+        const now = performance.now();
+        if (lastActionTime == undefined) {
+            lastActionTime = now;
+            lastActionElapsed = 0;
+            return;
+        }
+        lastActionElapsed += now - lastActionTime;
+        lastActionTime = now;
+        while (lastActionElapsed > 16.66) {
+            drawAndAction();
+            lastActionElapsed -= 16.66;
+        }
+    };
+
+    const drawAndAction = () => {
+        let start = performance.now();
         const ctx = canvas.getContext("2d");
         if (fadeCount < maxFadeCount) {
             fadeCount += 1;
