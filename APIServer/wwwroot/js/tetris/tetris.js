@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.7";
+    let version = "2.0.8";
 
     let block;
     let nextBlock;
@@ -458,6 +458,9 @@ var tetris = (() => {
     let highScores;
 
     let currentUser;
+
+    let lastActionTime;
+    let lastActionElapsed;
 
     // --- background
 
@@ -608,10 +611,48 @@ var tetris = (() => {
 
     const draw = () => {
         // game logic
-        if (isPaused) {
-            window.requestAnimationFrame(draw);
+        actionPhase();
+        // drawing
+        let ctx = canvas.getContext("2d");
+        if (dirtyBorder) {
+            drawBorder(ctx);
+            dirtyBorder = false;
+        }
+        if (dirtyPlayground && playground) {
+            drawPlayground(ctx);
+            dirtyPlayground = false;
+        }
+        if (dirtyBlock && block) {
+            drawBlock(ctx);
+            dirtyBlock = false;
+        }
+        if (dirtyNextBlock && nextBlock) {
+            let ctxnext = canvasNextBlock.getContext("2d");
+            ctxnext.clearRect(0, 0, canvas.width, canvas.height);
+            drawNextBlock(ctxnext);
+            dirtyNextBlock = false;
+        }
+        window.requestAnimationFrame(draw);
+    };
+
+    // --- action phase
+
+    const actionPhase = () => {
+        const now = performance.now();
+        if (isPaused || lastActionTime == undefined) {
+            lastActionTime = now;
+            lastActionElapsed = 0;
             return;
         }
+        lastActionElapsed += now - lastActionTime;
+        lastActionTime = now;
+        while (lastActionElapsed > 16.66) {
+            doAction();
+            lastActionElapsed -= 16.66;
+        }
+    };
+
+    const doAction = () => {
         if (state == StateEnums.NEWBLOCK) {
             placeNewBlock();
         }
@@ -685,27 +726,6 @@ var tetris = (() => {
                 }
             }
         }
-        // drawing
-        let ctx = canvas.getContext("2d");
-        if (dirtyBorder) {
-            drawBorder(ctx);
-            dirtyBorder = false;
-        }
-        if (dirtyPlayground && playground) {
-            drawPlayground(ctx);
-            dirtyPlayground = false;
-        }
-        if (dirtyBlock && block) {
-            drawBlock(ctx);
-            dirtyBlock = false;
-        }
-        if (dirtyNextBlock && nextBlock) {
-            let ctxnext = canvasNextBlock.getContext("2d");
-            ctxnext.clearRect(0, 0, canvas.width, canvas.height);
-            drawNextBlock(ctxnext);
-            dirtyNextBlock = false;
-        }
-        window.requestAnimationFrame(draw);
     };
 
     // --- block methods
