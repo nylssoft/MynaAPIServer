@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.8";
+    let version = "2.0.9";
 
     let block;
     let nextBlock;
@@ -465,7 +465,7 @@ var tetris = (() => {
     // --- background
 
     const setBackgroundPicture = () => {
-        if (backgroundPictures && level < backgroundPictures.length + 1) {
+        if (backgroundPictures && level < backgroundPictures.length) {
             const pic = backgroundPictures[level];
             const wrapBody = document.getElementById("wrap-body-id");
             wrapBody.style.setProperty("--bgimg", `url('${pic.url}')`);
@@ -610,8 +610,27 @@ var tetris = (() => {
     };
 
     const draw = () => {
+        window.requestAnimationFrame(draw);
+        const now = performance.now();
+        if (lastActionTime == undefined) {
+            lastActionTime = now;
+            lastActionElapsed = 0;
+            return;
+        }
+        lastActionElapsed += now - lastActionTime;
+        lastActionTime = now;
+        while (lastActionElapsed > 16.66) {
+            actionAndDraw();
+            lastActionElapsed -= 16.66;
+        }
+    };
+
+    const actionAndDraw = () => {
+        if (isPaused) {
+            return;
+        }
         // game logic
-        actionPhase();
+        action();
         // drawing
         let ctx = canvas.getContext("2d");
         if (dirtyBorder) {
@@ -632,27 +651,11 @@ var tetris = (() => {
             drawNextBlock(ctxnext);
             dirtyNextBlock = false;
         }
-        window.requestAnimationFrame(draw);
     };
 
     // --- action phase
 
-    const actionPhase = () => {
-        const now = performance.now();
-        if (isPaused || lastActionTime == undefined) {
-            lastActionTime = now;
-            lastActionElapsed = 0;
-            return;
-        }
-        lastActionElapsed += now - lastActionTime;
-        lastActionTime = now;
-        while (lastActionElapsed > 16.66) {
-            doAction();
-            lastActionElapsed -= 16.66;
-        }
-    };
-
-    const doAction = () => {
+    const action = () => {
         if (state == StateEnums.NEWBLOCK) {
             placeNewBlock();
         }
@@ -1190,7 +1193,7 @@ var tetris = (() => {
         });
     };
 
-    const init = (sm) => {
+    const init = (pictures) => {
         if (utils.is_mobile()) {
             pixelPerField = 18;
             borderWidth = 2;
@@ -1199,7 +1202,7 @@ var tetris = (() => {
             pixelPerField = 24;
             borderWidth = 3;
         }
-        initBackgroundPictures(sm.pictures);
+        initBackgroundPictures(pictures);
         initKeyDownEvent();
         renderInit();
     };
@@ -1216,9 +1219,9 @@ var tetris = (() => {
 window.onload = () => {
     utils.set_locale(() => {
         utils.auth_lltoken(() => {
-            let token = utils.get_authentication_token();
+            const token = utils.get_authentication_token();
             utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
-                (model) => tetris.init(model),
+                (model) => tetris.init(model.pictures),
                 (errMsg) => console.error(errMsg));
         });
     });
