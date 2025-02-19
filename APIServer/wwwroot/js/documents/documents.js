@@ -4,7 +4,7 @@ var documents = (() => {
 
     // state
 
-    let version = "2.0.7";
+    let version = "2.0.8";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -282,7 +282,7 @@ var documents = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_DOCUMENTS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2021-2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_DOCUMENTS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };

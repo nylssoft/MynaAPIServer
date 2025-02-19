@@ -4,7 +4,7 @@ var contacts = (() => {
     
     // state
 
-    let version = "1.0.6";
+    let version = "1.0.7";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -144,7 +144,7 @@ var contacts = (() => {
 
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent);
-        controls.create(div, "span", "copyright", `${_T("HEADER_CONTACTS")} ${version}. ${_T("TEXT_COPYRIGHT")} 2022 `);
+        controls.create(div, "span", "copyright", `${_T("HEADER_CONTACTS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
         controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
         controls.create(div, "span", "copyright", ".");
     };
