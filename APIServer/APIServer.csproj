@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <UserSecretsId>59559925-6314-4897-b314-9a1a2e10c10b</UserSecretsId>
+    <CompressionEnabled>false</CompressionEnabled>
   </PropertyGroup>
   <ItemGroup>
     <_ContentIncludedByDefault Remove="package.json" />
