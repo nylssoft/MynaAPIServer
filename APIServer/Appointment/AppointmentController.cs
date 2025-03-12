@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2023 Niels Stockfleth
+    Copyright (C) 2023-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 using APIServer.Appointment.Model;
 using APIServer.PwdMan;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 
 namespace APIServer.Appointment
@@ -58,7 +57,7 @@ namespace APIServer.Appointment
         [Route("api/appointment/{uuid}")]
         public IActionResult UpdateAppointment(string uuid, [FromBody] AppointmentDefinitionModel definition)
         {
-            if (uuid.IsNullOrEmpty() || definition == null) throw new MissingParameterException();
+            if (string.IsNullOrEmpty(uuid) || definition == null) throw new MissingParameterException();
             if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
             return new JsonResult(AppointmentService.UpdateAppointment(PwdManService, GetToken(), uuid, definition, GetSecurityKey(uuid)));
         }
@@ -67,7 +66,7 @@ namespace APIServer.Appointment
         [Route("api/appointment/{uuid}")]
         public IActionResult AddAppointment(string uuid, [FromBody] AppointmentModel appointment)
         {
-            if (uuid.IsNullOrEmpty() || appointment == null) throw new MissingParameterException();
+            if (string.IsNullOrEmpty(uuid) || appointment == null) throw new MissingParameterException();
             if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
             return new JsonResult(AppointmentService.AddAppointment(PwdManService, GetToken(), uuid, appointment, GetSecurityKey(uuid)));
         }
@@ -76,7 +75,7 @@ namespace APIServer.Appointment
         [Route("api/appointment/{uuid}/accesstoken")]
         public IActionResult GenerateAccessToken(string uuid)
         {
-            if (uuid.IsNullOrEmpty()) throw new MissingParameterException();
+            if (string.IsNullOrEmpty(uuid)) throw new MissingParameterException();
             if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
             return new JsonResult(AppointmentService.GenerateAccessToken(PwdManService, GetToken(), uuid));
         }
@@ -85,14 +84,14 @@ namespace APIServer.Appointment
         [Route("api/appointment/batch")]
         public IActionResult GetAppointmentsBatch([FromBody] List<AppointmentGetRequest> requests)
         {
-            if (requests.IsNullOrEmpty()) throw new MissingParameterException();
+            if (requests == null || requests.Count == 0) throw new MissingParameterException();
             if (requests.Count > Limits.MAX_APPOINTMENT_BATCH) throw new InputValueTooLargeException();
             List<AppointmentModel> ret = new();
             foreach (var request in requests)
             {
-                if (request.Uuid.IsNullOrEmpty()) throw new MissingParameterException();
+                if (string.IsNullOrEmpty(request.Uuid)) throw new MissingParameterException();
                 if (request.Uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
-                if (request.AccessToken.IsNullOrEmpty()) throw new MissingParameterException();
+                if (string.IsNullOrEmpty(request.AccessToken)) throw new MissingParameterException();
                 if (request.Method == "GET")
                 {
                     var securityKey = AppointmentService.GetSecurityKey(request.Uuid, request.AccessToken);
@@ -116,7 +115,7 @@ namespace APIServer.Appointment
         [Route("api/appointment/{uuid}")]
         public IActionResult GetAppointment(string uuid)
         {
-            if (uuid.IsNullOrEmpty()) throw new MissingParameterException();
+            if (string.IsNullOrEmpty(uuid)) throw new MissingParameterException();
             if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
             return new JsonResult(AppointmentService.GetAppointment(PwdManService, uuid, GetSecurityKey(uuid)));
         }
@@ -125,7 +124,7 @@ namespace APIServer.Appointment
         [Route("api/appointment/{uuid}/vote")]
         public IActionResult UpdateVote(string uuid, [FromBody] AppointmentVoteModel vote)
         {
-            if (uuid.IsNullOrEmpty() || vote == null || vote.UserUuid.IsNullOrEmpty()) throw new MissingParameterException();
+            if (string.IsNullOrEmpty(uuid) || vote == null || string.IsNullOrEmpty(vote.UserUuid)) throw new MissingParameterException();
             if (uuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
             if (vote.UserUuid.Length > Limits.MAX_APPOINTMENT_UUID) throw new InputValueTooLargeException();
             return new JsonResult(AppointmentService.UpdateVote(PwdManService, uuid, vote, GetSecurityKey(uuid)));

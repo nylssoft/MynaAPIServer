@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2023 Niels Stockfleth
+    Copyright (C) 2023-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,7 +21,6 @@ using APIServer.PwdMan;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -304,7 +303,7 @@ namespace APIServer.Appointment
         private static bool IsValidDefinition(AppointmentDefinitionModel definition)
         {
             if (definition == null ||
-                definition.Description.IsNullOrEmpty() ||
+                string.IsNullOrEmpty(definition.Description) ||
                 definition.Participants == null ||
                 definition.Options == null)
             {
@@ -337,7 +336,7 @@ namespace APIServer.Appointment
         private static bool IsValidVote(AppointmentVoteModel vote, AppointmentModel appointment)
         {
             if (vote == null ||
-                vote.UserUuid.IsNullOrEmpty() ||
+                string.IsNullOrEmpty(vote.UserUuid) ||
                 vote.Accepted == null ||
                 !appointment.Definition.Participants.Any(p => p.UserUuid == vote.UserUuid))
             {
@@ -405,7 +404,7 @@ namespace APIServer.Appointment
 
         private static string Decrypt(string encryptedText, string securityKey)
         {
-            if (!securityKey.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(securityKey))
             {
                 byte[] cryptoKey = Convert.FromBase64String(securityKey);
                 return DecodeText(encryptedText, cryptoKey);
@@ -415,7 +414,7 @@ namespace APIServer.Appointment
 
         private static string Encrypt(string plainText, string securityKey)
         {
-            if (!securityKey.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(securityKey))
             {
                 byte[] cryptoKey = Convert.FromBase64String(securityKey);
                 return EncodeText(plainText, cryptoKey);
@@ -521,7 +520,7 @@ namespace APIServer.Appointment
                     foreach (var cleanupDateTime in cleanupVoteDateTimes)
                     {
                         if (accepted.Year == cleanupDateTime.Year
-                            && accepted.Month == cleanupDateTime.Month                            
+                            && accepted.Month == cleanupDateTime.Month
                             && accepted.Days.Remove(cleanupDateTime.Day))
                         {
                             updateVote = true;

@@ -15,7 +15,7 @@ namespace APIServer.Migrations.DbSqlite
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.7");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.2");
 
             modelBuilder.Entity("APIServer.Database.DbAppointment", b =>
                 {
@@ -71,28 +71,6 @@ namespace APIServer.Migrations.DbSqlite
                     b.HasIndex("DbUserId", "PerformedUtc");
 
                     b.ToTable("Audit");
-                });
-
-            modelBuilder.Entity("APIServer.Database.DbChat", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long>("DbUserId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Message")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DbUserId");
-
-                    b.ToTable("Chats");
                 });
 
             modelBuilder.Entity("APIServer.Database.DbDiary", b =>
@@ -655,17 +633,6 @@ namespace APIServer.Migrations.DbSqlite
                 });
 
             modelBuilder.Entity("APIServer.Database.DbAudit", b =>
-                {
-                    b.HasOne("APIServer.Database.DbUser", "DbUser")
-                        .WithMany()
-                        .HasForeignKey("DbUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DbUser");
-                });
-
-            modelBuilder.Entity("APIServer.Database.DbChat", b =>
                 {
                     b.HasOne("APIServer.Database.DbUser", "DbUser")
                         .WithMany()
