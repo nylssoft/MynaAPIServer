@@ -15,9 +15,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using System.Collections.Generic;
 using APIServer.PwdMan;
 using APIServer.Skat.Model;
+using System.Collections.Generic;
 
 namespace APIServer.Skat
 {
@@ -86,6 +86,8 @@ namespace APIServer.Skat
         bool PickupSkat(string ticket, int internalCardNumber);
 
         bool ConfirmStartGame(string ticket);
+
+        bool CancelConfirmStartGame(string ticket);
 
         bool SpeedUp(string ticket);
 

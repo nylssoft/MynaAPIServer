@@ -39,7 +39,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.3.0";
+    let version = "2.3.1";
 
     let computerGame = false;
     let computerInternalState;
@@ -796,6 +796,7 @@ var skat = (() => {
                     }
                     else {
                         controls.create(parent, "p", undefined, _T("INFO_WAIT_CONFIRMATION_OTHER"));
+                        controls.createButton(parent, _T("BUTTON_CANCEL"), btnCancelConfirmStartGame_click, "CancelConfirmStartGame");
                         setActive(false);
                     }
                 }
@@ -1877,6 +1878,17 @@ var skat = (() => {
         utils.fetch_api_call("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("CONFIRM START GAME.");
+                render();
+            },
+            handleError);
+    };
+
+    const btnCancelConfirmStartGame_click = () => {
+        if (computerGame) return;
+        disablePollState();
+        utils.fetch_api_call("api/skat/cancelconfirmstartgame", { method: "POST", headers: { "ticket": ticket } },
+            () => {
+                if (utils.is_debug()) utils.debug("CANCEL CONFIRM START GAME.");
                 render();
             },
             handleError);

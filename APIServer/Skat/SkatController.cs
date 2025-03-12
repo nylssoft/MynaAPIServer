@@ -15,11 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.PwdMan;
+using APIServer.Skat.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-
-using APIServer.Skat.Model;
-using APIServer.PwdMan;
 using System.Collections.Generic;
 
 namespace APIServer.Skat
@@ -100,7 +99,7 @@ namespace APIServer.Skat
         [Route("api/skat/computer/bid")]
         public IActionResult PerformComputerBidAction([FromBody] ComputerRequest request)
         {
-            if (request == null || string.IsNullOrEmpty(request.InternalState)|| string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.Action)) throw new MissingParameterException();
+            if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.Action)) throw new MissingParameterException();
             if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
             return new JsonResult(SkatService.PerformComputerBidAction(request.CurrentPlayerName, request.InternalState, request.Action));
@@ -244,6 +243,13 @@ namespace APIServer.Skat
         }
 
         [HttpPost]
+        [Route("api/skat/cancelconfirmstartgame")]
+        public IActionResult CancelConfirmStartGame()
+        {
+            return new JsonResult(SkatService.CancelConfirmStartGame(GetTicket()));
+        }
+
+        [HttpPost]
         [Route("api/skat/confirmspeedup")]
         public IActionResult ConfirmSpeedUp()
         {
@@ -287,7 +293,7 @@ namespace APIServer.Skat
 
         [HttpGet]
         [Route("api/skat/resultbyid")]
-        public IActionResult GetResultByid([FromQuery]long id)
+        public IActionResult GetResultByid([FromQuery] long id)
         {
             return new JsonResult(SkatService.GetResultModelById(PwdManService, GetToken(), id));
         }

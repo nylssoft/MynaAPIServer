@@ -606,13 +606,23 @@ namespace APIServer.Skat
 
         public bool ConfirmStartGame(string ticket)
         {
+            return UpdateConfirmStateGame(ticket, true);
+        }
+
+        public bool CancelConfirmStartGame(string ticket)
+        {
+            return UpdateConfirmStateGame(ticket, false);
+        }
+
+        private bool UpdateConfirmStateGame(string ticket, bool confirmed)
+        {
             var ret = false;
             lock (mutex)
             {
                 var ctx = GetContext(ticket);
                 if (ctx != null)
                 {
-                    ctx.StartGameConfirmed = true;
+                    ctx.StartGameConfirmed = confirmed;
                     ret = true;
                 }
                 if (ret)
