@@ -260,9 +260,19 @@ namespace APIServer.Skat
             return GetInternalState(t);
         }
 
-        public string PerformComputerBidAction(string currentPlayer, string state, string bidAction)
+        public string PerformComputerBidAction(string currentPlayer, string state, string bidAction, bool passComputerPlayers)
         {
             var t = GetSkatTableFromState(state);
+            if (passComputerPlayers)
+            {
+                foreach (var p in t.Players)
+                {
+                    if (p.Name != currentPlayer)
+                    {
+                        p.BidStatus = BidStatus.Pass;
+                    }
+                }
+            }
             PerformBidAction(t, currentPlayer, bidAction);
             return GetInternalState(t);
         }

@@ -39,7 +39,7 @@ namespace APIServer.Skat
 
         string SetComputerGameOption(string currentPlayer, string state, GameOptionModel skatGameOptionModel);
 
-        string PerformComputerBidAction(string currentPlayer, string state, string bidAction);
+        string PerformComputerBidAction(string currentPlayer, string state, string bidAction, bool passComputerPlayers);
 
         string PickupComputerSkat(string currentPlayer, string state, int internalCardNumber);
 

@@ -102,7 +102,8 @@ namespace APIServer.Skat
             if (request == null || string.IsNullOrEmpty(request.InternalState) || string.IsNullOrEmpty(request.CurrentPlayerName) || string.IsNullOrEmpty(request.Action)) throw new MissingParameterException();
             if (request.CurrentPlayerName.Length > Limits.MAX_USERNAME) throw new InputValueTooLargeException();
             if (request.InternalState.Length > Limits.MAX_PWDMAN_CONTENT) throw new InputValueTooLargeException();
-            return new JsonResult(SkatService.PerformComputerBidAction(request.CurrentPlayerName, request.InternalState, request.Action));
+            bool passComputerPlayers = request.IsHumanPlayer && (request.Action == "PassBid" || request.Action == "PassHold");
+            return new JsonResult(SkatService.PerformComputerBidAction(request.CurrentPlayerName, request.InternalState, request.Action, passComputerPlayers));
         }
 
         [HttpPost]

@@ -39,7 +39,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.3.1";
+    let version = "2.3.2";
 
     let computerGame = false;
     let computerInternalState;
@@ -827,10 +827,8 @@ var skat = (() => {
                 }
             }
             model.skatTable.actions.forEach((action) => {
-                if (!computerGame || (action.name != "PassBid" && action.name != "PassHold")) {
-                    controls.createButton(parent, _T(action.descriptionLabel), btnAction_click, action.name);
-                    active = true;
-                }
+                controls.createButton(parent, _T(action.descriptionLabel), btnAction_click, action.name);
+                active = true;
             });
             if (model.skatTable.player && model.skatTable.player.tooltipLabels && model.skatTable.player.tooltipLabels.length > 0) {
                 controls.create(parent, "span", "tooltip", translateLabels(model.skatTable.player.tooltipLabels));
@@ -1598,7 +1596,7 @@ var skat = (() => {
                                 {
                                     method: "POST",
                                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                                    body: JSON.stringify({ Action: action, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState })
+                                    body: JSON.stringify({ Action: action, CurrentPlayerName: m.skatTable.currentPlayer.name, InternalState: m.internalState, IsHumanPlayer: false })
                                 },
                                 (internalState) => {
                                     if (utils.is_debug()) utils.debug("COMPUTER BID OR ACTION.");
@@ -2059,7 +2057,7 @@ var skat = (() => {
                     {
                         method: "POST",
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                        body: JSON.stringify({ Action: action, CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                        body: JSON.stringify({ Action: action, CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState, IsHumanPlayer: true })
                     },
                     (internalState) => {
                         if (utils.is_debug()) utils.debug("COMPUTER BID (btnAction_click).");
@@ -2248,7 +2246,7 @@ var skat = (() => {
                     {
                         method: "POST",
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
-                        body: JSON.stringify({ Action: "StartGame", CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState })
+                        body: JSON.stringify({ Action: "StartGame", CurrentPlayerName: getCurrentUsername(), InternalState: computerInternalState, IsHumanPlayer: true })
                     },
                     (internalState) => {
                         if (utils.is_debug()) utils.debug("COMPUTER BID (start game).");

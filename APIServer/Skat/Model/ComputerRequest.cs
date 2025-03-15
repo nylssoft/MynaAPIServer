@@ -34,5 +34,7 @@ namespace APIServer.Skat.Model
         public string Action { get; set; }
 
         public int Card { get; set; }
+
+        public bool IsHumanPlayer { get; set; }
     }
 }
