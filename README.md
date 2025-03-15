@@ -1,6 +1,6 @@
 # MynaAPIServer
 
-Provides a website with games and applications. The website runs on Unix or Windows using .NET 8 as backend server (Kestrel web server).
+Provides a website with games and applications. The website runs on Unix or Windows using .NET 9 as backend server (Kestrel web server).
 
 The following games are provided:
 - [Skat](https://www.stockfleth.eu/skat), a german card game
@@ -49,7 +49,7 @@ manage notes, diary, contacts and download documents, see
 ## Setup
 
 The project can be compiled with Visual Studio 2022 or from a command-line interpreter, see e.g. [build workflow](https://github.com/nylssoft/MynaAPIServer/actions/runs/10124625755/workflow).
-If you run the .NET 8 server you will see sample pages.
+If you run the .NET 9 server you will see sample pages.
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
