@@ -39,7 +39,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.3.3";
+    let version = "2.3.4";
 
     let computerGame = false;
     let computerInternalState;
@@ -823,9 +823,7 @@ var skat = (() => {
         let gameStarted = model.skatTable.gameStarted;
         let divGameType = controls.create(parent, "div", "gametype");
         controls.createRadiobutton(divGameType, "r1", "gametype", "Grand", _T("TEXT_GRAND"), game.type == "Grand", btnGameType_click, gameStarted);
-        if (!computerGame) {
-            controls.createRadiobutton(divGameType, "r2", "gametype", "Null", _T("TEXT_NULL"), game.type == "Null", btnGameType_click, gameStarted);
-        }
+        controls.createRadiobutton(divGameType, "r2", "gametype", "Null", _T("TEXT_NULL"), game.type == "Null", btnGameType_click, gameStarted);
         controls.createRadiobutton(divGameType, "r3", "gametype", "Clubs", _T("TEXT_CLUBS"), game.type == "Color" && game.color == "Clubs", btnGameType_click, gameStarted);
         controls.createRadiobutton(divGameType, "r4", "gametype", "Spades", _T("TEXT_SPADES"), game.type == "Color" && game.color == "Spades", btnGameType_click, gameStarted);
         controls.createRadiobutton(divGameType, "r5", "gametype", "Hearts", _T("TEXT_HEARTS"), game.type == "Color" && game.color == "Hearts", btnGameType_click, gameStarted);
@@ -2318,7 +2316,6 @@ var skat = (() => {
     const pollState = async () => {
         try {
             if (!pollStateEnabled || computerGame) {
-                if (utils.is_debug()) utils.debug("Poll state disabled or computer game. Retry in 1 second.");
                 await sleep(1000);
                 await pollState();
             } else {

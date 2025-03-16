@@ -67,7 +67,6 @@
                     bestCards.push(c);
                     bestScore = score;
                 }
-                if (utils.is_debug()) utils.debug(`card:${getCardDescription(c)}, score:${score}, best score:${bestScore}`);
             });
         }
         if (!bestCards) {
@@ -77,6 +76,9 @@
     };
 
     const getComputerPlayScore = (am, card) => {
+        if (am.game.type == 'Null') {
+            return getComputerPlayScoreNull(am, card);
+        }
         switch (am.myPosition) {
             case 0:
                 return getComputerPlayScoreVorhand(am, card);
@@ -89,6 +91,118 @@
         }
         return -2;
     };
+
+    // --- null game
+
+    const getComputerPlayScoreNull = (am, card) => {
+        const myCardOrder = getCardOrderNull(card);
+        const myCardColor = card.color;
+        const myColorCards = am.cardInfo[myCardColor].myCards;
+        const remaingColorCards = addCards(am.cardInfo[myCardColor].remainingCards, myColorCards);
+        const playerDoesNotHaveColor = am.cardInfo[card.color].playerNamesWithoutCards.includes(am.gamePlayerName);
+        const partnerDoesNotHaveColor = am.cardInfo[card.color].playerNamesWithoutCards.includes(am.partnerPlayerName);
+        const forced = am.myPosition > 0 && card.color == am.firstCard.color;
+        let score = 0;
+        // vorhand
+        if (am.myPosition == 0) {
+            // prefer lowest card to start with
+            score += (7 - myCardOrder) * 10;
+            // prefer card where most higher cards still exist
+            let higherCards = 0;
+            remaingColorCards.forEach(c => {
+                if (!myColorCards.includes(c) && getCardOrderNull(c) > myCardOrder) {
+                    higherCards++;
+                }
+            });
+            score += 10 * higherCards;
+            // prefer color that the player still have
+            if (!playerDoesNotHaveColor) {
+                score += 200;
+            }
+            // prefer color that my partner does not have
+            if (partnerDoesNotHaveColor) {
+                score += 20;
+            }
+        }
+        // mittelhand
+        else if (am.myPosition == 1) {
+            // same color as first card
+            if (forced) {
+                // prefer lowest card if game player is behind or if card is lower than game player card
+                if (am.gamePlayerPosition == 2 || myCardOrder < getCardOrderNull(am.firstCard)) {
+                    score += (7 - myCardOrder) * 10;
+                }
+                // prefer highest card, keep lower cards
+                else {
+                    score += myCardOrder * 20;
+                }
+                // prefer color that the player still have
+                if (!playerDoesNotHaveColor) {
+                    score += 200;
+                }
+                // prefer color that my partner does not have
+                if (partnerDoesNotHaveColor) {
+                    score += 20;
+                }
+            }
+            // different color, through away a card
+            else {
+                // prefer to have a clean color
+                score += (10 - myColorCards.length) * 20;
+                // prefer highest card, keep lower cards
+                score += myCardOrder * 20;
+                // prefer color where must cards still exists
+                score += am.cardInfo[myCardColor].remainingCards.length * 2;
+                // prefer color that the player still have
+                if (!playerDoesNotHaveColor) {
+                    score += 100;
+                }
+                // prefer color that my partner does not have
+                if (partnerDoesNotHaveColor) {
+                    score += 20;
+                }
+            }
+        }
+        // hinterhand
+        else {
+            const firstCard = am.firstCard;
+            const secondCard = am.secondCard;
+            const gamePlayerCard = am.gamePlayerPosition == 0 ? firstCard : secondCard;
+            const gamePlayerOrder = getCardOrderNull(gamePlayerCard);
+            const partnerPlayerCard = am.gamePlayerPosition == 0 ? secondCard : firstCard;
+            const partnerPlayerOrder = getCardOrderNull(partnerPlayerCard);
+            // same color as first card
+            if (forced) {
+                // lower card than game player win
+                if (myCardOrder < gamePlayerOrder && partnerPlayerOrder < gamePlayerOrder) {
+                    score += 1000;
+                } else {
+                    // prefer highest card to take the stitch
+                    score += myCardOrder * 20;
+                }
+            }
+            // different color, through away a card
+            else {
+                // prefer to have a clean color
+                score += (10 - myColorCards.length) * 20;
+                // prefer highest card order, keep lower cards
+                score += myCardOrder * 20;
+                // prefer color where must cards still exists
+                score += am.cardInfo[myCardColor].remainingCards.length * 2;
+                // prefer card that the player still have
+                if (!playerDoesNotHaveColor) {
+                    score += 100;
+                }
+                // prefer color that my partner does not have
+                if (partnerDoesNotHaveColor) {
+                    score += 20;
+                }
+            }
+        }
+        return score;
+    };
+
+    // --- trump game
 
     const getComputerPlayScoreVorhand = (am, card) => {
         let score = 0;
@@ -327,7 +441,6 @@
                 });
             }
         });
-        console.log(ret);
         return ret;
     };
 
@@ -446,6 +559,11 @@
             return cardOrderJack[card.color];
         }
         const cardOrder = { "Digit7": 0, "Digit8": 1, "Digit9": 2, "Queen": 3, "King": 4, "Digit10": 5, "Ace": 6 };
+        return cardOrder[card.value];
+    };
+
+    const getCardOrderNull = (card) => {
+        const cardOrder = { "Digit7": 0, "Digit8": 1, "Digit9": 2, "Digit10": 3, "Jack": 4, "Queen": 5, "King": 6, "Ace": 7 };
         return cardOrder[card.value];
     };
 
