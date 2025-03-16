@@ -48,7 +48,7 @@ module.exports = function (grunt) {
                 dest: "temp/usermgmt.js"
             },
             skat: {
-                src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/skat/skat.js"],
+                src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/skat/skatengine.js", "wwwroot/js/skat/skat.js"],
                 dest: "temp/skat.js"
             },
             slideshow: {
@@ -162,6 +162,7 @@ module.exports = function (grunt) {
                 "wwwroot/js/password/password.js",
                 "wwwroot/js/pwdman/pwdman.js",
                 "wwwroot/js/pwdman/usermgmt.js",
+                "wwwroot/js/skat/skatengine.js",
                 "wwwroot/js/skat/skat.js",
                 "wwwroot/js/slideshow/slideshow.js",
                 "wwwroot/js/tetris/tetris.js",
