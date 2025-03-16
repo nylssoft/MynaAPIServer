@@ -756,6 +756,10 @@ h3 {
         font-size: 11pt;
     }
 
+    .cards-section {
+        margin-top: 20pt;
+    }
+
     .card-img {
         z-index: 2;
         width: 60px;
@@ -812,6 +816,25 @@ h3 {
 
     p, span, label, .confirmation, .tooltip, .result-select {
         font-size: 11pt;
+    }
+
+    p {
+        margin-top: 5pt;
+        margin-bottom: 20pt;
+    }
+
+    .header-section {
+        height: 50pt;
+    }
+
+    .action-buttons-div {
+        height: 30pt;
+        margin-bottom: 10pt;
+    }
+
+    .tooltip-text-div {
+        height: 40pt;
+        margin-bottom: 10pt;
     }
 
     h1 {
