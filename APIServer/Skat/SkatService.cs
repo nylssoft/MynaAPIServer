@@ -25,6 +25,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -1421,7 +1423,7 @@ namespace APIServer.Skat
 
         private static SkatTable GetSkatTableFromState(string state)
         {
-            var json = Encoding.UTF8.GetString(Convert.FromBase64String(state));
+            var json = Decompress(state);
             var t = new SkatTable(JsonSerializer.Deserialize<InternalState>(json));
             // use same instances for Player objects
             if (t.CurrentPlayer != null)
@@ -1441,8 +1443,26 @@ namespace APIServer.Skat
 
         private static string GetInternalState(SkatTable t)
         {
-            var json = JsonSerializer.Serialize(t.GetInternalState());
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+            return Compress(JsonSerializer.Serialize(t.GetInternalState()));
+        }
+
+        private static string Decompress(string base64CompressedJson)
+        {
+            using var source = new MemoryStream(Convert.FromBase64String(base64CompressedJson));
+            using var zipstream = new GZipStream(source, CompressionMode.Decompress);
+            using var dest = new MemoryStream();
+            zipstream.CopyTo(dest);
+            return Encoding.UTF8.GetString(dest.ToArray());
+        }
+
+        private static string Compress(string json)
+        {
+            using var dest = new MemoryStream();
+            using var zipstream = new GZipStream(dest, CompressionMode.Compress);
+            using var source = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            source.CopyTo(zipstream);
+            zipstream.Close();
+            return Convert.ToBase64String(dest.ToArray());
         }
 
         private static bool PerformBidAction(SkatTable skatTable, string name, string bidAction)
