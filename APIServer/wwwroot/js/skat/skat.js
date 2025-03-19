@@ -774,7 +774,7 @@ var skat = (() => {
                     }
                     else {
                         controls.create(actionsParent, "p", undefined, _T("INFO_WAIT_CONFIRMATION_OTHER"));
-                        controls.createButton(paactionsParentrent, _T("BUTTON_CANCEL"), btnCancelConfirmStartGame_click, "CancelConfirmStartGame");
+                        controls.createButton(actionsParent, _T("BUTTON_CANCEL"), btnCancelConfirmStartGame_click, "CancelConfirmStartGame");
                         setActive(false);
                     }
                 }
