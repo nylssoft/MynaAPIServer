@@ -18,13 +18,13 @@
 using APIServer.APIError;
 using APIServer.Backgammon.Core;
 using APIServer.Backgammon.Model;
+using APIServer.Extensions;
 using APIServer.PwdMan;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Threading;
@@ -602,12 +602,12 @@ namespace APIServer.Backgammon
 
         private static BackgammonBoard GetBoard(string state)
         {
-            return new BackgammonBoard(JsonSerializer.Deserialize<InternalState>(Encoding.UTF8.GetString(Convert.FromBase64String(state))));
+            return new BackgammonBoard(JsonSerializer.Deserialize<InternalState>(state.Decompress()));
         }
 
         private static string GetInternalState(BackgammonBoard b)
         {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(b.GetInternalState())));
+            return JsonSerializer.Serialize(b.GetInternalState()).Compress();
         }
     }
 }
