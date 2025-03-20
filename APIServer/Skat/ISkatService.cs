@@ -93,6 +93,8 @@ namespace APIServer.Skat
 
         bool ConfirmSpeedUp(IPwdManService pwdManService, string ticket);
 
+        bool CancelConfirmSpeedUp(string ticket);
+
         bool ContinuePlay(string ticket);
 
         // --- with skatadmin user role

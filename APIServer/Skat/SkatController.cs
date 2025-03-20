@@ -258,6 +258,13 @@ namespace APIServer.Skat
         }
 
         [HttpPost]
+        [Route("api/skat/cancelconfirmspeedup")]
+        public IActionResult CancelConfirmSpeedUp()
+        {
+            return new JsonResult(SkatService.CancelConfirmSpeedUp(GetTicket()));
+        }
+
+        [HttpPost]
         [Route("api/skat/continueplay")]
         public IActionResult ContinuePlay()
         {

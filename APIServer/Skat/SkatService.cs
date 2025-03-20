@@ -693,6 +693,31 @@ namespace APIServer.Skat
             return ret;
         }
 
+        public bool CancelConfirmSpeedUp(string ticket)
+        {
+            var ret = false;
+            lock (mutex)
+            {
+                var ctx = GetContext(ticket);
+                if (ctx != null && skatTable?.IsSpeedUp == true && ctx.SpeedUpConfirmed)
+                {
+                    ctx.SpeedUpConfirmed = false;
+                    var playerNames = skatTable.Players.Select((p) => p.Name).ToList();
+                    var confirmedCount = userTickets.Values.Count((ctx) => playerNames.Contains(ctx.Name) && ctx.SpeedUpConfirmed);
+                    if (confirmedCount == 0)
+                    {
+                        skatTable.IsSpeedUp = false;
+                    }
+                    ret = true;
+                }
+                if (ret)
+                {
+                    stateChanged = DateTime.UtcNow;
+                }
+            }
+            return ret;
+        }
+
         public bool ContinuePlay(string ticket)
         {
             var ret = false;

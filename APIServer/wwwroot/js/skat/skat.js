@@ -39,7 +39,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.3.6";
+    let version = "2.3.7";
 
     let computerGame = false;
     let computerInternalState;
@@ -802,6 +802,7 @@ var skat = (() => {
                 }
                 else {
                     controls.create(actionsParent, "p", undefined, _T("INFO_WAIT_CONFIRM_SPEED_UP"));
+                    controls.createButton(actionsParent, _T("BUTTON_CANCEL"), btnCancelSpeedUpConfirm_click, "CancelConfirmSpeedup");
                 }
             }
             model.skatTable.actions.forEach((action) => {
@@ -1931,6 +1932,17 @@ var skat = (() => {
         utils.fetch_api_call("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("SPEED UP CONFIRMED.");
+                render();
+            },
+            handleError);
+    };
+
+    const btnCancelSpeedUpConfirm_click = () => {
+        if (computerGame) return;
+        disablePollState();
+        utils.fetch_api_call("api/skat/cancelconfirmspeedup", { method: "POST", headers: { "ticket": ticket } },
+            () => {
+                if (utils.is_debug()) utils.debug("CANCELED CONFIRM SPEED UP.");
                 render();
             },
             handleError);
