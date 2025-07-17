@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2022 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ namespace APIServer.PwdMan
 
         public TOTPConfig TOTPConfig { get; set; }
 
-        public SendGridConfig SendGridConfig { get; set; }
+        public EmailServiceConfig EmailServiceConfig { get; set; }
 
         public int ResetPasswordTokenExpireMinutes { get; set; } = 15;
 

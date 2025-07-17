@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2024 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@ using APIServer.Database;
 using APIServer.Document.Model;
 using APIServer.PasswordGenerator;
 using APIServer.PwdMan.Model;
+using Azure;
+using Azure.Communication.Email;
 using Markdig;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -26,8 +28,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using SendGrid;
-using SendGrid.Helpers.Mail;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
@@ -36,7 +36,6 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -50,7 +49,6 @@ namespace APIServer.PwdMan
         ILogger<PwdManService> logger,
         DbSqliteContext dbSqliteContext,
         DbPostgresContext dbPostgresContext,
-        ISendGridClient sendGridClient,
         IMemoryCache memoryCache) : IPwdManService
     {
         public IConfiguration Configuration { get; } = configuration;
@@ -60,8 +58,6 @@ namespace APIServer.PwdMan
         private readonly DbMynaContext dbSqliteContext = dbSqliteContext;
 
         private readonly DbPostgresContext dbPostgresContext = dbPostgresContext;
-
-        private readonly ISendGridClient sendGridClient = sendGridClient;
 
         private readonly IMemoryCache memoryCache = memoryCache;
 
@@ -1783,7 +1779,7 @@ namespace APIServer.PwdMan
             return loginIpAddress;
         }
 
-        private ContentConfig GetContentById(string id, string locale, List<ContentConfig> contents)
+        private static ContentConfig GetContentById(string id, string locale, List<ContentConfig> contents)
         {
             string language = null;
             if (locale != null)
@@ -1819,122 +1815,87 @@ namespace APIServer.PwdMan
             return new ContentConfig { Id = id, Content = content, Role = role };
         }
 
-        private string GetEmailTemplateId(string contentId, PwdManOptions opt, string locale = null)
+        private static EmailTemplateConfig GetEmailTemplateConfig(string contentId, PwdManOptions opt, string locale = null)
         {
-            if (!string.IsNullOrEmpty(opt.SendGridConfig.SenderAddress))
+            if (!string.IsNullOrEmpty(opt.EmailServiceConfig.SenderAddress))
             {
-                var contentConfig = GetContentById(contentId, locale, opt.SendGridConfig.Templates);
+                ContentConfig contentConfig = GetContentById(contentId, locale, opt.EmailServiceConfig.Templates);
                 if (!string.IsNullOrEmpty(contentConfig?.Content))
                 {
-                    return contentConfig.Content;
+                    string json = File.ReadAllText(contentConfig.Content);
+                    return JsonSerializer.Deserialize<EmailTemplateConfig>(json);
                 }
             }
-            return "";
+            return null;
         }
 
-        private async Task SendSecurityWarningEmailAsync(DbUser user, string ipAddress, PwdManOptions opt, string locale)
+        private static async Task SendEmail(string subject, string recipient, string plainText, PwdManOptions opt)
         {
-            var templateId = GetEmailTemplateId("TemplateIdSecurityWarning", opt, locale);
-            if (templateId.Length > 0)
+            EmailClient emailClient = new(opt.EmailServiceConfig.ConnectionString);
+            EmailContent emailContent = new(subject)
             {
-                var now = DateTime.UtcNow;
-                var ci = CultureInfo.CreateSpecificCulture(locale);
-                var msg = new SendGridMessage();
-                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.AddTo(user.Email, user.Name);
-                msg.SetTemplateId(templateId);
-                msg.SetTemplateData(new SecurityWarningTemplateData
-                {
-                    Name = user.Name,
-                    Date = now.ToString("d", ci),
-                    Time = $"{now.ToString("T", ci)} UTC",
-                    IPAddress = ipAddress,
-                    Hostname = opt.Hostname,
-                    Locale = locale,
-                    Next = WebUtility.UrlEncode("/index")
-                });
-                var response = await sendGridClient.SendEmailAsync(msg);
-                if (!response.IsSuccessStatusCode)
-                {
-                    logger.LogError("Failed to send security warning email: {statusCode}.", response.StatusCode);
-                }
-            }
+                PlainText = plainText
+            };
+            EmailMessage emailMessage = new(opt.EmailServiceConfig.SenderAddress, recipient, emailContent);
+            _ = await emailClient.SendAsync(WaitUntil.Started, emailMessage);
         }
 
-        private async Task SendResetPasswordEmailAsync(DbUser user, string code, string email, PwdManOptions opt, string locale)
+        private static async Task SendSecurityWarningEmailAsync(DbUser user, string ipAddress, PwdManOptions opt, string locale)
         {
-            var templateId = GetEmailTemplateId("TemplateIdResetPassword", opt, locale);
-            if (templateId.Length > 0)
+            EmailTemplateConfig securityConfig = GetEmailTemplateConfig("TemplateIdSecurityWarning", opt, locale);
+            if (securityConfig != null)
             {
-                var msg = new SendGridMessage();
-                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.AddTo(user.Email, user.Name);
-                msg.SetTemplateId(templateId);
-                msg.SetTemplateData(new ResetPasswordTemplateData
-                {
-                    Name = user.Name,
-                    Code = code,
-                    Valid = opt.ResetPasswordTokenExpireMinutes,
-                    Hostname = opt.Hostname,
-                    Email = WebUtility.UrlEncode(email),
-                    Locale = locale,
-                    Next = WebUtility.UrlEncode("/index")
-                });
-                var response = await sendGridClient.SendEmailAsync(msg);
-                if (!response.IsSuccessStatusCode)
-                {
-                    logger.LogError("Failed to send reset password email: {statusCode}.", response.StatusCode);
-                }
+                DateTime now = DateTime.UtcNow;
+                CultureInfo ci = CultureInfo.CreateSpecificCulture(locale);
+                string plainText = securityConfig.PlainText
+                    .Replace("{{Name}}", user.Name)
+                    .Replace("{{Date}}", now.ToString("d", ci))
+                    .Replace("{{Time}}", $"{now.ToString("T", ci)} UTC")
+                    .Replace("{{IPAddress}}", ipAddress);
+                await SendEmail(securityConfig.Subject, user.Email, plainText, opt);
             }
         }
 
-        private async Task SendRegistrationRequestEmailAsync(string email, PwdManOptions opt)
+        private static async Task SendResetPasswordEmailAsync(DbUser user, string code, string email, PwdManOptions opt, string locale)
         {
-            var templateId = GetEmailTemplateId("TemplateIdRegistrationRequest", opt);
-            if (templateId.Length > 0)
+            EmailTemplateConfig resetPasswordConfig = GetEmailTemplateConfig("TemplateIdResetPassword", opt, locale);
+            if (resetPasswordConfig != null)
             {
-                var msg = new SendGridMessage();
-                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.AddTo(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.SetTemplateId(templateId);
-                msg.SetTemplateData(new RequestRegistrationTemplateData { Email = email });
-                var response = await sendGridClient.SendEmailAsync(msg);
-                if (!response.IsSuccessStatusCode)
-                {
-                    logger.LogError("Failed to send registration request email: {statusCode}.", response.StatusCode);
-                }
+                string plainText = resetPasswordConfig.PlainText
+                    .Replace("{{Name}}", user.Name)
+                    .Replace("{{Code}}", code)
+                    .Replace("{{Valid}}", opt.ResetPasswordTokenExpireMinutes.ToString());
+                await SendEmail(resetPasswordConfig.Subject, email, plainText, opt);
             }
         }
 
-        private async Task SendConfirmationRegistrationEmailAsync(DbRegistration registration, bool reject, string email, PwdManOptions opt, string locale)
+        private static async Task SendRegistrationRequestEmailAsync(string email, PwdManOptions opt)
         {
-            var templateDeniedId = GetEmailTemplateId("TemplateIdRegistrationDenied", opt, locale);
-            var templateSuccessId = GetEmailTemplateId("TemplateIdRegistrationSuccess", opt, locale);
-            if (templateDeniedId.Length > 0 && templateSuccessId.Length > 0)
+            EmailTemplateConfig registrationConfig = GetEmailTemplateConfig("TemplateIdRegistrationRequest", opt);
+            if (registrationConfig != null)
             {
-                var msg = new SendGridMessage();
-                msg.SetFrom(new EmailAddress(opt.SendGridConfig.SenderAddress, opt.SendGridConfig.SenderName));
-                msg.AddTo(new EmailAddress(email));
-                if (reject)
+                string plainText = registrationConfig.PlainText.Replace("{{Email}}", email);
+                await SendEmail(registrationConfig.Subject, opt.EmailServiceConfig.AdminRecipientAddress, plainText, opt);
+            }
+        }
+
+        private static async Task SendConfirmationRegistrationEmailAsync(DbRegistration registration, bool reject, string email, PwdManOptions opt, string locale)
+        {
+            if (reject)
+            {
+                EmailTemplateConfig deniedConfig = GetEmailTemplateConfig("TemplateIdRegistrationDenied", opt, locale);
+                if (deniedConfig != null)
                 {
-                    msg.SetTemplateId(templateDeniedId);
+                    await SendEmail(deniedConfig.Subject, email, deniedConfig.PlainText, opt);
                 }
-                else
+            }
+            else
+            {
+                EmailTemplateConfig successConfig = GetEmailTemplateConfig("TemplateIdRegistrationSuccess", opt, locale);
+                if (successConfig != null)
                 {
-                    msg.SetTemplateId(templateSuccessId);
-                    msg.SetTemplateData(new ConfirmRegistrationTemplateData
-                    {
-                        Code = registration.Token,
-                        Hostname = opt.Hostname,
-                        Email = WebUtility.UrlEncode(email),
-                        Locale = locale,
-                        Next = WebUtility.UrlEncode("/index")
-                    });
-                }
-                var response = await sendGridClient.SendEmailAsync(msg);
-                if (!response.IsSuccessStatusCode)
-                {
-                    logger.LogError("Failed to send confirmation email for successfull registration: {statusCode}.", response.StatusCode);
+                    string plainText = successConfig.PlainText.Replace("{{Code}}", registration.Token);
+                    await SendEmail(successConfig.Subject, email, plainText, opt);
                 }
             }
         }
