@@ -1,6 +1,6 @@
 /*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ using APIServer.PwdMan;
 using APIServer.Skat;
 using APIServer.HighScore;
 using APIServer.Document;
-using SendGrid.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Hosting;
 using System.Text;
@@ -72,12 +71,6 @@ namespace APIServer
             services.AddRazorPages();
             // all urls lower case
             services.AddRouting(options => options.LowercaseUrls = true);
-            // sendgrid service
-            services.AddSendGrid(options =>
-            {
-                var pwdManOptions = Configuration.GetSection("PwdMan").Get<PwdManOptions>();
-                options.ApiKey = pwdManOptions.SendGridConfig.APIKey;
-            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021-2022 Niels Stockfleth
+    Copyright (C) 2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@ using System.Collections.Generic;
 
 namespace APIServer.PwdMan
 {
-    public class SendGridConfig
+    public class EmailServiceConfig
     {
-        public string APIKey { get; set; }
+        public string ConnectionString { get; set; }
 
         public string SenderAddress { get; set; }
 
-        public string SenderName { get; set; }
+        public string AdminRecipientAddress { get; set; }
 
         public List<ContentConfig> Templates { get; set; }
     }
