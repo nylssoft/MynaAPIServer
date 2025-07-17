@@ -1829,7 +1829,7 @@ namespace APIServer.PwdMan
             return null;
         }
 
-        private static async Task SendEmail(string subject, string recipient, string plainText, PwdManOptions opt)
+        private async Task SendEmail(string subject, string recipient, string plainText, PwdManOptions opt)
         {
             EmailClient emailClient = new(opt.EmailServiceConfig.ConnectionString);
             EmailContent emailContent = new(subject)
@@ -1837,10 +1837,17 @@ namespace APIServer.PwdMan
                 PlainText = plainText
             };
             EmailMessage emailMessage = new(opt.EmailServiceConfig.SenderAddress, recipient, emailContent);
-            _ = await emailClient.SendAsync(WaitUntil.Started, emailMessage);
+            try
+            {
+                _ = await emailClient.SendAsync(WaitUntil.Started, emailMessage);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError("Failed to send email '{subject}' to {recipient}: {msg}.", subject, recipient, ex.Message);
+            }
         }
 
-        private static async Task SendSecurityWarningEmailAsync(DbUser user, string ipAddress, PwdManOptions opt, string locale)
+        private async Task SendSecurityWarningEmailAsync(DbUser user, string ipAddress, PwdManOptions opt, string locale)
         {
             EmailTemplateConfig securityConfig = GetEmailTemplateConfig("TemplateIdSecurityWarning", opt, locale);
             if (securityConfig != null)
@@ -1856,7 +1863,7 @@ namespace APIServer.PwdMan
             }
         }
 
-        private static async Task SendResetPasswordEmailAsync(DbUser user, string code, string email, PwdManOptions opt, string locale)
+        private async Task SendResetPasswordEmailAsync(DbUser user, string code, string email, PwdManOptions opt, string locale)
         {
             EmailTemplateConfig resetPasswordConfig = GetEmailTemplateConfig("TemplateIdResetPassword", opt, locale);
             if (resetPasswordConfig != null)
@@ -1869,7 +1876,7 @@ namespace APIServer.PwdMan
             }
         }
 
-        private static async Task SendRegistrationRequestEmailAsync(string email, PwdManOptions opt)
+        private async Task SendRegistrationRequestEmailAsync(string email, PwdManOptions opt)
         {
             EmailTemplateConfig registrationConfig = GetEmailTemplateConfig("TemplateIdRegistrationRequest", opt);
             if (registrationConfig != null)
@@ -1879,7 +1886,7 @@ namespace APIServer.PwdMan
             }
         }
 
-        private static async Task SendConfirmationRegistrationEmailAsync(DbRegistration registration, bool reject, string email, PwdManOptions opt, string locale)
+        private async Task SendConfirmationRegistrationEmailAsync(DbRegistration registration, bool reject, string email, PwdManOptions opt, string locale)
         {
             if (reject)
             {
