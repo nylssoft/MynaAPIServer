@@ -35,7 +35,7 @@ var pwdman = (() => {
     let actionOk;
     let currentUser;
 
-    let version = "2.0.10";
+    let version = "2.1.0";
 
     // helper
 
@@ -193,7 +193,7 @@ var pwdman = (() => {
             errorDiv.textContent = _T("ERROR_INVALID_EMAIL");
             return;
         }
-        utils.fetch_api_call(`api/pwdman/register?locale=${utils.get_locale()}`,
+        utils.fetch_api_call(`api/pwdman/register?locale=${utils.get_locale()}&captcha=${getCaptchaResponse()}`,
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -206,11 +206,15 @@ var pwdman = (() => {
                     userEmail = email;
                 }
                 else {
+                    resetCaptchaWidget();
                     lastErrorMessage = _T("ERROR_EMAIL_NOT_VALIDATED_1", email);
                 }
                 renderPage();
             },
-            (errMsg) => errorDiv.textContent = _T(errMsg),
+            (errMsg) => {
+                resetCaptchaWidget();
+                errorDiv.textContent = _T(errMsg);
+            },
             setWaitCursor
         );
     };
@@ -283,7 +287,7 @@ var pwdman = (() => {
             errorDiv.textContent = _T("ERROR_INVALID_EMAIL");
             return;
         }
-        utils.fetch_api_call(`/api/pwdman/resetpwd?locale=${utils.get_locale()}`,
+        utils.fetch_api_call(`/api/pwdman/resetpwd?locale=${utils.get_locale()}&captcha=${getCaptchaResponse()}`,
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -296,7 +300,10 @@ var pwdman = (() => {
                 }
                 utils.set_window_location(url);
             },
-            (errMsg) => errorDiv.textContent = _T(errMsg),
+            (errMsg) => {
+                resetCaptchaWidget();
+                errorDiv.textContent = _T(errMsg);
+            },
             setWaitCursor
         );
     };
@@ -377,11 +384,13 @@ var pwdman = (() => {
 
     const isNotEmpty = (elem) => elem && elem.value && elem.value.length > 0;
 
-    const enableIfNotEmpty = (buttonid, ...elemIds) => {
+    const enableIfNotEmpty = (buttonid, ...elemIds) => enableIfNotEmptyWithCondition(buttonid, undefined, ...elemIds);
+
+    const enableIfNotEmptyWithCondition = (buttonid, conditionFunc, ...elemIds) => {
         if (buttonid && elemIds && elemIds.length > 0) {
             const button = document.getElementById(buttonid);
             if (button) {
-                const enabled = elemIds.every((id) => isNotEmpty(document.getElementById(id)));
+                const enabled = (conditionFunc == undefined || conditionFunc()) && elemIds.every((id) => isNotEmpty(document.getElementById(id)));
                 if (button.disabled && enabled) {
                     button.disabled = false;
                 }
@@ -406,6 +415,54 @@ var pwdman = (() => {
         if (buttonElem && !buttonElem.disabled) {
             buttonElem.click();
         }
+    };
+
+    // friendly captcha
+
+    const createCaptchaWidget = (parent, updateFunc) => {
+        const dataSiteKey = document.body.getAttribute("data-sitekey");
+        if (dataSiteKey && dataSiteKey.length > 0 && window.frcaptcha) {
+            const captchaDiv = controls.createDiv(parent, "frc-captcha");
+            captchaDiv.setAttribute("data-sitekey", dataSiteKey);
+            captchaDiv.setAttribute("lang", `${utils.get_locale()}`);
+            captchaDiv.addEventListener("frc:widget.complete", () => updateFunc(true));
+            captchaDiv.addEventListener("frc:widget.error", () => updateFunc(false));
+            captchaDiv.addEventListener("frc:widget.expire", () => updateFunc(false));
+            captchaDiv.addEventListener("frc:widget.statechange", (event) => {
+                if (event.state != "completed") {
+                    updateFunc(false);
+                }
+            });
+            // create captcha widget from div element
+            window.frcaptcha.attach(undefined);
+        }
+    };
+
+    const resetCaptchaWidget = () => {
+        if (window.frcaptcha) {
+            const allWidgets = window.frcaptcha.getAllWidgets();
+            if (allWidgets.length == 1) {
+                allWidgets[0].reset();
+            }
+        }
+    };
+
+    const isCaptchaCompleted = () => {
+        if (window.frcaptcha) {
+            const allWidgets = window.frcaptcha.getAllWidgets();
+            if (allWidgets.length == 1) {
+                return allWidgets[0].getState() == "completed";
+            }
+        }
+        return true;
+    };
+
+    const getCaptchaResponse = () => {
+        const captchaInputs = document.getElementsByName("frc-captcha-response");
+        if (captchaInputs && captchaInputs.length == 1) {
+            return captchaInputs[0].value;
+        }
+        return "";
     };
 
     // rendering
@@ -605,11 +662,12 @@ var pwdman = (() => {
         emailInput.id = "email-id";
         emailInput.addEventListener("input", () => {
             clearError();
-            enableIfNotEmpty("button-continue-id", "email-id");
+            enableIfNotEmptyWithCondition("button-continue-id", isCaptchaCompleted, "email-id");
         });
         if (!utils.is_mobile()) {
             emailInput.focus();
         }
+        createCaptchaWidget(parent, (ok) => enableIfNotEmptyWithCondition("button-continue-id", () => ok, "email-id"));
         let okCancelDiv = controls.createDiv(parent);
         const continueButton = controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestResetPassword(), undefined, "button");
         continueButton.id = "button-continue-id";
@@ -685,11 +743,12 @@ var pwdman = (() => {
         emailInput.id = "email-id";
         emailInput.addEventListener("input", () => {
             clearError();
-            enableIfNotEmpty("button-continue-id", "email-id");
+            enableIfNotEmptyWithCondition("button-continue-id", isCaptchaCompleted, "email-id");
         });
         if (!utils.is_mobile()) {
             emailInput.focus();
         }
+        createCaptchaWidget(parent, (ok) => enableIfNotEmptyWithCondition("button-continue-id", () => ok, "email-id"));
         let okCancelDiv = controls.createDiv(parent);
         const continueButton = controls.createButton(okCancelDiv, _T("BUTTON_CONTINUE"), () => requestRegistration(), undefined, "button");
         continueButton.id = "button-continue-id";

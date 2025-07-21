@@ -15,27 +15,28 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using APIServer.Appointment;
-using APIServer.Chess;
 using APIServer.Backgammon;
+using APIServer.Chess;
 using APIServer.Database;
 using APIServer.Diary;
+using APIServer.Document;
+using APIServer.HighScore;
 using APIServer.Notes;
 using APIServer.PwdMan;
 using APIServer.Skat;
-using APIServer.HighScore;
-using APIServer.Document;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.Hosting;
-using System.Text;
+using Markdig.Helpers;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
+using System.Text;
 
 namespace APIServer
 {
@@ -93,6 +94,13 @@ namespace APIServer
                 {
                     // uuid.min.js and qrcode.min.js are loaded via cloudflare
                     csp.Append($" cdnjs.cloudflare.com");
+                    if (path == "/pwdman")
+                    {
+                        // friendly captcha javascript is loaded from jsdelivr and iframe (widget) is loaded from frcapi
+                        csp.Append(" cdn.jsdelivr.net;frame-src *.frcapi.com");
+                        // pass friendly captcha site key to razor page
+                        context.Items["data-sitekey"] = GetOptions().FriendlyCaptchaConfig.SiteKey;
+                    }
                 }
                 csp.Append(';');
                 if (path == "/view")
@@ -147,6 +155,12 @@ namespace APIServer
                 endpoints.MapControllers();
                 endpoints.MapRazorPages();
             });
+        }
+
+        private PwdManOptions GetOptions()
+        {
+            var opt = Configuration.GetSection("PwdMan").Get<PwdManOptions>();
+            return opt ?? new PwdManOptions();
         }
     }
 }

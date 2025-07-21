@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2024 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,13 +28,13 @@ namespace APIServer.PwdMan
     {
         // --- reset password
 
-        Task RequestResetPasswordAsync(string email, string ipAddress, string locale);
+        Task RequestResetPasswordAsync(string email, string ipAddress, string locale, string captcha);
 
         void ResetPassword(UserResetPasswordModel resetPasswordModel, string ipAddress);
 
         // --- registration
 
-        Task<bool> RequestRegistrationAsync(string email, string ipAddress, string locale);
+        Task<bool> RequestRegistrationAsync(string email, string ipAddress, string locale, string captcha);
 
         List<OutstandingRegistrationModel> GetOutstandingRegistrations(string authenticationToken);
 

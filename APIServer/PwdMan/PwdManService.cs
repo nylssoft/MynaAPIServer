@@ -36,10 +36,13 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace APIServer.PwdMan
@@ -63,9 +66,11 @@ namespace APIServer.PwdMan
 
         // --- reset password
 
-        public async Task RequestResetPasswordAsync(string email, string ipAddress, string locale)
+        public async Task RequestResetPasswordAsync(string email, string ipAddress, string locale, string captcha)
         {
             logger.LogDebug("Request password reset for email addresss '{email}' and locale '{locale}' from IP address {ipAddress}.", email, locale, ipAddress);
+            var opt = GetOptions();
+            await ValidateCaptchaAsync(captcha, opt.FriendlyCaptchaConfig);
             if (!IsValidEmailAddress(email))
             {
                 throw new InvalidEmailAddressException();
@@ -81,7 +86,6 @@ namespace APIServer.PwdMan
             {
                 throw new ResetPasswordNotAllowedException();
             }
-            var opt = GetOptions();
             var loginIpAddress = CheckLoginIpAddress(dbContext, user, ipAddress, opt);
             var lastRequestedUtc = dbContext.DbResetPasswords.Where((r) => r.IpAddress == ipAddress).Max<DbResetPassword, DateTime?>((r) => r.RequestedUtc);
             if (lastRequestedUtc != null)
@@ -172,15 +176,16 @@ namespace APIServer.PwdMan
 
         // --- registration
 
-        public async Task<bool> RequestRegistrationAsync(string email, string ipAddress, string locale)
+        public async Task<bool> RequestRegistrationAsync(string email, string ipAddress, string locale, string captcha)
         {
             logger.LogDebug("Request registration for email addresss '{email}' and locale '{locale}' from IP address {ipAddress}...", email, locale, ipAddress);
+            var opt = GetOptions();
+            await ValidateCaptchaAsync(captcha, opt.FriendlyCaptchaConfig);
             if (!IsValidEmailAddress(email))
             {
                 throw new InvalidEmailAddressException();
             }
             email = email.ToLowerInvariant();
-            var opt = GetOptions();
             // setup: first user can register without confirmation and token
             var dbContext = GetDbContext();
             if (!dbContext.DbUsers.Any())
@@ -1958,6 +1963,51 @@ namespace APIServer.PwdMan
                 }
             }
             return startPage;
+        }
+
+        private async Task ValidateCaptchaAsync(string captcha, FriendlyCaptchaConfig config)
+        {
+            if (config.APIKey == null || config.SiteKey == null || config.VerifyURI == null)
+            {
+                logger.LogDebug("Friendly captcha is not configured.");
+                return;
+            }
+            HttpClient client = new();
+            CaptchaValidationPayload payload = new()
+            {
+                Response = captcha,
+                Sitekey = config.SiteKey
+            };
+            client.DefaultRequestHeaders.Add("X-API-Key", config.APIKey);
+            try
+            {
+                HttpResponseMessage response = await client.PostAsJsonAsync(config.VerifyURI, payload);
+                response.EnsureSuccessStatusCode();
+                CaptchaValidationResponse captchaResponse = await response.Content.ReadFromJsonAsync<CaptchaValidationResponse>();
+                if (!captchaResponse.Success)
+                {
+                    throw new AccessDeniedPermissionException();
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                // ignore failures if captcha server is not reachable
+                logger.LogWarning("Failed to verify captcha: {msg}", ex.Message);
+            }
+        }
+
+        private class CaptchaValidationPayload
+        {
+            [JsonPropertyName("response")]
+            public string Response { get; set; }
+            [JsonPropertyName("sitekey")]
+            public string Sitekey { get; set; }
+        }
+
+        private class CaptchaValidationResponse
+        {
+            [JsonPropertyName("success")]
+            public bool Success { get; set; }
         }
 
         // --- private static
