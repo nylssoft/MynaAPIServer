@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2024 Niels Stockfleth
+    Copyright (C) 2020-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -60,12 +60,12 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/resetpwd")]
-        public async Task<IActionResult> RequestResetPasswordAsync([FromBody] string email, [FromQuery] string locale)
+        public async Task<IActionResult> RequestResetPasswordAsync([FromBody] string email, [FromQuery] string locale, [FromQuery] string captcha)
         {
             if (string.IsNullOrEmpty(email)) throw new MissingParameterException();
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            await PwdManService.RequestResetPasswordAsync(email, ipAddress, locale);
+            await PwdManService.RequestResetPasswordAsync(email, ipAddress, locale, captcha);
             return new JsonResult(true);
         }
 
@@ -87,12 +87,12 @@ namespace APIServer.PwdMan
 
         [HttpPost]
         [Route("api/pwdman/register")]
-        public async Task<IActionResult> RequestRegistrationAsync([FromBody] string email, [FromQuery] string locale)
+        public async Task<IActionResult> RequestRegistrationAsync([FromBody] string email, [FromQuery] string locale, [FromQuery] string captcha)
         {
             if (string.IsNullOrEmpty(email)) throw new MissingParameterException();
             if (email?.Length > Limits.MAX_EMAIL_ADDRESS) throw new InputValueTooLargeException();
             var ipAddress = HttpContext.Connection.RemoteIpAddress.ToString();
-            var ret = await PwdManService.RequestRegistrationAsync(email, ipAddress, locale);
+            var ret = await PwdManService.RequestRegistrationAsync(email, ipAddress, locale, captcha);
             return new JsonResult(ret);
         }
 

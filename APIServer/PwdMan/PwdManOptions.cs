@@ -27,6 +27,8 @@ namespace APIServer.PwdMan
 
         public EmailServiceConfig EmailServiceConfig { get; set; }
 
+        public FriendlyCaptchaConfig FriendlyCaptchaConfig { get; set; }
+
         public int ResetPasswordTokenExpireMinutes { get; set; } = 15;
 
         public int MaxLoginTryCount { get; set; } = 3;

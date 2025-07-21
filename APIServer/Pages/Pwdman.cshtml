@@ -1,5 +1,8 @@
 ﻿@page
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    var dataSiteKey = HttpContext.Items["data-sitekey"];
+}
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,12 +16,14 @@
         <script src="~/js/common/utils.js" asp-append-version="true"></script>
         <script src="~/js/common/controls.js" asp-append-version="true"></script>
         <script src="~/js/pwdman/pwdman.js" asp-append-version="true"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@@friendlycaptcha/sdk@@0.1.26/site.js"></script>
     </environment>
     <environment exclude="Development">
         <link rel="stylesheet" href="~/css/pwdman/pwdman.min.css" asp-append-version="true" />
         <script src="~/js/pwdman/pwdman.min.js" asp-append-version="true"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@@friendlycaptcha/sdk@@0.1.26/site.min.js"></script>
     </environment>
 </head>
-<body>
+<body data-sitekey="@dataSiteKey">
 </body>
 </html>
