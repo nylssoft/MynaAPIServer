@@ -248,7 +248,7 @@
   "INFO_DOUBLE": "Pasch!",
   "INFO_ELEMENTS_SELECTED_1": "{0} Element(e) ausgewählt.",
   "INFO_EMAIL_OF_DATE_1_2": "E-Mail-Adresse {0} vom {1}.",
-  "INFO_EMAIL_REGISTER": "Gib deine E-Mail-Adresse an. Wenn Sie vom Portal-Administrator freigeschaltet wurde, kannst du dich registrieren. Dies kann etwas dauern. Bitte kontaktiere den Portal-Administrator im Vorfeld, um den Vorgang zu beschleunigen. Alle Spiele funktionieren aktuell auch ohne Registrierung.",
+  "INFO_EMAIL_REGISTER": "Gib deine E-Mail-Adresse an. Wenn sie von mir freigeschaltet wurde, kannst du dich registrieren. Dies kann etwas dauern. Bitte kontaktiere mich, um den Vorgang zu beschleunigen. Alle Spiele funktionieren aktuell auch ohne Registrierung.",
   "INFO_EMAIL_REG_CODE_1_2": "Die E-Mail-Adresse {0} hat den Registrierungscode {1}.",
   "INFO_EMAIL_REG_DENIED_1": "Die Registrierung für die E-Mail-Adresse {0} wurde abgelehnt.",
   "INFO_ENCRYPTION_APPOINTMENT": "Die Termine werden auf dem Server verschlüsselt gespeichert. Dazu ist ein Schlüssel erforderlich, der in deinem Browser lokal gespeichert werden kann. Notiere den Schlüssel. Danach wähle im Menü 'Schlüssel verbergen', um diesen Text auszublenden. Wenn der Schlüssel verloren geht, sind auch alle Daten verloren.",

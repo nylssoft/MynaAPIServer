@@ -248,7 +248,7 @@
   "INFO_DOUBLE": "Double!",
   "INFO_ELEMENTS_SELECTED_1": "{0} element(s) selected.",
   "INFO_EMAIL_OF_DATE_1_2": "Email address {0} of {1}.",
-  "INFO_EMAIL_REGISTER": "Enter your email address. You can register after the email address has been confirmed by the portal administrator. This can take a while. Please contact the portal administrator before to speed up your registration. All games can currently be used without registration.",
+  "INFO_EMAIL_REGISTER": "Enter your email address. You can register after I have confirmed the email address. This can take a while. Please contact me to speed up your registration. All games can currently be used without registration.",
   "INFO_EMAIL_REG_CODE_1_2": "The email address {0} has the registration code {1}.",
   "INFO_EMAIL_REG_DENIED_1": "The registration of the email address {0} has been rejected.",
   "INFO_ENCRYPTION_APPOINTMENT": "The appointments will be stored encrypted on the server. An encryption key is required, which can be stored locally in your browser. Save this key. After that choose 'Hide Encryption Key' in the menu. The data cannot be recovered if the encryption key is lost.",
