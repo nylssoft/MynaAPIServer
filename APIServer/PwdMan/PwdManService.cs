@@ -1967,7 +1967,7 @@ namespace APIServer.PwdMan
 
         private async Task ValidateCaptchaAsync(string captcha, FriendlyCaptchaConfig config)
         {
-            if (config.APIKey == null || config.SiteKey == null || config.VerifyURI == null)
+            if (string.IsNullOrEmpty(config.APIKey) || string.IsNullOrEmpty(config.SiteKey) || string.IsNullOrEmpty(config.VerifyURI))
             {
                 logger.LogDebug("Friendly captcha is not configured.");
                 return;
