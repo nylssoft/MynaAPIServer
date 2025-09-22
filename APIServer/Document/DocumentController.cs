@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021 Niels Stockfleth
+    Copyright (C) 2021-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.Document.Model;
 using APIServer.PwdMan;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -128,6 +129,8 @@ namespace APIServer.Document
             return new JsonResult(DocumentService.AddFolder(PwdManService, GetToken(), id, name));
         }
 
+        // --- contacts
+
         [HttpPut]
         [Route("api/contacts")]
         public IActionResult SetContacts([FromBody] string encodedContent)
@@ -149,6 +152,71 @@ namespace APIServer.Document
         public IActionResult DeleteContacts()
         {
             return new JsonResult(DocumentService.DeleteContacts(PwdManService, GetToken()));
+        }
+
+        // --- messages
+
+        [HttpGet]
+        [Route("api/message/privatekey")]
+        public IActionResult GetPrivateKey()
+        {
+            return new JsonResult(DocumentService.GetPrivateKey(PwdManService, GetToken()));
+        }
+
+        [HttpGet]
+        [Route("api/message/publickey")]
+        public IActionResult GetPublicKey([FromQuery]string emailAddress)
+        {
+            return new JsonResult(DocumentService.GetPublicKey(PwdManService, GetToken(), emailAddress));
+        }
+
+        [HttpPut]
+        [Route("api/message/keypair")]
+        public void SetKeyPair([FromBody] MessageKeyPair keyPair)
+        {
+            DocumentService.SetKeyPair(PwdManService, GetToken(), keyPair.PublicKey, keyPair.PrivateKey);
+        }
+
+        [HttpDelete]
+        [Route("api/message/keypair")]
+        public void DeleteKeyPair()
+        {
+            DocumentService.DeleteKeyPair(PwdManService, GetToken());
+        }
+
+        [HttpGet]
+        [Route("api/message")]
+        public IActionResult GetMessages()
+        {
+            return new JsonResult(DocumentService.GetMessages(PwdManService, GetToken()));
+        }
+
+        [HttpDelete]
+        [Route("api/message")]
+        public IActionResult DeleteMessages([FromBody] List<long> delIds)
+        {
+            return new JsonResult(DocumentService.DeleteMessages(PwdManService, GetToken(), delIds));
+        }
+
+        [HttpPost]
+        [Route("api/message/upload")]
+        public void SendMessage([FromForm(Name = "message-file")] IFormFile formFile, [FromForm(Name = "recipient")] string recipient)
+        {
+            if (formFile == null) throw new MissingParameterException();
+            if (string.IsNullOrEmpty(formFile.FileName)) throw new MissingParameterException();
+            if (formFile.Length > Limits.MAX_DOCUMENT_UPLOAD) throw new FileTooLargeException();
+            if (formFile.Length <= 0) throw new InvalidParameterException();
+            if (formFile.FileName?.Trim().Length > Limits.MAX_DOCUMENT_TITLE) throw new InputValueTooLargeException();
+            using var stream = formFile.OpenReadStream();
+            DocumentService.SendMessage(PwdManService, GetToken(), recipient, stream);
+        }
+
+        [HttpGet]
+        [Route("api/message/download/{id}")]
+        public IActionResult DownloadMessage(long id)
+        {
+            DownloadResult result = DocumentService.DownloadMessage(PwdManService, GetToken(), id);
+            return File(result.Stream, result.ContentType, result.FileName);
         }
 
         // --- private

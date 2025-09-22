@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2021-2024 Niels Stockfleth
+    Copyright (C) 2021-2025 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ namespace APIServer.Document
             name = name.Trim();
             var user = pwdManService.GetUserFromToken(authenticationToken);
             var dbContext = pwdManService.GetDbContext();
-            var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
+            var sum = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id).Sum(item => item.Size);
             var parentItem = GetItemById(dbContext, user, parentId);
             if (parentItem != null)
             {
@@ -263,7 +263,7 @@ namespace APIServer.Document
             {
                 throw new InvalidParameterException();
             }
-            var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
+            var sum = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id).Sum(item => item.Size);
             sum -= docItem.Size;
             var bytes = Encoding.UTF8.GetBytes(markdown);
             var size = bytes.Length;
@@ -336,71 +336,222 @@ namespace APIServer.Document
             return moved;
         }
 
+        // --- messages
+
+        public void SetKeyPair(IPwdManService pwdManService, string authenticationToken, string publicKey, string privateKey)
+        {
+            DbUser user = pwdManService.GetUserFromToken(authenticationToken);
+            DbMynaContext dbContext = pwdManService.GetDbContext();
+            int cntMessages = dbContext.DbDocItems.Count((item) => item.OwnerId == user.Id && item.Type == DbDocItemType.Message);
+            if (cntMessages > 0)
+            {
+                // TODO: appropriate exception, messages still exist
+                throw new InvalidParameterException();
+            }
+            SetTextDocumentByType(dbContext, publicKey, DbDocItemType.PublicKey, "$$publickey$$", user);
+            SetTextDocumentByType(dbContext, privateKey, DbDocItemType.PrivateKey, "$$privatekey$$", user);
+        }
+
+        public void DeleteKeyPair(IPwdManService pwdManService, string authenticationToken)
+        {
+            DbUser user = pwdManService.GetUserFromToken(authenticationToken);
+            DbMynaContext dbContext = pwdManService.GetDbContext();
+            int cntMessages = dbContext.DbDocItems.Count((item) => item.OwnerId == user.Id && item.Type == DbDocItemType.Message);
+            if (cntMessages > 0)
+            {
+                // TODO: appropriate exception, messages still exist
+                throw new InvalidParameterException();
+            }
+            _ = DeleteTextDocumentByType(dbContext, DbDocItemType.PublicKey, user.Id);
+            _ = DeleteTextDocumentByType(dbContext, DbDocItemType.PrivateKey, user.Id);
+        }
+
+        public string GetPrivateKey(IPwdManService pwdManService, string authenticationToken)
+        {
+            DbUser user = pwdManService.GetUserFromToken(authenticationToken);
+            return GetTextDocumentByType(pwdManService.GetDbContext(), DbDocItemType.PrivateKey, user.Id);
+        }
+
+        public string GetPublicKey(IPwdManService pwdManService, string authenticationToken, string emailAddress)
+        {
+            DbUser user = pwdManService.GetUserFromToken(authenticationToken);
+            if (!string.IsNullOrEmpty(emailAddress))
+            {
+                emailAddress = emailAddress.ToLowerInvariant();
+                user = pwdManService.GetDbContext().DbUsers.SingleOrDefault((u) => u.Email == emailAddress);
+                if (user == null)
+                {
+                    throw new InvalidEmailAddressException();
+                }
+            }
+            return GetTextDocumentByType(pwdManService.GetDbContext(), DbDocItemType.PublicKey, user.Id);
+        }
+
+        public List<ItemModel> GetMessages(IPwdManService pwdManService, string authenticationToken)
+        {
+            DbUser user = pwdManService.GetUserFromToken(authenticationToken);
+            DbMynaContext dbContext = pwdManService.GetDbContext();
+            List<ItemModel> ret = [];
+            foreach (DbDocItem item in dbContext.DbDocItems.Where(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Message))
+            {
+                ret.AddRange(ConvertToItemModel(item));
+            }
+            return ret;
+        }
+
+        public int DeleteMessages(IPwdManService pwdManService, string authenticationToken, List<long> delIds)
+        {
+            DbUser user = pwdManService.GetUserFromToken(authenticationToken);
+            DbMynaContext dbContext = pwdManService.GetDbContext();
+            List<DbDocItem> removeItems = [];
+            foreach (DbDocItem delItem in dbContext.DbDocItems.Where(
+                item =>
+                    item.OwnerId == user.Id &&
+                    item.Type == DbDocItemType.Message &&
+                    delIds.Contains(item.Id)))
+            {
+                _ = dbContext.DbDocContents.Remove(new DbDocContent { Id = delItem.ContentId.Value });
+                removeItems.Add(delItem);
+            }
+            if (removeItems.Count != 0)
+            {
+                dbContext.DbDocItems.RemoveRange(removeItems);
+                _ = dbContext.SaveChanges();
+            }
+            return removeItems.Count;
+        }
+
+        public void SendMessage(IPwdManService pwdManService, string authenticationToken, string recipientEmailAddress, Stream stream)
+        {
+            DbUser sender = pwdManService.GetUserFromToken(authenticationToken);
+            recipientEmailAddress = recipientEmailAddress.ToLowerInvariant();
+            DbMynaContext dbContext = pwdManService.GetDbContext();
+            DbUser recpient = dbContext.DbUsers.SingleOrDefault((u) => u.Email == recipientEmailAddress) ?? throw new InvalidEmailAddressException();
+            string publicKeySender = GetTextDocumentByType(dbContext, DbDocItemType.PublicKey, sender.Id);
+            string publicKeyRecipient = GetTextDocumentByType(dbContext, DbDocItemType.PublicKey, recpient.Id);
+            // recipient or sender not enabled for message sending
+            if (publicKeyRecipient == null || publicKeySender == null)
+            {
+                // TODO: appropriate exception
+                throw new InvalidParameterException();
+            }
+            long sum = dbContext.DbDocItems.Where(item => item.OwnerId == recpient.Id).Sum(item => item.Size);
+            MemoryStream ms = new();
+            stream.CopyTo(ms);
+            long size = ms.Length;
+            if (sum + size > recpient.StorageQuota)
+            {
+                throw new StorageQuotaExceededException();
+            }
+            DateTimeOffset utcOffset = new(DateTime.Now);
+            DbDocItem docItem = new()
+            {
+                Name = $"{sender.Email}:{sender.Name}:{utcOffset.ToUnixTimeMilliseconds()}",
+                Type = DbDocItemType.Message,
+                OwnerId = recpient.Id,
+                Size = size,
+                Content = new DbDocContent { Data = ms.ToArray() }
+            };
+            _ = dbContext.DbDocItems.Add(docItem);
+            _ = dbContext.SaveChanges();
+        }
+
+        public DownloadResult DownloadMessage(IPwdManService pwdManService, string authenticationToken, long id)
+        {
+            DbUser user = pwdManService.GetUserFromToken(authenticationToken);
+            DbMynaContext dbContext = pwdManService.GetDbContext();
+            DbDocItem docItem = dbContext.DbDocItems
+                 .SingleOrDefault(item => item.Type == DbDocItemType.Message && item.OwnerId == user.Id && item.Id == id);
+            if (docItem == null || !docItem.ContentId.HasValue)
+            {
+                throw new AccessDeniedPermissionException();
+            }
+            DbDocContent docContent = dbContext.DbDocContents.Single(c => c.Id == docItem.ContentId);
+            return new DownloadResult
+            {
+                Stream = new MemoryStream(docContent.Data),
+                FileName = docItem.Name,
+                ContentType = "application/octet-stream"
+            };
+        }
+
         // --- contacts
 
         public string GetContacts(IPwdManService pwdManService, string authenticationToken)
         {
-            logger.LogDebug("Get contacts...");
             var user = pwdManService.GetUserFromToken(authenticationToken);
-            var dbContext = pwdManService.GetDbContext();
-            var item = dbContext.DbDocItems.
-                Include(item => item.Content).
-                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
-            if (item == null)
-            {
-                return null;
-            }
-            return Encoding.UTF8.GetString(item.Content.Data);
+            return GetTextDocumentByType(pwdManService.GetDbContext(), DbDocItemType.Contacts, user.Id);
         }
 
         public bool SetContacts(IPwdManService pwdManService, string authenticationToken, string encodedContent)
         {
-            logger.LogDebug("Set contacts...");
-            var data = Encoding.UTF8.GetBytes(encodedContent);
             var user = pwdManService.GetUserFromToken(authenticationToken);
-            var dbContext = pwdManService.GetDbContext();
-            var item = dbContext.DbDocItems.
-                Include(item => item.Content).
-                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
-            if (item == null)
-            {
-                item = new DbDocItem
-                {
-                    Name = "$$contacts$$",
-                    Type = DbDocItemType.Contacts,
-                    OwnerId = user.Id,
-                    Size = data.Length,
-                    Content = new DbDocContent { Data = data }
-                };
-                dbContext.DbDocItems.Add(item);
-            }
-            else
-            {
-                item.Size = data.Length;
-                item.Content.Data = data;
-            }
-            dbContext.SaveChanges();
+            SetTextDocumentByType(pwdManService.GetDbContext(), encodedContent, DbDocItemType.Contacts, "$$contacts$$", user);
             return true;
         }
 
         public bool DeleteContacts(IPwdManService pwdManService, string authenticationToken)
         {
-            logger.LogDebug("Delete contacts...");
             var user = pwdManService.GetUserFromToken(authenticationToken);
-            var dbContext = pwdManService.GetDbContext();
-            var item = dbContext.DbDocItems.
-                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
+            return DeleteTextDocumentByType(pwdManService.GetDbContext(), DbDocItemType.Contacts, user.Id);
+        }
+
+        // ---- private methods
+
+        private static string GetTextDocumentByType(DbMynaContext dbContext, DbDocItemType type, long userId)
+        {
+            DbDocItem item = dbContext.DbDocItems.
+                Include(item => item.Content).
+                SingleOrDefault(item => item.OwnerId == userId && item.Type == type);
+            return item == null ? null : Encoding.UTF8.GetString(item.Content.Data);
+        }
+
+        private static void SetTextDocumentByType(DbMynaContext dbContext, string content, DbDocItemType type, string typeName, DbUser user)
+        {
+            long sum = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id).Sum(item => item.Size);
+            byte[] data = Encoding.UTF8.GetBytes(content);
+            DbDocItem item = dbContext.DbDocItems.
+                Include(item => item.Content).
+                SingleOrDefault(item => item.OwnerId == user.Id && item.Type == type);
+            if (item == null)
+            {
+                item = new DbDocItem
+                {
+                    Name = typeName,
+                    Type = type,
+                    OwnerId = user.Id,
+                    Size = data.Length,
+                    Content = new DbDocContent { Data = data }
+                };
+                _ = dbContext.DbDocItems.Add(item);
+            }
+            else
+            {
+                sum -= item.Size;
+                item.Size = data.Length;
+                item.Content.Data = data;
+            }
+            sum += data.Length;
+            if (sum > user.StorageQuota)
+            {
+                throw new StorageQuotaExceededException();
+            }
+            _ = dbContext.SaveChanges();
+        }
+
+        private static bool DeleteTextDocumentByType(DbMynaContext dbContext, DbDocItemType type, long userId)
+        {
+            DbDocItem item = dbContext.DbDocItems.
+                SingleOrDefault(item => item.OwnerId == userId && item.Type == type);
             if (item != null)
             {
-                dbContext.DbDocContents.Remove(new DbDocContent { Id = item.ContentId.Value });
-                dbContext.DbDocItems.Remove(item);
-                dbContext.SaveChanges();
+                _ = dbContext.DbDocContents.Remove(new DbDocContent { Id = item.ContentId.Value });
+                _ = dbContext.DbDocItems.Remove(item);
+                _ = dbContext.SaveChanges();
                 return true;
             }
             return false;
         }
-
-        // ---- private methods
 
         private static bool IsContainer(DbDocItem item) => item.Type == DbDocItemType.Folder || item.Type == DbDocItemType.Volume;
 
@@ -415,7 +566,7 @@ namespace APIServer.Document
             if (id.HasValue)
             {
                 return dbContext.DbDocItems.SingleOrDefault(
-                    item => item.OwnerId == user.Id && item.Id == id.Value && item.Type != DbDocItemType.Contacts);
+                    item => item.OwnerId == user.Id && item.Id == id.Value && item.Type < DbDocItemType.Contacts);
             }
             else
             {
@@ -485,6 +636,9 @@ namespace APIServer.Document
                 DbDocItemType.Folder => "Folder",
                 DbDocItemType.Item => "Document",
                 DbDocItemType.Contacts => "Contacts",
+                DbDocItemType.PublicKey => "PublicKey",
+                DbDocItemType.PrivateKey => "PrivateKey",
+                DbDocItemType.Message => "Message",
                 _ => throw new ArgumentException($"Invalid document type '{docType}'.")
             };
         }

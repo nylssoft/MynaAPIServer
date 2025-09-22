@@ -15,10 +15,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+using APIServer.Database;
 using APIServer.Document.Model;
 using APIServer.PwdMan;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace APIServer.Document
 {
@@ -52,5 +54,22 @@ namespace APIServer.Document
 
         bool DeleteContacts(IPwdManService pwdManService, string authenticationToken);
 
+        // --- messages
+
+        void SetKeyPair(IPwdManService pwdManService, string authenticationToken, string publicKey, string privateKey);
+
+        void DeleteKeyPair(IPwdManService pwdManService, string authenticationToken);
+
+        string GetPrivateKey(IPwdManService pwdManService, string authenticationToken);
+
+        string GetPublicKey(IPwdManService pwdManService, string authenticationToken, string emailAddress);
+
+        List<ItemModel> GetMessages(IPwdManService pwdManService, string authenticationToken);
+
+        int DeleteMessages(IPwdManService pwdManService, string authenticationToken, List<long> delIds);
+
+        void SendMessage(IPwdManService pwdManService, string authenticationToken, string emailAddress, Stream stream);
+
+        DownloadResult DownloadMessage(IPwdManService pwdManService, string authenticationToken, long id);
     }
 }

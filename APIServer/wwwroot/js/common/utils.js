@@ -348,6 +348,107 @@ var utils = (() => {
             .catch(err => reject(err.message));
     };
 
+    // NEW
+
+    const ab2str = (buf) => String.fromCharCode.apply(null, new Uint8Array(buf));
+
+    const str2ab = (str) => {
+        const buf = new ArrayBuffer(str.length);
+        const bufView = new Uint8Array(buf);
+        for (let i = 0, strLen = str.length; i < strLen; i++) {
+            bufView[i] = str.charCodeAt(i);
+        }
+        return buf;
+    };
+
+    const generate_aes_gcm_key_async = async () => {
+        const ck = await window.crypto.subtle.generateKey(
+            {
+                name: "AES-GCM",
+                length: 256,
+            },
+            true,
+            ["encrypt", "decrypt"]
+        )
+        return ck;
+    };
+
+    const export_aes_gcm_key_async = async (cryptoKey) => {
+        const exported = await window.crypto.subtle.exportKey(
+            "raw",
+            cryptoKey
+        );
+        const exportedAsString = ab2str(exported);
+        const exportedAsBase64 = window.btoa(exportedAsString);
+        return exportedAsBase64;
+    };
+
+    const create_rsa_keypair_async = async () => {
+        const rsaParam = {
+            name: "RSA-OAEP",
+            modulusLength: 4096,
+            publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
+            hash: "SHA-256",
+        };
+        return await window.crypto.subtle.generateKey(rsaParam, true, ["encrypt", "decrypt"]);
+    };
+    
+    const export_public_key_async = async (key) => {
+        const exported = await window.crypto.subtle.exportKey("spki", key);
+        const exportedAsString = ab2str(exported);
+        const exportedAsBase64 = window.btoa(exportedAsString);
+        return `-----BEGIN PUBLIC KEY-----\n${exportedAsBase64}\n-----END PUBLIC KEY-----`;
+    };
+
+    const import_public_key_async = async (pem) => {
+        const pemHeader = "-----BEGIN PUBLIC KEY-----";
+        const pemFooter = "-----END PUBLIC KEY-----";
+        const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
+        const binaryDerString = window.atob(pemContents);
+        const binaryDer = str2ab(binaryDerString);
+        const cryptoKey = await window.crypto.subtle.importKey(
+            "spki",
+            binaryDer,
+            {
+                name: "RSA-OAEP",
+                hash: "SHA-256"
+            },
+            true,
+            ["encrypt"]
+        );
+        return cryptoKey;
+    };
+
+    const import_private_key_async = async (pem) => {
+        const pemHeader = "-----BEGIN PRIVATE KEY-----";
+        const pemFooter = "-----END PRIVATE KEY-----";
+        const pemContents = pem.substring(pemHeader.length, pem.length - pemFooter.length);
+        const binaryDerString = window.atob(pemContents);
+        const binaryDer = str2ab(binaryDerString);
+        const cryptoKey = await window.crypto.subtle.importKey(
+            "pkcs8",
+            binaryDer,
+            {
+                name: "RSA-PSS",
+                modulusLength: 4096,
+                publicExponent: new Uint8Array([1, 0, 1]),
+                hash: "SHA-256",
+            },
+            true,
+            ["decrypt"]
+        );
+        return cryptoKey;
+    };
+
+    const export_private_key_async = async (key) => {
+        const exported = await window.crypto.subtle.exportKey("pkcs8", key);
+        const exportedAsString = ab2str(exported);
+        const exportedAsBase64 = window.btoa(exportedAsString);
+        return `-----BEGIN PRIVATE KEY-----\n${exportedAsBase64}\n-----END PRIVATE KEY-----`;
+    };
+
+    // END NEW
+
     const decode_message = (cryptoKey, msg, resolve, reject) => {
         let iv = hex2arr(msg.substr(0, 12 * 2));
         let data = hex2arr(msg.substr(12 * 2));
@@ -671,7 +772,7 @@ var utils = (() => {
                     testurl = testurl.substr(0, idx);
                 }
                 const validurls = [
-                    "/backgammon", "/chess", "/contacts", "/diary", "/documents", "/notes", "/password",
+                    "/arkanoid", "/backgammon", "/chess", "/contacts", "/diary", "/documents", "/messages", "/notes", "/password",
                     "/pwdman", "/skat", "/skatticket", "/slideshow", "/tetris", "/usermgmt", "/view", "/makeadate"];
                 if (validurls.includes(testurl)) {
                     return url;
@@ -846,6 +947,18 @@ var utils = (() => {
         hex2arr: hex2arr,
         buf2hex: buf2hex,
         create_crypto_key: create_crypto_key,
+
+        generate_aes_gcm_key_async: generate_aes_gcm_key_async,
+        export_aes_gcm_key_async: export_aes_gcm_key_async,
+        create_crypto_key_async: create_crypto_key_async,
+        create_rsa_keypair_async: create_rsa_keypair_async,
+        export_public_key_async: export_public_key_async,
+        import_public_key_async: import_public_key_async,
+        export_private_key_async: export_private_key_async,
+        import_private_key_async: import_private_key_async,
+        encode_message_async: encode_message_async,
+        decode_message_async: decode_message_async,
+
         decode_message: decode_message,
         encode_message: encode_message,
         has_viewed_encryption_key: has_viewed_encryption_key,

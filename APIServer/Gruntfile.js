@@ -31,6 +31,10 @@ module.exports = function (grunt) {
                 src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/markdown/markdown.js"],
                 dest: "temp/markdown.js"
             },
+            messages: {
+                src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/messages/messages.js"],
+                dest: "temp/messages.js"
+            },
             notes: {
                 src: ["wwwroot/js/common/controls.js", "wwwroot/js/common/utils.js", "wwwroot/js/notes/notes.js"],
                 dest: "temp/notes.js"
@@ -74,6 +78,7 @@ module.exports = function (grunt) {
                 "temp/makeadate.js",
                 "temp/markdown.js",
                 "temp/notes.js",
+                "temp/messages.js",
                 "temp/password.js",
                 "temp/pwdman.js",
                 "temp/usermgmt.js",
@@ -113,6 +118,10 @@ module.exports = function (grunt) {
             markdown: {
                 src: ["temp/markdown.js"],
                 dest: "wwwroot/js/markdown/markdown.min.js"
+            },
+            messages: {
+                src: ["temp/messages.js"],
+                dest: "wwwroot/js/messages/messages.min.js"
             },
             notes: {
                 src: ["temp/notes.js"],
@@ -158,6 +167,7 @@ module.exports = function (grunt) {
                 "wwwroot/js/documents/documents.js",
                 "wwwroot/js/makeadate/makeadate.js",
                 "wwwroot/js/markdown/markdown.js",
+                "wwwroot/js/notes/messages.js",
                 "wwwroot/js/notes/notes.js",
                 "wwwroot/js/password/password.js",
                 "wwwroot/js/pwdman/pwdman.js",

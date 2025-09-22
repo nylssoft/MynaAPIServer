@@ -1,10 +1,10 @@
-var documents = (() => {
+var messages = (() => {
 
     "use strict";
 
     // state
 
-    let version = "2.0.8";
+    let version = "0.0.1";
     let cryptoKey;
     let currentUser;
     let helpDiv;
@@ -20,13 +20,15 @@ var documents = (() => {
     let updateMarkdownItem;
     let markdownItemModified;
 
+    let rsaKeyPair;
+
     // helper
 
     const setWaitCursor = (wait) => {
         document.body.style.cursor = wait ? "wait" : "default";
-        if (waitDiv) {
-            waitDiv.className = wait ? "wait-div" : "invisible-div";
-        }
+//        if (waitDiv) {
+//            waitDiv.className = wait ? "wait-div" : "invisible-div";
+//        }
     };
 
     const initCryptoKey = (resolve, reject) => {
@@ -243,27 +245,13 @@ var documents = (() => {
 
     const initItems = (errMsg) => {
         const token = utils.get_authentication_token();
-        let url = "api/document/items";
-        if (Number.isInteger(currentId)) {
-            url += `/${currentId}`;
-        }
+        let url = "api/message";
         utils.fetch_api_call(url, { headers: { "token": token } },
             (items) => {
                 docItems = [];
                 items.forEach(item => {
                     docItems.push(item);
                 });
-                const volume = getVolume();
-                if (volume === undefined) {
-                    createVolume(_T("TEXT_DOCUMENTS"));
-                }
-                else {
-                    volumeId = volume.id;
-                    if (currentId === undefined) {
-                        currentId = volume.id;
-                    }
-                    renderState(errMsg);
-                }
             }, renderError, setWaitCursor);
     };
 
@@ -289,6 +277,7 @@ var documents = (() => {
 
     const renderError = (errMsg) => {
         setWaitCursor(false);
+        /*
         if (!errMsg) errMsg = "";
         const elem = document.getElementById("error-id");
         if (elem) {
@@ -301,6 +290,7 @@ var documents = (() => {
             controls.createDiv(parent, "error").textContent = _T(errMsg);
             renderCopyright(parent);
         }
+        */
     };
 
     const renderEncryptKeyAsync = async (parent) => {
@@ -573,36 +563,149 @@ var documents = (() => {
     const renderPageAsync = async () => {
         const parent = document.body;
         controls.removeAllChildren(parent);
-        waitDiv = controls.createDiv(parent, "invisible-div");
-        await renderEncryptKeyAsync(parent);
-        controls.createDiv(parent, "currentpath").id = "currentpath-id";
-        controls.createDiv(parent, "error").id = "error-id";
-        controls.createDiv(parent, "filter").id = "filter-id";
-        controls.createDiv(parent, "content").id = "content-id";
-        controls.createDiv(parent, "title").id = "title-id";
-        controls.createDiv(parent, "action").id = "action-id";
-        renderCopyright(parent);
-        renderUploadDocument(parent);
+        const containerDiv = controls.createDiv(parent, "container my-3");
+
+        const h1 = controls.create(containerDiv, "h1", "mb-4", "Nachricht verschicken");
+
+        const frm = controls.create(containerDiv, "form");
+        frm.id = "form-id";
+        frm.method = "post";
+        frm.enctype = "multipart/formdata";
+        
+        const div1 = controls.createDiv(frm, "mb-3");
+        const lab1 = controls.createLabel(div1, "form-label", "E-Mail-Adresse des Empf\u00E4ngers");
+        lab1.setAttribute("for", "email-id");
+        const inp1 = controls.createInputField(div1, "E-Mail-Adresse", undefined, "form-control", 30, 80);
+        inp1.setAttribute("type", "email");
+        inp1.setAttribute("aria-describedby", "emailhelp-id");
+        inp1.setAttribute("id", "email-id");
+        const divHelp1 = controls.createDiv(div1, "form-text");
+        divHelp1.setAttribute("id", "emailhelp-id");
+        divHelp1.textContent = "Die E-Mail-Adresse muss im Portal als Benutzer registriert sein und der Benutzer muss das Empfangen von Nachrichten aktiviert haben.";
+
+        const div2 = controls.createDiv(frm, "mb-3");
+        const lab2 = controls.createLabel(div2, "form-label", "Datei");
+        lab2.setAttribute("for", "file-id");
+        const inp2 = controls.createInputField(div2, "Datei", undefined, "form-control");
+        inp2.setAttribute("type", "file");
+        inp2.setAttribute("aria-describedby", "filehelp-id");
+        inp2.setAttribute("id", "file-id");
+        const divHelp2 = controls.createDiv(div2, "form-text");
+        divHelp2.setAttribute("id", "filehelp-id");
+        divHelp2.textContent = "Die Datei kann nur der Empf\u00E4nger im Portal herunterladen. Sie wird verschl\u00FCsselt auf dem Server hinterlegt und darf nicht gr\u00F6sser als 10MB sein.";
+
+        const div3 = controls.createDiv(frm, "mb-3");
+        const lab3 = controls.createLabel(div3, "form-label", "Schl\u00FCssel");
+        lab3.setAttribute("for", "key-id");
+        const inp3 = controls.createInputField(div3, "Schl\u00FCssel", undefined, "form-control");
+        inp3.setAttribute("aria-describedby", "keyhelp-id");
+        inp3.setAttribute("id", "key-id");
+        inp3.setAttribute("type", "password");
+        const encryptKey = await utils.get_encryption_key_async(currentUser);
+        inp3.value = encryptKey;
+        const divHelp3 = controls.createDiv(div3, "form-text");
+        divHelp3.setAttribute("id", "keyhelp-id");
+        divHelp3.textContent = "Mit diesem Schl\u00FCssel wird dein privater Schl\u00FCssel auf dem Server gesch\u00Fctzt.";
+
+        // btnSubmit.setAttribute("type", "submit");
+        // btnSubmit.setAttribute("formmethod", "POST");
+        // btnSubmit.setAttribute("formenctype", "multipart/form-data");
+        const cryptoKey = await utils.create_crypto_key_async(encryptKey, currentUser.passwordManagerSalt);
+
+        const token = utils.get_authentication_token();
+        const response = await fetch("api/message/privatekey", { headers: { "token": token } });
+        let encodedPrivateKey = await response.json();
+        if (!encodedPrivateKey) {
+            const keyPair = await utils.create_rsa_keypair_async();
+            const publicKey = await utils.export_public_key_async(keyPair.publicKey);
+            const privateKey = await utils.export_private_key_async(keyPair.privateKey);
+            encodedPrivateKey = await utils.encode_message_async(cryptoKey, privateKey);
+            await fetch("api/message/keypair", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
+                body: JSON.stringify({
+                    "PublicKey": publicKey,
+                    "PrivateKey": encodedPrivateKey
+                })
+            });
+        }
+        // const pk = await utils.decode_message_async(cryptoKey, encodedPrivateKey);
+        // console.log(pk);
+
+        const btnSubmit = controls.createButton(frm, "Abschicken", () => {
+            console.log("Send message!");
+            sendMessage();
+            /*
+            const recipient = document.getElementById("email-id").value;
+            const response = await fetch(`api/message/publickey?emailaddress=${recipient}`, { headers: { "token": token } });
+            const recipientPem = await response.json();
+            console.log(recipientPem);
+            const recipientCryptoKey = await utils.import_public_key_async(recipientPem);
+            console.log(recipientCryptoKey);
+            // generate new AES key to encrypt data
+            const dataCryptoKey = await utils.generate_aes_gcm_key_async();
+            const expAes = await utils.export_aes_gcm_key_async(dataCryptoKey);
+            console.log(expAes);
+            const ciphertext = await window.crypto.subtle.encrypt(
+                {
+                    name: "RSA-OAEP"
+                },
+                recipientCryptoKey,
+                new TextEncoder().encode(expAes)
+            );
+            console.log(ciphertext);
+            const enc = await utils.encode_message_async(dataCryptoKey, "TODO");
+            console.log(enc);
+            */
+        }, undefined, "btn btn-primary me-3");
+        btnSubmit.setAttribute("type", "button");
+
+        const btnList = controls.createButton(frm, "Meine Nachrichten", async () => {
+            console.log("show meine nachrichten!");
+            await downloadMessageAsync(31);
+        }, undefined, "btn btn-primary");
+        btnList.setAttribute("type", "button");
+
+        // TODO: encrypt file bytes with public key of recipient (send message)
+        // TODO: decrypt file bytes with private key of current user (receive message)
+
+        // <button type="submit" class="btn btn-primary">Abschicken</button>
+
+        // waitDiv = controls.createDiv(parent, "invisible-div");
+        // await renderEncryptKeyAsync(parent);
+        // controls.createDiv(parent, "currentpath").id = "currentpath-id";
+        // controls.createDiv(parent, "error").id = "error-id";
+        // controls.createDiv(parent, "filter").id = "filter-id";
+        // controls.createDiv(parent, "content").id = "content-id";
+        // controls.createDiv(parent, "title").id = "title-id";
+        // controls.createDiv(parent, "action").id = "action-id";
+        // renderCopyright(parent);
+        //  renderUploadDocument(parent);
     };
 
     const render = () => {
+        /*
+        if (!rsaKeyPair) {
+            utils.create_rsa_keypair(kp => {
+                rsaKeyPair = kp;
+                console.log(rsaKeyPair);
+                utils.export_pkcs8_pem(rsaKeyPair.privateKey, true, pem => console.log(pem), err => console.log(err));
+                utils.export_pkcs8_pem(rsaKeyPair.publicKey, false, pem => console.log(pem), err => console.log(err));
+            }, err => console.log(err));
+        }
+        */
         cryptoKey = undefined;
         const token = utils.get_authentication_token();
         if (!token) {
-            const nexturl = "/documents";
+            const nexturl = "/messages";
             utils.set_window_location("/pwdman?nexturl=" + encodeURI(nexturl));
             return;
         }
         utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
             async (user) => {
                 currentUser = user;
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has("messageview")) {
-                    await renderMessagePageAsync();
-                } else {
-                    await renderPageAsync();
-                    initItems();
-                }
+                await renderPageAsync();
+                initItems();
             },
             renderError, setWaitCursor);
     };
@@ -1006,21 +1109,20 @@ var documents = (() => {
         renderDocItemsTable(filteredItems);
     };
 
-    // --- messages
 
-    /**
-     * Converts an ASCII string to an array buffer.
-     * 
-     * @param {string} str
-     * @returns
-     */
-    const str2ab = (str) => {
-        const buf = new ArrayBuffer(str.length);
-        const bufView = new Uint8Array(buf);
-        for (let i = 0, strLen = str.length; i < strLen; i++) {
-            bufView[i] = str.charCodeAt(i);
+    // new messages
+
+    const sendMessage = () => {
+        const recipient = document.getElementById("email-id").value;
+        const inputFile = document.getElementById("file-id");
+        if (inputFile.files.length == 1) {
+            const curFile = inputFile.files[0];
+            if (curFile.size < 20 * 1024 * 1024) {
+                const fileReader = new FileReader();
+                fileReader.onload = async (e) => await uploadMessageAsync(e.target.result, curFile, recipient);
+                fileReader.readAsArrayBuffer(curFile);
+            }
         }
-        return buf;
     };
 
     /**
@@ -1035,7 +1137,7 @@ var documents = (() => {
                 cryptoKey = await utils.create_crypto_key_async(elem.value.trim(), currentUser.passwordManagerSalt);
             }
         }
-        return cryptoKey;
+        return crypoKey;
     };
 
     /**
@@ -1043,29 +1145,26 @@ var documents = (() => {
      * 
      * @param {string} token
      * @param {string} email
-     * @returns {Promise<CryptoKey> | undefined}
+     * @returns
      */
     const getPublicCryptoKeyAsync = async (token, email) => {
         const response = await fetch(`api/message/publickey?emailaddress=${email}`, { headers: { "token": token } });
         const publicKey = await response.json();
-        if (!publicKey) return undefined;
         const pem = publicKey.substring("-----BEGIN PUBLIC KEY-----".length, publicKey.length - "-----END PUBLIC KEY-----".length);
         const binary = str2ab(window.atob(pem));
-        return await window.crypto.subtle.importKey("spki", binary, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]);
+        return await window.crypto.subtle.importKey("spki", binary, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]);        
     };
 
     /**
      * Returns the decoded private RSA crypto key for the current user.
      * 
      * @param {string} token
-     * @returns {Promise<CryptoKey> | undefined}
+     * @param {CryptoKey} userCryptoKey
+     * @returns
      */
-    const getPrivateCryptoKeyAsync = async (token) => {
-        const userCryptoKey = await initUserCryptoKeyAsync();
-        if (!userCryptoKey) return undefined;
+    const getPrivateCryptoKeyAsync = async (token, userCryptoKey) => {
         const response = await fetch("api/message/privatekey", { headers: { "token": token } });
         const encryptedPrivateKey = await response.json();
-        if (!encryptedPrivateKey) return undefined;
         const privateKey = await utils.decode_message_async(userCryptoKey, encryptedPrivateKey);
         const pem = privateKey.substring("-----BEGIN PRIVATE KEY-----".length, privateKey.length - "-----END PRIVATE KEY-----".length);
         const binary = str2ab(window.atob(pem));
@@ -1081,93 +1180,51 @@ var documents = (() => {
         );
     };
 
-    /**
-     * Encrypts message data with the public key of the recipient.
-     * 
-     * @param {ArrayBuffer} data
-     * @param {CryptoKey} recipientPublicCryptoKey
-     * @returns
-     */
-    const encryptMessageDataAsync = async (data, recipientPublicCryptoKey) => {
-        // generate a new symmetric key (AES, 256 bytes) and export to a byte array
+    const uploadMessageAsync = async (fileData, curFile, recipient) => {
+        const token = utils.get_authentication_token();
+        // fetch public key for the recipient
+        const recipientCryptoKey = await getPublicCryptoKeyAsync(token, recipient);
+
+        /*
+        const response = await fetch(`api/message/publickey?emailaddress=${recipient}`, { headers: { "token": token } });
+        const pem = await response.json();
+        const pemContents = pem.substring("-----BEGIN PUBLIC KEY-----".length, pem.length - "-----END PUBLIC KEY-----".length);
+        const binaryDerString = window.atob(pemContents);
+        const binaryDer = str2ab(binaryDerString);
+        const recipientCryptoKey = await window.crypto.subtle.importKey("spki", binaryDer, { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"] );
+        */
+        // generate a symmetric key (AES, 256 bytes)
         const symmetricCryptoKey = await window.crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+
+        // encrypt the random ínitial vector and the symmetric key with the public key of the recipient
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
         const symmetricKeyBuffer = await window.crypto.subtle.exportKey("raw", symmetricCryptoKey);
         const symmetricKeyArray = new Uint8Array(symmetricKeyBuffer)
-        // generate random initialization vector
-        const iv = window.crypto.getRandomValues(new Uint8Array(12));
-        // encrypt the random ínitial vector and the symmetric key with the public key of the recipient and convert to a byte array
         const keyArray = new Uint8Array(iv.length + symmetricKeyArray.length);
         keyArray.set(iv, 0);
         keyArray.set(symmetricKeyArray, iv.length);
-        const encryptedKeyBuffer = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, recipientPublicCryptoKey, keyArray);
+        const encryptedKeyBuffer = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, recipientCryptoKey, keyArray);
         const encryptedKeyArray = new Uint8Array(encryptedKeyBuffer);
-        // encrypt the file data with the symmetric key and convert to a byte array
-        const encryptedFileDataBuffer = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, symmetricCryptoKey, data);
+
+        // encrypt the file data with the symmetric key
+        const encryptedFileDataBuffer = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, symmetricCryptoKey, fileData);
         const encryptedFileDataArray = new Uint8Array(encryptedFileDataBuffer);
-        // build cipher data array, first byte for the version, following 2 bytes for the length of the encrypted symmetric key
+
+        // build cipher data array, 2 bytes for the length of the encrypted symmetric key
         const headerArray = new Uint8Array(3);
-        headerArray[0] = 1;
+        headerArray[0] = 1; // format version
         headerArray[1] = encryptedKeyArray.length / 256;
         headerArray[2] = encryptedKeyArray.length % 256;
         const dataArray = new Uint8Array(headerArray.length + encryptedKeyArray.length + encryptedFileDataArray.length);
         dataArray.set(headerArray, 0);
         dataArray.set(encryptedKeyArray, headerArray.length)
         dataArray.set(encryptedFileDataArray, headerArray.length + encryptedKeyArray.length);
-        return dataArray;
-    };
 
-    /**
-     * Decrypts message data with the user's private key.
-     * 
-     * @param {Uint8Array} data
-     * @param {CryptoKey} privateCryptoKey
-     * @returns {Promise<ArrayBuffer> | undefined}
-     */
-    const decryptMessageDataAsync = async (data, privateCryptoKey) => {
-        // first byte is version
-        if (data[0] != 1) return undefined;
-        // next 2 bytes contain the length of the encrypted initialization vector and symmetric key
-        const encryptedLength = data[1] * 256 + data[2];
-        // read encrypted initialization vector and symmetric key
-        const encryptedKeyArray = new Uint8Array(encryptedLength);
-        for (let idx = 0; idx < encryptedLength; idx++) {
-            encryptedKeyArray[idx] = data[idx + 3];
-        }
-        // decrypt initialization vector and symmetric key with the private key
-        const keyBuffer = await window.crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateCryptoKey, encryptedKeyArray);
-        const keyArray = new Uint8Array(keyBuffer);
-        const ivArray = new Uint8Array(12);
-        for (let idx = 0; idx < 12; idx++) {
-            ivArray[idx] = keyArray[idx];
-        }
-        const symmetricKeyArray = new Uint8Array(keyArray.length - 12);
-        for (let idx = 0; idx < keyArray.length - 12; idx++) {
-            symmetricKeyArray[idx] = keyArray[idx + 12];
-        }
-        // create CryptoKey from symmetric key
-        const symmetricCryptoKey = await window.crypto.subtle.importKey("raw", symmetricKeyArray, "AES-GCM", true, ["decrypt"]);
-        // copy encrypted data to byte array
-        const encryptedDataArray = new Uint8Array(data.length - encryptedLength - 3);
-        for (let idx = 0; idx < data.length - encryptedLength - 3; idx++) {
-            encryptedDataArray[idx] = data[idx + 3 + encryptedLength];
-        }
-        // decrypt data with symmetric key
-        return await window.crypto.subtle.decrypt({ "name": "AES-GCM", "iv": ivArray }, symmetricCryptoKey, encryptedDataArray);
-    };
-
-    /**
-     * Uploads a message into the inbox of the user with the specified email address.
-     * 
-     * @param {string} token
-     * @param {string} email
-     * @param {ArryBuffer} data
-     * @param {string} fileName
-     */
-    const uploadMessageAsync = async (token, email, data, fileName) => {
-        const encryptedFile = new File([data], fileName, { type: "application/octet-stream" });
+        // upload encrypted file
+        const encryptedFile = new File([dataArray.buffer], curFile.name, { type: "application/octet-stream" });
         const formData = new FormData();
         formData.append("message-file", encryptedFile);
-        formData.append("recipient", email);
+        formData.append("recipient", recipient);
         await window.fetch("api/message/upload", {
             method: "POST",
             headers: { "token": token },
@@ -1175,104 +1232,103 @@ var documents = (() => {
         });
     };
 
-    /**
-     * Downloads the encrypted content of message with the specified ID.
-     * 
-     * @param {string} token
-     * @param {number} id
-     * @returns
-     */
-    const downloadMessageAsync = async (token, id) => {
-        const response = await fetch(`api/message/download/${id}`, { headers: { "token": token } });
-        const blob = await response.blob();
+    const downloadMessageAsync = async (id) => {
+
+        const encryptKey = await utils.get_encryption_key_async(currentUser);
+        const userCryptoKey = await utils.create_crypto_key_async(encryptKey, currentUser.passwordManagerSalt);
+
+        const token = utils.get_authentication_token();
+
+        const privateKeyCryptoKey = await getPrivateCryptoKeyAsync(token, userCryptoKey)
+        /*
+        const resp1 = await fetch("api/message/privatekey", { headers: { "token": token } });
+        const encryptedPrivateKey = await resp1.json();
+        console.log(encryptedPrivateKey);
+        const privateKey = await utils.decode_message_async(cryptoKey, encryptedPrivateKey);
+        console.log(privateKey);
+
+        const pemContents = privateKey.substring("-----BEGIN PRIVATE KEY-----".length, privateKey.length - "-----END PRIVATE KEY-----".length);
+        const binaryDerString = window.atob(pemContents);
+        const binaryDer = str2ab(binaryDerString);
+        const privateKeyCryptoKey = await window.crypto.subtle.importKey( "pkcs8", binaryDer,
+            {
+                name: "RSA-OAEP",
+                modulusLength: 4096,
+                publicExponent: new Uint8Array([1, 0, 1]),
+                hash: "SHA-256",
+            },
+            true,
+            ["decrypt"]
+        );
+        console.log(privateKeyCryptoKey);
+        */
+
+        const resp2 = await fetch(`api/message/download/${id}`, { headers: { "token": token } });
+        const blob = await resp2.blob();
         const data = new Uint8Array(blob.size);
         const reader = blob.stream().getReader();
         let idx = 0;
         while (true) {
             const readResponse = await reader.read();
-            if (readResponse.done) break;
-            readResponse.value.forEach(val => data[idx++] = val);
-        }
-        return data;
-    };
+            if (readResponse.done) {
 
-    /**
-     * Invokes the download of a blob as a file with the specified file name.
-     * 
-     * @param {Blob} blob
-     * @param {string} fileName
-     */
-    const invokeDownloadBlob = (blob, fileName) => {
-        const obj_url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = obj_url;
-        a.setAttribute("download", fileName);
-        a.click();
-        URL.revokeObjectURL(obj_url);
-    };
+                // TODO: use Uint8Array.slice to extract parts of the content
 
-    const renderMessagePageAsync = async () => {
-        const parent = document.body;
-        controls.removeAllChildren(parent);
-        waitDiv = controls.createDiv(parent, "invisible-div");
-        await renderEncryptKeyAsync(parent);
-        controls.createDiv(parent, "currentpath").id = "currentpath-id";
-        controls.createDiv(parent, "error").id = "error-id";
-        controls.createDiv(parent, "filter").id = "filter-id";
-        controls.createDiv(parent, "content").id = "content-id";
-        controls.createDiv(parent, "title").id = "title-id";
-        controls.createDiv(parent, "action").id = "action-id";
-        renderCopyright(parent);
+                console.log("done... decrypt everything");
+                const encryptedSymmetricKeyLength = data[1] * 256 + data[2];
+                const ivData = new Uint8Array(12);
+                const encryptedKeyData = new Uint8Array(encryptedSymmetricKeyLength);
+                for (idx = 0; idx < encryptedSymmetricKeyLength; idx++) {
+                    encryptedKeyData[idx] = data[idx + 3];
+                }
+                const keyBuffer = await window.crypto.subtle.decrypt({ name: "RSA-OAEP" }, privateKeyCryptoKey, encryptedKeyData);
+                const keyData = new Uint8Array(keyBuffer);
+                console.log(keyData);
+                console.log("OK!");
+                for (idx = 0; idx < 12; idx++) {
+                    ivData[idx] = keyData[idx];
+                }
+                const symmetricKeyData = new Uint8Array(keyData.length - 12);
+                for (idx = 0; idx < keyData.length - 12; idx++) {
+                    symmetricKeyData[idx] = keyData[idx + 12];
+                }
+                console.log(ivData);
+                console.log(symmetricKeyData);
 
+                const symmetricCryptoKey = await window.crypto.subtle.importKey("raw", symmetricKeyData, "AES-GCM", true, ["decrypt"]);
+                console.log(symmetricCryptoKey);
 
-        const form = controls.create(parent, "form");
-        form.id = "form-id";
-        form.method = "post";
-        form.enctype = "multipart/formdata";
-        const inputFile = controls.create(form, "input");
-        inputFile.type = "file";
-        inputFile.name = "file-input";
-        inputFile.id = "file-input-id";
-        inputFile.multiple = true;
-        inputFile.addEventListener("change", () => {
-            console.log("File Added!");
-            const inputFile = document.getElementById("file-input-id");
-            const curFile = inputFile.files[0];
-            const email = document.getElementById("email-input-id").value;
-            console.log(curFile);
-            console.log(email);
-            if (curFile.size < 20 * 1024 * 1024) {
-                const fileReader = new FileReader();
-                fileReader.onload = async (e) => {
-                    console.log(e);
-                    const token = utils.get_authentication_token();
-                    const recipientPublicKey = await getPublicCryptoKeyAsync(token, email);
-                    console.log(recipientPublicKey);
-                    const encrytpedArray = await encryptMessageDataAsync(e.target.result, recipientPublicKey);
-                    console.log(encrytpedArray);
-                    await uploadMessageAsync(token, email, encrytpedArray.buffer, "newtest.pdf");
-                };
-                fileReader.readAsArrayBuffer(curFile);
+                const encryptedFileData = new Uint8Array(data.length - encryptedSymmetricKeyLength - 3);
+                for (idx = 0; idx < data.length - encryptedSymmetricKeyLength - 3; idx++) {
+                    encryptedFileData[idx] = data[idx + 3 + encryptedSymmetricKeyLength];
+                }
+
+                const decryptedBuffer = await window.crypto.subtle.decrypt({ "name": "AES-GCM", "iv": ivData }, symmetricCryptoKey, encryptedFileData);
+                console.log("Decrypted content!");
+                console.log(decryptedBuffer);
+
+                const obj_url = URL.createObjectURL(new Blob([decryptedBuffer]));
+                const a = document.createElement("a");
+                a.href = obj_url;
+                a.setAttribute("download", `message-${id}`);
+                a.click();
+                URL.revokeObjectURL(obj_url);
+
+                break;
             }
-        });
+            console.log(`Read ${readResponse.value.length} bytes...`);
+            readResponse.value.forEach(val => data[idx++] = val);            
+        }
+    };
 
-        const filterElem = document.getElementById("filter-id");
-        const label = controls.createLabel(filterElem, undefined, "E-Mail-Adresse");
-        label.htmlFor = "email-input-id";
-        const name = controls.createInputField(filterElem, "E-Mail-Adress", undefined, undefined, 32, 255);
-        name.id = "email-input-id";
-        name.value = "niels.stockfleth@outlook.de";
 
-        const actionElem = document.getElementById("action-id");
-        controls.createButton(actionElem, "Neue Nachricht", onSelectFile);
-        controls.createButton(actionElem, "Nachricht herunterladen", async () => {
-            const token = utils.get_authentication_token();
-            const privateCryptoKey = await getPrivateCryptoKeyAsync(token);
-            const encryptedArray = await downloadMessageAsync(token, 34);
-            const message = await decryptMessageDataAsync(encryptedArray, privateCryptoKey);
-            const blob = new Blob([message]);
-            invokeDownloadBlob(blob, "test.pdf");
-        });
+    const str2ab = (str) => {
+        const buf = new ArrayBuffer(str.length);
+        const bufView = new Uint8Array(buf);
+        for (let i = 0, strLen = str.length; i < strLen; i++) {
+            bufView[i] = str.charCodeAt(i);
+        }
+        return buf;
     };
 
     // --- public API
@@ -1282,6 +1338,6 @@ var documents = (() => {
     };
 })();
 
-window.onload = () => utils.auth_lltoken(() => utils.set_locale(documents.render));
+window.onload = () => utils.auth_lltoken(() => utils.set_locale(messages.render));
 
 window.onclick = (event) => utils.hide_menu(event);

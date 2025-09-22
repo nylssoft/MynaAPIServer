@@ -602,7 +602,7 @@ namespace APIServer.PwdMan
             userModel.Roles = dbContext.DbRoles.Where(r => r.DbUserId == user.Id).Select(r => r.Name).ToList();
             if (details)
             {
-                var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == user.Id).Sum(item => item.Size);
+                var sum = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id).Sum(item => item.Size);
                 userModel.UsedStorage = sum;
                 userModel.HasContacts = dbContext.DbDocItems.Any(item => item.OwnerId == user.Id && item.Type == DbDocItemType.Contacts);
                 userModel.HasDiary = dbContext.DbDiaries.Any(item => item.DbUserId == user.Id);
@@ -906,7 +906,7 @@ namespace APIServer.PwdMan
                 throw new AccessDeniedPermissionException();
             }
             var dbContext = GetDbContext();
-            var sum = dbContext.DbDocItems.Where(item => item.Type == DbDocItemType.Item && item.OwnerId == userId).Sum(item => item.Size);
+            var sum = dbContext.DbDocItems.Where(item => item.OwnerId == userId).Sum(item => item.Size);
             return sum;
         }
 
@@ -1506,7 +1506,7 @@ namespace APIServer.PwdMan
             logger.LogDebug("Delete documents...");
             var user = GetUserFromToken(authenticationToken);
             var dbContext = GetDbContext();
-            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id && item.Type != DbDocItemType.Contacts);
+            var delDocItems = dbContext.DbDocItems.Where(item => item.OwnerId == user.Id && item.Type < DbDocItemType.Contacts);
             if (delDocItems.Any())
             {
                 var delDocContents = new List<DbDocContent>();
