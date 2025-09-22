@@ -15,6 +15,7 @@ var skat = (() => {
     // state
 
     let embedded;
+    let nomenu;
 
     let ticket;
     let model;
@@ -39,7 +40,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.3.7";
+    let version = "2.3.8";
 
     let computerGame = false;
     let computerInternalState;
@@ -313,7 +314,9 @@ var skat = (() => {
     const renderUserList = (parent) => {
         if (!embedded) {
             helpDiv = controls.createDiv(document.body);
-            utils.create_menu(parent);
+            if (!nomenu) {
+                utils.create_menu(parent);
+            }
             let title = currentUser ? `${currentUser.name} - ${_T("HEADER_SKAT")}` : _T("HEADER_SKAT");
             const h1 = controls.create(parent, "h1", undefined, title);
             const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
@@ -323,7 +326,7 @@ var skat = (() => {
                 const imgResults = controls.createImg(parent, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
                 imgResults.addEventListener("click", () => dispatchShowResults());
             }
-            if (currentUser && currentUser.photo) {
+            if (!nomenu && currentUser && currentUser.photo) {
                 const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
                 imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
             }
@@ -362,7 +365,7 @@ var skat = (() => {
                 idx++;
             });
         }
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.set_menu_items(currentUser);
         }
     };
@@ -390,7 +393,7 @@ var skat = (() => {
                     const reservationId = elem.target.id.substring(10);
                     let token = utils.get_authentication_token();
                     disablePollState();
-                    utils.fetch_api_call("api/skat/reservation",
+                    utils.fetch_api_call("/api/skat/reservation",
                         {
                             method: "DELETE",
                             headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
@@ -540,7 +543,7 @@ var skat = (() => {
                 }
             }
             disablePollState();
-            utils.fetch_api_call("api/skat/reservation",
+            utils.fetch_api_call("/api/skat/reservation",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
@@ -577,13 +580,9 @@ var skat = (() => {
                 inputUsername.focus();
             }
             controls.createButton(parent, _T("BUTTON_LOGIN"), btnLogin_click);
-            let p = controls.create(parent, "p", undefined, _T("INFO_REGISTER"));
-            const currentUrl = utils.get_window_location();
-            controls.createButton(p, _T("BUTTON_REGISTER"), () => {
-                utils.set_window_location("/pwdman?register&nexturl=" + encodeURI(currentUrl));
-            });
             if (!showReservations) {
-                controls.createButton(parent, _T("BUTTON_RESERVATIONS"), () => btnShowReservations_click());
+                const divReservations = controls.createDiv(parent);
+                controls.createButton(divReservations, _T("BUTTON_RESERVATIONS"), () => btnShowReservations_click());
             }
         }
         else {
@@ -975,7 +974,7 @@ var skat = (() => {
         if (embedded) return;
         let div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_SKAT")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
-        controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
+        controls.createA(div, "copyright", `/view?page=copyright&nomenu=${nomenu}`, _T("COPYRIGHT"));
         if (ticket || computerGame) {
             controls.createButton(div, _T("BUTTON_LEAVE_TABLE"), btnLogout_click, "Logout", "logout-button");
         }
@@ -1043,7 +1042,7 @@ var skat = (() => {
         if (!startYearElem || startYearElem.selectedOptions.length == 0) return;
         const startYear = startYearElem.selectedOptions[0].value;
         const token = utils.get_authentication_token();
-        utils.fetch_api_call(`api/skat/statistics/${startYear}`,
+        utils.fetch_api_call(`/api/skat/statistics/${startYear}`,
             {
                 method: "POST",
                 headers: { "token": token, "Accept": "application/json", "Content-Type": "application/json" },
@@ -1143,7 +1142,7 @@ var skat = (() => {
             options.push({ name: utils.format_date(started), value: `${result.id}` });
             if (index === 0) {
                 let token = utils.get_authentication_token();
-                utils.fetch_api_call(`api/skat/resultbyid?id=${result.id}`, { headers: { "token": token } },
+                utils.fetch_api_call(`/api/skat/resultbyid?id=${result.id}`, { headers: { "token": token } },
                     (result) => {
                         if (utils.is_debug()) {
                             utils.debug("RESULT RETRIEVED.");
@@ -1166,7 +1165,7 @@ var skat = (() => {
                 controls.createButton(padmin, _T("BUTTON_DELETE"), () => onDeleteSkatResult(true));
             }
             let token = utils.get_authentication_token();
-            utils.fetch_api_call(`api/skat/resultbyid?id=${elem.target.value}`, { headers: { "token": token } },
+            utils.fetch_api_call(`/api/skat/resultbyid?id=${elem.target.value}`, { headers: { "token": token } },
                 (result) => {
                     if (utils.is_debug()) {
                         utils.debug("RESULT RETRIEVED.");
@@ -1367,7 +1366,7 @@ var skat = (() => {
         }
         setState(model.state);
         controls.removeAllChildren(document.body);
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.create_cookies_banner(document.body);
         }
         setActive(false);
@@ -1409,7 +1408,7 @@ var skat = (() => {
     const fetchModel = (ticket) => {
         disablePollState();
         if (computerGame) {
-            utils.fetch_api_call("api/skat/computer/model",
+            utils.fetch_api_call("/api/skat/computer/model",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1424,7 +1423,7 @@ var skat = (() => {
                 handleError);
             return;
         }
-        utils.fetch_api_call("api/skat/model", { headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
                     utils.debug(`MODEL RETRIEVED (fetchModel). New state is ${m.state}`);
@@ -1442,7 +1441,7 @@ var skat = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/skat/login",
+        utils.fetch_api_call("/api/skat/login",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
@@ -1470,9 +1469,8 @@ var skat = (() => {
             utils.enable_debug(true);
             utils.debug("DEBUG enabled.");
         }
-        if (params.has("embedded")) {
-            embedded = true;
-        }
+        embedded = params.has("embedded");
+        nomenu = params.has("nomenu");
         if (params.has("login")) {
             login(params.get("login"));
             return;
@@ -1526,7 +1524,7 @@ var skat = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+        utils.fetch_api_call("/api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 if (utils.is_debug()) {
                     utils.debug("USER RETRIEVED (renderInit).");
@@ -1550,7 +1548,7 @@ var skat = (() => {
         computerInternalState = undefined;
         skatengine.initComputerPlayModel(getCurrentUsername());
         disablePollState();
-        utils.fetch_api_call("api/skat/computer/model",
+        utils.fetch_api_call("/api/skat/computer/model",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1567,7 +1565,7 @@ var skat = (() => {
 
     const onComputerAction = () => {
         if (!computerGame || !computerInternalState || !model || !model.skatTable || !model.skatTable.currentPlayer) return;
-        utils.fetch_api_call("api/skat/computer/model",
+        utils.fetch_api_call("/api/skat/computer/model",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1582,7 +1580,7 @@ var skat = (() => {
                         if (m.skatTable.actions.length > 0) {
                             const idx = skatengine.getRandom(0, m.skatTable.actions.length - 1);
                             const action = m.skatTable.actions[idx].name;
-                            utils.fetch_api_call("api/skat/computer/bid",
+                            utils.fetch_api_call("/api/skat/computer/bid",
                                 {
                                     method: "POST",
                                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1600,7 +1598,7 @@ var skat = (() => {
                 else if (!m.skatTable.gameEnded) {
                     if (m.skatTable.canCollectStitch) {
                         skatengine.collectComputerPlayStitch(m.skatTable.currentPlayer.name);
-                        utils.fetch_api_call("api/skat/computer/collectstitch",
+                        utils.fetch_api_call("/api/skat/computer/collectstitch",
                             {
                                 method: "POST",
                                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1617,7 +1615,7 @@ var skat = (() => {
                     if (m.skatTable.playableCards.length > 0) {
                         const card = skatengine.chooseComputerPlayCard(m, m.skatTable.currentPlayer.name);
                         skatengine.storeComputerPlayCard(m, m.skatTable.currentPlayer.name, card);
-                        utils.fetch_api_call("api/skat/computer/playcard",
+                        utils.fetch_api_call("/api/skat/computer/playcard",
                             {
                                 method: "POST",
                                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1638,7 +1636,7 @@ var skat = (() => {
     const onShowGameHistory = () => {
         if (!ticket) {
             if (computerInternalState) {
-                utils.fetch_api_call("api/skat/computer/gamehistory",
+                utils.fetch_api_call("/api/skat/computer/gamehistory",
                     {
                         method: "POST",
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1656,7 +1654,7 @@ var skat = (() => {
             }
         }
         else {
-            utils.fetch_api_call("api/skat/gamehistory", { headers: { "ticket": ticket } },
+            utils.fetch_api_call("/api/skat/gamehistory", { headers: { "ticket": ticket } },
                 (gamehistory) => {
                     if (utils.is_debug()) {
                         utils.debug("GAME HISTORY RETRIEVED.");
@@ -1681,7 +1679,7 @@ var skat = (() => {
     const onShowResult = () => {
         if (!ticket) {
             if (computerInternalState) {
-                utils.fetch_api_call("api/skat/computer/result",
+                utils.fetch_api_call("/api/skat/computer/result",
                     {
                         method: "POST",
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1699,7 +1697,7 @@ var skat = (() => {
             }
         }
         else {
-            utils.fetch_api_call("api/skat/result", { headers: { "ticket": ticket } },
+            utils.fetch_api_call("/api/skat/result", { headers: { "ticket": ticket } },
                 (result) => {
                     if (utils.is_debug()) {
                         utils.debug("RESULT RETRIEVED (render).");
@@ -1724,7 +1722,7 @@ var skat = (() => {
     const onShowResults = () => {
         if (currentUser) {
             let token = utils.get_authentication_token();
-            utils.fetch_api_call("api/skat/results", { headers: { "token": token } },
+            utils.fetch_api_call("/api/skat/results", { headers: { "token": token } },
                 (results) => {
                     if (utils.is_debug()) {
                         utils.debug("RESULTS RETRIEVED (render).");
@@ -1757,7 +1755,7 @@ var skat = (() => {
 
     const btnShowReservations_click = () => {
         disablePollState();
-        utils.fetch_api_call("api/skat/reservation", undefined,
+        utils.fetch_api_call("/api/skat/reservation", undefined,
             (r) => {
                 if (utils.is_debug()) {
                     utils.debug("RESERVATIONS RETRIEVED.");
@@ -1804,7 +1802,7 @@ var skat = (() => {
                 token = "";
             }
             disablePollState();
-            utils.fetch_api_call("api/skat/login",
+            utils.fetch_api_call("/api/skat/login",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
@@ -1837,7 +1835,7 @@ var skat = (() => {
     const btnStartGame_click = () => {
         if (computerGame) {
             skatengine.initComputerPlayModel(getCurrentUsername());
-            utils.fetch_api_call("api/skat/computer/newgame",
+            utils.fetch_api_call("/api/skat/computer/newgame",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1852,7 +1850,7 @@ var skat = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/skat/newgame", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/newgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("NEW GAME.");
                 render();
@@ -1863,7 +1861,7 @@ var skat = (() => {
     const btnConfirmStartGame_click = () => {
         if (computerGame) return;
         disablePollState();
-        utils.fetch_api_call("api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/confirmstartgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("CONFIRM START GAME.");
                 render();
@@ -1874,7 +1872,7 @@ var skat = (() => {
     const btnCancelConfirmStartGame_click = () => {
         if (computerGame) return;
         disablePollState();
-        utils.fetch_api_call("api/skat/cancelconfirmstartgame", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/cancelconfirmstartgame", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("CANCEL CONFIRM START GAME.");
                 render();
@@ -1886,7 +1884,7 @@ var skat = (() => {
         if (computerGame) return;
         if (elem.value == "GiveUpYes") {
             disablePollState();
-            utils.fetch_api_call("api/skat/giveup", { method: "POST", headers: { "ticket": ticket } },
+            utils.fetch_api_call("/api/skat/giveup", { method: "POST", headers: { "ticket": ticket } },
                 () => {
                     if (utils.is_debug()) utils.debug("GAVE UP.");
                     giveUpClicked = false;
@@ -1908,7 +1906,7 @@ var skat = (() => {
         if (computerGame) return;
         if (elem.value == "SpeedUpYes") {
             disablePollState();
-            utils.fetch_api_call("api/skat/speedup", { method: "POST", headers: { "ticket": ticket } },
+            utils.fetch_api_call("/api/skat/speedup", { method: "POST", headers: { "ticket": ticket } },
                 () => {
                     if (utils.is_debug()) utils.debug("SPEED UP.");
                     speedUpClicked = false;
@@ -1929,7 +1927,7 @@ var skat = (() => {
     const btnSpeedUpConfirm_click = () => {
         if (computerGame) return;
         disablePollState();
-        utils.fetch_api_call("api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/confirmspeedup", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("SPEED UP CONFIRMED.");
                 render();
@@ -1940,7 +1938,7 @@ var skat = (() => {
     const btnCancelSpeedUpConfirm_click = () => {
         if (computerGame) return;
         disablePollState();
-        utils.fetch_api_call("api/skat/cancelconfirmspeedup", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/cancelconfirmspeedup", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("CANCELED CONFIRM SPEED UP.");
                 render();
@@ -1951,7 +1949,7 @@ var skat = (() => {
     const btnContinuePlay_click = () => {
         if (computerGame) return;
         disablePollState();
-        utils.fetch_api_call("api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/continueplay", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("CONTINUE PLAY.");
                 render();
@@ -1972,7 +1970,7 @@ var skat = (() => {
             gamecolor = elem.value;
         }
         if (computerGame) {
-            utils.fetch_api_call("api/skat/computer/game",
+            utils.fetch_api_call("/api/skat/computer/game",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -1987,7 +1985,7 @@ var skat = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/skat/game",
+        utils.fetch_api_call("/api/skat/game",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -2002,7 +2000,7 @@ var skat = (() => {
 
     const btnGameOption_click = () => {
         if (computerGame) {
-            utils.fetch_api_call("api/skat/computer/gameoption",
+            utils.fetch_api_call("/api/skat/computer/gameoption",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -2028,7 +2026,7 @@ var skat = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/skat/gameoption",
+        utils.fetch_api_call("/api/skat/gameoption",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -2054,7 +2052,7 @@ var skat = (() => {
         }
         else {
             if (computerGame) {
-                utils.fetch_api_call("api/skat/computer/bid",
+                utils.fetch_api_call("/api/skat/computer/bid",
                     {
                         method: "POST",
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -2069,7 +2067,7 @@ var skat = (() => {
                 return;
             }
             disablePollState();
-            utils.fetch_api_call("api/skat/bid",
+            utils.fetch_api_call("/api/skat/bid",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -2099,7 +2097,7 @@ var skat = (() => {
         document.body.style.cursor = "wait";
         if (computerGame) {
             skatengine.storeComputerPlayCard(model, getCurrentUsername(), card);
-            utils.fetch_api_call("api/skat/computer/playcard",
+            utils.fetch_api_call("/api/skat/computer/playcard",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -2118,7 +2116,7 @@ var skat = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/skat/playcard",
+        utils.fetch_api_call("/api/skat/playcard",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -2138,7 +2136,7 @@ var skat = (() => {
     const btnSkatCard_click = (card) => {
         if (!model.skatTable.player || !card || showLastStitch || !model.skatTable.canPickupSkat) return;
         if (computerGame) {
-            utils.fetch_api_call("api/skat/computer/pickupskat",
+            utils.fetch_api_call("/api/skat/computer/pickupskat",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -2153,7 +2151,7 @@ var skat = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/skat/pickupskat",
+        utils.fetch_api_call("/api/skat/pickupskat",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -2180,7 +2178,7 @@ var skat = (() => {
         document.body.style.cursor = "wait";
         if (computerGame) {
             skatengine.collectComputerPlayStitch(getCurrentUsername());
-            utils.fetch_api_call("api/skat/computer/collectstitch",
+            utils.fetch_api_call("/api/skat/computer/collectstitch",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -2198,7 +2196,7 @@ var skat = (() => {
                 });
             return;
         }
-        utils.fetch_api_call("api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/skat/collectstitch", { method: "POST", headers: { "ticket": ticket } },
             () => {
                 if (utils.is_debug()) utils.debug("COLLECT STITCH.");
                 render();
@@ -2221,7 +2219,7 @@ var skat = (() => {
                 return;
             }
             disablePollState();
-            utils.fetch_api_call("api/skat/logout", { method: "POST", headers: { "ticket": ticket } },
+            utils.fetch_api_call("/api/skat/logout", { method: "POST", headers: { "ticket": ticket } },
                 () => {
                     if (utils.is_debug()) utils.debug("LOGOUT (button).");
                     logoutClicked = false;
@@ -2243,7 +2241,7 @@ var skat = (() => {
     const btnLetsStart_click = (elem) => {
         if (elem.value == "LetsStartYes") {
             if (computerGame) {
-                utils.fetch_api_call("api/skat/computer/bid",
+                utils.fetch_api_call("/api/skat/computer/bid",
                     {
                         method: "POST",
                         headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -2259,7 +2257,7 @@ var skat = (() => {
                 return;
             }
             disablePollState();
-            utils.fetch_api_call("api/skat/bid",
+            utils.fetch_api_call("/api/skat/bid",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -2294,7 +2292,7 @@ var skat = (() => {
             return;
         }
         let token = utils.get_authentication_token();
-        utils.fetch_api_call("api/skat/resultbyid",
+        utils.fetch_api_call("/api/skat/resultbyid",
             {
                 method: "DELETE",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
@@ -2316,7 +2314,7 @@ var skat = (() => {
             return;
         }
         let token = utils.get_authentication_token();
-        utils.fetch_api_call("api/skat/reset", { headers: { "token": token } },
+        utils.fetch_api_call("/api/skat/reset", { headers: { "token": token } },
             () => {
                 if (utils.is_debug()) utils.debug("SKAT RESET.");
                 utils.replace_window_location("/skat?admin");
@@ -2326,7 +2324,7 @@ var skat = (() => {
 
     const onShowTickets = (parent) => {
         let token = utils.get_authentication_token();
-        utils.fetch_api_call("api/skat/tickets", { headers: { "token": token } },
+        utils.fetch_api_call("/api/skat/tickets", { headers: { "token": token } },
             (tickets) => {
                 if (utils.is_debug()) {
                     utils.debug("TICKETS RETRIEVED.");

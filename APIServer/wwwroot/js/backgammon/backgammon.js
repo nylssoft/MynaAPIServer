@@ -33,6 +33,7 @@ var backgammon = (() => {
     // state
 
     let embedded;
+    let nomenu;
 
     let ticket;
     let model;
@@ -47,7 +48,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.9";
+    let version = "2.1.10";
 
     let dirty;
 
@@ -1021,12 +1022,14 @@ var backgammon = (() => {
     const renderUserList = (parent) => {
         helpDiv = controls.createDiv(document.body);
         if (!embedded) {
-            utils.create_menu(parent);
+            if (!nomenu) {
+                utils.create_menu(parent);
+            }
             let title = currentUser ? `${currentUser.name} - ${_T("HEADER_BACKGAMMON")}` : _T("HEADER_BACKGAMMON");
             const h1 = controls.create(parent, "h1", undefined, title);
             const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
             helpImg.addEventListener("click", () => onUpdateHelp(true));
-            if (currentUser && currentUser.photo) {
+            if (!nomenu && currentUser && currentUser.photo) {
                 const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
                 imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
             }
@@ -1051,7 +1054,7 @@ var backgammon = (() => {
                 idx++;
             });
         }
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.set_menu_items(currentUser);
         }
     };
@@ -1148,7 +1151,7 @@ var backgammon = (() => {
         if (embedded) return;
         const div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_BACKGAMMON")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
-        controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
+        controls.createA(div, "copyright", `/view?page=copyright&nomenu=${nomenu}`, _T("COPYRIGHT"));
         if (ticket || computerGame) {
             if (!model.board && !computerGame) {
                 controls.createButton(div, _T("BUTTON_LOGOUT"), btnLogout_click, "Logout", "logout-button");
@@ -1238,7 +1241,7 @@ var backgammon = (() => {
     const renderModel = (m) => {
         model = m;
         controls.removeAllChildren(document.body);
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.create_cookies_banner(document.body);
         }
         setActive(false);
@@ -1445,9 +1448,8 @@ var backgammon = (() => {
             utils.enable_debug(true);
             utils.debug("DEBUG enabled.");
         }
-        if (params.has("embedded")) {
-            embedded = true;
-        }
+        nomenu = params.has("nomenu");
+        embedded = params.has("embedded");
         if (params.has("login")) {
             login(params.get("login"));
             return;

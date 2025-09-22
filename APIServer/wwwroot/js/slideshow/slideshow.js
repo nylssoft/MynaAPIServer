@@ -14,6 +14,7 @@ var slideshow = (() => {
 
     // --- state
 
+    let nomenu;
     let isSlideshowPlaying = true;
     let shuffle = true;
 
@@ -61,7 +62,7 @@ var slideshow = (() => {
         imgLeftArrow.addEventListener("click", onPictureLeft);
         imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png", _T("BUTTON_NEXT_PICTURE"));
         imgRightArrow.addEventListener("click", onPictureRight);
-        if (currentUser && currentUser.photo) {
+        if (!nomenu && currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
@@ -77,8 +78,10 @@ var slideshow = (() => {
 
     const renderPage = () => {
         controls.removeAllChildren(document.body);
-        utils.create_cookies_banner(document.body);
-        utils.create_menu(document.body);
+        if (!nomenu) {
+            utils.create_cookies_banner(document.body);
+            utils.create_menu(document.body);
+        }
         renderHeader(document.body);
         divFooter = controls.createDiv(document.body, "footer");
         const divFooterDate = controls.createDiv(document.body, "footerdate");
@@ -107,7 +110,9 @@ var slideshow = (() => {
         });
         divFooter.addEventListener("mouseout", () => divFooterDate.textContent = '');
         renderSlideshowInfo(divFooter);
-        utils.set_menu_items(currentUser);
+        if (!nomenu) {
+            utils.set_menu_items(currentUser);
+        }
         document.addEventListener("keydown", (e) => {
             if (e.key == "ArrowLeft") {
                 onPictureLeft();
@@ -186,7 +191,7 @@ var slideshow = (() => {
     };
 
     const fetchCurrentUser = (token) => {
-        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+        utils.fetch_api_call("/api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
                 renderPage();
@@ -199,6 +204,8 @@ var slideshow = (() => {
     };
 
     const render = () => {
+        const params = new URLSearchParams(window.location.search);
+        nomenu = params.has("nomenu");
         currentUser = undefined;
         let token = utils.get_authentication_token();
         if (!token) {
@@ -310,7 +317,7 @@ window.onload = () => {
     utils.auth_lltoken(() => {
         utils.set_locale(() => {
             let token = utils.get_authentication_token();
-            utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+            utils.fetch_api_call("/api/pwdman/slideshow", { headers: { "token": token } },
                 (model) => {
                     slideshow.initSlideShow(model.pictures, model.interval);
                     slideshow.render();

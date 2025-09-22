@@ -423,7 +423,8 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.9";
+    let version = "2.0.10";
+    let nomenu;
 
     let block;
     let nextBlock;
@@ -779,7 +780,7 @@ var tetris = (() => {
             gameOverDiv.style.visibility = "visible";
             newGameButton.style.visibility = "visible";
             state = StateEnums.GAMEOVER;
-            fetch("api/tetris/highscore")
+            fetch("/api/tetris/highscore")
                 .then(response => response.json())
                 .then(h => {
                     highScores = h;
@@ -836,7 +837,7 @@ var tetris = (() => {
     const renderHeader = (parent) => {
         let title = currentUser ? `${currentUser.name} - ${_T("HEADER_TETRIS")}` : _T("HEADER_TETRIS");
         controls.create(parent, "h1", "header", title);
-        if (currentUser && currentUser.photo) {
+        if (!nomenu && currentUser && currentUser.photo) {
             const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
             imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
@@ -845,14 +846,14 @@ var tetris = (() => {
     const renderCopyright = (parent) => {
         const div = controls.createDiv(parent, "copyright");
         controls.create(div, "span", undefined, `${_T("HEADER_TETRIS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
-        controls.createA(div, undefined, "/view?page=copyright", _T("COPYRIGHT"));
+        controls.createA(div, undefined, `/view?page=copyright&nomenu=${nomenu}`, _T("COPYRIGHT"));
         controls.create(div, "span", undefined, ".");
     };
 
     const renderHighScoreEntries = () => {
         controls.removeAllChildren(highScoreDiv);
         highScoreDiv.style.visibility = "hidden";
-        fetch("api/tetris/highscore")
+        fetch("/api/tetris/highscore")
             .then(response => response.json())
             .then(h => {
                 highScores = h;
@@ -1082,13 +1083,19 @@ var tetris = (() => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
         wrapBody.id = "wrap-body-id";
-        utils.create_cookies_banner(wrapBody);
+        if (!nomenu) {
+            utils.create_cookies_banner(wrapBody);
+        }
         const all = controls.createDiv(wrapBody);
-        utils.create_menu(all);
+        if (!nomenu) {
+            utils.create_menu(all);
+        }
         renderHeader(all);
         renderTetris(all);
         renderCopyright(all);
-        utils.set_menu_items(currentUser);
+        if (!nomenu) {
+            utils.set_menu_items(currentUser);
+        }
 
         setBackgroundPicture();
 
@@ -1119,7 +1126,7 @@ var tetris = (() => {
             window.requestAnimationFrame(draw);
             return;
         }
-        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+        utils.fetch_api_call("/api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
                 render(startState);
@@ -1138,7 +1145,7 @@ var tetris = (() => {
     const addHighScore = () => {
         const name = inputUserName.value.trim();
         if (name.length > 0) {
-            fetch("api/tetris/highscore", {
+            fetch("/api/tetris/highscore", {
                 method: "POST",
                 headers: {
                     "Accept": "application/json",
@@ -1194,6 +1201,8 @@ var tetris = (() => {
     };
 
     const init = (pictures) => {
+        const params = new URLSearchParams(window.location.search);
+        nomenu = params.has("nomenu");
         if (utils.is_mobile()) {
             pixelPerField = 18;
             borderWidth = 2;
@@ -1220,7 +1229,7 @@ window.onload = () => {
     utils.set_locale(() => {
         utils.auth_lltoken(() => {
             const token = utils.get_authentication_token();
-            utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+            utils.fetch_api_call("/api/pwdman/slideshow", { headers: { "token": token } },
                 (model) => tetris.init(model.pictures),
                 (errMsg) => console.error(errMsg));
         });

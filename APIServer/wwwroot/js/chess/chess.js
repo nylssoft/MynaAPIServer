@@ -10,6 +10,7 @@ var chess = (() => {
     // state
 
     let embedded;
+    let nomenu;
     let autoStartComputerGame;
 
     let ticket;
@@ -51,7 +52,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.8";
+    let version = "2.0.9";
 
     // helper
 
@@ -523,7 +524,7 @@ var chess = (() => {
     const placeFigure = (fromRow, fromColumn, toRow, toColumn) => {
         document.body.style.cursor = "wait";
         disablePollState();
-        utils.fetch_api_call("api/chess/place",
+        utils.fetch_api_call("/api/chess/place",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -576,7 +577,7 @@ var chess = (() => {
 
     const update = () => {
         disablePollState();
-        utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
                     utils.debug(`MODEL RETRIEVED (update). New state is ${m.state.state}.`);
@@ -632,7 +633,7 @@ var chess = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/chess/login",
+        utils.fetch_api_call("/api/chess/login",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
@@ -693,12 +694,14 @@ var chess = (() => {
     const renderUserList = (parent) => {
         if (embedded) return;
         helpDiv = controls.createDiv(document.body);
-        utils.create_menu(parent);
+        if (!nomenu) {
+            utils.create_menu(parent);
+        }
         let title = currentUser ? `${currentUser.name} - ${_T("HEADER_CHESS")}` : _T("HEADER_CHESS");
         const h1 = controls.create(parent, "h1", undefined, title);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
-        if (currentUser && currentUser.photo) {
+        if (!nomenu && currentUser && currentUser.photo) {
             const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
             imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
         }
@@ -739,7 +742,9 @@ var chess = (() => {
                 idx++;
             });
         }
-        utils.set_menu_items(currentUser);
+        if (!nomenu) {
+            utils.set_menu_items(currentUser);
+        }
     };
 
     const renderLogin = (parent) => {
@@ -877,7 +882,7 @@ var chess = (() => {
         if (embedded) return;
         const div = controls.createDiv(parent);
         controls.create(div, "span", "copyright", `${_T("HEADER_CHESS")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
-        controls.createA(div, "copyright", "/view?page=copyright", _T("COPYRIGHT"));
+        controls.createA(div, "copyright", `/view?page=copyright&nomenu=${nomenu}`, _T("COPYRIGHT"));
         if (ticket && (!model.board || !model.board.gameStarted)) {
             controls.createButton(div, _T("BUTTON_LOGOUT"), btnLogout_click, "Logout", "logout-button");
         }
@@ -927,7 +932,7 @@ var chess = (() => {
         model = m;
         setState(model.state.state);
         controls.removeAllChildren(document.body);
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.create_cookies_banner(document.body);
         }
         setActive(false);
@@ -970,7 +975,7 @@ var chess = (() => {
     };
 
     const startEmbeddedComputerGame = () => {
-        utils.fetch_api_call("api/chess/login",
+        utils.fetch_api_call("/api/chess/login",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
@@ -989,9 +994,8 @@ var chess = (() => {
             utils.enable_debug(true);
             utils.debug("DEBUG enabled.");
         }
-        if (params.has("embedded")) {
-            embedded = true;
-        }
+        nomenu = params.has("nomenu");
+        embedded = params.has("embedded");
         if (params.has("login")) {
             login(params.get("login"));
             return;
@@ -1018,7 +1022,7 @@ var chess = (() => {
         lastPos = undefined;
         setPixelPerWidth();
         disablePollState();
-        utils.fetch_api_call("api/chess/model", { headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/chess/model", { headers: { "ticket": ticket } },
             (m) => {
                 if (utils.is_debug()) {
                     utils.debug(`MODEL RETRIEVED (render). New state is ${m.state.state}.`);
@@ -1042,7 +1046,7 @@ var chess = (() => {
             return;
         }
         disablePollState();
-        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+        utils.fetch_api_call("/api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 if (utils.is_debug()) {
                     utils.debug("USER RETRIEVED (renderInit).");
@@ -1132,7 +1136,7 @@ var chess = (() => {
             if (!token) {
                 token = "";
             }
-            utils.fetch_api_call("api/chess/login",
+            utils.fetch_api_call("/api/chess/login",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "token": token },
@@ -1163,7 +1167,7 @@ var chess = (() => {
 
     const btnPlayComputer_click = () => {
         disablePollState();
-        utils.fetch_api_call("api/chess/computergame", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/chess/computergame", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`COMPUTER GAME. New state is ${state}.`);
                 setState(state);
@@ -1174,7 +1178,7 @@ var chess = (() => {
 
     const btnNextGame_click = () => {
         disablePollState();
-        utils.fetch_api_call("api/chess/nextgame", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/chess/nextgame", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`NEXT GAME. New state is ${state}.`);
                 setState(state);
@@ -1185,7 +1189,7 @@ var chess = (() => {
 
     const btnConfirmNextGame_click = (ok) => {
         disablePollState();
-        utils.fetch_api_call("api/chess/confirmnextgame",
+        utils.fetch_api_call("/api/chess/confirmnextgame",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -1219,7 +1223,7 @@ var chess = (() => {
                 settings.ChessEngineName = document.getElementById("engine").value;
             }
             disablePollState();
-            utils.fetch_api_call("api/chess/newgame",
+            utils.fetch_api_call("/api/chess/newgame",
                 {
                     method: "POST",
                     headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -1236,7 +1240,7 @@ var chess = (() => {
 
     const btnConfirmStartGame_click = (ok) => {
         disablePollState();
-        utils.fetch_api_call("api/chess/confirmstartgame",
+        utils.fetch_api_call("/api/chess/confirmstartgame",
             {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json", "ticket": ticket },
@@ -1258,7 +1262,7 @@ var chess = (() => {
     const btnGiveUp_click = (elem) => {
         if (elem.value == "GiveUpYes") {
             disablePollState();
-            utils.fetch_api_call("api/chess/giveup", { method: "POST", headers: { "ticket": ticket } },
+            utils.fetch_api_call("/api/chess/giveup", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
                     if (utils.is_debug()) utils.debug(`GIVE UP. New state is ${state}.`);
                     setState(state);
@@ -1280,7 +1284,7 @@ var chess = (() => {
     const btnEndGame_click = (elem) => {
         if (elem.value == "EndGameYes") {
             disablePollState();
-            utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
+            utils.fetch_api_call("/api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
                 (state) => {
                     if (utils.is_debug()) utils.debug(`LOGOUT (EndGame). New state is ${state}.`);
                     setState(state);
@@ -1301,7 +1305,7 @@ var chess = (() => {
 
     const btnLogout_click = () => {
         disablePollState();
-        utils.fetch_api_call("api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
+        utils.fetch_api_call("/api/chess/logout", { method: "POST", headers: { "ticket": ticket } },
             (state) => {
                 if (utils.is_debug()) utils.debug(`LOGOUT (Button). New state is ${state}.`);
                 setState(state);

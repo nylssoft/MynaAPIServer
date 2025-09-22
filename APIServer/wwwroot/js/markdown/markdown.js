@@ -5,6 +5,7 @@ var markdown = (() => {
     let currentUser;
     let page;
     let hideCookieBanner;
+    let nomenu;
 
     const renderPage = () => {
         let opt;
@@ -21,11 +22,13 @@ var markdown = (() => {
                     setMarkdownHTML(parent, plainHtml);
                     return;
                 }
-                if (!hideCookieBanner) {
+                if (!hideCookieBanner && !nomenu) {
                     utils.create_cookies_banner(parent);
                 }
-                utils.create_menu(parent);
-                if (currentUser && currentUser.photo) {
+                if (!nomenu) {
+                    utils.create_menu(parent);
+                }
+                if (!nomenu && currentUser && currentUser.photo) {
                     const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
                     imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
                 }
@@ -38,7 +41,9 @@ var markdown = (() => {
                         h1.textContent = `${currentUser.name} - ` + h1.textContent;
                     }
                 }
-                utils.set_menu_items(currentUser);
+                if (!nomenu) {
+                    utils.set_menu_items(currentUser);
+                }
             });
     };
 
@@ -51,6 +56,7 @@ var markdown = (() => {
     };
 
     const setMarkdownHTML = (div, html) => {
+        // TODO: replace $page(page) with /view?page=<page>&nomenu=${nomenu}
         let pattern = "$backbutton";
         let sidx = html.indexOf(pattern);
         let backButton = false;
@@ -107,7 +113,7 @@ var markdown = (() => {
             renderPage();
             return;
         }
-        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+        utils.fetch_api_call("/api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
                 renderPage();
@@ -121,6 +127,7 @@ var markdown = (() => {
 
     const init = () => {
         const urlParams = new URLSearchParams(window.location.search);
+        nomenu = urlParams.has("nomenu");
         hideCookieBanner = urlParams.has("hidecookiebanner");
         page = urlParams.get("page") || "startpage";
         utils.set_locale(render, urlParams.get("locale"));

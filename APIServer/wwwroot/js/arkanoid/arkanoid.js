@@ -60,6 +60,7 @@ var arkanoid = (() => {
     // --- state
 
     let embedded;
+    let nomenu;
 
     let currentLevel;
     let levels;
@@ -149,7 +150,7 @@ var arkanoid = (() => {
 
     // --- constants
 
-    const version = "1.2.6";
+    const version = "1.2.7";
 
     const powerUps = [PowerUpEnums.LASER, PowerUpEnums.CATCH, PowerUpEnums.DISRUPTION, PowerUpEnums.ENLARGE, PowerUpEnums.SLOW];
 
@@ -1313,7 +1314,7 @@ var arkanoid = (() => {
         else {
             startGameButton.style.visibility = "visible";
             continueGameButton.style.visibility = gameOver && currentLevel.id > 1 && !isLevelSkipped ? "visible" : "hidden";
-            fetch("api/arkanoid/highscore")
+            fetch("/api/arkanoid/highscore")
                 .then(response => response.json())
                 .then(h => {
                     highScores = h;
@@ -1335,7 +1336,7 @@ var arkanoid = (() => {
         const name = inputUserName.value.trim();
         if (name.length > 0) {
             addHighScoreDiv.style.visibility = "hidden";
-            fetch("api/arkanoid/highscore", {
+            fetch("/api/arkanoid/highscore", {
                 method: "POST",
                 headers: { "Accept": "application/json", "Content-Type": "application/json" },
                 body: JSON.stringify({ "Name": name, "Score": score, "Level": currentLevel.id })
@@ -1882,14 +1883,14 @@ var arkanoid = (() => {
         const div = controls.createDiv(parent, "copyright");
         div.id = "copyright-id";
         controls.create(div, "span", undefined, `${_T("HEADER_ARKANOID")} ${version}. ${_T("TEXT_COPYRIGHT_YEAR")} `);
-        controls.createA(div, undefined, "/view?page=copyright", _T("COPYRIGHT"));
+        controls.createA(div, undefined, `/view?page=copyright&nomenu=${nomenu}`, _T("COPYRIGHT"));
         controls.create(div, "span", undefined, ".");
     };
 
     const renderHighScoreEntries = () => {
         controls.removeAllChildren(highScoreDiv);
         highScoreDiv.style.visibility = "hidden";
-        fetch("api/arkanoid/highscore")
+        fetch("/api/arkanoid/highscore")
             .then(response => response.json())
             .then(h => {
                 highScores = h;
@@ -2006,11 +2007,11 @@ var arkanoid = (() => {
         controls.removeAllChildren(document.body);
         const wrapBody = controls.createDiv(document.body, "wrap-body");
         wrapBody.id = "wrap-body-id";
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.create_cookies_banner(wrapBody);
         }
         const all = controls.createDiv(wrapBody);
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.create_menu(all);
             renderHeader(all);
         }
@@ -2023,7 +2024,7 @@ var arkanoid = (() => {
         startGameButton = controls.createButton(all, _T("BUTTON_START_GAME"), async () => await startNewGame(true), "newgame", "newgame");
         continueGameButton = controls.createButton(all, _T("BUTTON_CONTINUE_GAME"), async () => await startNewGame(true, true), "continuegame", "continuegame");
         await renderArkanoid(all);
-        if (!embedded) {
+        if (!embedded && !nomenu) {
             utils.set_menu_items(currentUser);
         }
         document.addEventListener("mousedown", onMouseDown);
@@ -2045,7 +2046,7 @@ var arkanoid = (() => {
             render();
             return;
         }
-        utils.fetch_api_call("api/pwdman/user", { headers: { "token": token } },
+        utils.fetch_api_call("/api/pwdman/user", { headers: { "token": token } },
             (user) => {
                 currentUser = user;
                 render();
@@ -2065,6 +2066,7 @@ var arkanoid = (() => {
             utils.debug("DEBUG enabled.");
         }
         embedded = params.has("embedded");
+        nomenu = params.has("nomenu");
         fetch(`/js/arkanoid/levels.json?v=${version}`)
             .then(resp => {
                 resp.json()
@@ -2096,7 +2098,7 @@ window.onload = () => {
                 arkanoid.init([]);
             }
             else {
-                utils.fetch_api_call("api/pwdman/slideshow", { headers: { "token": token } },
+                utils.fetch_api_call("/api/pwdman/slideshow", { headers: { "token": token } },
                     (model) => arkanoid.init(model.pictures),
                     (errMsg) => console.error(errMsg));
             }
