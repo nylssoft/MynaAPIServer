@@ -57,7 +57,7 @@ var slideshow = (() => {
         if (!shuffle) {
             imgShuffle.classList.add("greyed-out");
         }
-        imgShuffle.addEventListener("click", () => utils.replace_window_location(`/slideshow?shuffle=${!shuffle}`));
+        imgShuffle.addEventListener("click", () => utils.replace_window_location(`/slideshow?shuffle=${!shuffle}&nomenu=${nomenu}`));
         imgLeftArrow = controls.createImg(parent, "header-leftarrow-img header-img", 24, 24, "/images/buttons/arrow-left-2-24.png", _T("BUTTON_PREV_PICTURE"));
         imgLeftArrow.addEventListener("click", onPictureLeft);
         imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png", _T("BUTTON_NEXT_PICTURE"));
@@ -146,14 +146,16 @@ var slideshow = (() => {
 
         window.onclick = (event) => {
             utils.hide_menu(event);
-            if (utils.is_menu_hidden()) {
+            if (utils.is_menu_hidden() || nomenu) {
                 let dropdownDivElem = document.getElementById("div-dropdown-id");
                 let headerElem = document.getElementById("header-id");
                 if (event.target.tagName == "HTML") {
                     const imgProfile = document.querySelector(".header-profile-photo");
                     if (divFooter.style.visibility != "hidden") {
                         divFooter.style.visibility = "hidden";
-                        dropdownDivElem.style.visibility = "hidden";
+                        if (dropdownDivElem) {
+                            dropdownDivElem.style.visibility = "hidden";
+                        }
                         headerElem.style.visibility = "hidden";
                         if (isSlideshowPlaying) {
                             imgPauseSlideShow.style.visibility = "hidden";
@@ -170,7 +172,9 @@ var slideshow = (() => {
                     }
                     else {
                         divFooter.style.visibility = "visible";
-                        dropdownDivElem.style.visibility = "visible";
+                        if (dropdownDivElem) {
+                            dropdownDivElem.style.visibility = "visible";
+                        }
                         headerElem.style.visibility = "visible";
                         if (isSlideshowPlaying) {
                             imgPauseSlideShow.style.visibility = "visible";

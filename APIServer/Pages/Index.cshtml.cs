@@ -24,7 +24,7 @@ namespace APIServer.Pages
     {
         public IActionResult OnGet()
         {
-            return RedirectToPage("View");
+            return Redirect("/desktop");
         }
     }
 }

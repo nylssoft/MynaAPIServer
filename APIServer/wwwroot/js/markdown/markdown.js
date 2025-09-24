@@ -37,7 +37,9 @@ var markdown = (() => {
                 const h1 = document.querySelector("h1");
                 if (h1) {
                     document.title = h1.textContent;
-                    if (currentUser && currentUser.name) {
+                    if (nomenu) {
+                        h1.textContent = "";
+                    } else if (currentUser && currentUser.name) {
                         h1.textContent = `${currentUser.name} - ` + h1.textContent;
                     }
                 }
