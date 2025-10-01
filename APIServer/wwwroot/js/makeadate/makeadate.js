@@ -2,7 +2,7 @@ var makeadate = (() => {
 
     "use strict";
 
-    let version = "1.1.9";
+    let version = "1.1.10";
     let currentUser;
     let cryptoKey;
     let helpDiv;
@@ -533,6 +533,10 @@ var makeadate = (() => {
         const idparam = params.get("id");
         if (!idparam) {
             renderManageAppointments();
+            return;
+        }
+        if (!params.has("old")) {
+            window.location.href = `/desktop?vid=${idparam}`;
             return;
         }
         let accessToken = '';
