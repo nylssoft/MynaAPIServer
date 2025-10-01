@@ -216,6 +216,12 @@ var utils = (() => {
         }
     };
 
+    const fetch_photo = (username, resolve, reject) => {
+        const token = get_authentication_token();
+        const init = token ? { "headers": { "token": token } } : undefined;
+        fetch_api_call(`/api/pwdman/photo?username=${encodeURI(username)}`, init, resolve, reject, undefined, undefined);
+    };
+
     const fetch_api_call = (apicall, init, resolve, reject, set_waitcursor, retry) => {
         if (set_waitcursor) set_waitcursor(true);
         fetch(apicall, init)
@@ -840,6 +846,7 @@ var utils = (() => {
         logout: logout,
         logout_skat: logout_skat,
         fetch_api_call: fetch_api_call,
+        fetch_photo: fetch_photo,
         is_mobile: is_mobile,
         auth_lltoken: auth_lltoken,
         verify_password_strength: verify_password_strength,

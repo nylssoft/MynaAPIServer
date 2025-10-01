@@ -38,7 +38,7 @@ namespace APIServer.PwdMan
         public IActionResult GetPhoto([FromQuery] string username)
         {
             if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
-            return new JsonResult(PwdManService.GetPhoto(username));
+            return new JsonResult(PwdManService.GetPhoto(GetToken(), username));
         }
 
         [HttpPost]

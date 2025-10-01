@@ -418,13 +418,21 @@ namespace APIServer.PwdMan
 
         // --- user management
 
-        public string GetPhoto(string username)
+        public string GetPhoto(string authenticationToken, string username)
         {
             logger.LogDebug("Get photo for username '{username}'...", username);
             var user = GetDbUserByName(username);
-            if (user != null && user.AllowResetPassword && user.Photo != null)
+            if (user != null && user.Photo != null)
             {
-                return user.Photo;
+                if (user.AllowResetPassword)
+                {
+                    return user.Photo;
+                }
+                if (!string.IsNullOrEmpty(authenticationToken))
+                {
+                    GetUserFromToken(authenticationToken);
+                    return user.Photo;
+                }
             }
             return null;
         }

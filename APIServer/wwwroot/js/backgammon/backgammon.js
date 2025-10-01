@@ -48,7 +48,7 @@ var backgammon = (() => {
     let endGameClicked = false;
     let giveUpClicked = false;
 
-    let version = "2.1.10";
+    let version = "2.1.11";
 
     let dirty;
 
@@ -803,7 +803,7 @@ var backgammon = (() => {
             photo = `/images/skat/profiles/default${fallback}.png`;
             photos[name.toLowerCase()] = photo;
             img.src = photo;
-            utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(name)}`, undefined,
+            utils.fetch_photo(name,
                 (p) => {
                     if (utils.is_debug()) utils.debug(`PHOTO RETRIEVED: ${p}.`);
                     if (p) {
@@ -1029,9 +1029,11 @@ var backgammon = (() => {
             const h1 = controls.create(parent, "h1", undefined, title);
             const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
             helpImg.addEventListener("click", () => onUpdateHelp(true));
-            if (!nomenu && currentUser && currentUser.photo) {
+            if (currentUser && currentUser.photo) {
                 const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-                imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+                if (!nomenu) {
+                    imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+                }
             }
         }
         // draw sample board

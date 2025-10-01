@@ -52,7 +52,7 @@ var chess = (() => {
 
     const delayLastMoved = 30; // 30 frames = 0.5 seconds
 
-    let version = "2.0.9";
+    let version = "2.0.10";
 
     // helper
 
@@ -701,9 +701,11 @@ var chess = (() => {
         const h1 = controls.create(parent, "h1", undefined, title);
         const helpImg = controls.createImg(h1, "help-button", 24, 24, "/images/buttons/help.png", _T("BUTTON_HELP"));
         helpImg.addEventListener("click", () => onUpdateHelp(true));
-        if (!nomenu && currentUser && currentUser.photo) {
+        if (currentUser && currentUser.photo) {
             const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            if (!nomenu) {
+                imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            }
         }
         // draw sample chessboard
         let sampleBoard = controls.create(parent, "canvas", "playground");
@@ -725,7 +727,7 @@ var chess = (() => {
                     photo = `/images/skat/profiles/default${idx}.png`;
                     photos[user.name.toLowerCase()] = photo;
                     img.src = photo;
-                    utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(user.name)}`, undefined,
+                    utils.fetch_photo(user.name,
                         (p) => {
                             if (utils.is_debug()) utils.debug(`PHOTO RETRIEVED: ${p}.`);
                             if (p) {

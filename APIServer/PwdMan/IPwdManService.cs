@@ -44,7 +44,7 @@ namespace APIServer.PwdMan
 
         // --- user management
 
-        string GetPhoto(string username);
+        string GetPhoto(string authenticationToken, string username);
 
         string UploadPhoto(string authenticationToken, string contentType, Stream contentStream);
 

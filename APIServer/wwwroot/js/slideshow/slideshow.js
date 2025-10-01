@@ -62,9 +62,11 @@ var slideshow = (() => {
         imgLeftArrow.addEventListener("click", onPictureLeft);
         imgRightArrow = controls.createImg(parent, "header-rightarrow-img header-img", 24, 24, "/images/buttons/arrow-right-2-24.png", _T("BUTTON_NEXT_PICTURE"));
         imgRightArrow.addEventListener("click", onPictureRight);
-        if (!nomenu && currentUser && currentUser.photo) {
+        if (currentUser && currentUser.photo) {
             let imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            if (!nomenu) {
+                imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            }
         }
     };
 
@@ -146,7 +148,7 @@ var slideshow = (() => {
 
         window.onclick = (event) => {
             utils.hide_menu(event);
-            if (utils.is_menu_hidden() || nomenu) {
+            if (utils.is_menu_hidden()) {
                 let dropdownDivElem = document.getElementById("div-dropdown-id");
                 let headerElem = document.getElementById("header-id");
                 if (event.target.tagName == "HTML") {

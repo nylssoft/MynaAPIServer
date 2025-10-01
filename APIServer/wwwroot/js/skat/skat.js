@@ -40,7 +40,7 @@ var skat = (() => {
 
     let helpDiv;
 
-    let version = "2.3.8";
+    let version = "2.3.9";
 
     let computerGame = false;
     let computerInternalState;
@@ -326,9 +326,11 @@ var skat = (() => {
                 const imgResults = controls.createImg(parent, "results-img-open", 32, 32, "/images/buttons/games-card_game.png", _T("BUTTON_GAME_RESULTS"));
                 imgResults.addEventListener("click", () => dispatchShowResults());
             }
-            if (!nomenu && currentUser && currentUser.photo) {
+            if (currentUser && currentUser.photo) {
                 const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("BUTTON_PROFILE"));
-                imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+                if (!nomenu) {
+                    imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+                }
             }
         }
         let divInfoImages = controls.createDiv(parent, "infoimages");
@@ -348,7 +350,7 @@ var skat = (() => {
                     photo = `/images/skat/profiles/default${idx}.png`;
                     photos[user.name.toLowerCase()] = photo;
                     img.src = photo;
-                    utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(user.name)}`, undefined,
+                    utils.fetch_photo(user.name,
                         (p) => {
                             if (utils.is_debug()) utils.debug(`PHOTO RETRIEVED: ${p}.`);
                             if (p) {
@@ -866,7 +868,7 @@ var skat = (() => {
                         break;
                     }
                 }
-                utils.fetch_api_call(`/api/pwdman/photo?username=${encodeURI(player.name)}`, undefined,
+                utils.fetch_photo(player.name,
                     (p) => {
                         if (utils.is_debug()) utils.debug(`PHOTO RETRIEVED (render summary): ${p}.`);
                         if (p) {

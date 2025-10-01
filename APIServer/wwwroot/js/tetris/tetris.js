@@ -423,7 +423,7 @@ var tetris = (() => {
     let helpDiv;
 
     // --- state
-    let version = "2.0.10";
+    let version = "2.0.11";
     let nomenu;
 
     let block;
@@ -837,9 +837,11 @@ var tetris = (() => {
     const renderHeader = (parent) => {
         let title = currentUser ? `${currentUser.name} - ${_T("HEADER_TETRIS")}` : _T("HEADER_TETRIS");
         controls.create(parent, "h1", "header", title);
-        if (!nomenu && currentUser && currentUser.photo) {
+        if (currentUser && currentUser.photo) {
             const imgPhoto = controls.createImg(parent, "header-profile-photo", 32, 32, currentUser.photo, _T("HEADER_PROFILE"));
-            imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            if (!nomenu) {
+                imgPhoto.addEventListener("click", () => utils.set_window_location("/usermgmt"));
+            }
         }
     };
 
