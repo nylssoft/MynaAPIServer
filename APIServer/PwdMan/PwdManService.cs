@@ -440,8 +440,7 @@ namespace APIServer.PwdMan
         public bool IsRegisteredUsername(string username)
         {
             logger.LogDebug("Check whether username '{username}' is registered...", username);
-            var user = GetDbUserByName(username);
-            return user != null && user.AllowResetPassword;
+            return GetDbUserByName(username) != null;
         }
 
         public string UploadPhoto(string authenticationToken, string contentType, Stream contentStream)
