@@ -535,10 +535,6 @@ var makeadate = (() => {
             renderManageAppointments();
             return;
         }
-        if (!params.has("old")) {
-            window.location.href = `/desktop?vid=${idparam}`;
-            return;
-        }
         let accessToken = '';
         try {
             accessToken = atob(idparam);
@@ -1350,6 +1346,12 @@ var makeadate = (() => {
 // --- window loaded event
 
 window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    const idparam = params.get("id");
+    if (idparam && !params.has("old")) {
+        window.location.href = `/desktop?vid=${idparam}`;
+        return;
+    }
     window.addEventListener("resize", makeadate.onResize);
     window.setInterval(makeadate.onTimer, 30000);
     utils.auth_lltoken(() => utils.set_locale(() => makeadate.renderInit()));
