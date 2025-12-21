@@ -11,7 +11,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 10.0.x
     - name: Setup node
       uses: actions/setup-node@v4
     - name: Build gruntfile
@@ -25,4 +25,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: build-${{ github.run_number }}
-        path: APIServer/bin/Release/net9.0/publish
+        path: APIServer/bin/Release/net10.0/publish
