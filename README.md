@@ -1,27 +1,41 @@
 # MynaAPIServer
 
-Provides a website with games and applications. The website runs on Unix or Windows using .NET 10 as backend server (Kestrel web server).
+Provides a website with games and applications. The website runs on Linux, macOS or Windows using .NET 10 as backend server (Kestrel web server).
 
 The following games are provided:
+
 - [Skat](https://www.stockfleth.eu/skat), a german card game
+
 - A clone of the arcade version of [Arkanoid](https://www.stockfleth.eu/arkanoid)
+
 - [Backgammon](https://www.stockfleth.eu/backgammon)
+
 - [Chess](https://www.stockfleth.eu/chess)
+
 - A [Tetris](https://www.stockfleth.eu/tetris) clone
 
 Skat requires 3 or 4 players, Backgammon and Chess 2 players. Arkanoid and Tetris are single player games.
 Chess can be used as a single player game if a chess engine is configured, e.g. Zappa or Stockfish.
 
 The following applications are provided:
+
 - Contacts, a tool to manage contacts securely
+
 - Diary, a secure online diary
+
 - Documents, a simple and secure online document management system
+
 - Notes, a secure online system to manage simple notes
+
 - Password, a secure online password manager
+
 - Slideshow, an online picture galery
+
 - Appointments, an app to schedule appointments securely
 
 Visit [stockfleth.eu](https://www.stockfleth.eu) to see a customized version of the website.
+The website uses now a new client written in TypeScript using Bootstrap, see [TsMynaPortal](https://github.com/nylssoft/TsMynaPortal).
+The old client is still available and still necessary to manage markdown files and some administrator settings, see [LegacyClient](https://www.stockfleth.eu/view).
 
 The main goal of the applications is data protection. Nobody except the logged in user can access, read and manage the content.
 
@@ -35,21 +49,21 @@ The data cannot be restored if the encryption key is lost.
 
 Use a secure random encryption key, do not use any password as encryption key. After user registration the browser
 generates a secure random encryption key.
- 
+
 The user's data stored in the cloud can be downloaded using the tool [Cloud Export](https://github.com/nylssoft/MynaCloudExport).
 
 The encryption key cannot be changed. Use the Cloud Export tool to copy the data to a newly registered user account
 with the changed encryption key and afterwards delete the previously used account. Change the login name and email address to the
 previously used values if required.
 
-An Android app is provided to access and manage the data on an Android device. This app allows to add, update or delete passwords,
+An Android app is provided to access and manage the data on Android devices. This app allows to add, update or delete passwords,
 manage notes, diary, contacts and download documents, see
 [Password Reader](https://github.com/nylssoft/MynaPasswordReaderMAUI).
 
 ## Setup
 
-The project can be compiled with Visual Studio 2022 or from a command-line interpreter, see e.g. [build workflow](https://github.com/nylssoft/MynaAPIServer/actions/runs/10124625755/workflow).
-If you run the .NET 10 server you will see sample pages.
+The project can be build with Visual Studio 2026, Visual Studio code or using command-line tools. See [build workflow](https://github.com/nylssoft/MynaAPIServer/blob/master/.github/workflows/build.yml) for the required steps to build the project using command-line tools.
+If you run the .NET 10 server you will see sample pages (legacy client).
 All games can be used without further configuration.
 For the applications the [appsettings.json](/APIServer/appsettings.json) file has to be adjusted.
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
@@ -84,4 +98,3 @@ and [Copyright page](/APIServer/sampledata/Copyright.md) for the used open sourc
 The website administator can use the document management system to provide markdown pages.
 A folder can be marked as public to contain markdown files and images used for rendering public pages. It can also be marked with the role family
 to provide content only for logged-in users that have the role family assigned.
-
