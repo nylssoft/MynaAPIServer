@@ -3,6 +3,7 @@
 **/*.json.user
 **/*.min.css
 **/*.min.js
+.DS_Store
 .vs
 chessengine
 data
