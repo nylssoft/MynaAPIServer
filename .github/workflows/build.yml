@@ -4,16 +4,17 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 10.0.x
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: 24
     - name: Build web assets
@@ -24,7 +25,7 @@ jobs:
     - name: Publish
       run:  dotnet publish /p:PublishProfile=APIServer/Properties/PublishProfiles/FolderProfile.pubxml
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: build-${{ github.run_number }}
         path: APIServer/bin/Release/net10.0/publish
