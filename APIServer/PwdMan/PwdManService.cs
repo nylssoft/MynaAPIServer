@@ -1334,9 +1334,9 @@ namespace APIServer.PwdMan
             {
                 throw new ArgumentException($"Language file '{filename}' not found.");
             }
-            using var md5 = MD5.Create();
+            using var sha256 = SHA256.Create();
             using var stream = File.OpenRead(filename);
-            var hash = md5.ComputeHash(stream);
+            var hash = sha256.ComputeHash(stream);
             var v = BitConverter.ToString(hash).Replace("-", "");
             string url = $"/locale/{language}.json?v={v}";
             var options = new MemoryCacheEntryOptions()
@@ -1482,7 +1482,7 @@ namespace APIServer.PwdMan
                     }
                     if (render)
                     {
-                        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+                        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
                         var markdown = Markdown.ToHtml(File.ReadAllText(contentConfig.Content), pipeline);
                         return markdown;
                     }
@@ -1696,7 +1696,7 @@ namespace APIServer.PwdMan
                     if (docContent != null)
                     {
                         var content = Encoding.UTF8.GetString(docContent.Data);
-                        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+                        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().DisableHtml().Build();
                         var markdown = Markdown.ToHtml(content, pipeline);
                         if (AccessRole.IsEverbody(docItem.AccessRole))
                         {
