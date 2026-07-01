@@ -69,6 +69,21 @@ For the applications the [appsettings.json](/APIServer/appsettings.json) file ha
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
 You can also use the provided PowerShell script [New-AppSettings](/APIServer/New-AppSettings.ps1) to create an appsettings.json file with the required keys.
 
+### Environment variables for secrets
+
+Sensitive values can be provided via environment variables instead of storing them in [appsettings.json](/APIServer/appsettings.json).
+If an environment variable is set, its value overrides the corresponding setting from configuration.
+
+Supported environment variables:
+
+- `POSTGRES_PASSWORD` overrides the password part of `PostgresConnection`
+- `APPOINTMENT_SIGNKEY` overrides `Appointment:SignKey`
+- `PWDMAN_TOKEN_SIGNKEY` overrides `PwdMan:TokenConfig:SignKey`
+- `PWDMAN_TOKEN_LONGLIVEDSIGNKEY` overrides `PwdMan:TokenConfig:LongLivedSignKey`
+- `PWDMAN_FRIENDLYCAPTCHA_APIKEY` overrides `PwdMan:FriendlyCaptchaConfig:APIKey`
+- `PWDMAN_EMAILSERVICE_CONNECTIONSTRING` overrides `PwdMan:EmailServiceConfig:ConnectionString`
+- `PWDMAN_FAMILYACCESSTOKEN` overrides `PwdMan:FamilyAccessToken`
+
 ### Slideshow
 
 A JSON file is used to provide additional information, e.g. when the photo was taken and where and what is it about.

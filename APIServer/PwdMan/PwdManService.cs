@@ -1922,7 +1922,36 @@ namespace APIServer.PwdMan
         private PwdManOptions GetOptions()
         {
             var opt = Configuration.GetSection("PwdMan").Get<PwdManOptions>();
-            return opt ?? new PwdManOptions();
+            opt ??= new PwdManOptions();
+            opt.TokenConfig ??= new TokenConfig();
+            opt.EmailServiceConfig ??= new EmailServiceConfig();
+            opt.FriendlyCaptchaConfig ??= new FriendlyCaptchaConfig();
+            var signKey = Environment.GetEnvironmentVariable("PWDMAN_TOKEN_SIGNKEY");
+            if (!string.IsNullOrWhiteSpace(signKey))
+            {
+                opt.TokenConfig.SignKey = signKey;
+            }
+            var longLivedSignKey = Environment.GetEnvironmentVariable("PWDMAN_TOKEN_LONGLIVEDSIGNKEY");
+            if (!string.IsNullOrWhiteSpace(longLivedSignKey))
+            {
+                opt.TokenConfig.LongLivedSignKey = longLivedSignKey;
+            }
+            var friendlyCaptchaApiKey = Environment.GetEnvironmentVariable("PWDMAN_FRIENDLYCAPTCHA_APIKEY");
+            if (!string.IsNullOrWhiteSpace(friendlyCaptchaApiKey))
+            {
+                opt.FriendlyCaptchaConfig.APIKey = friendlyCaptchaApiKey;
+            }
+            var emailConnectionString = Environment.GetEnvironmentVariable("PWDMAN_EMAILSERVICE_CONNECTIONSTRING");
+            if (!string.IsNullOrWhiteSpace(emailConnectionString))
+            {
+                opt.EmailServiceConfig.ConnectionString = emailConnectionString;
+            }
+            var familyAccessToken = Environment.GetEnvironmentVariable("PWDMAN_FAMILYACCESSTOKEN");
+            if (!string.IsNullOrWhiteSpace(familyAccessToken))
+            {
+                opt.FamilyAccessToken = familyAccessToken;
+            }
+            return opt;
         }
 
         private string GetValidLocale(string locale, DbMynaContext dbContext = null, string email = null)

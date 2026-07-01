@@ -471,7 +471,13 @@ namespace APIServer.Appointment
         private AppointmentOptions GetOptions()
         {
             var opt = Configuration.GetSection("Appointment").Get<AppointmentOptions>();
-            return opt ?? new AppointmentOptions();
+            opt ??= new AppointmentOptions();
+            var signKey = Environment.GetEnvironmentVariable("APPOINTMENT_SIGNKEY");
+            if (!string.IsNullOrWhiteSpace(signKey))
+            {
+                opt.SignKey = signKey;
+            }
+            return opt;
         }
 
         private static HashSet<DateTime> GetOptionDateTimes(List<AppointmentOptionModel> options)
