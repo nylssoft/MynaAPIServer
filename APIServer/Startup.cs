@@ -36,6 +36,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Primitives;
+using Npgsql;
+using System;
 using System.Text;
 
 namespace APIServer
@@ -54,6 +56,15 @@ namespace APIServer
         {
             var sqliteConnection = Configuration.GetValue<string>("SqliteConnection");
             var postgresConnection = Configuration.GetValue<string>("PostgresConnection");
+            var postgresPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
+            if (!string.IsNullOrWhiteSpace(postgresConnection) && !string.IsNullOrWhiteSpace(postgresPassword))
+            {
+                var builder = new NpgsqlConnectionStringBuilder(postgresConnection)
+                {
+                    Password = postgresPassword
+                };
+                postgresConnection = builder.ConnectionString;
+            }
             services.AddControllers();
             // scoped
             services.AddDbContext<DbSqliteContext>(builder => builder.UseSqlite(sqliteConnection));
