@@ -25,17 +25,14 @@ namespace APIServer.HighScore
 {
     public class HighScoreService : IHighScoreService
     {
-        private readonly DbSqliteContext dbSqliteContext;
         private readonly DbPostgresContext dbPostgresContext;
         private readonly IConfiguration Configuration;
 
         public HighScoreService(
             IConfiguration configuration,
-            DbSqliteContext dbSqliteContext,
             DbPostgresContext dbPostgresContext)
         {
             Configuration = configuration;
-            this.dbSqliteContext = dbSqliteContext;
             this.dbPostgresContext = dbPostgresContext;
         }
 
@@ -134,8 +131,7 @@ namespace APIServer.HighScore
 
         private DbMynaContext GetDbContext()
         {
-            var connectionType = Configuration.GetValue<string>("ConnectionType");
-            return connectionType == "Postgres" ? dbPostgresContext : dbSqliteContext;
+            return dbPostgresContext;
         }
 
     }

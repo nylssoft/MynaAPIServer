@@ -54,7 +54,6 @@ namespace APIServer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var sqliteConnection = Configuration.GetValue<string>("SqliteConnection");
             var postgresConnection = Configuration.GetValue<string>("PostgresConnection");
             var postgresPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
             if (!string.IsNullOrWhiteSpace(postgresConnection) && !string.IsNullOrWhiteSpace(postgresPassword))
@@ -67,7 +66,6 @@ namespace APIServer
             }
             services.AddControllers();
             // scoped
-            services.AddDbContext<DbSqliteContext>(builder => builder.UseSqlite(sqliteConnection));
             services.AddDbContext<DbPostgresContext>(builder => builder.UseNpgsql(postgresConnection));
             services.AddScoped<IPwdManService, PwdManService>();
             services.AddScoped<IHighScoreService, HighScoreService>();

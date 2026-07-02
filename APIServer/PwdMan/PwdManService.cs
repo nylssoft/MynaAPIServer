@@ -50,15 +50,12 @@ namespace APIServer.PwdMan
     public class PwdManService(
         IConfiguration configuration,
         ILogger<PwdManService> logger,
-        DbSqliteContext dbSqliteContext,
         DbPostgresContext dbPostgresContext,
         IMemoryCache memoryCache) : IPwdManService
     {
         public IConfiguration Configuration { get; } = configuration;
 
         private readonly ILogger logger = logger;
-
-        private readonly DbMynaContext dbSqliteContext = dbSqliteContext;
 
         private readonly DbPostgresContext dbPostgresContext = dbPostgresContext;
 
@@ -1659,8 +1656,7 @@ namespace APIServer.PwdMan
 
         public DbMynaContext GetDbContext()
         {
-            var connectionType = Configuration.GetValue<string>("ConnectionType");
-            return connectionType == "Postgres" ? dbPostgresContext : dbSqliteContext;
+            return dbPostgresContext;
         }
 
         // --- private
