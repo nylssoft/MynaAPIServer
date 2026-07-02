@@ -15,31 +15,31 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace APIServer.PwdMan
 {
     public class SecurityWarningTemplateData
     {
-        [JsonProperty("Name")]
+        [JsonPropertyName("Name")]
         public string Name { get; set; }
 
-        [JsonProperty("Date")]
+        [JsonPropertyName("Date")]
         public string Date { get; set; }
 
-        [JsonProperty("Time")]
+        [JsonPropertyName("Time")]
         public string Time { get; set; }
 
-        [JsonProperty("IPAddress")]
+        [JsonPropertyName("IPAddress")]
         public string IPAddress { get; set; }
 
-        [JsonProperty("Hostname")]
+        [JsonPropertyName("Hostname")]
         public string Hostname { get; set; }
 
-        [JsonProperty("Locale")]
+        [JsonPropertyName("Locale")]
         public string Locale { get; set; }
 
-        [JsonProperty("Next")]
+        [JsonPropertyName("Next")]
         public string Next { get; set; }
     }
 }

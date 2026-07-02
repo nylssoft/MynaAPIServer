@@ -23,7 +23,7 @@ jobs:
         npm ci
         npm run build:assets
     - name: Publish
-      run:  dotnet publish /p:PublishProfile=APIServer/Properties/PublishProfiles/FolderProfile.pubxml
+      run:  dotnet publish /p:PublishProfile=APIServer/Properties/PublishProfiles/FolderProfile.pubxml -c Release
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:

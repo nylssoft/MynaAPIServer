@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace APIServer.PwdMan
 {
     public class RequestRegistrationTemplateData
     {
-        [JsonProperty("Email")]
+        [JsonPropertyName("Email")]
         public string Email { get; set; }
     }
 }
