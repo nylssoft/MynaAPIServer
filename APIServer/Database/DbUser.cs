@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2023 Niels Stockfleth
+    Copyright (C) 2020-2026 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -57,6 +57,8 @@ namespace APIServer.Database
         public bool AllowResetPassword { get; set; }
 
         public string Photo { get; set; }
+
+        public DbUserPhoto UserPhoto { get; set; }
 
         public long StorageQuota { get; set; }
 

@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2025 Niels Stockfleth
+    Copyright (C) 2020-2026 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,6 +39,19 @@ namespace APIServer.PwdMan
         {
             if (string.IsNullOrEmpty(username)) throw new MissingParameterException();
             return new JsonResult(PwdManService.GetPhoto(GetToken(), username));
+        }
+
+        [HttpGet]
+        [Route("api/pwdman/photo/content")]
+        public IActionResult GetPhotoContent([FromQuery] long userId)
+        {
+            if (userId <= 0) throw new MissingParameterException();
+            var result = PwdManService.GetPhotoContent(GetToken(), userId);
+            if (result == null)
+            {
+                return NotFound();
+            }
+            return File(result.Stream, result.ContentType);
         }
 
         [HttpPost]

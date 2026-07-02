@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2025 Niels Stockfleth
+    Copyright (C) 2020-2026 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using APIServer.Database;
+using APIServer.Document;
 using APIServer.Document.Model;
 using APIServer.PasswordGenerator;
 using APIServer.PwdMan.Model;
@@ -419,19 +420,67 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Get photo for username '{username}'...", username);
             var user = GetDbUserByName(username);
-            if (user != null && user.Photo != null)
+            if (user != null)
             {
-                if (user.AllowResetPassword)
+                var dbContext = GetDbContext();
+                var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
+                if (userPhoto != null)
                 {
-                    return user.Photo;
+                    var photoUrl = GetPhotoContentUrl(user.Id, userPhoto.UpdatedUtc);
+                    if (user.AllowResetPassword)
+                    {
+                        return photoUrl;
+                    }
+                    if (!string.IsNullOrEmpty(authenticationToken))
+                    {
+                        GetUserFromToken(authenticationToken);
+                        return photoUrl;
+                    }
                 }
-                if (!string.IsNullOrEmpty(authenticationToken))
+                else if (!string.IsNullOrEmpty(user.Photo))
                 {
-                    GetUserFromToken(authenticationToken);
-                    return user.Photo;
+                    if (user.AllowResetPassword)
+                    {
+                        return user.Photo;
+                    }
+                    if (!string.IsNullOrEmpty(authenticationToken))
+                    {
+                        GetUserFromToken(authenticationToken);
+                        return user.Photo;
+                    }
                 }
             }
             return null;
+        }
+
+        public DownloadResult GetPhotoContent(string authenticationToken, long userId)
+        {
+            logger.LogDebug("Get photo content for user ID '{userId}'...", userId);
+            var dbContext = GetDbContext();
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Id == userId);
+            if (user == null)
+            {
+                return null;
+            }
+            if (!user.AllowResetPassword)
+            {
+                if (string.IsNullOrEmpty(authenticationToken))
+                {
+                    return null;
+                }
+                GetUserFromToken(authenticationToken);
+            }
+            var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
+            if (userPhoto == null)
+            {
+                return null;
+            }
+            return new DownloadResult
+            {
+                Stream = new MemoryStream(userPhoto.Data),
+                FileName = "profile-photo.jpg",
+                ContentType = string.IsNullOrEmpty(userPhoto.ContentType) ? "image/jpeg" : userPhoto.ContentType
+            };
         }
 
         public bool IsRegisteredUsername(string username)
@@ -444,44 +493,36 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Upload photo...");
             var user = GetUserFromToken(authenticationToken);
-            var pwdgen = new PwdGen
-            {
-                Length = 32,
-                Symbols = "",
-                UpperCharacters = "",
-                MinDigits = 2,
-                MinUpperCharacters = 0,
-                MinLowerCharacters = 2,
-                MinSymbols = 0
-            };
-            var prevPhotoFile = user.Photo;
-            string extension = "jpg";
-            if (contentType.EndsWith("png", StringComparison.InvariantCultureIgnoreCase))
-            {
-                extension = "png";
-            }
-            user.Photo = $"/images/profiles/{user.Id}-{pwdgen.Generate()}.{extension}";
-            if (!Directory.Exists("wwwroot/images/profiles"))
-            {
-                Directory.CreateDirectory("wwwroot/images/profiles");
-            }
+            bool saveAsPng = !string.IsNullOrEmpty(contentType) && contentType.EndsWith("png", StringComparison.InvariantCultureIgnoreCase);
+            string photoContentType = saveAsPng ? "image/png" : "image/jpeg";
+            byte[] imageBytes;
             using (Image image = Image.Load(contentStream))
             {
                 var opt = new ResizeOptions { Mode = ResizeMode.Crop, Size = new Size { Width = 90, Height = 90 } };
                 image.Mutate(x => x.Resize(opt));
-                image.Save($"wwwroot/{user.Photo}");
+                using var stream = new MemoryStream();
+                if (saveAsPng)
+                {
+                    image.SaveAsPng(stream);
+                }
+                else
+                {
+                    image.SaveAsJpeg(stream);
+                }
+                imageBytes = stream.ToArray();
             }
             var dbContext = GetDbContext();
-            dbContext.SaveChanges();
-            // try to delete photo file if new photo has been successfully updated
-            if (!string.IsNullOrEmpty(prevPhotoFile))
+            var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
+            if (userPhoto == null)
             {
-                var fname = $"wwwroot/{prevPhotoFile}";
-                if (File.Exists(fname))
-                {
-                    File.Delete(fname);
-                }
+                userPhoto = new DbUserPhoto { DbUserId = user.Id };
+                dbContext.DbUserPhotos.Add(userPhoto);
             }
+            userPhoto.ContentType = photoContentType;
+            userPhoto.Data = imageBytes;
+            userPhoto.UpdatedUtc = DateTime.UtcNow;
+            user.Photo = GetPhotoContentUrl(user.Id, userPhoto.UpdatedUtc);
+            dbContext.SaveChanges();
             return user.Photo;
         }
 
@@ -489,15 +530,15 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Delete photo...");
             var user = GetUserFromToken(authenticationToken);
-            if (!string.IsNullOrEmpty(user.Photo))
+            var dbContext = GetDbContext();
+            var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
+            if (userPhoto != null || !string.IsNullOrEmpty(user.Photo))
             {
-                var fname = $"wwwroot/{user.Photo}";
-                if (File.Exists(fname))
+                if (userPhoto != null)
                 {
-                    File.Delete(fname);
+                    dbContext.DbUserPhotos.Remove(userPhoto);
                 }
                 user.Photo = null;
-                var dbContext = GetDbContext();
                 dbContext.SaveChanges();
                 return true;
             }
@@ -1586,7 +1627,6 @@ namespace APIServer.PwdMan
                     throw new UserManagerRequiredException();
                 }
             }
-            var photoFile = user.Photo;
             if (user.PasswordFileId.HasValue)
             {
                 var delpwdfile = new DbPasswordFile { Id = user.PasswordFileId.Value };
@@ -1611,15 +1651,6 @@ namespace APIServer.PwdMan
             dbContext.DbDocContents.RemoveRange(delDocContents);
             dbContext.DbUsers.Remove(user);
             dbContext.SaveChanges();
-            // try to delete photo file if user has been successfully deleted
-            if (!string.IsNullOrEmpty(photoFile))
-            {
-                var fname = $"wwwroot/{photoFile}";
-                if (File.Exists(fname))
-                {
-                    File.Delete(fname);
-                }
-            }
             return true;
         }
 
@@ -1660,6 +1691,12 @@ namespace APIServer.PwdMan
         }
 
         // --- private
+
+        private static string GetPhotoContentUrl(long userId, DateTime updatedUtc)
+        {
+            var version = new DateTimeOffset(updatedUtc).ToUnixTimeSeconds();
+            return $"/api/pwdman/photo/content?userId={userId}&v={version}";
+        }
 
         private string GetMarkdownByDocumentId(string authenticationToken, int docItemId, string locale)
         {
