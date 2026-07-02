@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2025 Niels Stockfleth
+    Copyright (C) 2020-2026 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using APIServer.Database;
+using APIServer.Document;
 using APIServer.PwdMan.Model;
 using System;
 using System.Collections.Generic;
@@ -45,6 +46,8 @@ namespace APIServer.PwdMan
         // --- user management
 
         string GetPhoto(string authenticationToken, string username);
+
+        DownloadResult GetPhotoContent(string authenticationToken, long userId);
 
         string UploadPhoto(string authenticationToken, string contentType, Stream contentStream);
 

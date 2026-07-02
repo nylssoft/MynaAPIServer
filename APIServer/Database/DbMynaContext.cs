@@ -1,6 +1,6 @@
 ﻿/*
     Myna API Server
-    Copyright (C) 2020-2025 Niels Stockfleth
+    Copyright (C) 2020-2026 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -66,6 +66,8 @@ namespace APIServer.Database
 
         public DbSet<DbAppointment> DbAppointments { get; set; }
 
+        public DbSet<DbUserPhoto> DbUserPhotos { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             _ = builder.Entity<DbRegistration>()
@@ -107,6 +109,11 @@ namespace APIServer.Database
                 .IsUnique();
             _ = builder.Entity<DbAppointment>()
                 .HasIndex(a => a.DbUserId);
+            _ = builder.Entity<DbUser>()
+                .HasOne(u => u.UserPhoto)
+                .WithOne(p => p.User)
+                .HasForeignKey<DbUserPhoto>(p => p.DbUserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         public static DateTime? GetUtcDateTime(DateTime? dbDateTime)
