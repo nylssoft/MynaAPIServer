@@ -43,14 +43,15 @@ namespace APIServer.PwdMan
 
         [HttpGet]
         [Route("api/pwdman/photo/content")]
-        public IActionResult GetPhotoContent([FromQuery] long userId)
+        public IActionResult GetPhotoContent([FromQuery] string photoId)
         {
-            if (userId <= 0) throw new MissingParameterException();
-            var result = PwdManService.GetPhotoContent(GetToken(), userId);
+            if (string.IsNullOrEmpty(photoId)) throw new MissingParameterException();
+            var result = PwdManService.GetPhotoContent(photoId);
             if (result == null)
             {
                 return NotFound();
             }
+            Response.Headers.CacheControl = "public,max-age=31536000,immutable";
             return File(result.Stream, result.ContentType);
         }
 

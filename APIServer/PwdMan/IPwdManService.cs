@@ -47,7 +47,7 @@ namespace APIServer.PwdMan
 
         string GetPhoto(string authenticationToken, string username);
 
-        DownloadResult GetPhotoContent(string authenticationToken, long userId);
+        DownloadResult GetPhotoContent(string photoId);
 
         string UploadPhoto(string authenticationToken, string contentType, Stream contentStream);
 

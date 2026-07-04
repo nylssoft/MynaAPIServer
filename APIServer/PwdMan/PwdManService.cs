@@ -426,7 +426,16 @@ namespace APIServer.PwdMan
                 var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
                 if (userPhoto != null)
                 {
-                    var photoUrl = GetPhotoContentUrl(user.Id, userPhoto.UpdatedUtc);
+                    if (!TryGetPhotoContentId(user.Photo, out var photoId))
+                    {
+                        photoId = Guid.NewGuid();
+                    }
+                    var photoUrl = GetPhotoContentUrl(photoId, userPhoto.UpdatedUtc);
+                    if (!string.Equals(user.Photo, photoUrl, StringComparison.Ordinal))
+                    {
+                        user.Photo = photoUrl;
+                        dbContext.SaveChanges();
+                    }
                     if (user.AllowResetPassword)
                     {
                         return photoUrl;
@@ -453,34 +462,42 @@ namespace APIServer.PwdMan
             return null;
         }
 
-        public DownloadResult GetPhotoContent(string authenticationToken, long userId)
+        public DownloadResult GetPhotoContent(string photoId)
         {
-            logger.LogDebug("Get photo content for user ID '{userId}'...", userId);
-            var dbContext = GetDbContext();
-            var user = dbContext.DbUsers.SingleOrDefault(u => u.Id == userId);
-            if (user == null)
+            logger.LogDebug("Get photo content for photo ID '{photoId}'...", photoId);
+            if (!Guid.TryParse(photoId, out var parsedPhotoId))
             {
                 return null;
             }
-            if (!user.AllowResetPassword)
+            string cacheKey = $"photo-content-{parsedPhotoId:D}";
+            if (memoryCache.TryGetValue(cacheKey, out CachedPhotoContent cachedPhotoContent))
             {
-                if (string.IsNullOrEmpty(authenticationToken))
-                {
-                    return null;
-                }
-                GetUserFromToken(authenticationToken);
+                return CreatePhotoDownloadResult(cachedPhotoContent.Data, cachedPhotoContent.ContentType);
+            }
+            var dbContext = GetDbContext();
+            var user = dbContext.DbUsers
+                .AsEnumerable()
+                .SingleOrDefault(u => TryGetPhotoContentId(u.Photo, out var id) && id == parsedPhotoId);
+            if (user == null)
+            {
+                return null;
             }
             var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
             if (userPhoto == null)
             {
                 return null;
             }
-            return new DownloadResult
+            var contentType = string.IsNullOrEmpty(userPhoto.ContentType) ? "image/jpeg" : userPhoto.ContentType;
+            var photoContent = new CachedPhotoContent
             {
-                Stream = new MemoryStream(userPhoto.Data),
-                FileName = "profile-photo.jpg",
-                ContentType = string.IsNullOrEmpty(userPhoto.ContentType) ? "image/jpeg" : userPhoto.ContentType
+                Data = userPhoto.Data,
+                ContentType = contentType
             };
+            var options = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(10))
+                .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+            memoryCache.Set(cacheKey, photoContent, options);
+            return CreatePhotoDownloadResult(photoContent.Data, photoContent.ContentType);
         }
 
         public bool IsRegisteredUsername(string username)
@@ -521,7 +538,7 @@ namespace APIServer.PwdMan
             userPhoto.ContentType = photoContentType;
             userPhoto.Data = imageBytes;
             userPhoto.UpdatedUtc = DateTime.UtcNow;
-            user.Photo = GetPhotoContentUrl(user.Id, userPhoto.UpdatedUtc);
+            user.Photo = GetPhotoContentUrl(Guid.NewGuid(), userPhoto.UpdatedUtc);
             dbContext.SaveChanges();
             return user.Photo;
         }
@@ -1692,10 +1709,51 @@ namespace APIServer.PwdMan
 
         // --- private
 
-        private static string GetPhotoContentUrl(long userId, DateTime updatedUtc)
+        private static string GetPhotoContentUrl(Guid photoId, DateTime updatedUtc)
         {
             var version = new DateTimeOffset(updatedUtc).ToUnixTimeSeconds();
-            return $"/api/pwdman/photo/content?userId={userId}&v={version}";
+            return $"/api/pwdman/photo/content?photoId={photoId:D}&v={version}";
+        }
+
+        private static bool TryGetPhotoContentId(string photoUrl, out Guid photoId)
+        {
+            photoId = Guid.Empty;
+            if (string.IsNullOrEmpty(photoUrl))
+            {
+                return false;
+            }
+            const string key = "photoId=";
+            var keyStart = photoUrl.IndexOf(key, StringComparison.OrdinalIgnoreCase);
+            if (keyStart < 0)
+            {
+                return false;
+            }
+            keyStart += key.Length;
+            var keyEnd = photoUrl.IndexOf('&', keyStart);
+            var value = keyEnd >= 0 ? photoUrl.Substring(keyStart, keyEnd - keyStart) : photoUrl.Substring(keyStart);
+            return Guid.TryParse(value, out photoId);
+        }
+
+        private static DownloadResult CreatePhotoDownloadResult(byte[] data, string contentType)
+        {
+            return new DownloadResult
+            {
+                Stream = new MemoryStream(data),
+                FileName = GetPhotoFileName(contentType),
+                ContentType = contentType
+            };
+        }
+
+        private static string GetPhotoFileName(string contentType)
+        {
+            return string.Equals(contentType, "image/png", StringComparison.OrdinalIgnoreCase) ? "profile-photo.png" : "profile-photo.jpg";
+        }
+
+        private sealed class CachedPhotoContent
+        {
+            public byte[] Data { get; set; }
+
+            public string ContentType { get; set; }
         }
 
         private string GetMarkdownByDocumentId(string authenticationToken, int docItemId, string locale)
