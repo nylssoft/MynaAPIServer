@@ -430,7 +430,7 @@ namespace APIServer.PwdMan
                     {
                         photoId = Guid.NewGuid();
                     }
-                    var photoUrl = GetPhotoContentUrl(photoId, userPhoto.UpdatedUtc);
+                    var photoUrl = GetPhotoContentUrl(photoId, user.Id, userPhoto.UpdatedUtc);
                     if (!string.Equals(user.Photo, photoUrl, StringComparison.Ordinal))
                     {
                         user.Photo = photoUrl;
@@ -462,23 +462,21 @@ namespace APIServer.PwdMan
             return null;
         }
 
-        public DownloadResult GetPhotoContent(string photoId)
+        public DownloadResult GetPhotoContent(string photoId, long userId)
         {
-            logger.LogDebug("Get photo content for photo ID '{photoId}'...", photoId);
+            logger.LogDebug("Get photo content for photo ID '{photoId}' and user ID {userId}...", photoId, userId);
             if (!Guid.TryParse(photoId, out var parsedPhotoId))
             {
                 return null;
             }
-            string cacheKey = $"photo-content-{parsedPhotoId:D}";
+            string cacheKey = $"photo-content-{userId}-{parsedPhotoId:D}";
             if (memoryCache.TryGetValue(cacheKey, out CachedPhotoContent cachedPhotoContent))
             {
                 return CreatePhotoDownloadResult(cachedPhotoContent.Data, cachedPhotoContent.ContentType);
             }
             var dbContext = GetDbContext();
-            var user = dbContext.DbUsers
-                .AsEnumerable()
-                .SingleOrDefault(u => TryGetPhotoContentId(u.Photo, out var id) && id == parsedPhotoId);
-            if (user == null)
+            var user = dbContext.DbUsers.SingleOrDefault(u => u.Id == userId);
+            if (user == null || !TryGetPhotoContentId(user.Photo, out var pid) || pid != parsedPhotoId)
             {
                 return null;
             }
@@ -538,7 +536,7 @@ namespace APIServer.PwdMan
             userPhoto.ContentType = photoContentType;
             userPhoto.Data = imageBytes;
             userPhoto.UpdatedUtc = DateTime.UtcNow;
-            user.Photo = GetPhotoContentUrl(Guid.NewGuid(), userPhoto.UpdatedUtc);
+            user.Photo = GetPhotoContentUrl(Guid.NewGuid(), user.Id, userPhoto.UpdatedUtc);
             dbContext.SaveChanges();
             return user.Photo;
         }
@@ -1709,10 +1707,10 @@ namespace APIServer.PwdMan
 
         // --- private
 
-        private static string GetPhotoContentUrl(Guid photoId, DateTime updatedUtc)
+        private static string GetPhotoContentUrl(Guid photoId, long userId, DateTime updatedUtc)
         {
             var version = new DateTimeOffset(updatedUtc).ToUnixTimeSeconds();
-            return $"/api/pwdman/photo/content?photoId={photoId:D}&v={version}";
+            return $"/api/pwdman/photo/content?photoId={photoId:D}&userId={userId}&v={version}";
         }
 
         private static bool TryGetPhotoContentId(string photoUrl, out Guid photoId)

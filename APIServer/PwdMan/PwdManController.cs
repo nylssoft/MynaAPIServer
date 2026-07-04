@@ -43,10 +43,11 @@ namespace APIServer.PwdMan
 
         [HttpGet]
         [Route("api/pwdman/photo/content")]
-        public IActionResult GetPhotoContent([FromQuery] string photoId)
+        public IActionResult GetPhotoContent([FromQuery] string photoId, [FromQuery] long userId)
         {
             if (string.IsNullOrEmpty(photoId)) throw new MissingParameterException();
-            var result = PwdManService.GetPhotoContent(photoId);
+            if (userId <= 0) throw new MissingParameterException();
+            var result = PwdManService.GetPhotoContent(photoId, userId);
             if (result == null)
             {
                 return NotFound();
