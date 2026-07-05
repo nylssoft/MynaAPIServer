@@ -53,6 +53,7 @@ namespace APIServer
                 var pwdman = services.GetRequiredService<IPwdManService>();
                 var dbContext = pwdman.GetDbContext();
                 dbContext.Database.Migrate();
+                pwdman.MigrateLegacyProfilePhotosToDatabase();
             }
             catch (Exception ex)
             {

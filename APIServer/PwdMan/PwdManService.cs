@@ -62,6 +62,8 @@ namespace APIServer.PwdMan
 
         private readonly IMemoryCache memoryCache = memoryCache;
 
+        private const string LegacyProfilePhotoMigrationSettingKey = "pwdman-legacy-profile-photo-migration-v1";
+
         // --- reset password
 
         public async Task RequestResetPasswordAsync(string email, string ipAddress, string locale, string captcha)
@@ -496,6 +498,80 @@ namespace APIServer.PwdMan
                 .SetSlidingExpiration(TimeSpan.FromMinutes(2));
             memoryCache.Set(cacheKey, photoContent, options);
             return CreatePhotoDownloadResult(photoContent.Data, photoContent.ContentType);
+        }
+
+        public void MigrateLegacyProfilePhotosToDatabase()
+        {
+            var dbContext = GetDbContext();
+            if (dbContext.DbSettings.Any(s => s.Key == LegacyProfilePhotoMigrationSettingKey))
+            {
+                logger.LogInformation("Legacy profile photo migration already completed.");
+                return;
+            }
+            logger.LogInformation("Start legacy profile photo migration...");
+            int migratedCount = 0;
+            int skippedCount = 0;
+            var users = dbContext.DbUsers.Where(u => !string.IsNullOrEmpty(u.Photo)).ToList();
+            foreach (var user in users)
+            {
+                if (!IsLegacyPhotoPath(user.Photo))
+                {
+                    skippedCount++;
+                    continue;
+                }
+                if (!TryResolveLegacyPhotoFilePath(user.Photo, out var photoPath))
+                {
+                    logger.LogWarning("Skip legacy profile photo migration for user ID {userId}: file path '{photoPath}' not found.", user.Id, user.Photo);
+                    skippedCount++;
+                    continue;
+                }
+                byte[] imageData;
+                try
+                {
+                    imageData = File.ReadAllBytes(photoPath);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Skip legacy profile photo migration for user ID {userId}: cannot read '{photoPath}'.", user.Id, photoPath);
+                    skippedCount++;
+                    continue;
+                }
+                if (imageData.Length == 0)
+                {
+                    skippedCount++;
+                    continue;
+                }
+                var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
+                if (userPhoto == null)
+                {
+                    userPhoto = new DbUserPhoto { DbUserId = user.Id };
+                    dbContext.DbUserPhotos.Add(userPhoto);
+                }
+                var updatedUtc = File.GetLastWriteTimeUtc(photoPath);
+                if (updatedUtc == DateTime.MinValue)
+                {
+                    updatedUtc = DateTime.UtcNow;
+                }
+                userPhoto.ContentType = "image/jpeg";
+                userPhoto.Data = imageData;
+                userPhoto.UpdatedUtc = updatedUtc;
+                user.Photo = GetPhotoContentUrl(Guid.NewGuid(), user.Id, userPhoto.UpdatedUtc);
+                migratedCount++;
+            }
+            dbContext.DbSettings.Add(new DbSetting
+            {
+                Key = LegacyProfilePhotoMigrationSettingKey,
+                Value = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture)
+            });
+            try
+            {
+                dbContext.SaveChanges();
+                logger.LogInformation("Legacy profile photo migration completed: {migratedCount} migrated, {skippedCount} skipped.", migratedCount, skippedCount);
+            }
+            catch (DbUpdateException ex) when (dbContext.DbSettings.Any(s => s.Key == LegacyProfilePhotoMigrationSettingKey))
+            {
+                logger.LogInformation(ex, "Legacy profile photo migration marker already exists, skipping duplicate startup migration run.");
+            }
         }
 
         public bool IsRegisteredUsername(string username)
@@ -1730,6 +1806,17 @@ namespace APIServer.PwdMan
             var keyEnd = photoUrl.IndexOf('&', keyStart);
             var value = keyEnd >= 0 ? photoUrl.Substring(keyStart, keyEnd - keyStart) : photoUrl.Substring(keyStart);
             return Guid.TryParse(value, out photoId);
+        }
+
+        private static bool IsLegacyPhotoPath(string photoUrl)
+        {
+            return !string.IsNullOrWhiteSpace(photoUrl) && !TryGetPhotoContentId(photoUrl, out _);
+        }
+
+        private static bool TryResolveLegacyPhotoFilePath(string photoUrl, out string photoPath)
+        {
+            photoPath = $"wwwroot/{photoUrl}";
+            return File.Exists(photoPath);
         }
 
         private static DownloadResult CreatePhotoDownloadResult(byte[] data, string contentType)

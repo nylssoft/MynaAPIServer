@@ -49,6 +49,8 @@ namespace APIServer.PwdMan
 
         DownloadResult GetPhotoContent(string photoId, long userId);
 
+        void MigrateLegacyProfilePhotosToDatabase();
+
         string UploadPhoto(string authenticationToken, string contentType, Stream contentStream);
 
         bool DeletePhoto(string authenticationToken);
