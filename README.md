@@ -15,7 +15,6 @@ The following games are provided:
 - A [Tetris](https://www.stockfleth.eu/tetris) clone
 
 Skat requires 3 or 4 players, Backgammon and Chess 2 players. Arkanoid and Tetris are single player games.
-Chess can be used as a single player game if a chess engine is configured, e.g. Zappa or Stockfish.
 
 The following applications are provided:
 
