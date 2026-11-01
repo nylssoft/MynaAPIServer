@@ -323,6 +323,14 @@ namespace APIServer.PwdMan
         }
     }
 
+    public class InvalidProfilePhotoException : APIException
+    {
+        public InvalidProfilePhotoException()
+            : base("ERROR_INVALID_PROFILE_PHOTO", 400)
+        {
+        }
+    }
+
     public class StorageQuotaExceededException : APIException
     {
         public StorageQuotaExceededException()

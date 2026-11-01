@@ -29,8 +29,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -584,24 +583,20 @@ namespace APIServer.PwdMan
         {
             logger.LogDebug("Upload photo...");
             var user = GetUserFromToken(authenticationToken);
-            bool saveAsPng = !string.IsNullOrEmpty(contentType) && contentType.EndsWith("png", StringComparison.InvariantCultureIgnoreCase);
-            string photoContentType = saveAsPng ? "image/png" : "image/jpeg";
-            byte[] imageBytes;
-            using (Image image = Image.Load(contentStream))
+            using var stream = new MemoryStream();
+            var buffer = new byte[81920];
+            int bytesRead;
+            while ((bytesRead = contentStream.Read(buffer, 0, buffer.Length)) > 0)
             {
-                var opt = new ResizeOptions { Mode = ResizeMode.Crop, Size = new Size { Width = 90, Height = 90 } };
-                image.Mutate(x => x.Resize(opt));
-                using var stream = new MemoryStream();
-                if (saveAsPng)
+                if (stream.Length + bytesRead > 10 * 1024 * 1024)
                 {
-                    image.SaveAsPng(stream);
+                    throw new FileTooLargeException();
                 }
-                else
-                {
-                    image.SaveAsJpeg(stream);
-                }
-                imageBytes = stream.ToArray();
+                stream.Write(buffer, 0, bytesRead);
             }
+            var (imageBytes, photoContentType) = TransformPhoto(
+                stream.ToArray(),
+                !string.IsNullOrEmpty(contentType) && contentType.EndsWith("png", StringComparison.InvariantCultureIgnoreCase));
             var dbContext = GetDbContext();
             var userPhoto = dbContext.DbUserPhotos.SingleOrDefault(photo => photo.DbUserId == user.Id);
             if (userPhoto == null)
@@ -1782,6 +1777,45 @@ namespace APIServer.PwdMan
         }
 
         // --- private
+
+        private static (byte[] Data, string ContentType) TransformPhoto(byte[] imageBytes, bool saveAsPng)
+        {
+            using var data = SKData.CreateCopy(imageBytes);
+            using var codec = SKCodec.Create(data);
+            if (codec == null || codec.Info.Width <= 0 || codec.Info.Height <= 0 ||
+                (long)codec.Info.Width * codec.Info.Height > 40_000_000)
+            {
+                throw new InvalidProfilePhotoException();
+            }
+            var sourceInfo = new SKImageInfo(codec.Info.Width, codec.Info.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
+            using var source = new SKBitmap(sourceInfo);
+            if (codec.GetPixels(source.Info, source.GetPixels()) != SKCodecResult.Success)
+            {
+                throw new InvalidProfilePhotoException();
+            }
+            var cropSize = Math.Min(source.Width, source.Height);
+            var sourceRect = new SKRect(
+                (source.Width - cropSize) / 2f,
+                (source.Height - cropSize) / 2f,
+                (source.Width + cropSize) / 2f,
+                (source.Height + cropSize) / 2f);
+            using var result = new SKBitmap(new SKImageInfo(90, 90, SKColorType.Rgba8888, SKAlphaType.Premul));
+            using (var canvas = new SKCanvas(result))
+            {
+                canvas.DrawBitmap(
+                    source,
+                    sourceRect,
+                    new SKRect(0, 0, 90, 90),
+                    new SKSamplingOptions(SKCubicResampler.CatmullRom));
+            }
+            using var image = SKImage.FromBitmap(result);
+            using var encoded = image.Encode(saveAsPng ? SKEncodedImageFormat.Png : SKEncodedImageFormat.Jpeg, 75);
+            if (encoded == null)
+            {
+                throw new InvalidProfilePhotoException();
+            }
+            return (encoded.ToArray(), saveAsPng ? "image/png" : "image/jpeg");
+        }
 
         private static string GetPhotoContentUrl(Guid photoId, long userId, DateTime updatedUtc)
         {
