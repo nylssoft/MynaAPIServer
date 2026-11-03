@@ -68,6 +68,49 @@ For the applications the [appsettings.json](/APIServer/appsettings.json) file ha
 Details are explained on the page [Example](/APIServer/sampledata/Example.md).
 You can also use the provided PowerShell script [New-AppSettings](/APIServer/New-AppSettings.ps1) to create an appsettings.json file with the required keys.
 
+### PostgreSQL with Docker
+
+For local development, [Docker Desktop](https://www.docker.com/products/docker-desktop/) can run the PostgreSQL server defined in [compose.yaml](compose.yaml). Install the Docker Desktop version for your Mac, start it, and verify the installation:
+
+```zsh
+docker version
+docker compose version
+```
+
+From the repository root, choose a unique local development password and start the database. Keep the variable exported in the terminal that starts the API server as well.
+
+```zsh
+export POSTGRES_PASSWORD='choose-a-long-unique-local-password'
+docker compose up -d
+docker compose ps
+```
+
+The container exposes PostgreSQL only on `localhost:5432` and stores its data in the `myna-postgres-data` Docker volume. Configure `PostgresConnection` in `APIServer/appsettings.json` without a password:
+
+```json
+{
+	"PostgresConnection": "Host=localhost;Port=5432;Database=apiserver;Username=apiserver"
+}
+```
+
+Start the API server from the same terminal session:
+
+```zsh
+dotnet run --project APIServer
+```
+
+The server applies the Entity Framework Core migrations automatically at startup. Useful database commands are:
+
+```zsh
+docker compose logs -f postgres
+docker compose exec postgres psql -U apiserver -d apiserver
+docker compose stop
+docker compose start
+docker compose down
+```
+
+To remove the database and all local development data, run `docker compose down -v`. This is destructive; the API recreates an empty schema through migrations on its next startup.
+
 ### Environment variables for secrets
 
 Sensitive values can be provided via environment variables instead of storing them in [appsettings.json](/APIServer/appsettings.json).
