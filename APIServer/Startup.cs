@@ -65,9 +65,6 @@ namespace APIServer
                 };
                 postgresConnection = builder.ConnectionString;
             }
-            // disable persistence of XML encryption keys
-            services.AddDataProtection().UseEphemeralDataProtectionProvider();
-            // add controllers
             services.AddControllers();
             // scoped
             services.AddDbContext<DbPostgresContext>(builder => builder.UseNpgsql(postgresConnection));
