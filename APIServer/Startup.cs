@@ -1,6 +1,6 @@
 /*
     Myna API Server
-    Copyright (C) 2020-2025 Niels Stockfleth
+    Copyright (C) 2020-2026 Niels Stockfleth
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ using APIServer.PwdMan;
 using APIServer.Skat;
 using Markdig.Helpers;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -64,6 +65,9 @@ namespace APIServer
                 };
                 postgresConnection = builder.ConnectionString;
             }
+            // disable persistence of XML encryption keys
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
+            // add controllers
             services.AddControllers();
             // scoped
             services.AddDbContext<DbPostgresContext>(builder => builder.UseNpgsql(postgresConnection));
