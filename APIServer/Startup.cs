@@ -25,9 +25,9 @@ using APIServer.HighScore;
 using APIServer.Notes;
 using APIServer.PwdMan;
 using APIServer.Skat;
+using APIServer.Weather;
 using Markdig.Helpers;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -74,7 +74,13 @@ namespace APIServer
             services.AddScoped<INotesService, NotesService>();
             services.AddScoped<IDocumentService, DocumentService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddHttpClient<IWeatherService, WeatherService>()
+                .ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.HttpClientHandler { AllowAutoRedirect = false })
+                .RemoveAllLoggers();
             // singletons
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<WeatherCache>();
+            services.AddSingleton<WeatherRateLimiter>();
             services.AddSingleton<ISkatService, SkatService>();
             services.AddSingleton<IChessService, ChessService>();
             services.AddSingleton<IBackgammonService, BackgammonService>();
