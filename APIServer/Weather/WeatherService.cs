@@ -88,8 +88,11 @@ namespace APIServer.Weather
             {
                 var lat = location.Latitude.Value.ToString(CultureInfo.InvariantCulture);
                 var lon = location.Longitude.Value.ToString(CultureInfo.InvariantCulture);
-                var url = $"{ForecastBaseUrl}/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code&timezone=GMT&timeformat=unixtime&forecast_days=3";
+                var url = $"{ForecastBaseUrl}/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&timezone=GMT&timeformat=unixtime&forecast_days=3";
                 forecast = await GetAsync<Forecast>(url, false, cancellationToken);
+                var dailyUrl = $"{ForecastBaseUrl}/forecast?latitude={lat}&longitude={lon}&daily=temperature_2m_min,temperature_2m_max,weather_code,precipitation_probability_max,wind_speed_10m_max&timezone={Uri.EscapeDataString(location.TimeZone)}&timeformat=unixtime&forecast_days=8";
+                var dailyForecast = await GetAsync<Forecast>(dailyUrl, false, cancellationToken);
+                forecast.Daily = dailyForecast.Daily;
                 ValidateForecast(forecast);
             }
 
@@ -104,9 +107,42 @@ namespace APIServer.Weather
                     cache.Cache.Remove(cacheKey);
                     throw ProviderError();
                 }
-                hours.Add(new HourlyWeather { TimeUtc = time, TemperatureC = forecast.Hourly.Temperature[i], PrecipitationProbabilityPercent = forecast.Hourly.PrecipitationProbability[i], WeatherCode = forecast.Hourly.WeatherCode[i] });
+                hours.Add(new HourlyWeather { TimeUtc = time, TemperatureC = forecast.Hourly.Temperature[i], PrecipitationProbabilityPercent = forecast.Hourly.PrecipitationProbability[i], WeatherCode = forecast.Hourly.WeatherCode[i], WindSpeedKph = forecast.Hourly.WindSpeed[i] });
             }
             if (hours.Count != 24 || hours[0].TimeUtc > asOf.AddHours(1))
+            {
+                cache.Cache.Remove(cacheKey);
+                throw ProviderError();
+            }
+            TimeZoneInfo timeZone;
+            try
+            {
+                timeZone = TimeZoneInfo.FindSystemTimeZoneById(location.TimeZone);
+            }
+            catch (TimeZoneNotFoundException) { throw ProviderError(); }
+            catch (InvalidTimeZoneException) { throw ProviderError(); }
+            var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(asOf, timeZone).DateTime);
+            var days = new List<DailyWeather>();
+            for (int i = 0; i < forecast.Daily.Time.Length && days.Count < 7; i++)
+            {
+                var date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.FromUnixTimeSeconds(forecast.Daily.Time[i]), timeZone).DateTime);
+                if (date < today) continue;
+                if (date != today.AddDays(days.Count))
+                {
+                    cache.Cache.Remove(cacheKey);
+                    throw ProviderError();
+                }
+                days.Add(new DailyWeather
+                {
+                    Date = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    TemperatureMinC = forecast.Daily.TemperatureMin[i],
+                    TemperatureMaxC = forecast.Daily.TemperatureMax[i],
+                    WeatherCode = forecast.Daily.WeatherCode[i],
+                    PrecipitationProbabilityMaxPercent = forecast.Daily.PrecipitationProbabilityMax[i],
+                    WindSpeedMaxKph = forecast.Daily.WindSpeedMax[i]
+                });
+            }
+            if (days.Count != 7)
             {
                 cache.Cache.Remove(cacheKey);
                 throw ProviderError();
@@ -119,7 +155,8 @@ namespace APIServer.Weather
                     Location = location,
                     AsOfUtc = asOf,
                     Current = new CurrentWeather { TimeUtc = DateTimeOffset.FromUnixTimeSeconds(forecast.Current.Time.Value), TemperatureC = forecast.Current.Temperature, WeatherCode = forecast.Current.WeatherCode, WindSpeedKph = forecast.Current.WindSpeed },
-                    Hourly = hours
+                    Hourly = hours,
+                    Daily = days
                 }
             };
         }
@@ -191,10 +228,12 @@ namespace APIServer.Weather
         {
             var current = forecast?.Current;
             var hourly = forecast?.Hourly;
-            if (current?.Time == null || hourly?.Time == null || hourly.Temperature == null || hourly.PrecipitationProbability == null || hourly.WeatherCode == null || hourly.Time.Length != hourly.Temperature.Length || hourly.Time.Length != hourly.PrecipitationProbability.Length || hourly.Time.Length != hourly.WeatherCode.Length) throw ProviderError();
+            if (current?.Time == null || hourly?.Time == null || hourly.Temperature == null || hourly.PrecipitationProbability == null || hourly.WeatherCode == null || hourly.WindSpeed == null || hourly.Time.Length != hourly.Temperature.Length || hourly.Time.Length != hourly.PrecipitationProbability.Length || hourly.Time.Length != hourly.WeatherCode.Length || hourly.Time.Length != hourly.WindSpeed.Length) throw ProviderError();
+            var daily = forecast.Daily;
+            if (daily?.Time == null || daily.TemperatureMin == null || daily.TemperatureMax == null || daily.WeatherCode == null || daily.PrecipitationProbabilityMax == null || daily.WindSpeedMax == null || daily.Time.Length != daily.TemperatureMin.Length || daily.Time.Length != daily.TemperatureMax.Length || daily.Time.Length != daily.WeatherCode.Length || daily.Time.Length != daily.PrecipitationProbabilityMax.Length || daily.Time.Length != daily.WindSpeedMax.Length) throw ProviderError();
             const long minUnix = -62135596800;
             const long maxUnix = 253402300799;
-            if (current.Time < minUnix || current.Time > maxUnix || hourly.Time.Any(t => t < minUnix || t > maxUnix)) throw ProviderError();
+            if (current.Time < minUnix || current.Time > maxUnix || hourly.Time.Any(t => t < minUnix || t > maxUnix) || daily.Time.Any(t => t < minUnix || t > maxUnix)) throw ProviderError();
         }
 
         private APIException ProviderError()
@@ -231,6 +270,22 @@ namespace APIServer.Weather
         {
             public ProviderCurrent Current { get; set; }
             public ProviderHourly Hourly { get; set; }
+            public ProviderDaily Daily { get; set; }
+        }
+
+        private class ProviderDaily
+        {
+            public long[] Time { get; set; }
+            [JsonPropertyName("temperature_2m_min")]
+            public double?[] TemperatureMin { get; set; }
+            [JsonPropertyName("temperature_2m_max")]
+            public double?[] TemperatureMax { get; set; }
+            [JsonPropertyName("weather_code")]
+            public int?[] WeatherCode { get; set; }
+            [JsonPropertyName("precipitation_probability_max")]
+            public int?[] PrecipitationProbabilityMax { get; set; }
+            [JsonPropertyName("wind_speed_10m_max")]
+            public double?[] WindSpeedMax { get; set; }
         }
 
         private class ProviderCurrent
@@ -253,6 +308,8 @@ namespace APIServer.Weather
             public int?[] PrecipitationProbability { get; set; }
             [JsonPropertyName("weather_code")]
             public int?[] WeatherCode { get; set; }
+            [JsonPropertyName("wind_speed_10m")]
+            public double?[] WindSpeed { get; set; }
         }
     }
 }

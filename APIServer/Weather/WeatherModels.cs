@@ -40,6 +40,17 @@ namespace APIServer.Weather
         public DateTimeOffset AsOfUtc { get; set; }
         public CurrentWeather Current { get; set; }
         public List<HourlyWeather> Hourly { get; set; }
+        public List<DailyWeather> Daily { get; set; }
+    }
+
+    public class DailyWeather
+    {
+        public string Date { get; set; }
+        public double? TemperatureMinC { get; set; }
+        public double? TemperatureMaxC { get; set; }
+        public int? WeatherCode { get; set; }
+        public int? PrecipitationProbabilityMaxPercent { get; set; }
+        public double? WindSpeedMaxKph { get; set; }
     }
 
     public class CurrentWeather
@@ -56,6 +67,7 @@ namespace APIServer.Weather
         public double? TemperatureC { get; set; }
         public int? PrecipitationProbabilityPercent { get; set; }
         public int? WeatherCode { get; set; }
+        public double? WindSpeedKph { get; set; }
     }
 
     public class WeatherLookupResult
