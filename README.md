@@ -18,7 +18,7 @@ The server runs on Windows, macOS, and Linux using ASP.NET Core on .NET 10, Kest
 
 ### Data protection and sharing
 
-The browser encrypts protected content before sending it to the server and decrypts it using the user's data-protection key. The browser generates a random key during registration; the server does not hold that key and cannot recover protected content if it is lost. Keep a separate copy in a safe place, and do not use your sign-in password as the data-protection key.
+The browser encrypts protected content before sending it to the server and decrypts it using the user's data-protection key. The browser generates a random key during registration; the server does not hold that key and cannot recover protected content if it is lost. Keep a separate copy in a safe place, and do not use your sign-in password as the data-protection key. The authenticated notes list includes each note's last-modified UTC timestamp as metadata, alongside its encrypted title.
 
 Encryption does not apply to everything the server stores. Files uploaded directly to shared folders are unencrypted. Public files can be downloaded without signing in; family files require the `family` role. Users with the `usermanager` role manage accounts and can configure sharing for folders they own. Changing a folder's visibility does not retroactively change its existing files or subfolders.
 

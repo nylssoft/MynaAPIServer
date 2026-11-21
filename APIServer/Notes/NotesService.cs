@@ -43,7 +43,7 @@ namespace APIServer.Notes
             var ret = new List<NoteModel>();
             foreach (var note in notes)
             {
-                ret.Add(new NoteModel { Id = note.Id, Title = note.Title });
+                ret.Add(new NoteModel { Id = note.Id, Title = note.Title, LastModifiedUtc = DbMynaContext.GetUtcDateTime(note.ModifiedUtc).Value });
             }
             return ret;
         }
