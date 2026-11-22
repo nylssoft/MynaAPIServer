@@ -124,4 +124,4 @@ The same build is available through **Actions > Build Myna API Server > Run work
 
 ## License
 
-MynaAPIServer is released under the GNU General Public License, version 3 or later. See [LICENSE](LICENSE) and the [third-party credits](APIServer/sampledata/Copyright.md).
+MynaAPIServer is released under the GNU General Public License, version 3 or later. See [LICENSE](LICENSE) and the [third-party notices](docs/third-party-notices.md).
