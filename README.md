@@ -22,7 +22,7 @@ The browser encrypts protected content before sending it to the server and decry
 
 Encryption does not apply to everything the server stores. Files uploaded directly to shared folders are unencrypted. Public files can be downloaded without signing in; family files require the `family` role. Users with the `usermanager` role manage accounts and can configure sharing for folders they own. Changing a folder's visibility does not retroactively change its existing files or subfolders.
 
-The portal's import and export tools are documented in the [TsMynaPortal README](https://github.com/nylssoft/TsMynaPortal#back-up-and-restore-your-data). [MynaCloudExport](https://github.com/nylssoft/MynaCloudExport) is a separate export tool. The [Android app](https://github.com/nylssoft/MynaPasswordReaderMAUI) can manage passwords, notes, diary entries, and contacts, and download documents.
+The portal's import and export tools are documented in the [TsMynaPortal README](https://github.com/nylssoft/TsMynaPortal#back-up-and-restore-your-data).
 
 ## Run locally
 
