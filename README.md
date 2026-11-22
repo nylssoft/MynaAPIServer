@@ -86,9 +86,20 @@ The launch profile listens on `http://localhost:5000` and `https://localhost:500
 
 Open [the bundled site](http://localhost:5000/) or check [the version endpoint](http://localhost:5000/api/version). To use the current web client instead, follow the [TsMynaPortal development instructions](https://github.com/nylssoft/TsMynaPortal#development-and-builds); its default dev proxy targets port 5000. Initialize the first administrator in a restricted environment before making a fresh instance publicly reachable. Subsequent accounts use the registration approval workflow.
 
-## Integration guides
+## API and integration guides
 
+### API domains
+
+- [Accounts API](docs/accounts-api.md): authentication, registration, profile, and user management.
+- [Notes API](docs/notes-api.md): encrypted note operations and timestamps.
+- [Diary API](docs/diary-api.md): entries, monthly views, and dates with entries.
+- [Documents and Contacts API](docs/documents-api.md): file and folder operations, sharing, and contacts.
+- [Appointments API](docs/appointments-api.md): owner and participant access, votes, and access tokens.
+- [Games API](docs/games-api.md): route families and game-session conventions.
 - [Weather API](docs/weather-api.md): authenticated city search, current conditions, hourly and daily forecast response fields, limits, and Open-Meteo configuration.
+
+### Integrations
+
 - [Azure Communication Services Email](docs/azure-communication-services-email.md): ACS resource setup, sender configuration, localized templates, secrets, and delivery troubleshooting.
 - [Friendly Captcha](docs/friendly-captcha.md): widget and API configuration, protected account flows, CSP considerations, and the current verification failure behavior.
 
