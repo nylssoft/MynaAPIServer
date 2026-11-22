@@ -71,10 +71,10 @@ Set your own signing keys and configure token issuer and audience before using a
 | `APPOINTMENT_SIGNKEY` | `Appointment:SignKey` |
 | `PWDMAN_TOKEN_SIGNKEY` | `PwdMan:TokenConfig:SignKey` |
 | `PWDMAN_TOKEN_LONGLIVEDSIGNKEY` | `PwdMan:TokenConfig:LongLivedSignKey` |
-| `PWDMAN_FRIENDLYCAPTCHA_APIKEY` | `PwdMan:FriendlyCaptchaConfig:APIKey` |
-| `PWDMAN_EMAILSERVICE_CONNECTIONSTRING` | `PwdMan:EmailServiceConfig:ConnectionString` |
+| `PWDMAN_FRIENDLYCAPTCHA_APIKEY` | `PwdMan:FriendlyCaptchaConfig:APIKey` ([guide](docs/friendly-captcha.md)) |
+| `PWDMAN_EMAILSERVICE_CONNECTIONSTRING` | `PwdMan:EmailServiceConfig:ConnectionString` ([guide](docs/azure-communication-services-email.md)) |
 | `PWDMAN_FAMILYACCESSTOKEN` | `PwdMan:FamilyAccessToken` |
-| `WEATHER_API_KEY` | `Weather:ApiKey`; selects Open-Meteo's customer endpoints |
+| `WEATHER_API_KEY` | `Weather:ApiKey`; selects Open-Meteo's customer endpoints ([guide](docs/weather-api.md)) |
 
 Run the server from the repository root:
 
@@ -86,13 +86,11 @@ The launch profile listens on `http://localhost:5000` and `https://localhost:500
 
 Open [the bundled site](http://localhost:5000/) or check [the version endpoint](http://localhost:5000/api/version). To use the current web client instead, follow the [TsMynaPortal development instructions](https://github.com/nylssoft/TsMynaPortal#development-and-builds); its default dev proxy targets port 5000. Initialize the first administrator in a restricted environment before making a fresh instance publicly reachable. Subsequent accounts use the registration approval workflow.
 
-## Weather API
+## Integration guides
 
-`GET /api/weather?city=Berlin&countryCode=DE&locale=de` requires the existing login token in the `token` request header. A city must contain 2-100 characters; `countryCode` is an optional two-letter ISO country code. The optional `locale` (e.g. `de` or `de-DE`) selects the language for location names and regions, if Open-Meteo has translations. When omitted, Open-Meteo defaults to English; an invalid locale returns 400. Open-Meteo matches city prefixes, so a search with multiple matches returns HTTP 409 with `error: ERROR_WEATHER_AMBIGUOUS_LOCATION` and up to 10 `candidates` (ID, name, country, region and time zone). Select one with `GET /api/weather?locationId=<id>&locale=de`; use the same locale to keep the selected location's language consistent. Do not combine `locationId` with city or country code. A missing location returns 404.
-
-A successful response contains `location`, `asOfUtc`, `current`, 24 `hourly` entries and seven `daily` entries. Daily entries cover today and the following six calendar days in the city's time zone. Each contains `date` (`yyyy-MM-dd`, a local date rather than a UTC timestamp), `temperatureMinC`, `temperatureMaxC`, `weatherCode`, `precipitationProbabilityMaxPercent` and `windSpeedMaxKph`. Daily precipitation and wind values are daily maxima. Daily aggregates are requested in the city's time zone separately from the UTC-aligned hourly forecast. The hourly timestamps are the next 24 hourly UTC instants strictly after `asOfUtc`; the location's IANA time zone is provided for display. Current data is model-based and includes its provider timestamp. Temperatures are degrees Celsius, wind speed (`windSpeedKph` in both `current` and each `hourly` entry) is km/h, and precipitation probability is a percentage for the preceding hour. Weather codes follow the [WMO interpretation codes](https://open-meteo.com/en/docs); unavailable values may be null. Weather data is provided by [Open-Meteo](https://open-meteo.com/) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); timestamps and data are mapped to this API's response format.
-
-Forecasts are cached in server memory for up to 10 minutes, and requests are limited to 30 per user per minute per server instance. Responses are marked `private, no-store`. Provider errors return 502, timeouts return 504, and rate-limited requests return 429. City searches are sent to Open-Meteo; do not include sensitive information in them. Open-Meteo's free service is for non-commercial use and has usage limits; review its [pricing and terms](https://open-meteo.com/en/pricing). Set `WEATHER_API_KEY` for a customer plan, or configure `Weather:ApiKey` using the normal configuration mechanism; keep the key out of source control.
+- [Weather API](docs/weather-api.md): authenticated city search, current conditions, hourly and daily forecast response fields, limits, and Open-Meteo configuration.
+- [Azure Communication Services Email](docs/azure-communication-services-email.md): ACS resource setup, sender configuration, localized templates, secrets, and delivery troubleshooting.
+- [Friendly Captcha](docs/friendly-captcha.md): widget and API configuration, protected account flows, CSP considerations, and the current verification failure behavior.
 
 ## Customize the bundled site
 
